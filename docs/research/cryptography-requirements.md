@@ -1,6 +1,6 @@
 # Entitlement cryptography requirements
 
-Current as of ledger log 39 (2026-11-11). Rewritten in place only when the user decides; each row cites the log entry or source that set its current reading. The ledger, [cryptography-research-notebook.md](cryptography-research-notebook.md), holds the dated history of every amendment. The construction and open work are in [cryptography-critical-path.md](cryptography-critical-path.md).
+Current as of ledger log 45 (2026-11-12). Rewritten in place only when the user decides; each row cites the log entry or source that set its current reading. The ledger, [cryptography-research-notebook.md](cryptography-research-notebook.md), holds the dated history of every amendment. The construction and open work are in [cryptography-critical-path.md](cryptography-critical-path.md).
 
 ## Objective
 

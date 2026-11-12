@@ -1,0 +1,3876 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{longtable,booktabs,array}
+\usepackage{multirow}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage[normalem]{ulem}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\author{}
+\date{}
+
+\begin{document}
+
+Hardness of \emph{\textbf{k}}-LWE and Applications in Traitor Tracing
+
+San Ling1, Duong Hieu Phan2, Damien Stehlé3, and Ron Steinfeld4
+
+\begin{quote}
+1 Division of Mathematical Sciences,\\
+School of Physical and Mathematical Sciences,\\
+Nanyang Technological University, Singapore\\
+2 Laboratoire LAGA (CNRS, U. Paris 8, U. Paris 13), U. Paris 8\\
+3 Laboratoire LIP (U. Lyon, CNRS, ENSL, INRIA, UCBL), ENS de Lyon,
+France 4 Faculty of Information Technology,\\
+Monash University, Clayton, Australia
+
+Abstract. We introduce the \emph{k}-LWE problem, a Learning With Errors
+variant of the \emph{k}-SIS problem. The Boneh-Freeman reduction from
+SIS to \emph{k}-SIS suers from an ex-ponential loss in \emph{k}. We
+improve and extend it to an LWE to \emph{k}-LWE reduction with a
+polynomial loss in \emph{k}, by relying on a new technique involving
+trapdoors for random integer kernel lattices. Based on this hardness
+result, we present the rst algebraic con-struction of a traitor tracing
+scheme whose security relies on the worst-case hardness of standard
+lattice problems. The proposed LWE traitor tracing is almost as ecient
+as the LWE encryption. Further, it achieves public traceability, i.e.,
+allows the authority to delegate the tracing capability to untrusted
+parties. To this aim, we introduce the notion of projective sampling
+family in which each sampling function is keyed and, with a projection
+of the key on a well chosen space, one can simulate the sampling
+function in a computationally indistinguishable way. The construction of
+a projective sampling family from \emph{k}-LWE allows us to achieve
+public traceability, by publishing the projected keys of the users. We
+believe that the new lattice tools and the projective sampling family
+are quite general that they may have applications in other areas.
+
+Keywords. Lattice-based cryptography, Traitor tracing, LWE.
+
+1 Introduction
+
+Since the pioneering work of Ajtai {[}6{]}, there have been a number of
+proposals of cryptographic schemes with security provably relying on the
+worst-case hardness of standard lattice problems, such as the decision
+Gap Shortest Vector Problem with polynomial gap (see the surveys {[}44,
+58{]}). These schemes enjoy unmatched security guarantees: Security
+relies on worst-case hardness assumptions for problems expected to be
+exponentially hard to solve (with respect to the lattice dimension
+\emph{n}), even with quantum computers. At the same time, they often
+enjoy great asymptotic eciency, as the basic operations are
+matrix-vector multiplications in dimension\\
+\emph{O}(\emph{n}) over a ring of cardinality \emph{≤Poly}(\emph{n}). A
+breakthrough result in that eld was the introduction of the Learning
+With Errors problem (LWE) by Regev {[}56, 57{]}, who showed it to be at
+least as hard as worst-case lattice problems and exploited it to devise
+an elementary encryption scheme. Gentry et al. showed in {[}27{]} that
+Regev\textquotesingle s scheme may be adapted so that a master can
+generate a large number of secret keys for the same public key. As a
+result, the latter encryption scheme, called dual-Regev, can be
+naturally extended into a multi-receiver encryption scheme. In the
+present work, we build traitor tracing schemes from this dual-Regev
+LWE-based encryption scheme.
+
+Traitor tracing. A traitor tracing scheme is a multi-receiver encryption
+scheme where malicious receiver coalitions aiming at building pirate
+decryption devices are deterred by the existence of a tracing algorithm:
+Using the pirate decryption device, the tracing algorithm can recover at
+least one member of the malicious coalition. Such schemes are
+particularly well suited for ghting copyright infringement in the
+context of
+
+2
+
+commercial content distribution (e.g., Pay-TV, subscription news
+websites, etc). Since their introduction by Chor et al. {[}21{]}, much
+work has been devoted to devising ecient and secure traitor tracing
+schemes. The most desirable schemes are fully collusion resistant: they
+can deal with arbitrarily large malicious coalitions. But,
+unsurprisingly, the most ecient schemes are in the bounded collusion
+model where the number of
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+malicious users is limited. The rst non-trivial fully collusion
+resistant scheme was proposed by Boneh et al. {[}14{]}. However, its
+ciphertext size is still large (\emph{Ω}(\emph{√N}), where
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\emph{N} is the total number of users) and it relies on pairing groups
+of composite order. Very recently, Boneh and Zhandry {[}16{]} proposed a
+fully collusion resistant scheme with poly-log size parameters. It
+relies on indistinguishability obfuscation {[}26{]}, whose security
+foundation remains to be studied, and whose practicality remains to be
+exhibited. In this paper, we focus on the bounded collusion model. The
+Boneh-Franklin scheme {[}11{]} is one of the earliest algebraic
+constructions but it can still be considered as the reference algebraic
+transformation from the standard ElGamal public key encryption into
+traitor tracing. This transformation induces a linear loss in eciency,
+with respect to the maximum number of traitors. The known
+transformations from encryption to traitor tracing in the bounded
+collusion model present at least a linear loss in eciency, either in the
+ciphertext size or in the private key size {[}11, 46, 33, 60, 10, 13{]}.
+We refer to {[}29{]} for a detailed introduction to this rich topic.
+Also, in Section 2.1, we give a short overview of traitor tracing
+schemes with their properties, in particular the public traceability.
+
+Our Contributions. We describe the rst algebraic construction of a
+public-key lattice-based traitor tracing scheme. It is semantically
+secure and enjoys public trace-ability. The security relies on the
+hardness of LWE, which is known to be at least as hard as standard
+worst-case lattice problems {[}57, 49, 18{]}.
+
+The scheme is the extension, described above, of the dual-Regev
+LWE-based en-cryption scheme from {[}27{]} to a multi-receiver
+encryption scheme, where each user has a dierent secret key. In the case
+of traitor tracing, several keys may be leaked to a traitor coalition.
+To show that we can trace the traitors, we extend the LWE problem and
+introduce the \emph{k}-LWE problem, in which \emph{k} hint vectors (the
+leaked keys) are given out.
+
+Intuitively, \emph{k}-LWE asks to distinguish between a random vector
+\emph{\textbf{t}} close to a given lattice \emph{Λ} and a random vector
+\emph{\textbf{t}} close to the orthogonal subspace of the span of
+\emph{k} given short vectors belonging to the dual \emph{Λ∗}of that
+lattice. Even if we are given (\emph{\textbf{b}∗i})\emph{i≤k} small in
+\emph{Λ∗}, computing the inner products \emph{⟨\textbf{b}∗i,
+\textbf{t}⟩}will not help in solving this problem, since they are small
+and distributed identically in both cases. The \emph{k}-LWE problem can
+be interpreted as a dual of the \emph{k}-SIS problem introduced by Boneh
+and Freeman {[}12{]}, which intuitively requests to nd a short vector in
+\emph{Λ∗}that is linearly independent with the \emph{k} given short
+vectors of \emph{Λ∗}. Their reduction from SIS to \emph{k}-SIS can be
+adapted to the LWE setup, but the hardness loss incurred by the
+reduction is gigantic. We propose a signicantly sharper reduction from
+LWE\emph{α} to \emph{k}-LWE\emph{α}. This improved reduction re-quires a
+new lattice technique: the equivalent for kernel lattices of
+Ajtai\textquotesingle s simultaneous sampling of a random \emph{q}-ary
+lattice with a short basis {[}7{]} (see also Lemma 10). We adapt the
+Micciancio-Peikert framework from {[}42{]} to sampling a Gaussian
+\emph{X ∈}Z\emph{m×n}along with a short basis for the lattice
+ker(\emph{X}) = \emph{\{\textbf{b} ∈}Z\emph{m}: \emph{\textbf{b}tX} =
+\textbf{0}\emph{\}}.
+
+Our construction of a traitor tracing scheme from \emph{k}-LWE can be
+seen as an additive and noisy variant of the (black-box) Boneh-Franklin
+traitor tracing scheme {[}11{]}. While the Boneh-Franklin scheme is
+transformed from the ElGamal encryption with a linear loss (in the
+maximum number of traitors) in eciency, our scheme is almost as ecient
+as standard LWE-based encryption, as long as the maximum number of
+traitors is
+\end{quote}
+
+3
+
+\begin{quote}
+below \emph{m/c}, where \emph{m} is the number of LWE samples and
+\emph{c} is a constant. The full functionality of black-box tracing in
+both the Boneh-Franklin scheme and ours are of high complexity as they
+both rely on the black-box conrmation: given a superset of the traitors,
+it is guaranteed to nd at least one traitor and no innocent suspect is
+incriminated. Boneh and Franklin left the improvement of the black-box
+tracing as an interesting open problem. We show that in the lattice
+setting, the black-box tracing can be accelerated by running the tracing
+procedure in parallel on untrusted machines. This is a direct
+consequence of the property of public traceability, i.e., the
+possibility of running tracing procedure on public information, that our
+scheme enjoys. We note that almost all traitor tracing systems require
+that the tracing key must be kept secret. Some schemes {[}20, 55, 15,
+17{]} achieve public traceability and some others achieve a stronger
+notion than public traceability, namely non-repudation, but the setup in
+these schemes require some interactive protocol between the center and
+each user such as a secure 2-party computation protocol in {[}53{]}, a
+commitment protocol in {[}54{]}, an oblivious polynomial evaluation in
+{[}64, 35, 32{]}.
+
+To obtain public traceability and inspired from the notion of projective
+hash fam-ily {[}23{]}, we introduce a new notion of projective sampling
+family in which each sampling function is keyed and, with a projection
+of the key on a well chosen space, one can simulate the sampling
+function in a computationally indistinguishable way. The con-struction
+of a set of projective sampling families from \emph{k}-LWE allows us to
+publicly sample the tracing signals.
+
+Related works. Our technique can be adapted to the SIS to \emph{k}-SIS
+reduction. We thus solve the open question left by Boneh and Freeman of
+improving their reduc-tion {[}12{]}: from an exponential loss in
+\emph{k} to a polynomial loss in \emph{k}. Consequently, their linearly
+homomorphic and ordinary signature schemes enjoy much better
+e-ciency/security trade-os.
+
+The Extended-LWE problem, dened in {[}48{]} and studied in {[}8, 18{]},
+has a similar avour to \emph{k}-LWE. In \emph{k}-LWE, the adversary is
+given \emph{k} short vectors in the dual \emph{Λ∗}of the lattice
+\emph{Λ} under scope and has to tell whether a vector \emph{\textbf{t}}
+is close to \emph{Λ} or close to the orthogonal of the \emph{k} vectors.
+In Extended-LWE, the adversary is given a short vector \emph{\textbf{z}}
+along with the value \emph{⟨\textbf{z}, \textbf{e}⟩}where
+\emph{\textbf{e}} denotes the oset between \emph{\textbf{t}} and
+\emph{Λ}. In {[}39{]}, Libert and Stehlé used our sampling of a random
+Gaussian integer matrix \emph{X} together with a short basis of
+ker(\emph{X}), to show that Extended-LWE remains hard if one is given
+\emph{k} well-distributed hint vectors \emph{\textbf{z}} instead of just
+one. They used it to prove the security of a fully secure functional
+encryption scheme for inner products.
+
+Open problems.Our proposed lattice-based traitor tracing scheme resists
+Chosen Plaintext Attacks. There exist traitor tracing schemes that
+resist Chosen Ciphertext Attacks, such as {[}11, Sec. 8{]}, but they
+rely on more traditional hardness assumptions (such as DDH). It seems
+quite challenging to devise such an IND-CCA-secure scheme under lattice
+hardness assumptions. Intuitively, in a traitor tracing scheme the users
+own parts of a master secret (e.g., each user owns a short vector in a
+shared lattice, or a discrete log representation with respect to a
+shared set of group elements), and we attempt to prevent traitors from
+gaining knowledge of more than their share of the secret information.
+This requirement seems to be in opposition with the underlying design of
+lattice-based IND-CCA-secure encryption schemes {[}49, 52, 19, 3, 4{]},
+as the receiver uses the full secret information (a short basis of
+lattice) to verify the well-formedness of the ciphertext it decrypts. It
+is an interesting open problem to design an IND-CCA-secure lattice-based
+encryption scheme where dierent independent secret keys could be used
+for a common public key.
+
+4
+
+Our scheme naturally raises the question whether the additional
+properties and fea-tures that are enjoyed by existing traitor tracing
+schemes can also be achieved using lattice hardness assumptions. Our
+scheme looks as a good starting point for building an ID-based traitor
+tracing scheme {[}1{]}, as it seems compatible with the construction
+from {[}3{]}. Another popular functionality is the possibility of
+revoking malicious users {[}47{]} or broadcasting to any subgroup of the
+users {[}25{]}. Our scheme can be directly adapted to broadcast to a
+small group of users (the tracing signals \emph{Trk} can be used for
+sending messages to users that has one of the sub-keys
+\emph{\textbf{x}}1\emph{, . . . , \textbf{x}k}). This possibility of
+broad-casting to a small set of the sub-keys can be then combined with
+the complete subtree framework in {[}45{]} to deal with revocation (in
+which each node of the tree is associated with a sub-key
+\emph{\textbf{x}i} and the key of each user is a set of sub-keys on the
+path from the root to the user). However, this way leads to a
+combinatorial and inecient scheme and can only deal with a small set of
+the revokers (for ensuring the security). An alge-braic construction of
+a lattice-based trace-and-revoke scheme could be an interesting problem.
+
+Remark. This article is the full version of {[}40{]}, published in the
+proceedings of CRYPTO 2014. Compared to the proceedings version, the
+reduction from LWE to \emph{k}-LWE has been signicantly simplied. This
+simplication also led to an improve-ment in the number of hints it
+handles, from \emph{k} = \emph{o}(\emph{n}) to \emph{k} linear in
+\emph{m}.
+
+2 Preliminaries
+
+If \emph{x} is a real number, then \emph{⌊x⌉}is the closest integer to
+\emph{x} (with any deterministic rule in case \emph{x} is half an odd
+integer). All vectors will be denoted in bold. By default, our vectors
+are column vectors. We let \emph{⟨·, ·⟩}denote the canonical inner
+product. For \emph{q} prime, we let Z\emph{q} denote the eld of integers
+modulo \emph{q}. For two matrices \emph{A, B} of compatible dimensions,
+we let (\emph{A\textbar B}) and (\emph{A∥B}) respectively denote the
+horizontal and vertical \emph{q}. concatenations of \emph{A} and
+\emph{B}. For \emph{A ∈}Z\emph{m×n} , we dene Im(\emph{A}) =
+\emph{\{A\textbf{s}} : \emph{\textbf{s} ∈}Z\emph{n q\} ⊆}Z\emph{m} For
+\emph{X ⊆}Z\emph{m q}, we let Span(\emph{X}) denote the set of all
+linear combinations of the elements of \emph{X}. We let \emph{X⊥}denote
+the linear subspace \emph{\{\textbf{b} ∈}Z\emph{m} : \emph{∀\textbf{c}
+∈X, ⟨\textbf{b}, \textbf{c}⟩}= 0\emph{\}}. For a matrix \emph{S
+∈}R\emph{m×n}, we let \emph{∥S∥}denote the norm of its longest column.
+If \emph{S} is full column-rank, we let \emph{σ}1(\emph{S}) \emph{≥. . .
+≥σn}(\emph{S}) denote its singular values. We let T denote the additive
+group R\emph{/}Z.
+
+If \emph{D}1 and \emph{D}2 are distributions over a countable set
+\emph{X}, their statistical distance \uline{1}
+
+dened similarly if \emph{X} is measurable. If \emph{X} is of nite
+weight, we let \emph{U}(\emph{X}) denote the 2
+\emph{x∈X\textbar D}1(\emph{x}) \emph{−D}2(\emph{x})\emph{\textbar{}}
+will be denoted by \emph{∆}(\emph{D}1\emph{, D}2). The statistical
+distance is
+
+uniform distribution over \emph{X}. For any invertible \emph{S
+∈}R\emph{m×m}and \emph{\textbf{c} ∈}R\emph{m}, we dene the function
+\emph{ρS,\textbf{c}}(\emph{\textbf{b}}) =
+exp(\emph{−π∥S−}1(\emph{\textbf{b} −\textbf{c}})\emph{∥}2). For \emph{S}
+= \emph{σIm}, we write \emph{ρσ,\textbf{c}}, and we omit the subscripts
+\emph{S} and \emph{\textbf{c}} when \emph{S} = \emph{Im} and
+\emph{\textbf{c}} = \textbf{0}. We let \emph{να} denote the
+one-dimensional Gaussian distribution with standard deviation \emph{α}.
+
+2.1 Traitor tracing
+
+Combinatorial schemes versus algebraic schemes. There are two main
+ap-proaches for devising a traitor tracing encryption scheme. Many
+constructions are combinatorial in nature (see {[}21, 61, 22, 59, 55,
+10, 13{]}, among others): They typically combine an arbitrary encryption
+scheme with a collusion-resistant ngerprinting code. The most
+interesting property in combinatorial schemes is the capacity of dealing
+with black-box tracing. However, the eciency of these traitor tracing
+schemes is curbed by
+\end{quote}
+
+5
+
+\begin{quote}
+the large parameters induced by even the best construction of such codes
+{[}63{]}: To resist coalitions of up to \emph{t} malicious users among
+\emph{N} users, the code length is \emph{ℓ}= \emph{Θ}(\emph{t}2log
+\emph{N}). Lower bounds with the same dependence with respect to
+\emph{t} have been given in {[}51, 63{]}, leaving little hope of
+signicant improvements.
+
+An alternative approach was initiated by Kurosawa and Desmedt in
+{[}36{]} (whose construction was shown insecure in {[}62{]}), and by
+Boneh and Franklin {[}11{]}: The tracing functionality directly stems
+from the algebraic properties of the encryption scheme. As opposed to
+the combinatorial approach, this algebraic approach is not generic and
+requires designing ad hoc encryption schemes. In this paper, we
+concentrate on the al-gebraic approach. Prior to this work, all known
+algebraic traitor tracing schemes relied on variants of the Discrete
+Logarithm Problem: For instance, the earlier constructions (including
+{[}36, 11, 33, 37{]}) rely on the assumed hardness of the Decision Die
+Hellman problem (DDH), whereas others (including {[}20, 14, 15, 1,
+24{]}) rely on variants of DDH on groups admitting pairings. The former
+provide strong security when instantiating with groups for which DDH is
+expected to be very hard (such as generic elliptic curves over prime
+elds), whereas the latter achieve improved functionalities while
+lowering the performance (as a function of the security level).
+
+Public traceability. An important problem on traitor tracing is to
+handle the case where the tracer is not trusted. In this scenario, the
+tracing procedure must be run in a way that enables verication of the
+traitor implication, by a system outsider. The strongest notion for this
+is non-repudiation: the tracing procedure must produce an undeniable
+proof of the traitor implication. However, a necessary condition for
+achieving non-repudiation is that the setup involves some interactive
+protocol between the center and each user. Indeed, if the center
+generates all the parameters for the users, then any pirate decoder
+produced by a collusion of traitors can also be produced by the center
+and there is no way for the center to trustworthily prove the
+culpability of the traitors. All the existing schemes enjoying
+non-repudiation involve complex interactive proofs: a secure 2-party
+computation protocol in {[}53{]}, a commitment protocol in {[}54{]}, an
+oblivious polynomial evaluation in {[}64, 35, 32{]}.
+
+When considering the standard setting of non-interactive setup, we
+cannot get the full strength of non-repudiation, but we can still
+achieve a weaker but very useful property: public traceability. This
+notion allows anyone to perform the tracing from the public parameters
+only and hence the traitor implication can be publicly veried. Moreover,
+public traceability implies the capacity of delegating the tracing
+procedure: the tracer can run the tracing procedure in parallel on
+untrusted machines without leaking any secret information. This can
+prove crucial for the schemes with high tracing complexity. In fact,
+there are very few (non-interactive) schemes that achieve this property
+{[}55, 15{]} (some schemes, such as {[}20, 10, 13{]}, partially achieve:
+some parts of the tracing procedure can be run publicly). The scheme
+{[}55{]} is generic, based on IPP-
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+codes, and is thus quite impractical. The Boneh-Waters scheme {[}15{]}
+achieves resistance against unbounded coalitions, but has a large
+ciphertext size of \emph{Θ}(\emph{√N}) group elements.
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+All known ecient algebraic schemes are in the bounded collusion model
+and so far, none of them enjoys public traceability. In this paper, we
+achieve public traceability without downgrading the eciency of the
+proposed sheme.
+
+Public key traitor tracing encryption
+
+A public-key traitor tracing scheme consists of four probabilistic
+algorithms Setup, Enc, Dec and Trace.
+
+6
+
+\emph{•} Algorithm Setup is run by a trusted authority. It takes as
+inputs a security pa-rameter \emph{λ}, a list of users
+(\emph{Ui})\emph{i≤N} and a bound \emph{t} on the size of traitor
+coalitions. It computes a public key \emph{pk}, descriptions of the
+plaintext and ciphertext domains \emph{P} and \emph{C}, secret keys
+(\emph{ski})\emph{i≤N}, and a tracing key \emph{tk} (which may contain
+the \emph{ski}\textquotesingle s and additional data). It publishes
+\emph{pk, P} and \emph{C}, and sends \emph{ski} to user \emph{Ui} for
+all \emph{i ≤N}.\emph{•} Algorithm Enc can be run by any party. It takes
+as inputs a public key \emph{pk} and a plaintext message \emph{M ∈P}. It
+computes a ciphertext \emph{C ∈C}.
+
+\emph{•} Algorithm Dec can be run by any user. It takes as inputs a
+secret key \emph{ski} and a ciphertext message \emph{C ∈C}. It computes
+a plaintext \emph{P ∈P}.
+
+\emph{•} Algorithm Trace is explained below. If the input of Trace,
+i.e., the tracing key \emph{tk}, is public then we say that the scheme
+supports public traceability.
+
+We require that Setup, Enc and Dec run in polynomial time, and that with
+over-
+
+whelming probability over the randomness used by the algorithms, we have
+\end{quote}
+
+\emph{∀M ∈P, ∀i ≤N} : Dec(\emph{ski,} Enc(\emph{pk, M})) = \emph{M,}
+
+where \emph{pk} and the \emph{ski}\textquotesingle s are sampled from
+Setup. We also require the encryption scheme
+
+\begin{quote}
+to be IND-CPA.
+
+Algorithm Trace aims at deterring coalitions of malicious users
+(traitors) from
+\end{quote}
+
+building an unauthorized decryption device. It takes as input \emph{tk}
+and has access to a
+
+\begin{quote}
+decryption device \emph{D}. Trace aims at disclosing the identity of at
+least one user that participated in building \emph{D}.
+
+We consider the minimal black-box access model {[}11{]}. In this model,
+the tracing
+
+authority has access to an oracle \emph{OD}that itself internally uses
+\emph{D}. Oracle \emph{OD}behaves as follows: It takes as input any pair
+(\emph{C, M}) \emph{∈C × P} and returns 1 if \emph{D}(\emph{C}) =
+\emph{M} and 0 otherwise; the oracle only tells whether the decoder
+decrypts \emph{C} to \emph{M} or not. We
+
+assume that if \emph{M} is sampled from \emph{U}(\emph{P}) and \emph{C}
+is the output of algorithm Enc given \emph{pk} and \emph{M} as inputs,
+then the decryption device decrypts correctly with probability
+
+signicantly more than 1\emph{/\textbar P\textbar{}}:
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Pr
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{OD}(\emph{C, M}) = 1
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{≥}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{\textbar P\textbar{}}+ 1\emph{λc ,}
+\end{quote}
+\end{minipage}} \\
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{C ←M ←}Enc(\emph{M}) \emph{U}(\emph{P})
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+for some constant \emph{c \textgreater{}} 0. This assumption is justied
+by the fact that otherwise the
+
+decryption device is not very useful. Alternatively, we may force the
+correct decryp-
+
+tion probability to be non-negligibly close to 1, by using an
+all-or-nothing transform
+
+\begin{quote}
+(see {[}33{]}). We also assume that the decoder \emph{D} is
+stateless/resettable, i.e., it cannot see and adapt to it being tested
+and replies independently to successive queries. Handling
+
+stateful pirate boxes has been investigated in {[}31, 30{]}.
+
+In our scheme, algorithm Trace will only be a conrmation algorithm. It
+takes as
+
+input a set of (suspect) users (\emph{Uij})\emph{j} of cardinality
+\emph{k ≤t}, and must satisfy the following two properties:
+
+\emph{•} Confirmation. If the traitors are all in the set of suspects
+(\emph{Uij})\emph{j≤k}, then it returns User \emph{Uij}0 is guilty for
+some \emph{j}0 \emph{≤k};\\
+\emph{•} Soundness. If it returns User \emph{Uij}0 is guilty for some
+\emph{j}0 \emph{≤k}, then user \emph{Uij}0 should indeed be a traitor.
+\end{quote}
+
+The conrmation algorithm should run in polynomial-time. It may be
+converted into a
+
+(costly) full-edge tracing algorithm by calling it on all subsets of
+users of cardinality \emph{t}.
+
+7
+
+\begin{quote}
+2.2 Euclidean lattices and discrete Gaussian distributions
+\end{quote}
+
+A lattice is a set of the form \emph{\{} independent vectors in
+R\emph{m}. In this situation, the \emph{\textbf{b}i}\textquotesingle s
+are said to form a basis of \emph{i≤nxi\textbf{b}i} : \emph{xi
+∈}Z\emph{\}} where the \emph{\textbf{b}i}\textquotesingle s are linearly
+
+the \emph{n}-dimensional lattice. The \emph{n}th minimum
+\emph{λn}(\emph{L}) of an \emph{n}-dimensional lattice \emph{L} is
+
+dened as the smallest \emph{r} such that the \emph{n}-dimensional closed
+hyperball of radius \emph{r}
+
+centered in \textbf{0} contains \emph{n} linearly independent vectors of
+\emph{L}. The smoothing param-
+
+eter of \emph{L} is dened as \emph{ηε}(\emph{L}) = min\emph{\{r
+\textgreater{}} 0 : \emph{ρ}1\emph{/r}( \emph{L \textbackslash{}}
+\textbf{0}) \emph{≤ε\}} for any \emph{ε ∈}(0\emph{,} 1),
+
+where \emph{L} = \emph{\{\textbf{c} ∈}Span(\emph{L}) :
+\emph{\textbf{c}t\sout{·} L \sout{⊆}}\uline{Z}\emph{\sout{\}}} is the
+dual lattice of \emph{L}. It was proved in {[}43,
+
+\begin{quote}
+Le. 3.3{]} that \emph{ηε}(\emph{L}) \emph{≤} ln(2\emph{n}(1 +
+1\emph{/ε}))\emph{/π · λn}(\emph{L}) for all \emph{ε ∈}(0\emph{,} 1) and
+\emph{n}-dimensional
+
+lattices \emph{L}.
+
+For a lattice \emph{L ⊆}R\emph{m}, a vector \emph{\textbf{c}
+∈}R\emph{m}and an invertible \emph{S ∈}R\emph{m×m}, we de-
+
+ne the Gaussian distribution of parameters \emph{L}, \emph{\textbf{c}}
+and \emph{S} by \emph{DL,S,\textbf{c}}(\emph{\textbf{b}})
+\emph{∼ρS,\textbf{c}}(\emph{\textbf{b}}) =
+exp(\emph{−π∥S−}1(\emph{\textbf{b} −\textbf{c}})\emph{∥}2) for all
+\emph{\textbf{b} ∈L}. When \emph{S} = \emph{σ · Im}, we simply write
+\emph{DL,σ,\textbf{c}}. Note that \emph{DL,S,\textbf{c}} =
+\emph{St·DS−tL,}1\emph{,S−t\textbf{c}}. Sometimes, for convenience, we
+use the notation \emph{DL}+\emph{\textbf{c},S}
+\end{quote}
+
+as a shorthand for \emph{\textbf{c}} + \emph{DL,S,−\textbf{c}}. Gentry
+et al. {[}27{]} showed that Klein\textquotesingle s algorithm {[}34{]}
+
+can be used to sample from \emph{DL,S,\textbf{c}}. This discrete
+Gaussian sampler was later rened
+
+\begin{quote}
+in {[}18{]}.
+\end{quote}
+
+Lemma 1 ({[}18, Le. 2.3{]}). There exists a ppt algorithm that, given a
+basis (\emph{\textbf{b}i})\emph{i}
+
+\begin{quote}
+of an \emph{n}-dimensional lattice \emph{L}, \emph{\textbf{c}
+∈}Span(\emph{L}) and \emph{S ∈}R\emph{m×m}invertible satisfying
+ln(2\emph{n} + 4)\emph{/π ·} max\emph{i ∥S−t\textbf{b}i∥≤}1, returns a
+sample from \emph{DL,S,\textbf{c}}.
+
+The following basic results on lattice Gaussians are usually stated for
+full-rank
+\end{quote}
+
+lattices. As we consider lattices that are not full-rank, we adapt them.
+The proofs
+
+can be modied readily to handle this more general setup, by relying on
+an isometry
+
+\begin{quote}
+from Span(\emph{L}) to R\emph{n}with \emph{n} = dim \emph{L}.
+
+Lemma 2 (Adapted from {[}5, Le. 3{]}). For any \emph{n}-dimensional
+lattice \emph{L ⊆}R\emph{m}, \emph{\textbf{c} ∈}Span(\emph{L}) and
+\emph{S ∈}R\emph{m×m}invertible satisfying \emph{σm}(\emph{S})
+\emph{≥ηε}(\emph{L}) with \emph{ε ∈}(0\emph{,} 1\emph{/}2), we
+
+have Pr\emph{\textbf{b}←DL,S,\textbf{c}}{[}\emph{∥\textbf{b}
+−\textbf{c}∥≥σ}1(\emph{S}) \emph{· √n}{]} \emph{≤}2\emph{−n}+2.
+
+Lemma 3 (Adapted from {[}43, Le. 4.4{]}). For any lattice \emph{L
+⊆}R\emph{m}, \emph{\textbf{c} ∈}Span(\emph{L}) and \emph{S
+∈}R\emph{m×m}invertible satisfying \emph{σm}(\emph{S})
+\emph{≥ηε}(\emph{L}) with \emph{ε ∈}(0\emph{,} 1\emph{/}2), we have
+\emph{ρS,\textbf{c}}(\emph{L})
+\emph{∈}(\uline{1}\emph{\sout{−}\uline{ε}}1+\emph{ε,} 1) \emph{·
+ρS}(\emph{L}).
+
+Lemma 4 (Special case of {[}50, Th. 3.1{]}). Let \emph{S}1\emph{, S}2
+\emph{∈}R\emph{m×m}invertible, \emph{\textbf{c} ∈}R\emph{m}, and
+\emph{Λ}1\emph{, Λ}2 \emph{\sout{⊆}}\uline{R}\emph{m}be full-rank
+lattices. Assume that 1 \emph{≥ηε}(\emph{S−}1\emph{ηε}(
+(\emph{S}1\emph{St} 1)\emph{−}1 + (\emph{S}2\emph{St} 2)\emph{−}1
+\emph{· Λ}2) for some \emph{ε ∈}(0\emph{,} 1\emph{/}2). If
+\emph{\textbf{x}}2 \emph{←DΛ}2\emph{,S}2\emph{,}\textbf{0} and
+\emph{\textbf{x}}1 \emph{←} 1\emph{Λ}1) and 1 \emph{≥}
+\end{quote}
+
+\emph{DΛ}1\emph{,S}1\emph{,\textbf{c}−\textbf{x}}2, then the residual
+distribution of \emph{\textbf{x}}1 is within statistical distance
+8\emph{ε} of
+
+\begin{quote}
+\emph{DΛ}1\emph{,S,\textbf{c}}, with \emph{S} = \emph{S}1\emph{St} 1+
+\emph{S}2\emph{St} 2.
+\end{quote}
+
+Lemma 5 (Adapted from {[}12, Le. 4.12{]}). Let \emph{S}1\emph{,
+S}2\emph{\sout{∈}}\uline{R}\emph{m×m}invertible,
+\emph{\textbf{c}}1\emph{, \textbf{c}}2 \emph{∈}R\emph{m}, and
+\emph{Λ}1\emph{, Λ}2 \emph{⊆}R\emph{m}be lattices. Assume that 1
+\emph{≥ηε}(\emph{Λ}2) for some \emph{ε ∈}(0\emph{,} 1\emph{/}2). If
+\emph{\textbf{x}}1 \emph{←}distribution of \emph{\textbf{x}}1 +
+\emph{\textbf{x}}2 is within statistical distance 4\emph{ε} of
+\emph{DΛ}1+\emph{Λ}2\emph{,S,\textbf{c}}1+\emph{\textbf{c}}2, where
+\emph{S} = \emph{DΛ}1\emph{,S}1\emph{,\textbf{c}}1 and
+\emph{\textbf{x}}2 \emph{←DΛ}2\emph{,S}2\emph{,\textbf{c}}2, then the
+residual (\emph{S}1\emph{St} 1)\emph{−}1 + (\emph{S}2\emph{St}
+2)\emph{−}1 \emph{· Λ}1 \emph{∩}
+
+\begin{quote}
+\emph{S}1\emph{St} 1+ \emph{S}2\emph{St} 2.
+\end{quote}
+
+Lemma 6 ({[}5, Le. 8{]}). Let \emph{n ≥}1, \emph{m ≥}2\emph{n}, and
+\emph{σ ≥C · √n} for some absolute
+
+\begin{quote}
+constant \emph{C}. Let \emph{X ←Ω}(\emph{σ√m}). \emph{Dm×n} Z\emph{,σ}.
+Then, except with probability 2\emph{−Ω}(\emph{m}), we have
+\emph{σn}(\emph{X}) \emph{≥}
+
+8
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Lemma 7 ({[}2, Th. 5.1{]}). Let \emph{n ≥}100, \emph{ε ∈}(0\emph{,}
+1\emph{/}1000), \emph{σ ≥}9 and \emph{m ≥}30\emph{n} log(\emph{σn}). Let
+\emph{\textbf{c} ∈}R\emph{m}and \emph{X ←Dm×n} Z\emph{,σ}. Let \emph{S
+∈}R\emph{m×m} with \emph{σm}(\emph{S}) \emph{≥}ln(2\emph{n}(1 +
+1\emph{/ε}))\emph{/π}
+
+10\emph{nσ} log3\emph{/}2(\emph{nmσ/ε}). Then, with probability
+\emph{≥}1\emph{−}2\emph{−n}over the choice of \emph{X}, we have
+\emph{Xt·}Z\emph{m}= Z\emph{n}and \emph{∆}(\emph{Xt·
+D}Z\emph{m,S,\textbf{c}, D}Z\emph{n,S′,Xt\textbf{c}}) \emph{≤}2\emph{ε}
+with \emph{S′}= (\emph{SX})(\emph{SX})\emph{t}.
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+We consider the following extension of Lemma 7, in which we force the
+rst row of \emph{X} to be the all-1 vector. This modication is important
+for our traitor tracing scheme, as having the rst entry of every column
+of \emph{X} equal to 1 is what enables correct decryption. Note that
+Lemma 16 and Theorem 17 also hold without this restriction on the rst
+row of \emph{X} (as can be seen by substituting Lemma 7 for Lemma 8 in
+their proofs).
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{1.0000} + 6\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Lemma 8. Let \emph{n ≥}100, \emph{ε ∈}(0\emph{,} 1\emph{/}1000), \emph{σ
+≥C ·} max(\emph{√n,} ln(\emph{n/ε})) for some
+\end{quote}
+
+constant \emph{C \textgreater{}} 0 and \emph{m ≥}30\emph{n}
+log(\emph{σn}) + 1. Let \emph{\textbf{c} ∈}R\emph{m}and \emph{X
+∈}Z\emph{m×n}with all
+
+entries of its rst row equal to 1 and all remaining entries sampled from
+\emph{D}Z\emph{,σ}. Let
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{S ∈}R\emph{m×m}invertible of the form \emph{S} =
+\end{quote}
+\end{minipage}} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{σ}1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+0
+\end{minipage} \\
+\midrule()
+\endhead
+0 & \emph{T} \\
+\bottomrule()
+\end{longtable}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+, with \emph{σm}(\emph{S}) \emph{≥}10\emph{nσ}
+log3\emph{/}2(\emph{nmσ/ε}).
+\end{quote}
+\end{minipage} \\
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{1.0000} + 6\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+Then, with probability \emph{≥}1 \emph{−}2\emph{−n}over the choice of
+\emph{X}, we have \emph{Xt·} Z\emph{m}= Z\emph{n}and
+
+\begin{quote}
+\emph{∆}(\emph{Xt· D}Z\emph{m,S,\textbf{c}, D}Z\emph{n,S′,Xt\textbf{c}})
+\emph{≤}2\emph{ε} with \emph{S′}= (\emph{SX})(\emph{SX})\emph{t}.
+\end{quote}
+
+Proof. Write \emph{\textbf{c}} = (\emph{c}1\emph{∥\textbf{d}}) with
+\emph{\textbf{d} ∈}R\emph{m−}1and \emph{X} = (\textbf{1}\emph{t∥Y} )
+where \textbf{1} denotes the all-
+
+\begin{quote}
+1 vector and \emph{Y ←D}(\emph{m−}1)\emph{×n} Z\emph{,σ} . By Lemma 7,
+we have \emph{Yt·} Z\emph{m−}1= Z\emph{n}and \emph{∆}(\emph{Yt·}
+
+\emph{D}Z\emph{m−}1\emph{,T,\textbf{d}, D}Z\emph{n,T ′,Y t\textbf{d}})
+\emph{≤}2\emph{ε} with \emph{T′∈}Z\emph{n×n}invertible so that
+\emph{T′}= (\emph{TY} )\emph{t}(\emph{TY} ).
+\end{quote}
+
+This implies that \emph{Xt·}Z\emph{m}= Z\emph{n}. Now, we have
+\emph{Xt·D}Z\emph{m,S,\textbf{c}} =
+\textbf{1}\emph{·D}Z\emph{,σ}1\emph{,c}1+\emph{Yt·D}Z\emph{m−}1\emph{,T,\textbf{d}}.
+
+The latter is within statistical distance 2\emph{ε} from \textbf{1}
+\emph{· D}Z\emph{,σ}1\emph{,c}1 + \emph{D}Z\emph{n,T ′,Y t\textbf{d}}.
+The result\emph{σ}1
+
+\begin{quote}
+follows from Lemma 5, using \emph{Λ}2 = Z\emph{n, Λ}1 = \textbf{1}
+\emph{·} Z and \emph{S}1 = \emph{√nIn}. The hypothesis
+
+1 \emph{≥ηε}(
+\end{quote}
+
+on \emph{σm}(\emph{S}) and the fact thats \emph{σn}(\emph{TY} )
+\emph{≥σm}(\emph{S})\emph{σn}(\emph{Y} ) and \emph{σn}(\emph{Y} )
+\emph{≥Ω}(\emph{√mσ}) (by (\emph{S}1\emph{St} 1)\emph{−}1 +
+(\emph{S}2\emph{St} 2)\emph{−}1 \emph{· Λ}1 \emph{∩Λ}2) of Lemma 5 is
+implied by the assumption
+
+\begin{quote}
+Lemma 6). \emph{⊔}
+
+We extensively use \emph{q}-ary lattices. The \emph{q}-ary lattice
+associated to \emph{A ∈}Z\emph{m×n} is
+\end{quote}
+
+dened as \emph{Λ⊥}(\emph{A}) = \emph{\{\textbf{x} ∈}Z\emph{m}:
+\emph{\textbf{x}t· A} = \textbf{0} mod \emph{q\}}. It has dimension
+\emph{m}, and a basis can
+
+be computed in polynomial-time from \emph{A}. For \emph{\textbf{u}
+∈}Z\emph{m q}, we dene \emph{Λ⊥\textbf{u}}(\emph{A}) as the coset
+
+\begin{quote}
+\emph{\{\textbf{x} ∈}Z\emph{m}: \emph{\textbf{x}t· A} =
+\emph{\textbf{u}t}mod \emph{q\}} of \emph{Λ⊥}(\emph{A}).
+\end{quote}
+\end{minipage}} \\
+2.3 &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.7500} + 4\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Random lattices
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+We consider the following random lattices, called \emph{q}-ary Ajtai
+lattices. They are obtained
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+by sampling \emph{A ←U}(Z\emph{m×n} ) and considering
+\emph{Λ⊥}(\emph{A}). The following lemma provides a
+
+\begin{quote}
+probabilistic bound on the smoothing parameter of \emph{Λ⊥}(\emph{A}).
+\end{quote}
+
+Lemma 9 (Adapted from {[}27, Le. 5.3{]}). Let \emph{q} be prime and
+\emph{m, n} integers with
+
+\emph{n}
+
+\begin{quote}
+\emph{m ≥}2\emph{n} and \emph{ε \textgreater{}} 0, then
+\emph{ηε}(\emph{Λ⊥}(\emph{A})) \emph{≤}4\emph{q m} log(2\emph{m}(1 +
+1\emph{/ε}))\emph{/π}, for all except a
+
+fraction 2\emph{−Ω}(\emph{n})of \emph{A ∈}Z\emph{m×n} .
+
+It is possible to eciently sample a close to uniform \emph{A} along with
+a short basis
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+of \emph{Λ⊥}(\emph{A}) (see {[}7, 8, 50, 42{]}).
+
+Lemma 10 (Adapted from {[}8, Th. 3.1{]}). There exists a ppt algorithm
+that given \emph{n, m, q ≥}2 as inputs samples two matrices \emph{A
+∈}Z\emph{m×n} and \emph{T ∈}Z\emph{m×m}such that: the distribution of
+\emph{A} is within statistical distance 2\emph{−Ω}(\emph{n})from
+\emph{U}(Z\emph{m×n} ); the rows of \emph{T} form a basis of
+\emph{Λ⊥}(\emph{A}); each row of \emph{T} has norm
+\emph{≤}3\emph{mqn/m}.
+\end{quote}
+
+9
+
+\begin{quote}
+For \emph{A ∈}Z\emph{m×n} , \emph{S ∈}R\emph{m×m}invertible,
+\emph{\textbf{c} ∈}R\emph{m}and \emph{\textbf{u} ∈}Z\emph{n q}, we dene
+the distribu-tion \emph{DΛ⊥\textbf{u}}(\emph{A})\emph{,S,\textbf{c}} as
+\textbf{¯\emph{c}} +
+\emph{DΛ⊥}(\emph{A})\emph{,S,−}\textbf{¯\emph{c}}+\emph{\textbf{c}},
+where \textbf{¯\emph{c}} is any vector of Z\emph{m}such that
+\textbf{¯\emph{c}}\emph{t· A} = \emph{\textbf{u}t}mod \emph{q}. A sample
+\emph{\textbf{x}} from \emph{DΛ⊥\textbf{u}}(\emph{A})\emph{,S} can be
+obtained using the GPV algorithm along with the short basis of
+\emph{Λ⊥}(\emph{A}) provided by Lemma 10. Boneh and Freeman {[}12{]}
+showed how to eciently obtain the residual distribution of (\emph{A,
+\textbf{x}}) without relying on Lemma 10.
+
+Theorem 11 (Adapted from {[}12, Th. 4.3{]}). Let \emph{n, m, q ≥}2,
+\emph{k ≥}0 and \emph{S ∈}R\emph{m×m} be such that \emph{m ≥}2\emph{n},
+\emph{q} is prime with \emph{q \textgreater{} σ}1(\emph{S})
+\emph{·}max(\emph{Ω}(\emph{√n} log \emph{m})\emph{,}
+2\emph{σ}1(\emph{S}) Then the residual distributions of the tuple
+(\emph{A, \textbf{x}}1\emph{, . . . , \textbf{x}k}) obtained with the
+following \emph{m} ). Let \emph{\textbf{u}}1\emph{, . . . , \textbf{u}k
+∈}Z\emph{n q}and \emph{\textbf{c}}1\emph{, . . . ,
+\textbf{c}k∈}R\emph{m} be arbitrary. 2 log(4\emph{m}), and
+\emph{σm}(\emph{S}) = \emph{q m ·}
+
+two experiments are within statistical distance 2\emph{−Ω}(\emph{n}).
+
+Exp0 : \emph{A ←U}(Z\emph{m×n} );\emph{∀i ≤k} : \emph{\textbf{x}i
+←DΛ⊥\textbf{u}i}(\emph{A})\emph{,S,\textbf{c}i.}
+
+Exp1 : \emph{∀i ≤k} : \emph{\textbf{x}i ←D}Z\emph{m,S,\textbf{c}i};
+\emph{A ←U} Z\emph{m×n \textbar∀i ≤k} : \emph{\textbf{x}t i· A} =
+\emph{\textbf{u}t i}mod \emph{q} \emph{.}
+
+This statement generalizes {[}12, Th. 4.3{]} in three ways. First, the
+latter corresponds to the special case corresponding to taking all the
+\emph{\textbf{u}i}\textquotesingle s and
+\emph{\textbf{c}i}\textquotesingle s equal to \textbf{0}. This
+gen-eralization does not add any extra complication in the proof of
+{[}12, Th. 4.3{]}, but is important for our constructions. Second, the
+condition on \emph{m} is less restrictive (the corresponding assumption
+in {[}12, Th. 4.3{]} is that \emph{m ≥}max(2\emph{n} log \emph{q,}
+2\emph{k})). To allow for such small values of \emph{m}, we rene the
+bound on the smoothing parameter of the \emph{Λ⊥}(\emph{A}) lattice
+(namely, we use Lemma 9). Third, we allow for a non-spherical Gaussian
+dis-tribution, as we are able to adapt the Micciancio-Peikert trapdoor
+technique to kernel lattices only with non-spherical Gaussian
+distribution for the trapdoor vectors.
+
+We also use the following result on the probability of the Gaussian
+vectors \emph{\textbf{x}i} from Theorem 11 being linearly independent
+over Z\emph{q}.
+
+Lemma 12 (Adapted from {[}12, Le. 4.5{]}). With the notations and
+assumptions of Theorem 11, the \emph{k} vectors
+\emph{\textbf{x}}1\emph{, . . . , \textbf{x}k} sampled in Exp0 and Exp1
+are linearly independent over Z\emph{q}, except with probability
+2\emph{−Ω}(\emph{n}).
+
+2.4 Rényi divergence
+
+We use Rényi Divergence (RD) in our analysis, relying on techniques
+developed in {[}41, 38, 9{]}. For any two probability distributions
+\emph{P} and \emph{Q} such that the support of \emph{P} is a subset of
+the support of \emph{Q} over a countable domain \emph{X}, we dene the RD
+(of order 2)
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{P}(\emph{x})2\\
+by \emph{R}(\emph{P∥Q}) = \emph{x∈X} \emph{Q}(\emph{x}), with the
+convention that the fraction is zero when both
+\end{quote}
+
+the numerator and denominator are zero. We recall that the RD between
+two oset\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+discrete Gaussians is bounded as follows.
+
+Lemma 13 ({[}38, Le. 4.2{]}). For any \emph{n}-dimensional lattice
+\emph{L ⊆}R\emph{n}and invertible matrix \emph{S}, set \emph{P} =
+\emph{DL,S,\textbf{w}} and \emph{Q} = \emph{DL,S,\textbf{z}} for some
+xed \emph{\textbf{w}, \textbf{z} ∈}R\emph{n}. If \emph{\textbf{w},
+\textbf{z} ∈L}, let \emph{ε} = 0. Otherwise, x \emph{ε ∈}(0\emph{,} 1)
+and assume that \emph{σn}(\emph{S}) \emph{≥ηε}(\emph{L}). Then
+\emph{R}(\emph{P∥Q}) \emph{≤} \uline{1+\emph{ε}} 1\emph{−ε} \emph{·} exp
+2\emph{π∥\textbf{w} −\textbf{z}∥}2\emph{/σn}(\emph{S})2 .
+
+We use this bound and the fact that the RD between the parameter
+distributions of two distinguishing problems can be used to relate their
+hardness, if they satisfy a certain public samplability property.
+
+10
+\end{quote}
+
+Lemma 14 ({[}9{]}). Let \emph{Φ, Φ′}denote two distributions with
+Supp(\emph{Φ}) \emph{⊆}Supp(\emph{Φ′}), and
+
+\emph{D}0(\emph{r}) and \emph{D}1(\emph{r}) denote two distributions
+determined by some parameter \emph{r ∈}Supp(\emph{Φ′}). Let \emph{P,
+P′}be two decision problems dened as follows:
+
+\begin{quote}
+\emph{• P}: Assess whether input \emph{x} is sampled from distribution
+\emph{X}0 or \emph{X}1, where
+
+\emph{X}0 = \emph{\{x} : \emph{r ←Φ, x ←D}0(\emph{r})\emph{\}, X}1 =
+\emph{\{x} : \emph{r ←Φ, x ←D}1(\emph{r})\emph{\}}.
+
+\emph{• P′}: Assess whether input \emph{x} is sampled from distribution
+\emph{X′}0or \emph{X′}1, where
+
+\emph{X′}0= \emph{\{x} : \emph{r ←Φ′, x ←D}0(\emph{r})\emph{\}, X′}1=
+\emph{\{x} : \emph{r ←Φ′, x ←D}1(\emph{r})\emph{\}}.
+
+Assume that \emph{D}0(\emph{·}) and \emph{D}1(\emph{·}) have the
+following public samplability property: there
+\end{quote}
+
+exists a sampling algorithm S with run-time \emph{TS} such that for all
+\emph{r}, \emph{b}, given any sample
+
+\begin{quote}
+\emph{x} from \emph{Db}(\emph{r}) we have:
+
+\emph{•} S(0\emph{, x}) outputs a sample distributed as
+\emph{D}0(\emph{r}) over the randomness of S.
+
+\emph{•} S(1\emph{, x}) outputs a sample distributed as
+\emph{D}1(\emph{r}) over the randomness of S.
+
+If there exists a \emph{T}-time distinguisher \emph{A} for problem
+\emph{P} with advantage \emph{ε}, then we can
+\end{quote}
+
+construct a distinguisher \emph{A′}for problem \emph{P′}with run-time
+and advantage respectively
+
+\begin{quote}
+bounded from above and below by:
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.2857} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{O}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1\\
+\emph{ε}2 log
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{R}(\emph{Φ∥Φ′})\emph{ε}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{·} (\emph{TS} + \emph{T})
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+and
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{ε}3\\
+8\emph{R}(\emph{Φ∥Φ′})\emph{.}
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+2.5 &
+\multicolumn{6}{>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.8571} + 10\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Learning with errors
+\end{quote}
+\end{minipage}} \\
+\multicolumn{7}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{1.0000} + 12\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+Let \emph{\textbf{s} ∈}Z\emph{n q}and \emph{α \textgreater{}} 0. We dene
+the distribution \emph{A\textbf{s},α}as follows: Take \emph{\textbf{a}
+←U}(Z\emph{n q})
+
+and \emph{e ←να}, and return (\emph{\textbf{a},}\uline{1}
+\emph{q⟨\textbf{a}, \textbf{s}⟩}+ \emph{e}) \emph{∈}Z\emph{n q×} T. The
+Learning With Errors problem
+
+LWE\emph{α}, introduced by Regev in {[}56, 57{]}, consists in assessing
+whether an oracle produces
+
+\begin{quote}
+samples from \emph{U}(Z\emph{n q×}T) or \emph{A\textbf{s},α}for some
+constant \emph{\textbf{s} ←√n} \emph{U}(Z\emph{n q}). Regev {[}57{]}
+showed that
+\end{quote}
+
+for \emph{q ≤Poly}(\emph{n}) prime and \emph{α ∈}( 2\emph{q,} 1), LWE is
+(quantumly) not easier than standard
+
+worst-case lattice problems in dimension \emph{n} with approximation
+factors \emph{Poly}(\emph{n})\emph{/α}.
+
+This hardness proof was partly dequantized in {[}49, 18{]}, and the
+requirements that \emph{q}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+should be prime and \emph{Poly}(\emph{n}) were waived.
+
+In this work, we consider a variant LWE where the number of oracle
+samples that
+\end{quote}
+
+the distinguisher requests is a priori bounded. If \emph{m} denotes that
+bound, then we will
+
+refer to this restriction as LWE\emph{α,m}. In this situation, the
+hardness assumption can
+
+be restated in terms of linear algebra over Z\emph{q}: Given \emph{A
+←U}(Z\emph{m×n} ), the goal is to
+
+\begin{quote}
+distinguish between the distributions (over T\emph{m})
+
+1 1
+
+\emph{q U} (Im(\emph{A})) + \emph{νm} and \emph{q U} Z\emph{m} +
+\emph{νmα.}
+\end{quote}
+
+Under the assumption that \emph{αq ≥Ω}(\emph{√n}), the right hand side
+distribution is indeed
+
+within statistical distance 2\emph{−Ω}(\emph{n})to \emph{U}(T\emph{m})
+(see, e.g., {[}43, Le. 4.1{]}). The hardness as-
+
+sumption states that by adding to them a small Gaussian noise, the
+linear spaces Im(\emph{A})
+
+and Z\emph{m q}become computationally indistinguishable. This rephrasing
+in terms of linear
+
+algebra is helpful in the security proof of the traitor tracing scheme.
+Note that by
+
+a standard hybrid argument, distinguishing between the two distributions
+given one
+
+sample from either, and distinguishing between them given \emph{Q}
+samples (from the same
+
+distribution), are computationally equivalent problems, up to a loss of
+a factor \emph{Q} in
+
+\begin{quote}
+the distinguishing advantage.
+\end{quote}
+
+11
+
+\begin{quote}
+Finally, we will also use a variant of LWE where the noise distribution
+\emph{να} is re-placed by \emph{Dq−}1Z\emph{,α}, and where \emph{U}(T)
+is replaced by \emph{U}(T\emph{q}) with T\emph{q} being \emph{q−}1Z with
+addition mod 1. This variant, denoted by LWE\emph{′}, was proved in
+{[}50{]} to be no easier than standard LWE (up to a constant factor
+increase in \emph{α}).
+
+3 New lattice tools
+
+The security of our constructions relies on the hardness of a new
+variant of LWE, which may be seen as the dual of the \emph{k}-SIS
+problem from {[}12{]}.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}@{}}
+\toprule()
+\multicolumn{11}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{1.0000} + 20\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+Denition 15. Let \emph{k ≤m}, \emph{S ∈}R\emph{m×m}invertible and
+\emph{C} = (\emph{\textbf{c}}1\emph{∥· · · ∥\textbf{c}k})
+\emph{∈}R\emph{m×k}.
+
+The (\emph{k, S, C})-LWE\emph{α,m} problem (or (\emph{k, S})-LWE if
+\emph{C} = 0) is as follows: Given \emph{A ←}
+
+\emph{U}(Z\emph{m×n} )\emph{, \textbf{u} ←U}(Z\emph{n q}) and
+\emph{\textbf{x}i←DΛ⊥−\textbf{u}}(\emph{A})\emph{,S,\textbf{c}i} for
+\emph{i ≤k}, the goal is to distinguish
+
+\begin{quote}
+between the distributions (over T\emph{m}+1)
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{U}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage} & Im & \emph{\textbf{u}t} & + \emph{νm}+1 & nd &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{U}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Span
+\end{quote}
+\end{minipage} & 1 & \emph{⊥} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
++ \emph{νm}+1
+\end{quote}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage} \\
+\emph{q·} & & \emph{A} & \emph{α} & nd &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{q·}
+\end{quote}
+\end{minipage} & \emph{i≤k} & \emph{\textbf{x}i} & & \emph{α} & \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+The classical LWE problem consists in distinguishing the left
+distribution from uniform, without the hint vectors \emph{\textbf{x}}+
+\emph{i}= (1\emph{∥\textbf{x}i}). These hint vectors correspond to the
+secret keys obtained by the malicious coalition in the traitor tracing
+scheme. Once these hint vectors are revealed, it becomes easy to
+distinguish the left distribution from the uniform distribution: take
+one of the vectors \emph{\textbf{x}}+ \emph{i}, get a challenge sample
+\emph{\textbf{y} i, \textbf{y}⟩∈}T; if \emph{\textbf{y}} is a sample
+from the left distribution, then the centered and compute
+\emph{⟨\textbf{x}}+ residue is expected to be of size \emph{≈α ·}
+(\emph{√mσ}1(\emph{S}) + \emph{∥\textbf{c}i∥}), which is \emph{≪}1 for
+standard parameter settings; on the other hand, if \emph{\textbf{y}} is
+sampled from the uniform distribution, then \emph{⟨\textbf{x}}+\emph{,
+\textbf{y}⟩}should be uniform. The denition of (\emph{k, S})-LWE handles
+this issue by replacing \emph{U}(Z\emph{m}+1 ) by
+\emph{U}(Span\emph{i≤k}(\emph{\textbf{x}}+ \emph{i})\emph{⊥}).
+
+\emph{i}from \emph{DΛ⊥}((\emph{\textbf{u}t∥A}))\emph{,S,\textbf{c}i}may
+seem more natural than imposing that the Sampling \emph{\textbf{x}}+\\
+rst coordinate of each \emph{\textbf{x}}+ \emph{i}is 1. Looking ahead,
+this constraint will prove convenient to ensure correctness of our
+cryptographic primitives. Theorem 18 below and its proof can be readily
+adapted to this hint distribution. They may also be adapted to improve
+the SIS to \emph{k}-SIS reduction from {[}12{]}. Setting \emph{C} = 0 is
+also more natural, but for technical reasons, our reduction from LWE to
+(\emph{k, S, C})-LWE works with unit vectors \emph{\textbf{c}i}.
+However, we show that for small \emph{∥\textbf{c}i∥}, there exist
+polynomial time reductions between (\emph{k, S, C})-LWE and (\emph{k,
+S})-LWE.
+
+In the proof of the hardness of the (\emph{k, S})-LWE problem, we rely
+on an adaptation of the Micciancio-Peikert trapdoor construction
+{[}42{]} for \emph{q}-ary lattices, to sampling a Gaussian \emph{X
+∈}Z\emph{m×n}along with a short basis for the lattice ker(\emph{X}) =
+\emph{\{\textbf{b} ∈}Z\emph{m}: \emph{\textbf{b}tX} =
+\textbf{0}\emph{\}}. This is the purpose of the next subsection.
+
+3.1 Sampling a Gaussian \emph{\textbf{X}} with a small basis of
+\textbf{ker(\emph{X})}
+
+The Micciancio-Peikert construction {[}42{]} relies on a leftover hash
+lemma stating that with overwhelming probability over \emph{A
+←U}(Z\emph{m×n} ) and for a suciently large \emph{σ}, the distribution
+of \emph{At· D}Z\emph{m,σ} mod \emph{q} is statistically close to
+\emph{U}(Z\emph{n q}). We use a similar result over the integers,
+starting from a Gaussian \emph{X ∈}Z\emph{m×n}instead of a uniform
+\emph{A ∈}Z\emph{m×n} . The proof of the following lemma relies on
+{[}2{]}, which improves over a similar result from {[}5{]}. The result
+would be neater with \emph{σ}2 = \emph{σ}1, but, unfortunately, we do
+not know how to achieve it. The impact of this drawback on our results
+and constructions is mostly cosmetic.
+
+12
+\end{quote}
+
+Lemma 16. Let \emph{m \textgreater{} n ≥}100 and \emph{σ}1\emph{, σ}2
+\emph{\textgreater{}} 0 satisfying \emph{σ}1 \emph{≥Ω}(\emph{√mn} log
+\emph{m}), \emph{m ≥Ω}(\emph{n} log(\emph{σ}1\emph{n})) and \emph{σ}2
+\emph{≥Ω}(\emph{n}5\emph{/}2\emph{√mσ}2 entries of its rst row equal to
+1 and all remaining entries sampled from \emph{D}Z\emph{,σ}1. There
+1log3\emph{/}2(\emph{mσ}1)). Let \emph{X} = (\textbf{1}\emph{t∥Y} )
+\emph{∈}Z\emph{m×n} with all
+
+\begin{quote}
+exists a ppt algorithm that takes \emph{n, m, σ}1\emph{, σ}2\emph{, X}
+and \emph{\textbf{c} ∈}Z\emph{n}as inputs and returns \emph{\textbf{x}
+∈}Z\emph{n, \textbf{r} ∈}Z\emph{m}such that \emph{\textbf{x}} =
+\emph{\textbf{c}}+\emph{Xt\textbf{r}} with
+\emph{∥\textbf{r}∥≤O}(\emph{σ}2\emph{/σ}1), with probability
+1\emph{−}2\emph{−Ω}(\emph{n}), and\\
+\emph{∆}((\emph{Y, \textbf{x}})\emph{, D}(\emph{m−}1)\emph{×n}
+Z\emph{,σ}1 \emph{× D}Z\emph{n,σ}2\emph{,\textbf{c}})
+\emph{≤}2\emph{−Ω}(\emph{n})\emph{.}
+
+Proof. We apply Lemma 8 with \emph{S} of the correct shape, invertible
+and chosen so that (\emph{SX})\emph{t}(\emph{SX}) = \emph{σ}2 2\emph{In}
+for some \emph{σ}2 \emph{\textgreater{} σ}1, thus obtaining an unskewed
+Gaussian distri-bution \emph{D}Z\emph{n,σ}2\emph{,\textbf{c}}. The
+scaling \emph{σ}2 is chosen suciently large so that the assumptions of
+Lemmas 6 and 8 hold.
+
+We rst sample \emph{X} as in the result statement, using Lemma 1, and
+write \emph{X} =
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+(\textbf{1}\emph{t∥Y} ). By Lemma 8 (that we use with \emph{ε} =
+2\emph{−n}), its row Z-span is Z\emph{n}with prob-ability \emph{≥}1
+\emph{−}2\emph{−n}: we now assume that we are in this situation. Then we
+sample \emph{\textbf{r}} from \emph{D}Z\emph{m,S}, using Lemma 1 again,
+for some invertible matrix \emph{S ∈}R\emph{m×m}chosen as described
+below. Finally, we set \emph{\textbf{x}} = \emph{\textbf{c}} + \emph{Xt·
+\textbf{r}}. If the assumptions of Lemma 8 are satised, we know that,
+except with probability \emph{≤}2\emph{−n}over \emph{X}, the
+distribution of \emph{\textbf{x}}
+
+is, conditioned on \emph{X}, within statistical distance 2\emph{ε} of
+\emph{D}Z\emph{n,σ}2\emph{,\textbf{c}}.\emph{√}
+
+We build \emph{S} =
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{σ}2\emph{/} 2
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+0
+\end{minipage} \\
+\midrule()
+\endhead
+0 & \emph{T} \\
+\bottomrule()
+\end{longtable}
+
+using the singular value decomposition \emph{Y} = \emph{UY ·}
+
+Diag((\emph{σi}(\emph{Y} ))\emph{i≤n}) \emph{· VY} , where \emph{UY
+∈}R(\emph{m−}1)\emph{×n}and \emph{VY ∈}R\emph{n×n}are orthogonal
+matrices.
+
+\begin{quote}
+We dene \emph{T} = \emph{UT ·} Diag((\emph{ti})\emph{i\textless m})
+\emph{· VT} as follows: we set \emph{Ut T}= \emph{VY}
+
+\textbf{0} \emph{Im−}1\emph{−n} \textbf{0} and \emph{Vt T}=
+
+{[}\emph{UY \textbar U⊥}set \emph{ti} = \emph{σ}2\emph{/}(
+\end{quote}
+
+(\emph{σ}2 2\emph{/}2) \emph{· In}. We thus have
+(\emph{SX})\emph{t}(\emph{SX}) = \emph{σ}2 \emph{Y}{]}, where \emph{U
+⊥√}2\emph{·σi}(\emph{Y} )) for \emph{i ≤n} and \emph{ti} =
+\emph{σn}(\emph{T}) for \emph{i \textgreater{} n}. This leads to
+(\emph{TY} )\emph{t}(\emph{TY} ) = \emph{Y}is an orthonormal basis for
+the orthogonal of \emph{UY ·} R\emph{n}; we also
+
+2\emph{· In}, as required.
+
+\begin{quote}
+To check that the assumptions of Lemma 8 are satised, note that the
+smallest
+
+singular value of \emph{S} is \emph{σm}(\emph{S}) = \emph{σ}2\emph{/}(
+
+10\emph{nσ}1 log3\emph{/}2(\emph{nmσ}1\emph{/ε}) is satised if
+\emph{σ}2\emph{/}\\
+\emph{√}
+
+2\emph{· σ}1(\emph{Y} )). Hence the assumption \emph{σm}(\emph{S})
+\emph{≥}2 \emph{≥σ}1(\emph{Y} )\emph{·}10\emph{nσ}1
+log3\emph{/}2(\emph{nmσ}1\emph{/ε}). The latter holds by the choice of
+\emph{σ}2, using the fact that \emph{σ}1(\emph{Y} ) \emph{≤∥Y ∥≤√m ·
+σ}1. The second inequality holds with probability
+\emph{≥}1\emph{−n}2\emph{−m}+2, using the union bound and Lemma 2.
+\end{quote}
+
+\emph{σ}2\emph{/}( Finally, the bound on \emph{∥\textbf{r}∥}follows from
+Lemma 2 and the facts that \emph{σ}1(\emph{S})
+=\emph{√}2\emph{·σn}(\emph{Y} )) and \emph{σn}(\emph{Y} )
+\emph{≥Ω}(\emph{σ}1\emph{√m}) except with probability
+2\emph{−Ω}(\emph{m}), by Lemma 6.
+
+\emph{⊔}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+We now adapt the trapdoor construction from {[}42{]} to kernel lattices.
+
+Theorem 17. Let \emph{n, m}1\emph{, σ}1\emph{, σ}2 be as above, and
+\emph{m}2 \emph{≥m}1 bounded as \emph{nO}(1). There exists a ppt
+algorithm that given \emph{n, m}1\emph{, m}2 (in unary), \emph{σ}1 and
+\emph{σ}2, returns \emph{X}1 \emph{∈}Z\emph{m}1\emph{×n, X}2
+\emph{∈}Z\emph{m}2\emph{×n}, and \emph{U ∈}Z\emph{m×m}with \emph{m} =
+\emph{m}1 + \emph{m}2, such that:\\
+\emph{•} the distribution of (\emph{X}1\emph{, X}2) is within
+statistical distance 2\emph{−Ω}(\emph{n})of the distribution
+\emph{Dm}1\emph{×n} of \emph{X}1 being equal to 1, and where
+\emph{\textbf{δ}i} denotes the \emph{i}th canonical unit vector in
+Z\emph{m}2 Z\emph{,σ}1 \emph{×}
+(\emph{D}Z\emph{m}2\emph{,σ}2\emph{,\textbf{δ}}1 \emph{× · · · ×
+D}Z\emph{m}2\emph{,σ}2\emph{,\textbf{δ}n}) conditioned on all entries of
+the rst row
+
+whose \emph{i}th coordinate is 1 and whose remaining coordinates are 0,
+
+\emph{•} we have \emph{\textbar{}} det \emph{U\textbar{}} = 1 and
+\emph{U · X} = (\emph{In∥}0) with \emph{X} = (\emph{X}1\emph{∥X}2),\\
+\emph{•} every row of \emph{U} has norm \emph{≤O}(\emph{√nm}1\emph{σ}2)
+with probability \emph{≥}1 \emph{−}2\emph{−Ω}(\emph{n}).
+
+The second statement implies that the last \emph{m −n} rows of \emph{U}
+form a basis of the random lattice ker(\emph{X}).
+\end{quote}
+
+13
+
+Proof. We rst sample \emph{X}1 as in Lemma 16, using the GPV algorithm.
+We run \emph{m}2 times
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}@{}}
+\toprule()
+\multicolumn{9}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{1.0000} + 16\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+the algorithm from Lemma 16, on the input \emph{n, m}1\emph{, σ}1\emph{,
+σ}2\emph{, X}1 and \emph{\textbf{c}} running through the columns of
+\emph{C} = {[}\emph{In\textbar{}}0\emph{n×}(\emph{m}2\emph{−n}){]}. This
+gives \emph{X}2 \emph{∈}Z\emph{m}2\emph{×n}and \emph{R
+∈}Z\emph{m}1\emph{×m}2such that \emph{Xt} 2=
+{[}\emph{In\textbar{}}\textbf{0}\emph{n×}(\emph{m}2\emph{−n}){]} +
+\emph{Xt} 1\emph{· R}. One can then see that \emph{U · X} =
+{[}\emph{In∥}\textbf{0}{]}, where
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+& & & & & & & \emph{X}1 & \\
+\emph{U} = & \emph{Im}1 \emph{−}(\emph{X}1\emph{\textbar{}}\textbf{0}) &
+\emph{·} & \emph{−RtIm}2 & = & \emph{Im}1 +
+(\emph{X}1\emph{\textbar{}}\textbf{0})\emph{Rt−}(\emph{X}1\emph{\textbar{}}\textbf{0})
+& \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{, X} =
+\end{quote}
+\end{minipage} & \emph{X}2 & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+The result then follows from Gaussian tail bounds (to bound the norms of
+the rows of \emph{X}1) and elementary computations. \emph{⊔}
+
+3.2 Hardness of \emph{\textbf{k}}-LWE
+
+The following result shows that this LWE variant, with \emph{S} a specic
+diagonal matrix, is no easier than LWE.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\multicolumn{6}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{1.0000} + 10\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+Theorem 18. Let \emph{m, q, σ, σ′, k} be such that \emph{σ
+≥Ω}(max(\emph{m√}log \emph{m, σ′k/}(\emph{m}+\emph{k}))),
+\emph{σ′≥Ω}(\emph{m}3\emph{σ}2log3\emph{/}2(\emph{mσ})), \emph{q
+≥Ω}(\emph{σ′√}log \emph{m}) is prime, and \emph{m ≥Ω}(\emph{n} log
+\emph{q}). Then there ex-
+
+ists a probabilistic polynomial-time reduction from LWE\emph{α,m}+1 in
+dimension \emph{n} to (\emph{k, S})-
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.5000} + 4\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+LWE\emph{α′,m}+1+\emph{k} in dimension \emph{n}, with \emph{α′}=
+\emph{Ω}(\emph{m}3\emph{/}2\emph{σ′α}) and \emph{S} =
+\end{quote}
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{σ · Im}+\emph{k}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+0
+\end{minipage} \\
+\midrule()
+\endhead
+0 & \\
+\bottomrule()
+\end{longtable}
+
+\emph{σ′· In}
+\end{minipage}} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+. More
+\end{quote}
+\end{minipage} \\
+\multicolumn{6}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{1.0000} + 10\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+concretely, using a (\emph{k, S})-LWE\emph{α′,m}+\emph{k} algorithm with
+run-time \emph{T} and advantage \emph{ε}, the reduction gives an
+LWE\emph{α,m}+1 algorithm with run-time \emph{T′}= \emph{O}(\emph{T ·
+Poly}(\emph{m}) \emph{·}(\emph{ε′})\emph{−}2log((\emph{ε′})\emph{−}1))
+and advantage \emph{ε′}= \emph{Ω}((\emph{ε′})3), where \emph{ε′}=
+\emph{ε −}2\emph{−Ω}(\emph{n}).
+\end{quote}
+\end{minipage}} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Example parameters are \emph{k} = \emph{m/}10, \emph{σ} =
+\end{quote}
+\end{minipage} & \emph{Θ}(\emph{n}), \emph{σ′}= &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}}{%
+\emph{Θ}(\emph{n}5), \emph{q} =} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{Θ}(\emph{n}5) and \emph{m} =
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\emph{Θ}(\emph{n} log \emph{n}).
+
+The reduction takes an LWE instance and extends it to a related
+\emph{k}-LWE instance for which the additional hint vectors
+(\emph{\textbf{x}i})\emph{i≤k} are known. The major diculty in this
+extension is to restrain the noise increase, as a function of \emph{k}.
+
+The existing approach for this reduction (that we improve below) is the
+technique used in the SIS to \emph{k}-SIS reduction from {[}12{]}. In
+the latter approach, the hint vectors are chosen independently from a
+small discrete Gaussian distribution, and then the is extended to a
+taller matrix \emph{A′}under the constraint that the LWE matrix \emph{A
+∈}Z\emph{m×n}\\
+hint vectors are in the \emph{q}-ary lattice \emph{Λ⊥}(\emph{A′}) =
+\emph{\{\textbf{b}} : \emph{\textbf{b}tA′}= \textbf{0} mod \emph{q\}}.
+Unfortunately, with this approach, the transformation from an LWE sample
+with respect to \emph{A}, to a \emph{k}-LWE sample with respect to
+\emph{A′}, involves a multiplication by the cofactor matrix
+det(\emph{G}) \emph{· G−}1over Z of a \emph{k × k} full-rank submatrix
+\emph{G} of the hint vectors matrix. Although the entries of \emph{G}
+are small, the entries of its cofactor matrix are almost as large as det
+\emph{G}, which is exponential in \emph{k}. This leads to an exponential
+noise blowup, \emph{O}(1) if one wants to rely on the hardness
+restraining the applicability range to \emph{k ≤}\\
+of LWE with noise rate 1\emph{/α ≤Poly}(\emph{n}) (otherwise, LWE is not
+exponentially hard to solve).
+
+To restrain the noise increase for large \emph{k}, we use a matrix pair
+(\emph{X, U})
+\emph{∈}Z\emph{k×}(\emph{m}+\emph{k})\emph{×}Z(\emph{m}+\emph{k})\emph{×}(\emph{m}+\emph{k})from
+Theorem 17. We write \emph{X} = (\textbf{1}\emph{t∥Y} ) and let \emph{V
+∈}Z\emph{m×}(\emph{m}+\emph{k})be the matrix made of the bottom \emph{m}
+rows of \emph{U} (it is a basis of ker(\emph{X})). At a high level, our
+reduction consists in mapping the LWE instance (\emph{A, \textbf{b}}) to
+the \emph{k}-LWE in-stance (\emph{VtA, Yt, Vt\textbf{b}}). Note that
+\emph{Xt}(\emph{VtA}) = 0 mod \emph{q}, which means that the columns of
+\emph{Y} are indeed hint vectors. In the proof of correctness of the
+reduction, we will argue that the pair (\emph{VtA, Y} ) is almost
+correctly distributed. The distribution imperfection lies in the fact
+that some rows of \emph{Y} have non-zero centers, because of Theorem 17.
+
+14
+
+In the proof, we will argue that if an algorithm can eciently solve
+\emph{k}-LWE with non-zero-centered hints, it can be used to eciently
+solve \emph{k}-LWE with zero-centered hints. Another diculty is that the
+noise component of \emph{Vt\textbf{b}} is skewed. We will unskew it by
+adding to it some extra Gaussian noise, with a carefully designed
+covariance matrix.
+
+Proof. Without loss of generality, we assume that \emph{k} =
+\emph{Ω}(\emph{n}) throughout the proof: the result with large values of
+\emph{k} implies the result for smaller values of \emph{k}, as we can
+always disregard hints. We also assume that \emph{k} =
+\emph{O}(\emph{m}), as otherwise the conditions on \emph{σ} and
+\emph{σ′}cannot be satised simultaneously.
+
+For a technical reason related to the non-zero centers
+\emph{\textbf{δ}i} in the distribution of the hint vectors produced by
+Theorem 17, we decompose our reduction from LWE\emph{α,m}+1 to (\emph{k,
+S})-LWE into two subreductions. The rst subreduction (outlined above)
+reduces LWE\emph{α,m}+1 to (\emph{k, S, C})-LWE\emph{α′,m}+1+\emph{k},
+where the \emph{i}th column of \emph{C} is the unit vector
+\emph{\textbf{c}i} = (0\emph{m∥\textbf{δ}i})
+\emph{∈}R\emph{m}+\emph{k}for \emph{i} = 1\emph{, . . . , k}. The second
+subreduction reduces (\emph{k, S, C})-LWE\emph{α′,m}+1+\emph{k} to
+(\emph{k, S})-LWE\emph{α′,m}+1+\emph{k}. Both reductions preserve the
+LWE dimension \emph{n}. We rst describe and analyze the rst
+subreduction, and then explain the second subreduction.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Description of the rst subreduction. Let (\emph{A}+\emph{, \textbf{b}})
+with \emph{A}+= (\emph{\textbf{u}t∥A}) denote the
+
+\begin{quote}
+given LWE\emph{α,m}+1 input instance, where \emph{A}+\emph{←}from either
+the LWE distribution\uline{1} \emph{qU} (Im(\emph{A}+))+\emph{νm}+1
+\emph{U}(Z(\emph{m}+1)\emph{×n}
+
+or the Uniform distribution\\
+), and \emph{\textbf{b} ∈}T\emph{m}+1comes
+
+\uline{1}
+
+\emph{qU} Z\emph{m}+1 + \emph{νm}+1\emph{α}. The reduction maps
+(\emph{A}+\emph{, \textbf{b}}) to (\emph{A′, \textbf{u}′, X,
+\textbf{b}′}) with \emph{A′∈}Z(\emph{m}+\emph{k})\emph{×n}
+\end{quote}
+
+and \emph{\textbf{u}′∈}Z\emph{n q}independent and uniform, \emph{X
+∈}Z\emph{k×}(\emph{m}+\emph{k}) with its \emph{i}th row
+\emph{\textbf{x}i}independently
+
+sampled from \emph{DΛ⊥−\textbf{u}′}(\emph{A′})\emph{,S,\textbf{c}i} for
+\emph{i ≤k}, and \emph{\textbf{b}′ ∈}T\emph{m}+1+\emph{k} coming from
+either the \emph{k}-
+
+LWE distribution\uline{1} \emph{qU} (Im(\emph{A′}+)) +
+\emph{νm}+1+\emph{k} if \emph{\textbf{b}} is from the LWE distribution,
+or the
+
+\begin{quote}
+\emph{k}-Uniform distribution\uline{1} \emph{qU}
+Span\emph{i≤k}(\emph{\textbf{x}}+ \emph{i})\emph{⊥} if \emph{\textbf{b}}
+is from the Uniform distribution.
+\end{quote}
+
+Here \emph{A′}+= (\emph{\textbf{u}′t∥A′}), and \emph{\textbf{x}}+
+\emph{i}denotes the vector (1\emph{∥\textbf{x}i}) for \emph{i ≤k}. The
+reduction is as
+
+\begin{quote}
+follows.
+
+1. Sample (\emph{X}1\emph{, X}2\emph{, U})
+\emph{∈}Z(\emph{m}+1)\emph{×k×} Z\emph{k×k×}
+Z(\emph{m}+1+\emph{k})\emph{×}(\emph{m}+1+\emph{k})as in Theorem 17
+(with parameters \emph{n, m}1\emph{, m}2\emph{, σ}1 and \emph{σ}2
+respectively set to \emph{k, m} + 1\emph{, k, σ} and \emph{σ′}).
+
+Dene \emph{\textbf{x}}+ \emph{i}as the \emph{i}th column of
+(\emph{X}1\emph{∥X}2) for \emph{i ≤k} (recall that all the entries of
+the rst row of \emph{X}1 are equal to 1). Let \emph{V
+∈}Z(\emph{m}+1)\emph{×}(\emph{m}+1+\emph{k})be the matrix consisting of
+the bottom \emph{m} + 1 rows of \emph{U}. Let \emph{X
+∈}Z\emph{k×}(\emph{m}+\emph{k})be the matrix whose \emph{i}th row
+
+2. Compute \emph{Σ} = \emph{α′· Im}+1+\emph{k −Vt· V} and\\
+is \emph{\textbf{x}i} for all \emph{i ≤k}.
+
+positive denite, abort.
+\end{quote}
+
+\emph{√Σ} such that\emph{√Σt ·√Σ} = \emph{Σ}; if \emph{Σ} is not
+
+\begin{quote}
+3. Compute \emph{A′}+= (\emph{Vt· A}+) and \emph{\textbf{b}′}=
+\emph{Vt\textbf{b}} + the top row of \emph{A′}+. \emph{√Σ\textbf{e}′},
+with \emph{\textbf{e}′←νm}+1+\emph{k} 1 . Let
+(\emph{\textbf{u}′})\emph{t}be
+
+4. Return (\emph{A′, \textbf{u}′, X, \textbf{b}′}).
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Step 1 aims at building a transformation matrix \emph{Vt}that sends
+\emph{A}+to \emph{A′}+. Two properties are required from this
+transformation. First, it must be a linear map with small coecients, so
+that when we map the LWE right hand side to the \emph{k}-LWE right hand
+side, the noise component does not blow up. Second, it must contain some
+vec-tors (1\emph{∥\textbf{x}i}) in its (left) kernel, with
+\emph{\textbf{x}i} normally distributed. These vectors are to be used as
+\emph{k}-LWE hints. For this, we use Theorem 17. This ensures that the
+\emph{\textbf{x}i}\textquotesingle s are (almost) distributed as
+independent Gaussian samples from \emph{D}Z\emph{m,σ × D}Z\emph{k,σ′},
+and that the matrix \emph{V} is integral with small coecients. We have,
+for all \emph{i ≤k}:\\
+{[}1\emph{\textbar{}\textbf{x}t i}{]} \emph{· A′}+ =
+{[}1\emph{\textbar{}\textbf{x}t i}{]} \emph{· V t · A}+ = \textbf{0} mod
+\emph{q.}
+\end{quote}
+
+15
+
+\begin{quote}
+This means each \emph{\textbf{x}i} belongs to
+\emph{Λ⊥−\textbf{u}}(\emph{A′}).
+
+The fact that \emph{U} is unimodular ensures that the columns of
+\emph{A′}+are uniformly distributed in the subspace orthogonal to the
+hint vectors \emph{\textbf{x}}+ \emph{i}modulo \emph{q}. This shows that
+the reduction maps Uniform to \emph{k}-Uniform.
+
+It remains to see how to map LWE to \emph{k}-LWE. The main problem, when
+multi-
+\end{quote}
+
+plying \emph{\textbf{b}} by \emph{Vt}, is that the LWE noise gets
+skewed. If its covariance matrix was of the
+
+\begin{quote}
+form \emph{α}2\emph{· Im}+1, then it becomes \emph{α}2\emph{V · Vt}. To
+compensate for that, in Step 3, we add to \emph{Vt· \textbf{b}} an
+independent Gaussian noise with well-chosen covariance matrix, designed
+at Step 2. At Step 2, we set \emph{α′}large enough to ensure that the
+symmetric matrix\emph{α′· Im}+1+\emph{k −Vt· V} is positive denite. This
+noise unskewing technique was adapted to discrete Gaussians in {[}50{]}.
+\end{quote}
+
+Analysis of the rst subreduction. All steps of the reduction can be
+implemented
+
+\begin{quote}
+in polynomial time. Its correctness follows from the following three
+lemmas.
+
+Lemma 19. The tuple (\emph{A′, \textbf{u}′, X}) is within statistical
+distance 2\emph{−Ω}(\emph{n})of the distribu-tion in which
+\emph{A′∈}Z(\emph{m}+\emph{k})\emph{×n} and \emph{\textbf{u}′∈}Z\emph{n
+q}are independent and uniform, and the rows of \emph{X
+∈}Z\emph{k×}(\emph{m}+\emph{k})are from
+\emph{DΛ⊥−\textbf{u}′}(\emph{A′})\emph{,S,\textbf{c}i}, where
+\emph{\textbf{c}i} = (0\emph{m∥\textbf{δ}i}) \emph{∈}R\emph{m}+\emph{k}
+and \emph{\textbf{δ}i} denotes the \emph{i}th canonical unit vector in
+Z\emph{k}for \emph{i} = 1\emph{, . . . , k}.
+\end{quote}
+
+Proof. Let \emph{D}0 denote the desired distribution for (\emph{A′,
+\textbf{u}′, X}). We rst apply Theo-
+
+\begin{quote}
+rem 11 (with the theorem parameters \emph{m, n, k, σ}1(\emph{S})\emph{,
+σm}(\emph{S}) having the values \emph{m} + \emph{k}, \emph{n}, \emph{k},
+\emph{σ′}and \emph{σ}, respectively) to show that \emph{D}0 is within
+statistical distance 2\emph{−Ω}(\emph{n})of the distribution \emph{D}1
+on tuples (\emph{A′, \textbf{u}′, X}) dened as follows:
+\emph{\textbf{u}′∈}Z\emph{n q}is sampled uni-formly, \emph{X
+∈}Z\emph{k×}(\emph{m}+\emph{k})has its \emph{i}th row \emph{\textbf{x}i}
+independently sampled from \emph{D}Z\emph{m}+\emph{k,S,\textbf{c}i}, and
+\emph{A′∈}Z(\emph{m}+\emph{k})\emph{×n} is sampled uniformly from the
+set of solutions to \emph{\textbf{x}t i· A′} = \emph{−\textbf{u}′t} mod
+\emph{q}.
+
+Indeed, the assumptions of the theorem are satised by our choice of
+parameters.
+
+Let \emph{D}2 denote the distribution of (\emph{A′, \textbf{u}′, X}) in
+the reduction. We show below that\emph{∆}(\emph{D}1\emph{, D}2)
+\emph{≤}2\emph{−Ω}(\emph{n}), which completes the proof.
+
+By Theorem 17, we have that, in distribution \emph{D}2, the distribution
+of \emph{X} is within statistical distance 2\emph{−Ω}(\emph{n})of the
+distribution of \emph{X} in \emph{D}1. Now, we consider the
+distri-bution of \emph{A′}+. By construction, we have that \emph{A′}+=
+\emph{VtA}+. This implies that \emph{\textbf{x}t i· A′}
+=\emph{−\textbf{u}′t}mod \emph{q} for all \emph{i}. As \emph{X} has full
+rank modulo \emph{q} (by Lemma 12), the number of solu-tions \emph{A′}to
+this equation is exactly \emph{qmn}. Further, as \emph{V} can be
+extended into a unimod-ular matrix, multiplication by \emph{Vt}is an
+injective map, and the cardinality of \emph{Vt}Z\emph{m×n} is exactly
+\emph{qmn}. This implies that \emph{Vt}Z\emph{m×n} is exactly the set of
+solutions to the equation, and that \emph{A′}= \emph{VtA} is uniformly
+distributed in that set. \emph{⊔}
+
+Next, we assume that (\emph{A′}+\emph{, X}) is xed and consider the
+distribution of \emph{\textbf{b}′}in the
+\end{quote}
+
+two cases of the distribution of \emph{\textbf{b}}. First we consider
+the LWE to \emph{k}-LWE distribution
+
+\begin{quote}
+mapping.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{1.0000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Lemma 20. The following holds with probability 1
+\emph{−}2\emph{−Ω}(\emph{n})over the choice of \emph{X}. If
+\emph{\textbf{b} ∈}T\emph{m}+1is sampled from\uline{1}
+\emph{qU}(Im\emph{A}+)+\emph{νm}+1 , then
+\emph{\textbf{b}′∈}T\emph{m}+1+\emph{k}is within statistical
+
+distance 2\emph{−Ω}(\emph{n})of\uline{1} \emph{qU} (Im\emph{A′}+) +
+\emph{νm}+1+\emph{kα′} .
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6667} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Proof. We have \emph{\textbf{b}} =\uline{1} \emph{qA}+
+\emph{·\textbf{s}}+\emph{\textbf{e} ∈}T\emph{m}+1 with \emph{\textbf{e}}
+sampled from \emph{νm}+1
+
+so
+\end{quote}
+\end{minipage}} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+and \emph{\textbf{s}} from \emph{U}(Z\emph{n q}),
+\end{quote}
+\end{minipage} \\
+\emph{\textbf{b}′}= \emph{Vt· \textbf{b}} + &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6667} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{√Σ · \textbf{e}′}
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+16
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6667} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+= 1 \emph{q V tA}+ \emph{· \textbf{s}} + \emph{V t · \textbf{e}} +
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{√Σ · \textbf{e}′}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+= 1 \emph{q A′}+ \emph{· \textbf{s}} + \emph{V t · \textbf{e}} + &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6667} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{√Σ · \textbf{e}′.}
+\end{quote}
+\end{minipage}} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{1.0000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Now, since \emph{\textbf{s}} is uniform, we have\uline{1}
+\end{quote}
+
+the vector \emph{Vt·\textbf{e}} is normally distributed with covariance
+matrix \emph{α}2\emph{·V Vt}, while \emph{qA′}+\emph{·\textbf{s}} is
+uniformly distributed in Im(\emph{A′}+). Moreover,\emph{Σ\textbf{e}′}is
+
+independent and normally distributed with covariance matrix \emph{Σ} =
+\emph{α′}2\emph{Im}+1+\emph{k−α}2\emph{VtV}
+
+(we show below that \emph{Σ} is indeed a valid covariance matrix, i.e.,
+is positive denite, so
+
+\begin{quote}
+that
+
+has distribution \emph{νm}+1+\emph{k√Σ} exists, except with probability
+2\emph{−Ω}(\emph{n})). Therefore, the vector \emph{Vt· \textbf{e}} +
+
+\emph{α′}, as required.\\
+\emph{√Σ\textbf{e}′}
+\end{quote}
+
+overwhelming probability over the choice of \emph{X}. By denition, the
+singular values of It remains to show that \emph{Σ} =
+\emph{α′}2\emph{Im}+1+\emph{k −α}2\emph{VtV} is a positive denite
+matrix, with
+
+\emph{Σ} are of the form \emph{α′}2\emph{−α}2\emph{σi}(\emph{V} )2,
+where the \emph{σi}(\emph{V} )\textquotesingle s are the singular values
+of \emph{V} . It therefore suces to show that
+\emph{α′}2\emph{\textgreater{} α}2\emph{σ}1(\emph{V} )2, where
+\emph{σ}1(\emph{V} ) is the largest singular
+
+value of \emph{V} . We have \emph{σ}1(\emph{V} ) \emph{\sout{≤}√m} +
+1\emph{∥V ∥}(by Schwarz\textquotesingle s inequality). By Theorem 17,
+
+we have that \emph{∥V ∥≤O}( assumption that \emph{α′}=
+\emph{Ω}(\emph{m}3\emph{/}2\emph{σ′α}) allows us to complete the
+proof.\emph{√kmσ′}). It follows that \emph{σ}1(\emph{V} ) =
+\emph{O}(\emph{mk}1\emph{/}2\emph{σ′}), and hence the
+
+\emph{⊔}\strut
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Finally, we consider the Uniform to \emph{k}-Uniform distribution
+mapping.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\multicolumn{6}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{1.0000} + 10\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Lemma 21. The following holds with probability
+1\emph{−}2\emph{−Ω}(\emph{n})over the choice of \emph{X}. If
+\emph{\textbf{b}} is sampled from\uline{1} \emph{qU} Z\emph{m}+1 +
+\emph{νm}+1\emph{α}, then \emph{\textbf{b}′}is within statistical
+distance 2\emph{−Ω}(\emph{n})of
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\uline{1}\\
+\emph{qU}
+\end{quote}\strut
+\end{minipage} & Span\emph{i≤k}(\emph{\textbf{x}}+ \emph{i})\emph{⊥} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
++ \emph{νm}+1+\emph{kα′}
+\end{quote}
+\end{minipage} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.5000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+.
+\end{quote}
+\end{minipage}} \\
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.6667} + 6\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Proof. We have \emph{\textbf{b}} =\uline{1} \emph{q\textbf{y}} +
+\emph{\textbf{e} ∈}T\emph{m}+1 with \emph{\textbf{e}} sampled from
+\emph{νm}+1
+
+so
+\end{quote}
+
+\emph{\textbf{b}′}= 1 \emph{q V t · \textbf{y}} + \emph{V t ·
+\textbf{e}} +\emph{√Σ · \textbf{e}′.}
+\end{minipage}} & and \emph{\textbf{y}} from \emph{U}(Z\emph{m}+1 &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+),
+\end{quote}
+\end{minipage} \\
+\multicolumn{6}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{1.0000} + 10\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+Now, since \emph{\textbf{y}} is uniform, we have that\uline{1} \emph{qV
+t\textbf{y}} is uniform in Im\emph{V t} =
+Span\emph{i≤k}(\emph{\textbf{x}}+ \emph{i})\emph{⊥},
+
+as explained in the proof of Lemma 19. As shown in Lemma 20, we also
+have that
+
+\begin{quote}
+the noise term \emph{Vt· \textbf{e}} +\emph{νm}+1+\emph{kα}, as
+required. \emph{√Σ\textbf{e}′}is within statistical distance
+2\emph{−Ω}(\emph{n})of the distribution
+\end{quote}
+
+\emph{⊔}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Overall, we have described a reduction that maps the LWE distribution to
+the \emph{k}-LWE distribution, and the Uniform distribution to the
+\emph{k}-Uniform distribution, up to statistical distance
+2\emph{−Ω}(\emph{n}).
+
+Second subreduction. It remains to reduce the (\emph{k, S, C})-LWE with
+non-zero centers for the hint distribution, to (\emph{k, S})-LWE with
+zero-centered hints. For this, we use Lemma 14 to obtain the following.
+
+Lemma 22. Let \emph{m′}= \emph{m} + \emph{k} and assume that
+\emph{σm′}(\emph{S}) \emph{≥ω}(\emph{√n}). If there exists a
+distinguisher against (\emph{k, S})-LWE\emph{α′,m′} (in dimension
+\emph{n}) with run-time \emph{T} and advantage\emph{ε}, then there
+exists a distinguisher against (\emph{k, S, C})-LWE\emph{α′,m′} with
+run-time \emph{T′}= \emph{O}(\emph{Poly}(\emph{m′}) \emph{·}
+(\emph{ε′})\emph{−}2\emph{· T ·} log\emph{\uline{R}ε\uline{′}} ) and
+advantage \emph{ε′} = \emph{Ω}((\emph{ε′})3\emph{/R
+−}2\emph{−Ω}(\emph{n})), where \emph{ε′} =\emph{ε
+−}2\emph{−Ω}(\emph{n})and \emph{R} = exp(\emph{O}(\emph{k ·}
+(2\emph{−n}+ \emph{∥C∥}2\emph{/σm′}(\emph{S})2))).
+
+Proof. Consider the following sequence of games.
+\end{quote}
+
+receives an instance of the form (\emph{r, \textbf{y}}), where \emph{r}
+= (\emph{A, \textbf{u}, \{\textbf{x}i\}i≤k}) with \emph{A ←}Let Game0
+denote the original (\emph{k, S})-LWE game, in which the distinguisher
+\emph{B U}(Z\emph{m′×n} ),
+
+17
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{1.0000} + 6\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{\textbf{u} ←U}(Z\emph{n q}) and
+\emph{\textbf{x}i←DΛ⊥−\textbf{u}}(\emph{A})\emph{,S,}\textbf{0} for
+\emph{i ≤k}, and \emph{\textbf{y} ∈}T\emph{m′}+1 is a sample from either
+
+\begin{quote}
+the distribution
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{D}(\emph{r}) = 1 \emph{U}
+\end{quote}
+\end{minipage} & Im & \emph{\textbf{u}t} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
++ \emph{νm′}+1
+\end{quote}
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+0 \emph{q·}
+\end{quote}
+\end{minipage} & & \emph{A} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{α}
+\end{quote}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+or the distribution
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{D}(\emph{r}) = 1 \emph{U}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Span
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{⊥}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
++ \emph{νm′}+1
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+1 \emph{q·}
+\end{quote}
+\end{minipage} & \emph{i≤k} & \emph{\textbf{x}i} & & \emph{α} & \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Let \emph{ε}0(\emph{B}) = \emph{ε} denote the advantage of \emph{B} in
+distinguishing between these distri-butions in Game0. Similarly, in the
+following, we let \emph{εi}(\emph{B}) denote the corresponding attacker
+advantage in Game\emph{i}.
+
+Let Game1 denote a modication of Game0 in which we change the
+distribution
+\end{quote}
+
+of \emph{A} by rejection sampling as follows: we sample \emph{A}
+uniformly from Z\emph{m′×n} , but reject
+
+\begin{quote}
+and resample \emph{A} if \emph{η}2\emph{−n}(\emph{A})
+\emph{\textgreater{}} 4\emph{qn/m′} log(2\emph{m′}(1 +
+2\emph{n}))\emph{/π} = \emph{O}(\emph{√n}). By Lemma 9,
+
+the rejection probability is 2\emph{−Ω}(\emph{n}), and therefore, the
+distinguishing advantage \emph{ε}1(\emph{B}) satises \emph{ε}1(\emph{B})
+\emph{≥ε}0(\emph{B}) \emph{−}2\emph{−Ω}(\emph{n}).
+
+Let Game2 denote a modication of Game1 in which we change the
+distribution of
+\end{quote}
+
+the hint \emph{\textbf{x}i}\textquotesingle s in \emph{r} from the
+zero-centered distribution
+\emph{DΛ⊥−\textbf{u}}(\emph{A})\emph{,S,}\textbf{0} of (\emph{k, S})-LWE
+to the
+
+non-zero centered distribution
+\emph{DΛ⊥−\textbf{u}}(\emph{A})\emph{,S,\textbf{c}i} of (\emph{k, S,
+C})-LWE. We observe that, since
+
+\begin{quote}
+given \emph{r} = (\emph{A, \textbf{u}, \{\textbf{x}i\}i≤k}), one can
+eciently sample a vector \emph{\textbf{y}} from either distribution
+\emph{D}0(\emph{r}) or \emph{D}1(\emph{r}), the (\emph{k, S, C})-LWE
+problem has the public samplability property needed
+
+to apply Lemma 14. It follows that there exists a distinguisher
+\emph{B′}in Game2 with run-time \emph{T′}=
+\emph{O}(\emph{Poly}(\emph{m′})\emph{·ε}1(\emph{B})\emph{−}2\emph{·T})
+and advantage \emph{ε}2(\emph{B′})
+\emph{≥Ω}((\emph{ε}1(\emph{B})\emph{−O}(2\emph{−n}))3\emph{/R}), where
+\emph{R} = \emph{R}(\emph{Φ}1\emph{∥Φ}2) denotes the RD between the
+distributions \emph{Φ}1 and \emph{Φ}2 of \emph{r} in Game1 and Game2,
+respectively. Since the \emph{\textbf{x}i}\textquotesingle s are
+independent, and conditioning on \emph{\textbf{u}}
+
+and \emph{A}, we have, from the multiplicative property of the RD, that
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{R ≤}max \emph{\textbf{u}∈}Z\emph{n′}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{i≤k}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{R}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{DΛ⊥−\textbf{u}}(\emph{A})\emph{,S,}\textbf{0}\emph{∥DΛ⊥−\textbf{u}}(\emph{A})\emph{,S,\textbf{c}i}
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage}} \\
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{≤}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+max\\
+\emph{\textbf{c}∈}R\emph{m′}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{i≤k}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{R}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{DΛ⊥}(\emph{A})\emph{,S,}\textbf{¯\emph{c}}\emph{∥DΛ⊥}(\emph{A})\emph{,S,}\textbf{¯\emph{c}}+\emph{\textbf{c}i}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+The latter can be bounded from above by applying Lemma 13. The smoothing
+condi-tion of the lemma holds since \emph{σm′}(\emph{S})
+\emph{≥ω}(\emph{√n}), so we have by the rejection step of the previous
+game that \emph{σm′}(\emph{S}) \emph{≥η}2\emph{−n}(\emph{A}). This leads
+to
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{R ≤}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{i≤k}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+exp(2\emph{−n}+3+ 2\emph{π∥\textbf{c}i∥}2\emph{/σm′}(\emph{S})2)
+\emph{≤}exp(\emph{k ·} (2\emph{−n}+3+
+2\emph{π∥C∥}2\emph{/σm′}(\emph{S})2))\emph{.}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Finally, let Game3 denote a modication of Game2, in which we undo the
+rejection
+\end{quote}
+
+sampling of \emph{A} introduced in Game1, sampling it uniformly instead.
+By the same argu-
+
+\begin{quote}
+ment as in the change from Game0 to Game1, the advantage of \emph{B′}in
+Game3 satises\emph{ε}3(\emph{B′}) \emph{≥ε}2(\emph{B′})
+\emph{−}2\emph{−Ω}(\emph{n}). Note that the instance distribution in
+Game3 is identical to that of the (\emph{k, S, C})-LWE game, so
+\emph{B′}has advantage \emph{ε}3(\emph{B′}) against (\emph{k, S,
+C})-LWE, as required. \emph{⊔}
+
+In our application of Lemma 22, the (\emph{k, S, C})-LWE problem
+resulting from the
+
+rst subreduction has \emph{∥C∥}= 1, and \emph{σm′}(\emph{S}) = \emph{σ},
+so that \emph{R} = exp(\emph{O}(\emph{k ·} (2\emph{−n}+ 1\emph{/σ}2))) =
+\emph{O}(1) using \emph{σ} = \emph{Ω}(\emph{n}) and \emph{k ≤n}. This
+shows that the second subreduction is probabilistic polynomial time.
+\emph{⊔}
+
+18
+
+Our technique can be applied to improve the Boneh-Freeman reduction from
+SIS to \emph{k}-SIS, from an exponential loss in \emph{k} to a
+polynomial loss in \emph{k}. In fact, we map \emph{A} to \emph{A′}=
+\emph{VtA} in the same way (except that we do not use and add
+\emph{\textbf{u}} on top of the matrix \emph{A}) and use \emph{X} as the
+\emph{k}-SIS hints for the new matrix \emph{A′}. Then, whenever the
+adversary can output a short vector \emph{\textbf{x}} that is orthogonal
+to \emph{A′}, we can also output a short vector \emph{V \textbf{x}}
+which is orthogonal to \emph{A}. As \emph{\textbf{x}} is linearly
+independent from the rows of \emph{X} and \emph{V} is a basis of the
+lattice ker \emph{X}, we obtain that \emph{V \textbf{x} ̸}= \textbf{0}.
+Also, the vector \emph{V \textbf{x }}is small, as both \emph{V} and
+\emph{\textbf{x}} have small entries. RD may also be used to reduce
+\emph{k}-SIS with non-zero-centered hints (with small centers) to
+\emph{k}-SIS with zero-centered hints.
+
+4 A lattice-based public-key traitor tracing scheme
+
+In this section, we describe and analyze our basic traitor tracing
+scheme. First, we give the underlying multi-user public-key encryption
+scheme. We then explain how to implement black-box conrmation tracing.
+
+4.1 A multi-user encryption scheme
+
+The scheme is designed for a given security parameter \emph{n}, a number
+of users \emph{N} and a maximum malicious coalition size \emph{t}. It
+then involves several parameters \emph{q, m, α, S}. These are set so
+that the scheme is correct (decryption works properly on honestly
+gen-erated ciphertexts) and secure (semantically secure encryption and
+possibility to trace members of malicious coalitions). In particular, we
+set \emph{S} = Diag(\emph{σ, . . . , σ, σ′, . . . , σ′})
+\emph{∈}R\emph{m×m}where \emph{σ′\textgreater{} σ} and their respective
+numbers of iterations are set so that (\emph{t, S})-LWE\emph{α,m}+1 is
+hard to solve.
+\end{quote}
+
+Setup. The trusted authority generates a master key pair using the
+algorithm from
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule()
+\multicolumn{7}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{1.0000} + 12\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Lemma 10. Let (\emph{A, T}) \emph{∈}Z\emph{m×n×} Z\emph{m×m}be the
+output. We additionally sample \emph{\textbf{u}} uniformly in Z\emph{n
+q}. Matrix \emph{T} will be part of the tracing key \emph{tk}, whereas
+the public key
+
+is \emph{pk} = \emph{A}+, with \emph{A}+= (\emph{\textbf{u}t∥A}).
+\end{quote}
+
+follows. The authority executes the GPV algorithm using the basis of
+\emph{Λ⊥}(\emph{A}) consist-Each user \emph{Ui} for \emph{i ≤N} obtains
+a secret key \emph{ski} from the trusted authority, as
+
+ing of the rows of \emph{T}, and the standard deviation matrix \emph{S}.
+The authority obtains a
+
+sample \emph{\textbf{x}i} from \emph{DΛ⊥−\textbf{u}}(\emph{A})\emph{,S}.
+The standard deviations \emph{σ′ \textgreater{} σ} may be chosen as
+small
+
+\begin{quote}
+as 3\emph{mqn/m} (2\emph{m} + 4)\emph{/π}. The user secret key is
+\emph{\textbf{x}}+ \emph{i}= (1\emph{∥\textbf{x}i}) \emph{∈}Z\emph{m}+1.
+Using the Gaus-sian tail bound and the union bound, we have
+\emph{∥\textbf{x}i∥≤√mσ′}for all \emph{i ≤N}, with probability \emph{≥}1
+\emph{−N ·} 2\emph{−Ω}(\emph{m}).
+
+The tracing key \emph{tk} consists of the matrix \emph{T} and all pairs
+(\emph{Ui, ski}).
+\end{quote}
+
+Encrypt. The encryption algorithm is exactly the 1-bit encryption scheme
+from {[}27,
+
+\begin{quote}
+Se. 7.1{]}, which we recall, for readability.1The plaintext and
+ciphertext domains are \emph{P} = \emph{\{}0\emph{,} 1\emph{\}} and
+\emph{C} = Z\emph{m}+1 respectively, and:
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+Enc : \emph{M} & \emph{\textbf{u}t} & \emph{\textbf{s}} +
+\emph{\textbf{e}} + & \emph{M · ⌊q/}2\emph{⌋} & \emph{,} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+hr \emph{\textbf{s}}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{U}(Z \emph{n}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+) nd \emph{\textbf{e}}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{νm}+1\emph{.}
+\end{quote}
+\end{minipage} \\
+\emph{→} & \emph{A} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{·}
+\end{quote}
+\end{minipage} & \textbf{0} & &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+hr \emph{←} Z \emph{q} nd \emph{←}
+\end{quote}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{⌊αq⌉}
+\end{quote}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+As explained in {[}27{]}, this scheme is semantically secure under
+chosen plaintext attacks (IND-CPA), under the assumption that
+LWE\emph{α,m}+1 is hard to solve.
+
+1 As usual, the encryption algorithm may be used to encapsulate session
+keys which are then fed into an ecient data encapsulation mechanism to
+encrypt the data.
+\end{quote}
+
+19
+
+Decrypt. To decrypt a ciphertext \emph{\textbf{c} ∈}Z\emph{m}+1 , user
+\emph{Ui} uses its secret key \emph{\textbf{x}}+ \emph{i}and evaluates
+
+the following function Dec from Z\emph{m}+1 to \emph{\{}0\emph{,}
+1\emph{\}}: Map \emph{\textbf{c}} to 0 if \emph{⟨\textbf{x}}+ \emph{i,
+\textbf{c}⟩}mod \emph{q} is closer
+
+\begin{quote}
+to 0 than \emph{±⌊q/}2\emph{⌋}.
+
+If \emph{\textbf{c}} is an honestly generated ciphertext of a plaintext
+\emph{M ∈\{}0\emph{,} 1\emph{\}}, we have \emph{⟨\textbf{x}}+ \emph{i,
+\textbf{c}⟩}=
+\end{quote}
+
+\emph{⟨\textbf{x}}+ \emph{i, \textbf{e}⟩}+ \emph{M · ⌊q/}2\emph{⌋}mod
+\emph{q}, where \emph{\textbf{e} ←⌊ναq⌉m}+1. It can be shown that the
+latter has
+
+magnitude \emph{≤}2\emph{√mαq∥\textbf{x}}+ \emph{i∥}with probability
+1\emph{−}2\emph{−Ω}(\emph{n}) over the randomness of \emph{\textbf{e}}.
+This
+
+is \emph{≤}3\emph{mαqσ′}for all \emph{i}, with probability \emph{≥}1
+\emph{−N ·} 2\emph{−Ω}(\emph{n}). To ensure the correctness of
+
+the scheme, it suces to set \emph{q ≥}4\emph{mαqσ′}. Note that other
+constraints will be added to
+
+\begin{quote}
+enable tracing.
+\end{quote}
+
+Theorem 23. Let \emph{m, n, q} and \emph{N} be integers such that
+\emph{q} is prime and \emph{N ≤}2\emph{o}(\emph{n}). Let \emph{α, σ,
+σ′\textgreater{}} 0 such that \emph{σ′≥σ ≥Ω}(\emph{mqn/m√}log \emph{m})
+and \emph{α ≤}1\emph{/}(4\emph{mσ′}). Then the
+
+scheme described above is IND-CPA under the assumption that
+LWE\emph{m}+1\emph{,α} is hard.
+
+\begin{quote}
+Further, the decryption algorithm is correct:
+\end{quote}
+
+\emph{∀M ∈\{}0\emph{,} 1\emph{\}, ∀i ≤N} : Dec (Enc(\emph{M, pk})\emph{,
+ski}) = \emph{M}
+
+\begin{quote}
+holds with probability \emph{≥}1 \emph{−}2\emph{−Ω}(\emph{n})over the
+randomness used in Setup and Enc.
+
+4.2 Tracing traitors
+\end{quote}
+
+We now present a black-box conrmation algorithm Trace.2It is given
+access to an
+
+oracle \emph{OD}that provides black-box access to a decryption device
+\emph{D}. It takes as inputs
+
+the tracing key \emph{tk} = (\emph{T,} (\emph{Ui, \textbf{x}}+
+\emph{i})\emph{i≤N}) and a set of suspect users \emph{\{Ui}1\emph{, . .
+. , Uik\}} of
+
+cardinality \emph{k ≤t}, where \emph{t} is the a priori bound on any
+coalition size. Wlog, we may
+
+\begin{quote}
+consider that \emph{k} = \emph{t} and \emph{ij} = \emph{j} for all
+\emph{j ≤k}.
+
+Algorithm Trace gathers information about which keys have been used to
+build de-
+\end{quote}
+
+coder \emph{D}, by feeding dierent carefully designed distributions to
+oracle \emph{OD}. We consider
+
+\begin{quote}
+the following \emph{t} + 1 distributions \emph{Tr}0\emph{, . . . , Trt}
+over \emph{C} = Z\emph{m}+1 :
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{Tri} = \emph{U}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Span(\emph{\textbf{x}}+ 1\emph{, . . . , \textbf{x}}+ \emph{i})\emph{⊥}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
++ \emph{⌊ναq⌉m}+1\emph{.}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+The rst distribution \emph{Tr}0 is the uniform distribution, whereas the
+last distribution \emph{Trt}
+
+is meant to be computationally indistinguishable from Enc(0). We dene
+\emph{p∞}as the
+
+probability Pr{[}\emph{OD}(\emph{\textbf{c}, M}) = 1{]} that the decoder
+can decrypt the ciphertexts, over the
+
+randomness of \emph{M ←U}(\emph{\{}0\emph{,} 1\emph{\}}) and
+\emph{\textbf{c} ←}Enc(\emph{M}). We dene \emph{pi} as the probability
+the
+
+\begin{quote}
+decoder decrypts the signals in \emph{Tri}, for \emph{i ∈}{[}0\emph{,
+t}{]}:
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{pi} =
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+Pr
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{OD}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{\textbf{c}} +
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{M · ⌊q/}2\emph{⌋}\textbf{0}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{, M}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+= 1
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+\emph{\textbf{c} ←Tri}
+
+\emph{M ←U}(\emph{\{}0\emph{,} 1\emph{\}})
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+A gap between \emph{pi−}1 and \emph{pi} is meant to indicate that
+\emph{Ui} is a traitor.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+4.3
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Conrmation and soundness of the proposed traitor tracing
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+We dene the usefulness of the decoder as \emph{ε} := \emph{p∞−}1
+\emph{\textbar P\textbar{}}= \emph{p∞−}\uline{1} 2. It can be estimated
+
+\begin{quote}
+to within a factor 2 with probability \emph{≥}1
+\emph{−}2\emph{−Ω}(\emph{n})via the Cherno bound.
+
+We can now formally describe algorithm Trace. It proceeds in three
+steps, as
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+follows.
+\end{quote}
+
+2 Note that in our context, minimal access is equivalent to standard
+access: since the plaintext domain
+
+\begin{quote}
+is small, plaintext messages can be tested exhaustively.
+
+20
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1. It computes an estimate
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{ε} of the usefulness \emph{ε} of the decoder to within a multi-
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+plicative factor of 2, which holds with probability
+\emph{≥}1\emph{−}2\emph{−n}. This can be obtained via
+Cherno\textquotesingle s bound, and costs \emph{O}(\emph{ε−}2\emph{n}).
+
+2. For \emph{i} from 0 to \emph{t}, algorithm Trace computes an
+approximation \emph{pi} of \emph{pi} to within an
+
+absolute error \emph{≤}16\emph{t}, which holds with probability
+\emph{≥}1\emph{−}2\emph{−n} (also using Cherno\textquotesingle s
+
+bound).
+
+3. If \emph{pi −pi−}1 \emph{\textgreater{}} 8\emph{t}for some \emph{i
+≤t}, then Trace returns User \emph{Ui} is guilty. Otherwise,\emph{ε}
+
+it returns \emph{⊥}.
+\end{quote}
+
+is \emph{n−c}for some constant \emph{c}, then Trace runs in polynomial
+time. Note that we are implicitly using the fact that \emph{D} is
+stateless/resettable. Also, if \emph{ε}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+We start with the conrmation property.
+
+Theorem 24. Assume that decoder \emph{D} was built using
+\emph{\{skj\}j≤k ⊆\{ski\}i≤t}. Under the assumption that (\emph{t,
+S})-LWE\emph{α,m}+1 is hard, algorithm Trace returns User \emph{Ui} is
+guilty for some \emph{i ≤t}.
+\end{quote}
+
+Proof. Wlog we may assume that the traitors in the coalition know all
+the secret
+
+keys \emph{sk}1\emph{, . . . , skt}. The hardness of (\emph{t,
+S})-LWE\emph{α,m}+1 implies that the distributions Enc(0)
+
+and \emph{Trt} are computationally indistinguishable. As a consequence,
+we have that \emph{pt} is
+
+negligibly close to \emph{p∞}(the rounding to nearest of the samples
+from \emph{ναq} can be per-
+
+formed directly on the challenge samples, obliviously to any secret
+data, as in the proof
+
+\begin{quote}
+of semantic security of Section 4.1).
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{pi\textbar{} ≤\uline{ε}}\\
+On the other hand, the acceptance probability \emph{p}0 is \emph{≤}1
+
+8for all \emph{i}, we must have \emph{pt−p}0
+\emph{\textgreater{}\uline{ε}}4\emph{≥}8, with probability exponentially
+close to 1.
+
+\emph{\uline{ε}} 2. As \emph{pt −p}0 \emph{\textgreater{} ε}
+
+\emph{ε}\\
+2and \emph{\textbar{} pi −}
+\end{quote}
+
+As a consequence, there must exist \emph{i ≤t} such that \emph{pi −pi−}1
+\emph{\textgreater{}} 8\emph{t}, and algorithm Trace
+
+\begin{quote}
+returns User \emph{Ui} is guilty. \emph{⊔}
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Proving the soundness property is more involved. We exploit the hardness
+of (\emph{t, S})-
+
+LWE and rely on Theorem 11 several times.
+
+Theorem 25. Assume that decoder \emph{D} was built using
+\emph{\{skj\}j≤k}. Under the parameter assumptions of Theorem 11 with
+(\emph{k, n}) in Theorem 11 set to (\emph{t} + 1\emph{, n} + \emph{t} +
+1), and
+\end{quote}
+
+the computational assumption that (\emph{t} + 1\emph{,
+S})-LWE\emph{α,m}+1 is hard: if algorithm Trace
+
+\begin{quote}
+returns User \emph{Ui}0 is guilty, then \emph{i}0 \emph{≤k}.
+
+Proof. Assume (by contradiction) that the traitors \emph{\{Uj\}j≤k} with
+\emph{k ≤t} succeed in having Trace incriminate an innocent user
+\emph{Ui}0 (with \emph{i}0 \emph{\textgreater{} k}). We show that the
+algorithm \emph{T} the traitors use to build the pirate decoder may be
+exploited for solv-ing (\emph{t} + 1\emph{, S})-LWE\emph{α,m}+1. First,
+note that algorithm \emph{T} provides an algorithm \emph{A} that wins
+the following game.
+
+Game0. The game consists of three steps, as follows:
+\end{quote}
+
+\emph{•} Initialize0: Sample \emph{A ←U}(Z\emph{m×n} ), \emph{\textbf{u}
+←U}(Z\emph{n q}) and
+\emph{\textbf{x}i←DΛ⊥−\textbf{u}}(\emph{A})\emph{,S} for \emph{i ≤t}+1.
+
+\begin{quote}
+\emph{•} Input0: Send \emph{A}+= (\emph{\textbf{u}t∥A}) and
+(\emph{\textbf{x}i})\emph{i≤t}+1\emph{,i̸}=\emph{i}0 to \emph{A}.
+
+\emph{•} Challenge0: Sample \emph{b ←U}(\emph{\{}0\emph{,} 1\emph{\}}).
+Send to \emph{A} arbitrarily many samples from \emph{U}
+Span\emph{i≤i}0\emph{−}1+\emph{b}(\emph{\textbf{x}}+ \emph{i})\emph{⊥} +
+\emph{⌊ναq⌉m}+1.
+
+We say that \emph{A} wins Game0 if it nds the value of \emph{b} with
+non-negligible advantage.
+
+Algorithm \emph{A} can be obtained from algorithm \emph{T} by sampling
+plaintext \emph{M} uniformly in \emph{\{}0\emph{,} 1\emph{\}}, and
+giving (\emph{\textbf{c}} +
+(\emph{M\textbar{}}\textbf{0}\emph{t})\emph{t, M}) as input to
+\emph{OD}, where \emph{\textbf{c}} is any sample from
+\end{quote}
+
+21
+
+Challenge0. We now introduce two variations of Game0, which dier in the
+Initialize
+
+\begin{quote}
+and Challenge steps.
+
+Game1. The game consists of three steps, as follows:
+
+\emph{•} Initialize1: Sample \emph{A ←U}(Z\emph{m×n} ), \emph{\textbf{u}
+←U}(Z\emph{n q}), \emph{\textbf{x}i←DΛ⊥−\textbf{u}}(\emph{A})\emph{,σ}
+for \emph{i ≤t} + 1, \emph{j←}\\
+\emph{U}(Span\emph{i\textless i}0(\emph{\textbf{x}}+ \emph{i})\emph{⊥})
+for \emph{j ≤t −i}0 + 2. and \emph{\textbf{b}}+\emph{•} Input1: Send
+\emph{A}+= (\emph{\textbf{u}t∥A}) and
+(\emph{\textbf{x}i})\emph{i≤t}+1\emph{,i̸}=\emph{i}0 to \emph{A}.
+
+\emph{•} Challenge1: Sample \emph{b ←U}(\emph{\{}0\emph{,} 1\emph{\}}).
+If \emph{b} = 0, then send to \emph{A} arbitrarily many
+\emph{i})\emph{⊥}+ \emph{⌊ναq⌉m}+1. If \emph{b} = 1, then send to
+\emph{A} arbitrarily samples from \emph{U}
+Span\emph{i\textless i}0(\emph{\textbf{x}}+\\
+many samples from:
+
+\emph{U} Im \emph{A}+\emph{\textbar{}\textbf{b}}+ 1\emph{\textbar{} . .
+. \textbar{}\textbf{b}}+ \emph{t−i}0+2 + \emph{⌊ναq⌉m}+1\emph{.}
+
+As in Game0, algorithm \emph{A} wins Game1 if it guesses \emph{b} with
+non-negligible advantage.
+
+Game\emph{′}1is as Game1, except that if \emph{b} = 0 in the challenge
+step, then the samples sent
+
+to \emph{A} are from the distribution \emph{U}
+Span\emph{i≤i}0(\emph{\textbf{x}}+ \emph{i})\emph{⊥} + \emph{⌊ναq⌉m}+1.
+(The \emph{\textbf{b}j}\textquotesingle s are sampled from
+\emph{U}(Span\emph{i\textless i}0(\emph{\textbf{x}}+ \emph{i})\emph{⊥})
+in both cases.)
+
+Note that \emph{A}\textquotesingle s inputs in Game0, Game1 and
+Game\emph{′}1are identical (only the distribu-
+
+tions of the Challenge steps vary). By the triangle inequality, if
+\emph{A} wins Game0 with some non-negligible advantage, then it may be
+used to win either Game1 or Game\emph{′}1
+
+with non-negligible advantage. In our use of \emph{A} to solve (\emph{t}
++ 1\emph{, S})-LWE, we may guess in which situation we are. We now
+consider the two situations separately.
+
+First situation: Algorithm \emph{A} wins Game1 with non-negligible
+advantage. Then it may be used to solve (\emph{t} + 1\emph{, S})-LWE.
+Indeed, assume we have a (\emph{t} + 1\emph{, S})-LWE input
+
+(\emph{A, \textbf{u},} (\emph{\textbf{x}i})\emph{i≤t}+1), and that we
+aim at distinguishing between the following distributions over
+Z\emph{m}+1 :
+
+\emph{U} Im(\emph{A}+) + \emph{νm}+1\emph{αq} and \emph{U}
+Span\emph{i≤t}+1(\emph{\textbf{x}}+ \emph{i})\emph{⊥}+
+\emph{νm}+1\emph{αq} \emph{.}
+
+To solve this problem instance, we sample \emph{\textbf{b}j} for \emph{j
+≤t −i}0 + 2 as in Initialize1. Then we add a uniform Z\emph{q}-linear
+combination of the \emph{\textbf{b}j}\textquotesingle s to the (\emph{t}
++ 1\emph{, S})-LWE input
+
+samples. Since \emph{m ≥t} + \emph{n}, these (\emph{t −i}0 + 2) vectors
+are linearly independent and none of them belongs to
+Span\emph{i}0\emph{≤i≤t}+1(\emph{\textbf{x}}+ the transformation maps
+\emph{U} Span\emph{i≤t}+1(\emph{\textbf{x}}+ \emph{i})\emph{⊥}, with
+probability \emph{≥}1 \emph{−}2\emph{−Ω}(\emph{n}). In that case,
+\emph{i})\emph{⊥}+ \emph{νm}+1\emph{αq} to \emph{U}
+Span\emph{i\textless i}0(\emph{\textbf{x}}+ \emph{i})\emph{⊥} +
+\emph{νm}+1\emph{αq} ,
+
+and maps \emph{U}(Im(\emph{A}+)) + \emph{νm}+1\emph{αq} to
+\emph{U}(Im{[}\emph{A}+\emph{\textbar{}\textbf{b}}+ 1\emph{\textbar{} .
+. . \textbar{}\textbf{b}}+ \emph{t−i}0+2{]}) + \emph{νm}+1 . We then
+round
+
+the samples to the nearest integer vectors, and Algorithm \emph{A}
+distinguishes between the resulting distributions, and its output is
+forwarded as output to the initial (\emph{t} + 1\emph{, S})-
+
+LWE instance.
+\end{quote}
+
+Second situation: Algorithm \emph{A} wins Game\emph{′}1with
+non-negligible advantage. It seems
+
+quite similar to the rst situation, but the following observation hints
+why its han-
+
+dling is somewhat more complex. In the rst situation, the domains of the
+noise-
+
+less variants of the distributions to be distinguished are contained
+into one another:
+
+Im({[}\emph{A}+\emph{\textbar{}\textbf{b}}1\emph{\textbar{} . . .
+\textbar{}\textbf{b}t−i}0+2{]})
+\emph{⊆}Span\emph{i\textless i}0(\emph{\textbf{x}}+ holds. The purpose
+of the sequence of games below is to map Game\emph{′i})\emph{⊥}. In the
+second situation, no such inclusion
+
+1to recover such
+
+\begin{quote}
+an inclusion setting.
+
+Let us dene Game2 as being the same as Game\emph{′}1, but with the
+following updated
+
+rst step:
+
+22
+\end{quote}
+
+\emph{•} Initialize2: Sample \emph{A ←U}(Z\emph{m×n} ), \emph{\textbf{u}
+←U}(Z\emph{n q}), \emph{\textbf{b}j←U}(Z\emph{m q}) and
+\emph{vj←U}(Z\emph{q})
+
+for \emph{j ≤t −i}0 + 2, \emph{\textbf{x}i
+←DΛ⊥−\textbf{u}}(\emph{A})\emph{,S} for \emph{i ≥i}0 and
+\emph{\textbf{x}i ←DΛ⊥−\textbf{u}′}(\emph{A′})\emph{,S} for \emph{i
+\textless{} i}0, with
+
+\begin{quote}
+\emph{A′}= {[}\emph{A\textbar{}\textbf{b}}1\emph{\textbar{} . . .
+\textbar{}\textbf{b}t−i}0+2{]} and \emph{\textbf{u}′}=
+(\emph{\textbf{u}∥v}1\emph{∥. . . ∥vt−i}0+2)\emph{.}
+
+We show that the residual distributions at the end of Initialize1 and
+Initialize2
+\end{quote}
+
+are essentially the same. For that, we use Theorem 11 twice. First,
+starting from
+
+Initialize1, we swap the samplings of \emph{A} and \emph{\textbf{u}}
+with those of (\emph{\textbf{x}i})\emph{i\textless i}0. This ensures
+
+that the residual distribution of Initialize1 is within statistical
+distance 2\emph{−Ω}(\emph{n})from
+
+\begin{quote}
+the residual distribution of the following experiment: Sample
+\emph{\textbf{x}i ←}
+
+\emph{A}+= (\emph{\textbf{u}t∥A}) \emph{←}
+
+\emph{DΛ⊥−\textbf{u}}(\emph{A})\emph{,S} for \emph{i
+∈}{[}\emph{i}0\emph{, t} + 1{]}, and \emph{\textbf{b}}+\\
+\emph{U}(Z(\emph{m}+1)\emph{×n} ) conditioned on
+\emph{\textbf{x}}+\emph{t}
+
+\emph{j←U}(Span\emph{i\textless i}0(\emph{\textbf{x}}+ \emph{i· A}+=
+\textbf{0} for all \emph{i \textless{} i}0, \emph{\textbf{x}i ←}
+
+\emph{i})\emph{⊥}) for \emph{j ≤t −i}0 + 2. The\\
+\emph{D}Z\emph{m,S} for \emph{i \textless{} i}0,
+\end{quote}
+
+samplings of the last \emph{\textbf{x}}+ \emph{i}\textquotesingle s and
+those of the \emph{\textbf{b}}+ \emph{j}\textquotesingle s being
+independent, their order can
+
+be exchanged. We can now apply Theorem 11 a second time, to postpone the
+sam-
+
+plings of (\emph{\textbf{x}i})\emph{i\textless i}0 after those of the
+\emph{\textbf{b}}+ \emph{j}\textquotesingle s. This gives us that the
+residual distributions of
+
+the above experiment and that of Initialize2 are within statistical
+distance 2\emph{−Ω}(\emph{n}).
+
+Overall, we have shown that the residual distributions of (\emph{A,
+\textbf{u},} (\emph{\textbf{b}j})\emph{j,} (\emph{vj})\emph{j,}
+(\emph{\textbf{x}i})\emph{i}) af-
+
+ter Initialize1 and Initialize2 are within exponentially small
+statistical distance.
+
+\begin{quote}
+Hence algorithm \emph{A} wins Game2 with non-negligible advantage.
+
+Now, consider Game3, which diers from Game2 only in that
+\emph{\textbf{x}i}0 is also sampled
+
+from \emph{DΛ⊥−\textbf{u}′}(\emph{A′})\emph{,S}.
+\end{quote}
+
+\emph{•} Initialize3: Sample \emph{A ←U}(Z\emph{m×n} ), \emph{\textbf{u}
+←U}(Z\emph{n q}), \emph{\textbf{b}j←U}(Z\emph{m q}) and
+\emph{vj←U}(Z\emph{q})
+
+\begin{quote}
+for \emph{j ≤t −i}0 + 2, \emph{\textbf{x}i
+←DΛ⊥−\textbf{u}}(\emph{A})\emph{,S} for \emph{i \textgreater{} i}0 and
+\emph{\textbf{x}i ←DΛ⊥−\textbf{u}′}(\emph{A′})\emph{,S} for \emph{i ≤i}0
+
+As \emph{\textbf{x}i}0 is not given to \emph{A} at step Input3 and as it
+is not involved in the challenge
+\end{quote}
+
+distributions this modication does not alter the winning probability of
+\emph{A}: algorithm \emph{A}
+
+also wins Game3 with non-negligible advantage. Now, we again use Theorem
+11 twice,
+
+but with (\emph{\textbf{x}i})\emph{i≤i}0: once for swapping the
+samplings of these \emph{\textbf{x}i}\textquotesingle s with
+\emph{A}+and the \emph{\textbf{b}}+ \emph{j}\textquotesingle s,
+
+and once for swapping the samplings of \emph{A}+and these
+\emph{\textbf{x}i}\textquotesingle s. This shows that algorithm \emph{A}
+
+wins Game4 with non-negligible advantage, where Game4 diers from Game3
+only in
+
+\begin{quote}
+its rst step, as follows.
+\end{quote}
+
+\emph{•} Initialize4: Sample \emph{A ←U}(Z\emph{m×n} ), \emph{\textbf{u}
+←U}(Z\emph{n q}), \emph{\textbf{x}i←DΛ⊥−\textbf{u}}(\emph{A})\emph{,S}
+for \emph{i ≤t}, and
+
+\begin{quote}
+\emph{\textbf{b}}+ \emph{j←U}(Span\emph{i≤i}0(\emph{\textbf{x}}+
+\emph{i})\emph{⊥}) for \emph{j ≤t −i}0 + 2.
+
+The situation we are in now is very similar to that in the rst
+situation, where \emph{A}
+\end{quote}
+
+was supposed to win Game1. The arguments used in the rst situation
+readily carry
+
+over here (up to replacing Span\emph{i\textless i}0\emph{\textbf{x}}+
+\emph{i}and Span\emph{i≥i}0\emph{\textbf{x}}+ \emph{i}by
+Span\emph{i≤i}0\emph{\textbf{x}}+ \emph{i}and
+Span\emph{i\textgreater i}0\emph{\textbf{x}}+ \emph{i},
+
+\begin{quote}
+respectively). \emph{⊔}
+
+5 Projective sampling and public traceability
+\end{quote}
+
+We now modify the scheme of Section 4 so that the tracing signals can be
+publicly
+
+\begin{quote}
+sampled. For this purpose, we introduce the concept of projective
+sampling family.
+
+5.1 Projective sampling
+\end{quote}
+
+Inspired from the notion of projective hash family {[}23{]}, we propose
+the notion of pro-
+
+jective sampling family in which each sampling function is keyed and,
+with a projected
+
+key, one can simulate the sampling function in a computationally
+indistinguishable
+
+23
+
+\begin{quote}
+way. Let \emph{X} be a nite non-empty set. Let \emph{F} =
+(F\emph{k})\emph{k∈K} be a collection of sampling functions indexed by
+\emph{K}, so that F\emph{k} is a sampling function over \emph{X}, for
+every \emph{k ∈K}. We call Sam = (\emph{F, K, X}) a sampling family. We
+now introduce the concept of projective sampling.
+
+Denition 26 (Projective Sampling). Let Sam = (\emph{F, K, X}) be a
+sampling family. Let \emph{J} be a nite, non-empty set, and let \emph{π}
+: \emph{K →J} be a (probabilistic) function. Let also P =
+(P\emph{j})\emph{j∈J} be a collection of sampling functions over
+\emph{X}, and \emph{D} be a distribution over \emph{K}. Then PSam =
+(\emph{F, K, X,} P\emph{, J, π, D}) is called a projective sampling
+family if, with overwhelming probability over the choice of \emph{k,
+k′←D}, and given the secret key \emph{k} and its projected key
+\emph{π}(\emph{k}), 1) the distributions obtained using F\emph{k} and
+P\emph{π}(\emph{k}) are computationally indistinguishable, and 2) the
+distributions obtained using F\emph{k} and P\emph{π}(\emph{k′}) can be
+eciently distinguished.
+
+The rst condition means that for \emph{k ←D}, the value
+\emph{π}(\emph{k}) encodes the sampling distribution of F\emph{k}, so
+that when \emph{π}(\emph{k}) is made public, the sampled signal
+F\emph{k} can be pub-licly simulated by P\emph{π}(\emph{k})\emph{.} The
+security requirement is very strong because the adversary is not only
+given the projected key, as in projective hashing, but also the secret
+key \emph{k}. We require that sampling signals from the secret key and
+from its projected key be indistinguishable for the insiders who know
+the secret key. This is relevant for traitor tracing, as the traitors
+are system insiders and they possess secret data. The second condition
+(that we actually do not directly use in our cryptographic application)
+al-lows to prevent the trivial solution consisting in setting
+P\emph{π}(\emph{k}) as an ecient sampling function that is independent
+of \emph{k}: the simulation signal P\emph{π}(\emph{k}) must be specic to
+\emph{k}.3
+
+5.2 Projective sampling from \emph{\textbf{k}}-LWE
+
+We construct a set of projective sampling families
+(PSam\emph{i})0\emph{≤i≤t}. The parameters are almost identical to the
+parameters in the Setup of the multi-user scheme of Section 4. A further
+dierence, required for simulation purposes in the security proof, is
+that \emph{σ′\textgreater{} σ}must be set\emph{Ω}(\emph{√mn} +
+\emph{πq}).
+
+We let \emph{A ←U}(Z\emph{m×n} ) and \emph{\textbf{u} ←U}(Z\emph{n q})
+be public parameters. For each \emph{i}, we dene \emph{Ki} = (Z\emph{m
+q})\emph{i} and \emph{Di}as the distribution on \emph{Ki}that samples
+\emph{k} = (\emph{\textbf{x}j})\emph{j≤i}with \emph{\textbf{x}j←DΛ⊥}\\
+\emph{−\textbf{u}}(\emph{A})\emph{,σ} for all \emph{j ≤i}. The sampling
+function F\emph{i,k} is dened as
+\emph{U}(Span\emph{j≤i}(\emph{\textbf{x}}+ \emph{j})\emph{⊥})
++\emph{⌊ναq⌉m}+1. The projected key \emph{πi}(\emph{k}) is dened as
+follows:\\
+\emph{•} Sample \emph{H ∈}Z\emph{m×}(\emph{m−n}) uniformly, conditioned
+on Im(\emph{A}) \emph{⊆}Im(\emph{H}).
+
+\emph{•} For each \emph{j ≤i}, dene \emph{\textbf{h}t j}=
+\emph{−\textbf{x}t j· H}.
+
+\emph{•} Finally, set \emph{J} = Z\emph{m×}(\emph{m−n})\emph{×}
+(Z\emph{m−n} )\emph{i}and set \emph{πi}(\emph{k}) = (\emph{H,}
+(\emph{\textbf{h}j})\emph{j≤i}).
+
+We now dene the sampling P\emph{i,πi}(\emph{k}) with projected key
+\emph{πi}(\emph{k}) = (\emph{H,} (\emph{\textbf{h}j})\emph{j≤i}), as
+follows:
+
+\emph{•} Set \emph{Hj} = (\emph{\textbf{h}t j∥H})
+\emph{∈}Z(\emph{m}+1)\emph{×}(\emph{m−n}) . We have
+\emph{\textbf{x}}+\emph{t j} \emph{· Hj} = \textbf{0} and Im(\emph{A}+)
+\emph{⊆}Im(\emph{Hj}).\emph{•} Set P\emph{i,πi}(\emph{k}) = \emph{U}
+(\emph{∩j≤i}Im(\emph{Hj})) + \emph{⌊ναq⌉m}+1, with
+\emph{∩j≤}0Im(\emph{Hj}) = Z\emph{m}+1 by convention.
+
+\emph{j})\emph{⊥}. Note that \emph{∩j≤i}Im(\emph{Hj})
+\emph{⊆}Span\emph{j≤i}(\emph{\textbf{x}}+
+
+Theorem 27. For each \emph{i} = 0\emph{, . . . , t}, PSam\emph{i} is a
+projective sampling family. Concretely, under the (\emph{i,
+S})-LWE\emph{α,m} hardness assumptions, given the uniformly sampled
+public
+
+3 Another trivial situation occurs when \emph{π}(\emph{k}) = \emph{k}:
+the projected key leaks the full information about the original key and
+one cannot safely publish the projected key.
+
+24
+\end{quote}
+
+parameters (\emph{A, \textbf{u}}), the secret key \emph{k} =
+(\emph{\textbf{x}j})\emph{j≤i ←Di} and its projected key
+\emph{πi}(\emph{k}) =
+
+\begin{quote}
+(\emph{H,} (\emph{\textbf{h}j})\emph{j≤i}), the distributions
+F\emph{i,k} and P\emph{i,πi}(\emph{k}) are indistinguishable. Moreover,
+they are both indistinguishable from \emph{U}(Im(\emph{A}+)) +
+\emph{⌊ναq⌉m}+1. Finally, with overwhelming probability, the
+distributions F\emph{i,k} and P\emph{i,πi}(\emph{k′}) can be eciently
+distinguished, when \emph{k′}
+
+is independently sampled from \emph{Di}.
+\end{quote}
+
+Proof. For the last statement, observe that with overwhelming
+probability, the secret
+
+\begin{quote}
+key \emph{k′}contains an \emph{\textbf{x}′}
+\end{quote}
+
+that case, taking the inner product of all \emph{\textbf{x}′j∈}Z\emph{m
+q}that does not belong to Span\emph{j≤i}(\emph{\textbf{x}j}) (by Lemma
+12). In \emph{j}\textquotesingle s of \emph{k′} with a sample from
+P\emph{i,πi}(\emph{k′})gives
+
+small residues modulo \emph{q}, whereas one of the inner products of the
+\emph{\textbf{x}′j}\textquotesingle s with a sample
+
+\begin{quote}
+from F\emph{i,k} will be uniform modulo \emph{q}.
+
+We now consider the rst statement. From the hardness of (\emph{i,
+S})-LWE\emph{α,m}, given
+
+\emph{k}, the distributions
+
+F\emph{i,k} = \emph{U}(Span\emph{j≤i}(\emph{\textbf{x}}+
+\emph{j})\emph{⊥}) + \emph{⌊ναq⌉m}+1 and \emph{U}(Im(\emph{A}+)) +
+\emph{⌊ναq⌉m}+1
+
+are indistinguishable. Further, given \emph{k} =
+(\emph{\textbf{x}j})\emph{j≤i}, the projected key \emph{πi}(\emph{k}) =
+(\emph{H,} (\emph{\textbf{h}j})\emph{j≤i}) can be sampled from
+\emph{Di}. Therefore, given both \emph{k} and \emph{πi}(\emph{k}), the
+distributions F\emph{i,k} and
+
+\emph{U}(Im(\emph{A}+)) + \emph{⌊ναq⌉m}+1remain indistinguishable.
+
+Now, we have Im(\emph{A}+) \emph{⊆∩j≤i}Im(\emph{Hj})
+\emph{⊆}(Span\emph{j≤i}(\emph{\textbf{x}}+ \emph{j}))\emph{⊥}. Hence:
+
+\emph{U}(Im(\emph{A}+)) + \emph{U}(\emph{∩j≤i}Im(\emph{Hj})) =
+\emph{U}(\emph{∩j≤i}Im(\emph{Hj}))\emph{,
+U}(Span\emph{j≤i}(\emph{\textbf{x}}+ \emph{j})\emph{⊥}) +
+\emph{U}(\emph{∩j≤i}Im(\emph{Hj})) =
+\emph{U}(Span\emph{j≤i}(\emph{\textbf{x}}+ \emph{j})\emph{⊥})\emph{.}
+
+We note that given \emph{\textbf{h}}1\emph{, . . . , \textbf{h}i}, one
+can eciently sample from \emph{U}(\emph{∩j≤i}Im(\emph{Hj})). There-fore,
+under the hardness of (\emph{i, S})-LWE\emph{α,m}, this shows that
+F\emph{i,k}, P\emph{i,πi}(\emph{k}) and \emph{U}(Im(\emph{A}+))+
+
+\emph{⌊ναq⌉m}+1are indistinguishable. \emph{⊔}
+
+5.3 Public traceability from projective sampling
+
+In the scheme of Section 4, the tracing key \emph{tk} = (\emph{T,}
+(\emph{Ui, \textbf{x}i})\emph{i≤N}) must be kept se-cret, as it would
+reveal the secret keys of the users. The tracing signals are samples
+
+from \emph{U}(Span\emph{j≤i}(\emph{\textbf{x}}+ \emph{j})\emph{⊥}) +
+\emph{⌊ναq⌉m}+1, which exactly matches F\emph{i,k}. By publishing the
+projected key \emph{πi}(\emph{k}), anyone can use the projective
+sampling P\emph{i,πi}(\emph{k}): by Theorem 27,
+\end{quote}
+
+given (\emph{k, πi}(\emph{k})), F\emph{i,k} and P\emph{i,πi}(\emph{k})
+are indistinguishable and they are both indistinguish-
+
+\begin{quote}
+able from the original sampling \emph{U}(Im(\emph{A}+))+\emph{⌊ναq⌉m}+1.
+We are thus almost done with public traceability.
+
+However, a subtle point is that we have to use all the projective
+samplings (P\emph{i,πi}(\emph{k}))
+
+for transforming the secret tracing to the public tracing: all the
+projected keys (\emph{\textbf{h}j})\emph{j≤N} should be published.
+Because the keys \emph{k} in F\emph{i,k} are not independent, it could
+occur
+
+that the adversary exploits a projected key \emph{πi}(\emph{k}) for
+distinguishing P\emph{i′,πi′}(\emph{k′}) from the original signals. To
+handle this, we prove that, given (\emph{\textbf{x}j})\emph{j≤i} and all
+the keys (\emph{\textbf{h}j})\emph{j≤N}, the adversary cannot
+distinguish P\emph{i,πi}(\emph{k}) from the original signals. For this
+purpose, we
+
+exploit a technique from {[}28{]} to simulate
+(\emph{\textbf{h}j})\emph{i\textless j≤N} from the public information.
+\end{quote}
+
+Theorem 28. Set \emph{i ≤t}. Under the (\emph{i, S})-LWE\emph{α,m} and
+the LWE\emph{′α,m}hardness as-
+
+\begin{quote}
+sumptions, given the secret key \emph{k} =
+(\emph{\textbf{x}j})\emph{j≤i} and the projected keys (\emph{H,}
+(\emph{\textbf{h}j})\emph{j≤N}), the following two distributions are
+indistinguishable
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+P\emph{i,α}(\emph{k}) = \emph{U}(\emph{∩j≤i}Im(\emph{Hj})) +
+\emph{⌊ναq⌉m}+1
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+and
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{U}(Im(\emph{A}+)) + \emph{⌊ναq⌉m}+1\emph{.}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+25
+
+\begin{quote}
+Proof. Assume a ppt attacker is given (\emph{\textbf{x}j})\emph{j≤i}
+(with the \emph{\textbf{x}j}\textquotesingle s independently sampled
+from \emph{DΛ⊥−\textbf{u}}(\emph{A})\emph{,σ}) and all the projected
+keys (\emph{\textbf{h}j})\emph{j≤N}. We are to prove that, under the
+(\emph{i, S})-LWE\emph{α,m} and LWE\emph{′α,m}hardness assumptions, it
+cannot distinguish between the distributions (over Z\emph{m}+1 )
+
+\emph{U}(Im(\emph{A}+)) + \emph{⌊ναq⌉m}+1 and P\emph{i,πi}(\emph{k}) =
+\emph{U}(\emph{∩j≤i}Im(\emph{Hj})) + \emph{⌊ναq⌉m}+1\emph{.}
+
+We proceed by a sequence of games.
+
+Game0: This is the above distinguishing game. We let \emph{ε}0 denote
+the adversary\textquotesingle s dis-tinguishing advantage. The goal is
+to show that \emph{ε}0 is negligible.
+
+Game1: In this second game, we sample \emph{\textbf{x}}1\emph{, . . . ,
+\textbf{x}i} from \emph{DΛ⊥−\textbf{u}}(\emph{A})\emph{,σ} as in Game0,
+but the \emph{\textbf{x}j}\textquotesingle s for \emph{j \textgreater{}
+i} are sampled uniformly in Z\emph{n q}, conditioned on
+\emph{\textbf{x}t j· A} = \emph{−\textbf{u}t}. The
+\emph{\textbf{h}j}\textquotesingle s for \emph{j \textgreater{} i} are
+modied accordingly, but the rest is as in Game0. We let \emph{ε}1 denote
+the adversary\textquotesingle s distinguishing advantage.
+
+The main point is that in Game1, no secret information is required for
+sampling the projected keys \emph{\textbf{h}j}\textquotesingle s for
+\emph{j \textgreater{} i}.
+
+Lemma 29. Under the LWE\emph{′α,m}hardness assumption, the quantity
+\emph{\textbar ε}1\emph{−ε}0\emph{\textbar{}} is negli-gible.
+
+Proof. Our aim is to reduce LWE\emph{′α,m}+1to distinguishing Game1and
+Game0. Assume we have the following multiple LWE\emph{′}input (\emph{B,
+\textbf{y}i}+1\emph{, . . . , \textbf{y}N}) where \emph{B
+←U}(Z\emph{m×n} ),
+\end{quote}
+
+and \emph{\textbf{y}j} = \emph{B\textbf{s}j} +\emph{\textbf{e}j} with
+\emph{\textbf{s}j ←}for all \emph{j}. Our goal is to exploit a
+distinguisher between Game0 and Game1 to decide \emph{U}(Z\emph{n q})
+and either \emph{\textbf{e}j←U}(Z\emph{m q}) for all \emph{j}, or
+\emph{\textbf{e}j←D}Z\emph{m,αq}
+
+\begin{quote}
+whether the \emph{\textbf{e}j}\textquotesingle s are Gaussian or
+uniform. We simulate Game1 and Game0 as follows (depending on the nature
+of \emph{\textbf{e}i}):
+
+Sample \emph{A ∈}Z\emph{m×n} and \emph{T ∈}Z\emph{m×m}such that \emph{A}
+is uniform conditioned on \emph{Bt·A} = 0 and \emph{T} is a full-rank
+basis of \emph{Λ⊥}(\emph{A}) satisfying \emph{∥T∥≤O}(\emph{√mn} log
+\emph{q} log \emph{m}). This can be performed in ppt using {[}28, Le.
+4{]}.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Dene \emph{H} as a randomized basis of the kernel of \emph{B}. It is
+\emph{m×}(\emph{m−n}) with probabil-ity 2\emph{−Ω}(\emph{n}). The
+distribution of the pair (\emph{A, H}) is within statistical distance
+2\emph{−Ω}(\emph{n})
+
+of its distribution in Game0 and Game1.
+
+Sample \emph{\textbf{u} ←U}(Z\emph{n q}) and sample the keys
+\emph{\textbf{x}}1\emph{, . . . ,
+\textbf{x}i←DΛ⊥−\textbf{u}}(\emph{A})\emph{,S} by using the
+
+trapdoor matrix \emph{T} (this is why \emph{σ′}must be set suciently
+large). Compute \emph{\textbf{h}t j}=
+
+\emph{−\textbf{x}t j· H} for \emph{j ≤i}.
+
+Using linear algebra, nd \emph{\textbf{c}} such that \emph{\textbf{c}t·
+A} = \emph{\textbf{u}t}. For each \emph{j ∈}{[}\emph{i} + 1\emph{,
+N}{]}:
+
+\emph{•} Compute \emph{\textbf{u}t} we would prefer \emph{\textbf{u}t}=
+\emph{\textbf{e}t j}= \emph{\textbf{y}t j· A}. Since \emph{\textbf{y}j}
+= \emph{B · \textbf{s}j} + \emph{\textbf{e}j}, we have
+\emph{\textbf{u}t}
+\end{quote}
+
+\emph{j· A}).
+
+\emph{j}= \emph{\textbf{e}t j· A} (although
+
+\begin{quote}
+\emph{•} Sample \emph{\textbf{e}′j←\textbf{c} −\textbf{y}j} +
+\emph{DΛ⊥}(\emph{A})\emph{,S}2\emph{,−\textbf{c}}+\emph{\textbf{y}j}
+where \emph{S}2 = \emph{SSt−α}2\emph{q}2\emph{Im} (these
+
+are diagonal matrices), using \emph{T}. Since \emph{\textbf{y}j
+−\textbf{e}j ∈Λ⊥}(\emph{A}), we can rewrite the latter as
+\emph{\textbf{e}′j←\textbf{c} −\textbf{e}j} +
+\emph{DΛ⊥}(\emph{A})\emph{,S}2\emph{,−\textbf{c}}+\emph{\textbf{e}j}.
+
+\emph{•} Compute \emph{\textbf{z}j} = \emph{\textbf{y}j} +
+\emph{\textbf{e}′j}. We now have (\emph{\textbf{e}t j}+
+\emph{\textbf{e}′t j}) \emph{· A} = \emph{\textbf{z}t j· A} =
+\emph{\textbf{c}t · A} = \emph{\textbf{u}t}.
+
+\emph{•} Set \emph{\textbf{h}t j}= \emph{−\textbf{z}t j· H}. Note that
+\emph{\textbf{h}t j}= \emph{−}(\emph{\textbf{e}t j}+ \emph{\textbf{e}′t
+j}) \emph{· H}.
+
+Return \emph{A, \textbf{u}, H,} (\emph{\textbf{x}j})\emph{j≤i} and
+(\emph{\textbf{h}j})\emph{j≤N}.
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+We observe that for each \emph{j ∈}{[}\emph{i} + 1\emph{, N}{]}, we have
+\emph{\textbf{z}j} = \emph{\textbf{y}j} + \emph{\textbf{e}′j}= \emph{B ·
+\textbf{s}j} + (\emph{\textbf{e}j} + \emph{\textbf{e}′j}). We consider
+two cases.
+
+26
+
+When \emph{\textbf{e}j ←D}Z\emph{m,αq}, the residual distribution of
+\emph{DΛ⊥}(\emph{A})\emph{,S}2\emph{,−\textbf{c}}+\emph{\textbf{e}j} is
+within negli-gible statistical distance to
+\emph{DΛ⊥}(\emph{A})\emph{,S,−\textbf{c}}; this is provided by Lemma 4,
+whose as-sumptions are satised (thanks to the second lower bound on
+\emph{σ′}) and to Lemma 9; consequently, the residual distribution of
+\emph{\textbf{e}j} + \emph{\textbf{e}′j}is negligibly close to the
+dis-tribution \emph{\textbf{c}} +
+\emph{DΛ⊥}(\emph{A})\emph{,S,−\textbf{c}}, and hence the distribution of
+\emph{\textbf{z}j} is statistically close
+\emph{\textbf{u}}(\emph{A})\emph{,S}. Overall, the data available to the
+adversary follows the same distri-to \emph{DΛ⊥}butions as in Game0, up
+to negligible statistical distance.
+
+When \emph{\textbf{e}j ←}argument above). The data available follows the
+same distributions as in Game1, \emph{U}(Z\emph{m q}), the residual
+distribution of \emph{\textbf{z}j}is uniform (by adapting the
+
+up to negligible statistical distance.
+
+This completes the proof of the lemma. \emph{⊔}
+
+We note that, in Game1, the \emph{\textbf{h}j}\textquotesingle s can be
+sampled publicly from the available data. Therefore, from Theorem 27,
+under the (\emph{i, S})-LWE\emph{α,m} hardness assumptions, the
+ad-vantage \emph{ε}1 is negligible. \emph{⊔}Semantic security of the
+updated scheme. We modify the public information of the scheme of
+Section 4, so that we can use the set of projective sampling families
+de-scribed above. For this aim, we simply add the projected key
+(\emph{H,} (\emph{\textbf{h}i})\emph{i≤N}) to the public key. The scheme
+becomes publicly traceable because the tracing signals can be sampled
+from the projected keys, as explained above. Finally, as the public key
+has been modied, we should prove that the knowledge of these projected
+keys provides no signicant advantage for an adversary towards breaking
+the semantic security of the encryption scheme. Fortunately, the
+semantic security directly follows from Theo-rem 28, for the particular
+case of \emph{i} = 0.
+
+Acknowledgements. We thank M. Abdalla, D. Augot, R. Bhattacharrya, L.
+Ducas, V. Guleria, G. Hanrot, F. Laguillaumie, K. T. T. Nguyen, G.
+Quintin, O. Regev, H. Wang for helpful discussions. The authors were
+partly supported by the LaBaCry MERLION grant, the Australian Research
+Council Discovery Grant DP110100628, the ANR-09-VERSO-016 BEST and
+ANR-12-JS02-0004 ROMAnTIC Projects, the IN-RIA invited researcher
+scheme, the Singapore National Research Foundation Research Grant
+NRF-CRP2-2007-03, the Singapore MOE Tier 2 research grant
+MOE2013-T2-1-041, the LIA Formath Vietnam and the ERC Starting Grant
+ERC-2013-StG-335086-LATTAC.
+
+References
+
+1. M. Abdalla, A. W. Dent, J. Malone-Lee, G. Neven, D. H. Phan, and N.
+P. Smart. Identity-based traitor tracing. In Proceedings of PKC, volume
+4450 of LNCS, pages 361376. Springer, 2007. 2. D. Aggarwal and O. Regev.
+A note on discrete gaussian combinations of lattice vectors, 2013.
+Draft. Available at http://arxiv.org/pdf/1308.2405v1.pdf.
+
+3. S. Agrawal, D. Boneh, and X. Boyen. Ecient lattice (H)IBE in the
+standard model. In Proc. of EUROCRYPT, volume 6110 of LNCS, pages
+553572. Springer, 2010. Full version available from the authors upon
+request.
+
+4. S. Agrawal, D. Boneh, and X. Boyen. Lattice basis delegation in xed
+dimension and shorter-ciphertext hierarchical IBE. In Proc. of CRYPTO,
+volume 6223 of LNCS, pages 98115. Springer, 2010.
+
+5. S. Agrawal, C. Gentry, S. Halevi, and A. Sahai. Sampling discrete
+gaussians eciently and obliviously. In Proc. of ASIACRYPT (1), volume
+8269 of LNCS, pages 97116. Springer, 2013. 6. M. Ajtai. Generating hard
+instances of lattice problems (extended abstract). In Proc. of STOC,
+pages 99108. ACM, 1996.
+\end{quote}
+
+27
+
+\begin{quote}
+7. M. Ajtai. Generating hard instances of the short basis problem. In
+Proc. of ICALP, volume 1644 of LNCS, pages 19. Springer, 1999.
+
+8. J. Alwen and C. Peikert. Generating shorter bases for hard random
+lattices. Theor. Comput. Science, 48(3):535553, 2011.
+
+9. S. Bai, A. Langlois, T. Lepoint, D. Stehlé, and R. Steinfeld.
+Improved security proofs in lattice-based cryptography: using the Rényi
+divergence rather than the statistical distance. IACR Cryp-tology ePrint
+Archive, 2015:483, 2015.
+
+10. O. Billet and D. H. Phan. Ecient Traitor Tracing from Collusion
+Secure Codes. In Proc. of ICITS, volume 5155 of LNCS, pages 171182.
+Springer, 2008.
+
+11. D. Boneh and M. K. Franklin. An ecient public key traitor tracing
+scheme. In Proc. of CRYPTO, volume 1666 of LNCS, pages 338353. Springer,
+1999.
+
+12. D. Boneh and D. M. Freeman. Linearly homomorphic signatures over
+binary elds and new tools for lattice-based signatures. In Proc. of PKC,
+volume 6571 of LNCS, pages 116. Springer, 2011. Full version available
+at http://eprint.iacr.org/2010/453.pdf.
+
+13. D. Boneh and M. Naor. Traitor tracing with constant size ciphertext.
+In Proc. of ACM CCS, pages 501510. ACM, 2008.
+
+14. D. Boneh, A. Sahai, and B. Waters. Fully collusion resistant traitor
+tracing with short ciphertexts and private keys. In Proc. of EUROCRYPT,
+volume 4004 of LNCS, pages 573592. Springer, 2006.
+
+15. D. Boneh and B. Waters. A fully collusion resistant broadcast,
+trace, and revoke system. In Proc. of ACM CCS, pages 211220. ACM, 2006.
+
+16. D. Boneh and M. Zhandry. Multiparty key exchange, ecient traitor
+tracing, and more from indistinguishability obfuscation. In Proc. of
+CRYPTO, volume 8616 of LNCS, pages 480499. Springer, 2014.
+
+17. Dan Boneh and Mark Zhandry. Multiparty key exchange, ecient traitor
+tracing, and more from indistinguishability obfuscation. Cryptology
+ePrint Archive, Report 2013/642, 2013. http: //eprint.iacr.org/.
+
+18. Z. Brakerski, A. Langlois, C. Peikert, O. Regev, and D. Stehlé.
+Classical hardness of learning with errors. In STOC, pages 575584. ACM,
+2013.
+
+19. D. Cash, D. Hofheinz, E. Kiltz, and C. Peikert. Bonsai trees, or how
+to delegate a lattice basis. In Proc. of EUROCRYPT, volume 6110 of LNCS,
+pages 523552. Springer, 2010.
+\end{quote}
+
+20. H. Chabanne, D. H. Phan, and D. Pointcheval. Public traceability in
+traitor tracing schemes.
+
+\begin{quote}
+In Ronald Cramer, editor, EUROCRYPT 2005, volume 3494 of LNCS, pages
+542558. Springer, May 2005.
+
+21. B. Chor, A. Fiat, and M. Naor. Tracing traitors. In Proc. of CRYPTO,
+volume 839 of LNCS, pages 257270. Springer, 1994.
+
+22. B. Chor, A. Fiat, M. Naor, and B. Pinkas. Tracing traitors. IEEE
+Trans. Inf. Th., 46(3):893910, 2000.
+
+23. R. Cramer and V. Shoup. Universal hash proofs and a paradigm for
+adaptive chosen ciphertext secure public-key encryption. In Lars R.
+Knudsen, editor, EUROCRYPT 2002, volume 2332 of LNCS, pages 4564.
+Springer, April / May 2002.
+
+24. N. Fazio, A. Nicolosi, and D. H. Phan. Traitor tracing with optimal
+transmission rate. In Proc. of ISC, volume 4779 of LNCS, pages 7188.
+Springer, 2007.
+
+25. A. Fiat and M. Naor. Broadcast encryption. In Douglas R. Stinson,
+editor, CRYPTO\textquotesingle93, volume 773 of LNCS, pages 480491.
+Springer, August 1994.
+
+26. S. Garg, C. Gentry, S. Halevi, M. Raykova, A. Sahai, and B. Waters.
+Candidate indistinguisha-bility obfuscation and functional encryption
+for all circuits. In Proc. of FOCS, pages 4049. IEEE Computer Society
+Press, 2013.
+
+27. C. Gentry, C. Peikert, and V. Vaikuntanathan. Trapdoors for hard
+lattices and new cryptographic constructions. In Proc. of STOC, pages
+197206. ACM, 2008. Full version available at http:
+//eprint.iacr.org/2007/432.pdf.
+
+28. S. D. Gordon, J. Katz, and V. Vaikuntanathan. A group signature
+scheme from lattice assump- tions. In Proc. of ASIACRYPT, volume 2647 of
+LNCS, pages 395412. Springer, 2010.
+
+29. A. Kiayias and S. Pehlivanglu. Encryption For Digital Content.
+Springer, 2010.
+
+30. A. Kiayias and M. Yung. On crafty pirates and foxy tracers. In Proc.
+of DRM Workshop, volume 2320 of LNCS, pages 2239. Springer, 2001.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+31. A. Kiayias and M. Yung.
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Self protecting pirates and black-box traitor tracing.
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+In Proc. of
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+CRYPTO, volume 2139 of LNCS, pages 6379. Springer, 2001.
+
+32. A. Kiayias and M. Yung. Breaking and repairing asymmetric public-key
+traitor tracing. In Digital Rights Management Workshop, pages 3250,
+2002.
+
+33. A. Kiayias and M. Yung. Traitor tracing with constant transmission
+rate. In Lars R. Knudsen, editor, EUROCRYPT 2002, volume 2332 of LNCS,
+pages 450465. Springer, April / May 2002.
+
+28
+
+34. P. N. Klein. Finding the closest lattice vector when
+it\textquotesingle s unusually close. In Proc. of SODA, pages 937941.
+ACM, 2000.
+
+35. H. Komaki, Y. Watanabe, G. Hanaoka, and H. Imai. Ecient asymmetric
+self-enforcement scheme with public traceability. In Kwangjo Kim,
+editor, PKC 2001, volume 1992 of LNCS, pages 225 239. Springer, February
+2001.
+
+36. K. Kurosawa and Y. Desmedt. Optimum traitor tracing and asymmetric
+schemes. In Proc. of EUROCRYPT, LNCS, pages 145157. Springer, 1998.
+
+37. K. Kurosawa and T. Yoshida. Linear code implies public-key traitor
+tracing. In David Naccache and Pascal Paillier, editors, PKC 2002,
+volume 2274 of LNCS, pages 172187. Springer, February 2002.
+
+38. A. Langlois, D. Stehlé, and R. Steinfeld. GGHLite: More ecient
+multilinear maps from ideal lattices. In Proc. of EUROCRYPT, LNCS, pages
+239256. Springer, 2014.
+
+39. B. Libert and D. Stehlé. Fully secure functional encryption for
+inner products, from standard assumptions, 2015. Available at
+http://eprint.iacr.org/2015/608.
+
+40. S. Ling, D. H. Phan, D. Stehlé, and R. Steinfeld. Hardness of k-LWE
+and applications in traitor tracing. In Proc. of CRYPTO, volume 8616 of
+LNCS, pages 315334. Springer, 2014.
+
+41. V. Lyubashevsky, C. Peikert, and O. Regev. On ideal lattices and
+learning with errors over rings. J. ACM, 60(6):43, 2013.
+
+42. D. Micciancio and C. Peikert. Trapdoors for lattices: Simpler,
+tighter, faster, smaller. In Proc. of EUROCRYPT, volume 7237 of LNCS,
+pages 700718. Springer, 2012.
+
+43. D. Micciancio and O. Regev. Worst-case to average-case reductions
+based on gaussian measures. SIAM J. Comput, 37(1):267302, 2007.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+44. D. Micciancio and O. Regev.
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Lattice-based cryptography.
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+In Post-Quantum Cryptography,
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+D. J. Bernstein, J. Buchmann, E. Dahmen (Eds), pages 147191. Springer,
+2009.
+
+45. D. Naor, M. Naor, and J. Lotspiech. Revocation and tracing schemes
+for stateless receivers. In Joe Kilian, editor, CRYPTO 2001, volume 2139
+of LNCS, pages 4162. Springer, August 2001. 46. M. Naor and B. Pinkas.
+Ecient trace and revoke schemes. In Yair Frankel, editor, FC 2000,
+volume 1962 of LNCS, pages 120. Springer, February 2000.
+
+47. M. Naor and B. Pinkas. Ecient trace and revoke schemes. In Proc. of
+Financial Cryptography, volume 1962 of LNCS, pages 120. Springer, 2000.
+
+48. A. O\textquotesingle Neill, C. Peikert, and B. Waters. Bi-deniable
+public-key encryption. In Proc. of CRYPTO, volume 6841 of LNCS, pages
+525542. Springer, 2011.
+
+49. C. Peikert. Public-key cryptosystems from the worst-case shortest
+vector problem. In Proc. of STOC, pages 333342. ACM, 2009.
+
+50. C. Peikert. An ecient and parallel Gaussian sampler for lattices. In
+Proc. of CRYPTO, volume 6223 of LNCS, pages 8097. Springer, 2010.
+
+51. C. Peikert, A. Shelat, and A. Smith. Lower bounds for
+collusion-secure ngerprinting. In Proc. of SODA, pages 472479, 2003.
+
+52. C. Peikert and B. Waters. Lossy trapdoor functions and their
+applications. In Proc. of STOC, pages 187196. ACM, 2008.
+
+53. B. Ptzmann. Trials of traced traitors. In Information Hiding, volume
+1174 of LNCS, pages 4964. Springer, 1996.
+
+54. B. Ptzmann and M. Waidner. Asymmetric ngerprinting for larger
+collusions. In ACM CCS 97, pages 151160. ACM Press, April 1997.
+
+55. D. H. Phan, R. Safavi-Naini, and D. Tonien. Generic construction of
+hybrid public key traitor tracing with full-public-traceability. In
+Proc. of ICALP (2), volume 4052 of LNCS, pages 264275. Springer, 2006.
+
+56. O. Regev. On lattices, learning with errors, random linear codes,
+and cryptography. In Proc. of STOC, pages 8493. ACM, 2005.
+
+57. O. Regev. On lattices, learning with errors, random linear codes,
+and cryptography. J. ACM, 56(6), 2009.
+
+58. O. Regev. The learning with errors problem, 2010. Invited survey in
+CCC 2010, available at http: //www.cims.nyu.edu/\textasciitilde regev/.
+
+59. A. Silverberg, J. Staddon, and J. L. Walker. Ecient traitor tracing
+algorithms using list decoding. In Proc. of ASIACRYPT, volume 2248 of
+LNCS, pages 175192. Springer, 2001.
+
+60. T. Sirvent. Traitor tracing scheme with constant ciphertext rate
+against powerful pirates.
+
+In Daniel Augot, Nicolas Sendrier, and Jean-Pierre Tillich, editors,
+Workshop on Coding and CryptographyWCC \textquotesingle07, pages 379388,
+April 2007.
+
+61. D. R. Stinson and R. Wei. Combinatorial properties and constructions
+of traceability schemes and frameproof codes. SIAM J. Discrete Math.,
+11(1):4153, 1998.
+
+62. D. R. Stinson and R. Wei. Key preassigned traceability schemes for
+broadcast encryption. In Proc. of SAC, volume 1556 of LNCS, pages
+144156. Springer, 1998.
+\end{quote}
+
+29
+
+\begin{quote}
+63. G. Tardos. Optimal probabilistic ngerprint codes. J. ACM, 55(2),
+2008.
+
+64. Y. Watanabe, G. Hanaoka, and H. Imai. Ecient asymmetric public-key
+traitor tracing without trusted agents. In David Naccache, editor,
+CT-RSA 2001, volume 2020 of LNCS, pages 392407. Springer, April 2001.
+\end{quote}
+
+\end{document}

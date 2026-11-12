@@ -1,0 +1,4245 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{longtable,booktabs,array}
+\usepackage{multirow}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\author{}
+\date{}
+
+\begin{document}
+
+Bonsai Trees, or How to Delegate a Lattice Basis
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+David Cash\emph{∗}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Dennis Hofheinz\emph{†}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Eike Kiltz\emph{‡}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Chris Peikert\emph{§}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+June 14, 2011
+
+\textbf{Abstract}
+
+\begin{quote}
+We introduce a new \emph{lattice-based} cryptographic structure called a
+\emph{bonsai tree}, and use it to resolve some important open problems
+in the area. Applications of bonsai trees include:
+
+\emph{•} An efficient, stateless `hash-and-sign' signature scheme in the
+\emph{standard model} (i.e., no random oracles), and
+
+\emph{•} The first \emph{hierarchical} identity-based encryption (HIBE)
+scheme (also in the standard model) that does not rely on bilinear
+pairings.
+
+Interestingly, the abstract properties of bonsai trees seem to have no
+known realization in conventional number-theoretic cryptography.
+
+\textbf{1} \textbf{Introduction}
+\end{quote}
+
+Lattice-based cryptographic schemes have undergone rapid development in
+recent years, and are attractive due to their low asymptotic complexity
+and potential resistance to quantum-computing attacks. One notable
+recent work in this area is due to Gentry, Peikert, and Vaikuntanathan
+{[}GPV08{]}, who constructed an efficient `hash-and-sign' signature
+scheme and an identity-based encryption (IBE) scheme. (IBE is a powerful
+cryptographic primitive in which \emph{any string} can serve as a public
+key {[}Sha84{]}.)\\
+Abstractly, the GPV schemes are structurally quite similar to
+Rabin/Rabin-Williams signatures {[}Rab79{]} (based on integer
+factorization) and the Cocks/Boneh-Gentry-Hamburg IBEs {[}Coc01,
+BGH07{]} (based on the quadratic residuosity problem), in that they all
+employ a so-called ``preimage sampleable'' trapdoor function as a basic
+primitive. As a result, they have so far required the random oracle
+model (or similar heuristics) for their security analysis. This is both
+a theoretical drawback and also a practical concern (see, e.g.,
+{[}LN09{]}), so avoiding such heuristics is an important goal.
+
+\begin{quote}
+\emph{∗}University of California, San Diego. Email: cdc@ucsd.edu. Part
+of this work was performed while at Georgia Institute of Technology.
+
+\emph{†}Karlsruhe Institute of Technology. Email:
+Dennis.Hofheinz@kit.edu. Part of work performed while at CWI and
+supported by an NWO Veni grant.
+
+\emph{‡}Cryptology \& Information Security Group, CWI, Amsterdam, The
+Netherlands. Email: kiltz@cwi.nl. Supported by the research program
+Sentinels.
+
+\emph{§}Georgia Institute of Technology. Email: cpeikert@cc.gatech.edu.
+This material is based upon work supported by the National Science
+Foundation under Grants CNS-0716786, CNS-0749931, and CAREER award
+CCF-1054495, by the US Department of Homeland Security under Contract
+Number HSHQDC-07-C-00006, and the Alfred P. Sloan Foundation. Any
+opinions, findings, and conclusions or recommendations expressed in this
+material are those of the authors and do not necessarily reflect the
+views of the National Science Foundation, the US Department of Homeland
+Security, or the Sloan Foundation.
+\end{quote}
+
+1
+
+\begin{quote}
+Another intriguing open question is whether any of these IBE schemes can
+be extended to deliver richer levels of functionality, as has been done
+in pairing-based cryptography since the work of Boneh and Franklin
+{[}BF01{]}. For example, the more general notion of \emph{hierarchical}
+IBE {[}HL02, GS02{]} permits multiple levels of secret-key authorities.
+This notion is more appropriate than standard IBE for large
+organizations, can isolate damage in the case of secret-key exposure,
+and has further applications such as forward-secure encryption
+{[}CHK03{]} and broadcast encryption {[}DF02, YFDL04{]}.
+
+\textbf{1.1} \textbf{Our Results}
+\end{quote}
+
+We put forward a new cryptographic notion called a \emph{bonsai tree},
+and give a realization based on hard lattice problems. (Section 1.2
+gives an intuitive overview of bonsai trees, and Section 1.4 discusses
+their relation to other primitives and techniques.) We then show that
+bonsai trees resolve some central open questions in lattice-based
+cryptography: to summarize, they remove the need for random oracles in
+many important applications, and facilitate delegation for purposes such
+as hierarchical IBE.
+
+\begin{quote}
+Our first application of bonsai trees is an efficient, stateless
+signature scheme that is secure in the \emph{standard model} (no random
+oracles) under conventional lattice assumptions. Our scheme has a
+`hash-and-sign'flavor that does not use the
+key-refresh/authentication-tree paradigm of many prior constructions
+(both generic {[}GMR84, NY89{]} and specialized to lattice assumptions
+{[}LM08{]}), and in particular it does not require the signer to keep
+any state. (Statelessness is a crucial property in many real-world
+scenarios, where distinct systems may sign relative to the same public
+key.) In our scheme, the verification key, signature length, and
+verification time are all an \emph{O}(\emph{k}) factor larger than in
+the random-oracle scheme of {[}GPV08{]}, where \emph{k} is the output
+length of a \emph{chameleon} hash function, and the \emph{O}(\emph{·})
+notation hides only a 1 or 2 factor. The signing algorithm is
+essentially as efficient as the one from {[}GPV08{]}.1The underlying
+hard problem is the standard \emph{short integer solution} (SIS) problem
+dating back to the seminal work of Ajtai {[}Ajt96{]}, which is known to
+be as hard as several worst-case approximation problems on lattices (see
+also {[}MR04, GPV08{]}). Via
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+SIS, the security of our signature scheme rests upon the hardness of
+approximating worst-case problems on
+
+\begin{quote}
+\emph{n}-dimensional lattices to within an˜
+
+Our second application is a collection of various \emph{hierarchical}
+identity-based encryption (HIBE) schemes, \emph{O}(\emph{√k ·
+n}3\emph{/}2) factor; this is only a\emph{√k} factor looser than that of
+{[}GPV08{]}.
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+which are the first HIBEs that do not rely on bilinear pairings. Our
+main scheme works in the standard model, also making it the first
+non-pairing-based IBE (hierarchical or not) that does not use random
+oracles or qualitatively similar heuristics. The underlying hard problem
+is the standard \emph{learning with errors} (LWE) problem as defined by
+Regev, which may be seen as the `dual' of SIS and is also as hard as
+certain worst-case lattice problems {[}Reg05, Pei09b{]}; LWE is also the
+foundation for the plain IBE of {[}GPV08{]}, among many other recent
+cryptographic schemes.
+
+Additionally, our HIBE is \emph{anonymous} across all levels of the
+hierarchy, i.e., a ciphertext conceals (computationally) the identity to
+which is was encrypted. Anonymity is a useful property in many
+applications, such as fully private communication {[}BBDP01{]} and
+searching on encrypted data {[}BCOP04, ABC+05{]}. While there are a few
+anonymous (non-hierarchical) IBEs {[}BF01, CS07, BGH07, GPV08{]}, only
+one other HIBE is known to be anonymous {[}BW06{]}.
+
+\textbf{1.2} \textbf{Overview of Bonsai Trees and Applications}
+\end{quote}
+
+The ancient art of bonsai is centered around a \emph{tree} and the
+selective \emph{control} thereof by an arborist, the tree's cultivator
+and caretaker. By combining natural, \emph{undirected} growth with
+\emph{controlled} propagation techniques
+
+\begin{quote}
+1Our signing algorithm performs about \emph{k forward} computations of a
+trapdoor function, plus one inversion (which dominates the running
+time).
+\end{quote}
+
+2
+
+\begin{quote}
+such as wiring and pruning, arborists cultivate trees according to a
+variety of aesthetic forms.
+
+Similarly, cryptographic bonsai is not so much a precise definition as a
+collection of principles and techniques, which can be employed in a
+variety of ways. (The informal description here is developed technically
+in Section 3.) The first principle is the tree itself, which in our
+setting is a \emph{hierarchy of trapdoor functions} having certain
+properties. The arborist can be any of several entities in the system
+--- e.g., the signer in a signature scheme or a simulator in a security
+proof --- and it can exploit both kinds of growth, undirected and
+controlled. Briefly stated, \emph{undirected} growth of a branch means
+that the arborist has no privileged information about the associated
+function, whereas the arborist \emph{controls} a branch if it knows a
+trapdoor for the function. Moreover, control automatically extends down
+the hierarchy, i.e., knowing a trapdoor for a parent function implies
+knowing a trapdoor for any of its children.
+\end{quote}
+
+In our concrete lattice-based instantiation, the functions in the tree
+are indexed by a hierarchy of public lattices chosen at random from a
+certain `hard' family (i.e., one having a connection to worst-case
+problems). The lattices may be specified by a variety of means, e.g., a
+public key, interaction via a protocol, a random oracle, etc. Their key
+property is that they naturally form a hierarchy as follows: every
+lattice in the tree (excepting the root) is a \emph{higher-dimensional
+superlattice} of its parent. Specifically, a parent lattice in
+R\emph{m}is simply the restriction of its child(ren) in R\emph{m′}(where
+\emph{m′\textgreater{} m}) to the first \emph{m} dimensions. As we shall
+see shortly, this hierarchical relationship means that a parent lattice
+naturally `subsumes' its children (and more generally, all its
+descendants).
+
+\begin{quote}
+\emph{Undirected} growth in our realization is technically
+straightforward, emerging naturally from the underly-ing hard
+average-case lattice problems (SIS and LWE). This growth is useful
+primarily for letting a simulator embed a challenge problem into one or
+more branches of the tree (but it may have other uses as well).
+
+To explain \emph{controlled growth}, we first need a small amount of
+technical background. As explored in prior works on lattice-based
+cryptography (e.g., {[}GGH97, HPS98, HHGP+03, GPV08, PVW08, Pei09b{]}),
+a lattice has a `master trapdoor' in the form of a \emph{short basis},
+i.e., a basis made up of relatively short lattice vectors. Knowledge of
+such a trapdoor makes it easy to solve a host of seemingly hard problems
+relative to the lattice, such as decoding within a bounded distance, or
+randomly sampling short lattice vectors. As described in {[}GPV08{]},
+these two operations are effectively the inversion algorithms for
+certain families of injective and `preimage sampleable' trapdoor
+functions, respectively. The reader may view a short basis for a lattice
+as roughly analogous to the factorization of an RSA modulus, though we
+emphasize that there are in general \emph{many distinct} short bases
+that convey roughly `equal power' with respect to the lattice.
+
+In light of the above, we say that an arborist \emph{controls} a branch
+of a bonsai tree if it knows a short basis for the associated lattice.
+The hierarchy of lattices is specially designed so that any short basis
+of a parent lattice can be easily \emph{extended} to a short basis of
+any higher-dimensional child lattice, with no loss in quality. This
+means that control of a branch implicitly comes with control over all
+its offshoots. In a typical application, the privileged entity in the
+system (e.g., the signer in a signature scheme) will know a short basis
+for the root lattice, thus giving it control over the entire tree. Other
+entities, such as an attacker, will generally have less power, though in
+some applications they might even be given control over entire subtrees.
+
+So far, we have deliberately avoided the question of \emph{how} an
+arborist comes to control a (sub)tree by acquiring a short basis for the
+associated lattice. A similar issue arises in other recent cryptographic
+schemes {[}GPV08, PVW08, Pei09b{]}, but in a simpler setting involving
+only a single lattice and short basis (not a hierarchy). In these
+schemes, one directly applies a special algorithm, originally conceived
+by Ajtai {[}Ajt99{]} and recently improved by Alwen and Peikert
+{[}AP09{]}, which generates a hard random lattice together with a short
+basis `from scratch.' At first glance, the algorithms of {[}Ajt99,
+AP09{]} seem useful only for controlling a new tree entirely by its
+root, which is not helpful if we need finer-grained control.
+Fortunately, we observe that the same technique used for extending an
+already-controlled lattice also allows us to `graft' a solitary
+\end{quote}
+
+3
+
+\begin{quote}
+controlled lattice onto an \emph{uncontrolled} branch.2\\
+This whole collection of techniques, therefore, allows an arborist to
+achieve a primary bonsai aesthetic: a carefully controlled tree that
+nonetheless gives the appearance of having grown without any outside
+intervention. As we shall see next, bonsai techniques can reduce the
+construction of complex cryptographic schemes to the design of simple
+\emph{combinatorial} games between an arborist and an adversary.
+
+\textbf{1.2.1} \textbf{Application 1: Hash-and-Sign without Random
+Oracles}
+
+Our end goal is a signature scheme that meets the \emph{de facto} notion
+of security, namely, existential unforgeability under adaptive
+chosen-message attack {[}GMR84{]}. By a standard, efficient
+transformation using \emph{chameleon hashes} {[}KR00{]} (which have
+efficient realizations under conventional lattice assumptions, as we
+show), it suffices to construct a \emph{weakly secure} scheme, namely,
+one that is existentially unforgeable under a static attack in which the
+adversary non-adaptively makes all its queries before seeing the public
+key.
+
+Our weakly secure scheme signs messages of length \emph{k}, the output
+length of the chameleon hash. The public key represents a \emph{binary}
+bonsai tree \emph{T} of depth \emph{k} in a compact way, which we
+describe in a moment. The secret key is a short basis for the lattice
+Λ\emph{ε} at the root of the tree, which gives the signer control over
+all of \emph{T}. To sign a string \emph{µ ∈\{}0\emph{,}
+1\emph{\}k}(which is the chameleon hash of the `true' message \emph{m}),
+the signer first derives the lattice Λ\emph{µ} from \emph{T} by walking
+the root-to-leaf path specified by \emph{µ}. The signature is simply a
+short nonzero vector \textbf{v} \emph{∈}Λ\emph{µ}, chosen at random from
+the `canonical' Gaussian distribution, which can be sampled efficiently
+using the signer's control of Λ\emph{µ}. A verifier can check the
+signature \textbf{v} simply by deriving Λ\emph{µ} itself from the public
+key, and checking that \textbf{v} is a sufficiently short nonzero vector
+in Λ\emph{µ}.
+\end{quote}
+
+The bonsai tree \emph{T} is represented compactly by the public key in
+the following way. First, the root latticeΛ\emph{ε} is specified
+completely. Then, for each level \emph{i} = 0\emph{, . . . , k −}1, the
+public key includes two blocks of randomness that specify how a parent
+lattice at level \emph{i} branches into its two child lattices. We
+emphasize that all nodes at a given depth use the \emph{same} two blocks
+of randomness to derive their children.
+
+\begin{quote}
+The proof of security is at heart a combinatorial game on the tree
+between the simulator \emph{S} and forger \emph{F}, which goes roughly
+as follows. The forger gives the simulator a set \emph{M} =
+\emph{\{µ}1\emph{, . . . , µQ\}} of messages, and \emph{S} needs to
+cultivate a bonsai tree (represented by \emph{pk}) so that it controls
+some set of subtrees that \emph{cover} all of \emph{M}, yet is unlikely
+to control the leaf for whatever arbitrary message \emph{µ∗̸∈M} that
+\emph{F} eventually produces in its forgery. If the latter condition
+happens to hold true, then the forger has found a short nonzero vector
+in an uncontrolled lattice, in violation of the underlying assumption.
+(This combinatorial game is closely related to the recent ``prefix
+technique'' introduced by Hohenberger and Waters {[}HW09{]}; see Section
+1.4 for discussion.)
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+the messages in \emph{M}, and lets all the other edges implicitly be
+colored blue. The result is a forest of at most To satisfy the
+conflicting constraints of the game, \emph{S} colors red all the edges
+on the root-to-leaf paths of
+
+\begin{quote}
+\emph{Q · k} distinct blue subtrees \emph{\{Bℓ\}}, each growing off of
+some red path by a single blue edge. The simulator chooses one of these
+subtrees \emph{Bℓ}uniformly at random (without regard to its size),
+guessing that the eventual forgery will lie in \emph{Bℓ}. It then
+cultivates a bonsai tree so that all the growth on the path up to and
+throughout \emph{Bℓ}is \emph{undirected} (by embedding its given
+challenge instance as usual), while all the remaining growth in \emph{T
+\textbackslash{} Bℓ}is controlled. This can be achieved by controlling
+one branch at each level leading up to \emph{Bℓ}(namely, the branch
+growing off of the path to \emph{Bℓ}), and none thereafter.
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+2It is worth noting that in {[}Ajt99, AP09{]}, even the simple goal of
+generating a solitary lattice together with a short basis actually
+proceeds in two steps: first start with a sufficient amount of random
+undirected growth, then produce a single controlled offshoot by way of a
+certain linear algebraic technique. Fittingly, this is analogous to the
+traditional bonsai practice of growing a new specimen from a cutting of
+an existing tree, which is generally preferred to growing a new plant
+`from scratch' with seeds.
+\end{quote}
+
+4
+
+\begin{quote}
+\textbf{1.2.2} \textbf{Application 2: Hierarchical Identity-Based
+Encryption}
+
+Bonsai trees also provide a very natural and flexible approach for
+realizing HIBE. For simplicity, consider an authority hierarchy that is
+a \emph{binary tree}, which suffices for forward-secure encryption and
+general HIBE itself {[}CHK03{]}. The master public key of the scheme
+describes a binary bonsai tree, which mirrors the authority hierarchy.
+The root authority starts out by controlling the entire tree, i.e., it
+knows a trapdoor short basis for the lattice at the root. Each authority
+is entitled to control its corresponding branch of the tree. Any entity
+in the hierarchy can delegate control over an offshoot branch to the
+corresponding sub-authority, simply by computing and revealing a short
+basis of the associated child lattice. In this framework, encryption and
+decryption algorithms based on the LWE problem are standard.
+
+For the security proof, the simulator again prepares a bonsai tree so
+that it controls certain branches (which should cover the adversary's
+queries), while allowing the undirected growth of others (corresponding
+to the adversary's target identity). This can be accomplished in a few
+ways, with different advantages and drawbacks in terms of the security
+notion achieved and the tightness of the reduction. One notion is
+security against a \emph{selective-identity} attack, where the adversary
+must declare its target identity before seeing the public key, but may
+adaptively query secret keys afterward. In this model, the simulator can
+cultivate a bonsai tree whose growth toward the (known) target identity
+is undirected, while controlling each branch off of that path; this
+setup makes it easy for the simulator to answer any legal secret-key
+query.
+
+A stronger notion is security against a \emph{fully adaptive} attack
+(``full security''), where the adversary may choose its target identity
+after making its secret-key queries. (See Section 2.2 for a precise
+definition.) There are generic combinatorial techniques for converting
+selective-identity-secure (H)IBE schemes into fully secure ones; we show
+how to apply and optimize these techniques to our HIBE. First, we use
+the approach of Boneh and Boyen {[}BB04a{]} to construct a fully secure
+HIBE scheme in the random oracle model. The basic idea is to hash all
+identities; this way, the target identity can be dynamically embedded as
+the answer to a random oracle query. Secondly, we demonstrate that other
+tools of Boneh and Boyen {[}BB04b{]} can be adapted to our setting to
+yield a fully secure HIBE scheme \emph{without} random oracles. This
+works by hashing identities to branches of a bonsai tree, where a
+probabilistic argument guarantees that any given identity hashes to a
+controlled branch with a certain probability. We can adjust this
+probability in the right way, so that with non-negligible probability,
+all queried identities hash to controlled branches, while the target
+identity hashes to an uncontrolled branch. In our probabilistic
+argument, we employ \emph{admissible hash functions (AHFs)}, as
+introduced by {[}BB04b{]}. However, as we will explain in Section 5.4.4,
+their original AHF definition and proof strategy do not take into
+consideration the statistical dependence of certain crucial events. We
+circumvent this with a different AHF definition and a different proof.
+\end{quote}
+
+Based on the above description, the reader may still wonder whether
+secret-key delegation is actually secure, i.e., whether the real and
+simulated bases are drawn from the same probability distribution. In
+fact, they may not be! For example, under the most straightforward
+method of extending a basis, the child basis actually contains the
+parent basis as a submatrix, so it is clearly insecure to reveal the
+child. We solve this issue with an additional bonsai principle of
+\emph{randomizing control}, using the Gaussian sampling algorithm of
+{[}GPV08{]}. This produces a new basis under a `canonical' distribution,
+which ensures that the real system and simulation coincide. The
+randomization increases the length of the basis by a small factor---
+which accumulates geometrically with each delegation from parent to
+child --- but for reasonable depths, the resulting bases are still short
+enough to be useful when all the parameters are set appropriately. (See
+Section 1.3 for more details.)\\
+For achieving security under chosen-ciphertext attacks (CCA security), a
+transformation due to Boneh, Canetti, Halevi, and Katz {[}BCHK07{]}
+gives a CCA-secure HIBE for depth \emph{d} from any chosen
+plaintext-secure HIBE for depth \emph{d} + 1. Alternatively, we observe
+that the public and secret keys in our HIBE scheme are
+
+5
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Application}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Model}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Public key}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Secret key}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Signature}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Assumption}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Hash-and-sign {[}GPV08{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+RO
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{O}(\emph{n}2)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{O}(\emph{n}2)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{O}(\emph{n})˜
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{O}(\emph{n})-SIS
+\end{minipage} \\
+\midrule()
+\endhead
+Hash-and-sign & Standard & \emph{O}(\emph{kn}2) & \emph{O}(\emph{n}2) &
+\emph{O}(\emph{kn})˜ & \emph{O}(˜\emph{√k · n})-SIS \\
+\bottomrule()
+\end{longtable}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Application}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Model}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Public key}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Secret key}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Ciphertext}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+1\emph{/α} \textbf{for} LWE
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+IBE {[}GPV08{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+RO
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{O}(\emph{n}2)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{O}(\emph{n}2)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{O}(\emph{n})˜
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{O}(\emph{n})˜
+\end{minipage} \\
+\midrule()
+\endhead
+IBE & Standard & \emph{O}(\emph{kn}2) & \emph{O}(\emph{n}2) &
+\emph{O}(\emph{kn})˜ & \emph{O}(˜\emph{√k · n}) \\
+HIBE (depth \emph{d}) & RO & \emph{O}(\emph{d}2\emph{n}2) &
+\emph{O}(\emph{d}5\emph{n}2) & \emph{O}(\emph{d}3\emph{n}) & \emph{√dn
+·}˜\emph{O}(\emph{d√n})\emph{d} \\
+HIBE (depth \emph{d}) & Standard & \emph{O}(\emph{d}3\emph{kn}2) &
+\emph{O}(\emph{d}5\emph{k}2\emph{n}2) & \emph{O}(\emph{d}3\emph{kn}) &
+\emph{√dn ·}˜\emph{O}(\emph{d√kn})\emph{d} \\
+\bottomrule()
+\end{longtable}
+
+Figure 1: Complexity of our bonsai tree applications in comparison with
+prior work; \emph{n} is the main security parameter and \emph{k} is the
+output length of a chameleon hash function (for the signature scheme) or
+collision-resistant hash function (for the IBEs). ``RO'' means random
+oracle model under fully adaptive attack, while``Standard'' means
+standard model under selective-identity attack (standard-model schemes
+with adaptive security are omitted). ``Public key,'' ``secret key,''
+etc. refer to their lengths in bits; for the HIBEs, these quantities are
+the maximum possible over all levels of the hierarchy. The column
+labelled ``1\emph{/α} for LWE''refers to the inverse error rate of the
+underlying LWE problem used in the proofs of security.
+
+\begin{quote}
+of exactly the same `type' as those in the recent CCA-secure
+cryptosystem of {[}Pei09b{]}, so we can simply plug that scheme into our
+bonsai tree/HIBE framework. Interestingly, the two approaches result in
+essentially identical schemes.
+
+\textbf{1.2.3} \textbf{Variations}
+
+This paper focuses almost entirely on bonsai trees that are related, via
+worst- to average-case reductions, to \emph{general} lattices. Probably
+the main drawback is that the resulting public and secret keys are
+rather large. For example, the public key in our signature scheme is
+larger by a factor of \emph{k} (the output length of a chameleon hash
+function) than that of its random-oracle analogue {[}GPV08{]}, which is
+already at least quadratic in the security parameter. Fortunately, the
+principles of bonsai trees may be applied equally well using analogous
+hard problems and tools for \emph{cyclic/ideal lattices} (developed in,
+e.g., {[}Mic02, PR06, LM06, PR07, SSTX09, LPR10{]}), with little to no
+essential changes to the proofs. This approach can `miniaturize' the
+bonsai trees and most of their associated operations by about a linear
+factor in the security parameter. The resulting schemes are still not
+suitable for practice, but their asymptotic behavior is attractive.
+
+\textbf{1.3} \textbf{Complexity and Open Problems}
+
+Here we discuss some additional quantitative details of our schemes, and
+describe some areas for further research.
+
+Several important quantities in our bonsai tree constructions and
+applications depend upon the depth of the tree. The dimension of a
+lattice in the tree grows linearly with its depth, and the size of the
+trapdoor basis grows roughly quadratically with the dimension.
+
+Accordingly, in our HIBE schemes, the dimension of a ciphertext vector
+grows linearly with the depth
+\end{quote}
+
+6
+
+of the identity to which it is encrypted. Moreover, the Euclidean length
+of a user's trapdoor basis increases \emph{geometrically} with its depth
+in the tree (more precisely, with the length of the delegation chain),
+due to the basis randomization that is performed with each delegation.
+To ensure correct decryption, the inverse noise parameter 1\emph{/α} in
+the associated LWE problem, and hence the approximation factor of the
+underlying worst-case lattice problems, must grow with the basis length.
+In particular, a hierarchy of depth \emph{d} corresponds (roughly) to an
+\emph{nd/}2approximation factor for worst-case lattice problems, where
+\emph{n} is the dimension. Because lattice problems are conjectured to
+be hard to approximate to within even subexponential factors, the scheme
+may remain asymptotically secure for depths as large as \emph{d} =
+\emph{nc}, where \emph{c \textless{}} 1.
+
+\begin{quote}
+Our HIBE scheme that enjoys security under a full
+\emph{adaptive-identity} attack requires large keys and has a somewhat
+loose security reduction. In particular, the attack simulation
+partitions an (implicit) bonsai tree into controlled and undirected
+branches. This is done in the hope that all user secret key queries
+correspond to controlled branches (so the simulation can derive the
+corresponding secret key), and that the target identity refers to an
+undirected branch (so the attack can be converted into one on the LWE
+problem). This simulation approach (dubbed `partitioning strategy' in
+{[}Wat09{]}) involves, to a certain extent, guessing the adversary's
+user secret key and challenge queries. The result is a rather loose
+security reduction.
+\end{quote}
+
+In contrast, recent works have achieved tight reductions (and even small
+keys, in some cases) for pairing-based (H)IBEs under various assumptions
+{[}Gen06, GH09, Wat09{]}, and a variant of the GPV IBE (in the random
+oracle model) also has a tight reduction, but their approaches do not
+seem to translate to our setting. The issue, essentially, is that our
+simulator is required to produce a `master trapdoor' for each queried
+identity, which makes it difficult to embed the challenge problem into
+the adversary's view. In prior systems with tight reductions, secret
+keys are less `powerful,' so the simulator can embed a challenge while
+still knowing at least one secret key for every identity (even the
+targeted one).
+
+\begin{quote}
+A final very interesting (and challenging) question is whether bonsai
+trees can be instantiated based on other mathematical foundations, e.g.,
+integer factorization. At a very fundamental level, our lattice-based
+construction seems to rely upon a kind of random self-reducibility that
+the factorization problem is not known to enjoy.
+
+\textbf{1.4} \textbf{Related Techniques and Works}
+
+This paper represents a combination of two concurrent and independent
+works by the first three au-thors {[}CHK09{]} and the fourth author
+{[}Pei09a{]}, which contained some overlapping results and were accepted
+to Eurocrypt 2010 under the condition that they be merged.
+
+The abstract properties of bonsai trees, as hierarchies of trapdoor
+functions, appear to have no known real-ization in conventional
+number-theoretic cryptography. However, our applications use several
+combinatorial techniques that are similar to those from several prior
+works.
+
+The analysis of our signature scheme may be seen as a refinement of the
+recent ``prefix technique'' of Hohenberger and Waters {[}HW09{]} for
+standard-model signatures. Our scheme and its proof appear quite
+different from their main RSA-based construction, but is closely related
+(at least at a combinatorial level) to their construction based on
+bilinear pairings. Interestingly, in both of these constructions the
+scheme itself does not deal with message prefixes at all; they only show
+up in the security proofs. The main difference between our simulation
+strategies is that, in the prefix technique, the simulator in a static
+chosen-message attack sets up the public key by guessing a uniformly
+random prefix of a random queried message, in the hope that the
+adversary's forged message will start with that prefix (but its next bit
+will be different). With this strategy, some of the simulator's
+potential guesses may prevent it from being able to sign all the queried
+messages, thus causing the simulation to fail. (Fortunately, a
+noticeable fraction of the simulator's guesses avoid this outcome, so
+the reduction goes through correctly.) In contrast, our simulator looks
+at \emph{all} the queried
+\end{quote}
+
+7
+
+\begin{quote}
+messages, and sets up the public key so that it always knows how to sign
+all of them (and potentially many others). This is done by constructing
+a forest of subtrees as described in Section 1.2.1.
+
+The structure of our HIBE is also similar, at a combinatorial level, to
+that of prior pairing-based HIBEs, in that the simulator can `control'
+certain edges of an implicit tree by choosing certain random exponents
+itself. However, there are no \emph{trapdoor functions} per se in
+pairing-based constructions; instead, the pairing is used to facilitate
+key agreement between the encrypter and decrypter. Our approach,
+therefore, may be seen as a blending of pairing-based techniques and the
+trapdoor techniques found in {[}Coc01, BGH07, GPV08{]}.
+
+Following the initial dissemination of our results in {[}CHK09,
+Pei09a{]}, several extensions and additional applications have been
+found. R¨uckert {[}R¨uc10{]} modified our signature scheme to make it
+\emph{strongly} unforgeable, and constructed hierarchical identity-based
+signatures. Agrawal and Boyen {[}AB09{]} constructed a standard-model
+IBE based on LWE, which is secure under a selective-identity attack;
+their construction has structure similar to ours, but it does not
+address delegation, nor does it give an efficient signature scheme.
+Agrawal, Boneh, and Boyen {[}ABB10{]} improved the efficiency of our
+(H)IBE schemes (under a quantitatively stronger LWE assumption), and
+Boyen {[}Boy10{]} used similar techniques to obtain shorter signatures
+(under a stronger SIS assumption).
+
+\textbf{2} \textbf{Preliminaries}
+
+\textbf{2.1} \textbf{Notation}
+
+For a positive integer \emph{k}, {[}\emph{k}{]} denotes the set
+\emph{\{}1\emph{, . . . , k\}}; {[}0{]} is the empty set. We denote the
+set of integers modulo an integer \emph{q ≥}1 by Z\emph{q}. For a string
+\emph{x} over some alphabet, \emph{\textbar x\textbar{}} denotes the
+length of \emph{x}. For an alphabet \emph{X} and nonnegative integer
+\emph{n}, define \emph{X≤n}=\emph{n i}=0\emph{Xi}, and
+\emph{X\textless n} similarly. We say that a function in \emph{n} is
+\emph{negligible}, written negl(\emph{n}), if it vanishes faster than
+the inverse of any polynomial in \emph{n}. We say that a probability
+\emph{p}(\emph{n}) is \emph{overwhelming} if 1 \emph{−p}(\emph{n}) is
+negligible.
+\end{quote}
+
+The \emph{statistical distance} between two distributions \emph{X} and
+\emph{Y} (or two random variables having those Column vectors are named
+by lower-case bold letters (e.g., \textbf{x}) and matrices by upper-case
+bold letters distributions), viewed as functions over a countable domain
+\emph{D}, is defined as max\emph{A⊆D\textbar X}(\emph{A})
+\emph{−Y}(\emph{A})\emph{\textbar{}}. (e.g., \textbf{X}). We identify a
+matrix \textbf{X} with the ordered set \emph{\{}\textbf{x}\emph{j\}} of
+its column vectors, and let \textbf{X}\emph{∥}\textbf{X}\emph{′}denote
+the (ordered) concatenation of the sets \textbf{X}\emph{,}
+\textbf{X}\emph{′}. For a set \textbf{X} of real vectors, we define
+\emph{∥}\textbf{X}\emph{∥}= max\emph{j∥}\textbf{x}\emph{j∥},
+where\emph{∥·∥}denotes the Euclidean norm.
+
+denote its \emph{Gram-Schmidt orthogonalization}, defined iteratively as
+follows: For any (ordered) set \textbf{S} = \emph{\{}\textbf{s}1\emph{,
+. . . ,} \textbf{s}\emph{k\} ⊂}R\emph{m}of linearly independent vectors,
+let \textbf{s}1 = \textbf{s}1, and for each \emph{i} = 2\emph{, . . . ,
+k}, \textbf{S} = \emph{\{} \textbf{s}1\emph{, . . . ,}
+\textbf{s}\emph{k\}}
+
+\begin{quote}
+the vector \textbf{s}\emph{i} is the component of \textbf{s}\emph{i}
+orthogonal to span(\textbf{s}1\emph{, . . . ,} \textbf{s}\emph{i−}1). In
+matrix notation, there is a unique QR decomposition \textbf{S} =
+\textbf{QR} where the columns of \textbf{Q} \emph{∈}R\emph{m×k}are
+orthonormal (i.e., \textbf{Q}\emph{t}\textbf{Q} = \textbf{I}
+\emph{∈}R\emph{k×k}) and \textbf{R} \emph{∈}R\emph{k×k}is
+right-triangular with positive diagonal entries; the Gram-Schmidt
+orthogonalization is \textbf{S} = \textbf{Q} \emph{·}
+diag(\emph{r}1\emph{,}1\emph{, . . . , rk,k}). Clearly,
+\emph{∥}\textbf{s}\emph{i∥≤∥}\textbf{s}\emph{i∥}for all \emph{i}.
+
+\textbf{2.2} \textbf{Cryptographic Definitions}
+
+The main cryptographic security parameter through the paper is \emph{n},
+and all algorithms (including the adversary) are implicitly given the
+security parameter \emph{n} in unary.
+
+For a (possibly interactive) algorithm \emph{A}, we define its
+\emph{distinguishing advantage} between two distributions \emph{X} and
+\emph{Y} to be \emph{\textbar{}}Pr{[}\emph{A}(\emph{X}) = 1{]}
+\emph{−}Pr{[}\emph{A}(\emph{Y}) = 1{]}\emph{\textbar{}}. We use the
+general notation \textbf{Adv}atk SCH(\emph{A}) to describe the advantage
+of an adversary \emph{A} mounting an atk attack on a cryptographic
+scheme SCH, where the definition of advantage is specified as part of
+the attack. Similarly, we write \textbf{Adv}PROB(\emph{A}) for the
+advantage of an
+\end{quote}
+
+8
+
+adversary \emph{A} against a computational problem PROB (where again the
+meaning of advantage is part of the problem definition).
+
+\begin{quote}
+\textbf{Chameleon hash functions.} Chameleon hashing was introduced by
+Krawczyk and Rabin {[}KR00{]}. For our purposes, we need a slight
+generalization in the spirit of ``preimage sampleable'' (trapdoor)
+functions {[}GPV08{]}.
+
+A family of chameleon hash functions is a collection \emph{H} =
+\emph{\{hi} : \emph{M × R →Y\}} of functions \emph{hi} mapping a message
+\emph{m ∈M} and randomness \emph{r ∈R} to a range \emph{Y}. The
+randomness space \emph{R} is endowed with some efficiently sampleable
+distribution (which may not be uniform). A function \emph{hi} is
+efficiently computable given its description, and the family has the
+property that for any \emph{m ∈M}, for \emph{hi ←H} and \emph{r ←R}, the
+pair (\emph{hi, hi}(\emph{m, r})) is uniform over (\emph{H, Y}) (up to
+negligible statistical distance). The chameleon property is that a
+random \emph{hi ←H} may be generated together with a trapdoor \emph{t},
+such that for any output \emph{y ∈Y} and message \emph{m ∈M}, it is
+possible (using \emph{t}) to efficiently sample \emph{r ∈R} (under the
+\emph{R}'s distribution) conditioned on the requirement that
+\emph{hi}(\emph{m, r}) = \emph{y}. Finally, the family has the standard
+collision-resistance property, i.e., given \emph{hi ←H} it should be
+hard for an adversary to find distinct (\emph{m, r})\emph{,} (\emph{m′,
+r′}) \emph{∈M × R} such that \emph{hi}(\emph{m, r}) =
+\emph{hi}(\emph{m′, r′}).
+
+In Section 4 we realize chameleon hash functions (in the above sense)
+using lattices, via bonsai techniques.
+
+\textbf{Signatures.} A signature scheme SIG for a message space \emph{M}
+is a tuple of PPT algorithms as follows:
+
+\emph{•} Gen outputs a verification key \emph{vk} and a signing key
+\emph{sk}.
+
+\emph{•} Sign(\emph{sk, µ}), given a signing key \emph{sk} and a message
+\emph{µ ∈M}, outputs a signature \emph{σ ∈\{}0\emph{,} 1\emph{\}∗}.
+
+\emph{•} Ver(\emph{vk, µ, σ}), given a verification key \emph{vk}, a
+message \emph{µ}, and a signature \emph{σ}, either accepts or rejects.
+\end{quote}
+
+Ver(\emph{vk, µ, σ}) should accept with overwhelming probability (over
+all the randomness in the experiment). The correctness requirement is:
+for any \emph{µ ∈M}, generate (\emph{vk, sk}) \emph{←}Gen and \emph{σ
+←}Sign(\emph{sk, µ}). Then
+
+\begin{quote}
+We recall two standard notions of security for signatures. The first,
+existential unforgeability under \emph{static} chosen-message attack, or
+eu-scma security, is defined as follows: first, the forger \emph{F}
+outputs a list of query messages \emph{µ}1\emph{, . . . , µQ} for some
+\emph{Q}. Next, (\emph{vk, sk}) \emph{←}Gen and \emph{σi
+←}Sign(\emph{sk, µi}) are generated for each \emph{i ∈}{[}\emph{Q}{]},
+then \emph{vk} and \emph{σi} (for each \emph{i ∈}{[}\emph{Q}{]}) are
+given to \emph{F}. Finally, \emph{F} outputs an attempted forgery
+(\emph{µ∗, σ∗}). The advantage \emph{A}eu-scma taken over all the
+randomness of the experiment. (\emph{F}) of \emph{F} is the probability
+that Ver(\emph{vk, µ∗, σ∗}) accepts and \emph{µ∗̸}= \emph{µi} for all
+\emph{i ∈}{[}\emph{Q}{]},
+\end{quote}
+
+Another notion, called existential unforgeability under \emph{adaptive}
+chosen-message attack, or eu-acma security, is defined similarly, except
+that \emph{F} is first given \emph{vk} and may adaptively choose the
+messages \emph{µi}. Using a family of chameleon hash functions (as
+defined above), there is a generic construction of eu-acma-secure
+signatures from eu-scma-secure signatures; see, e.g., {[}KR00{]}.
+Furthermore, the construction results in an \emph{online/offline}
+signature scheme; see {[}ST01{]}. The basic idea behind the construction
+is that the signer chameleon hashes the message to be signed, then signs
+the hashed message using the eu-scma-secure scheme (and includes the
+randomness used in the chameleon hash with the final signature).
+
+\begin{quote}
+\textbf{Key-Encapsulation Mechanism (KEM).} We present all of our
+encryption schemes in the framework of \emph{key encapsulation}, which
+simplifies the definitions and leads to more modular constructions. A
+KEM for keys of length \emph{ℓ}= \emph{ℓ}(\emph{n}) is a triple of PPT
+algorithms as follows:
+
+\emph{•} Gen outputs a public key \emph{pk} and a secret key \emph{sk}.
+\end{quote}
+
+9
+
+\begin{quote}
+\emph{•} Encaps(\emph{pk}) outputs a key \emph{κ ∈\{}0\emph{,}
+1\emph{\}ℓ}and its encapsulation as \emph{σ ∈\{}0\emph{,} 1\emph{\}∗}.
+
+\emph{•} Decaps(\emph{sk, σ}) outputs a key \emph{κ}.
+\end{quote}
+
+The correctness requirement is: for (\emph{pk, sk}) \emph{←}Gen and
+(\emph{κ, σ}) \emph{←}Encaps(\emph{pk}), Decaps(\emph{sk, σ}) should
+output\emph{κ} with all but negl(\emph{n}) probability.
+
+\begin{quote}
+In this work we are mainly concerned with indistinguishability under
+chosen-plaintext attack, or ind-cpa security. The attack is defined as
+follows: generate (\emph{pk, sk}) \emph{←}Gen, (\emph{κ∗, σ∗})
+\emph{←}Encaps(\emph{pk}), and \emph{κ′←\{}0\emph{,} 1\emph{\}ℓ}(chosen
+uniformly and independently of the other values). The advantage
+\textbf{Adv}ind-cpa KEM(\emph{A}) of an adversary \emph{A} is its
+distinguishing advantage between (\emph{pk, σ∗, κ∗}) and (\emph{pk, σ∗,
+κ′}).
+
+\textbf{Hierarchical Identity-Based Encryption (HIBE).} In HIBE,
+identities are strings (tuples) over some alphabet \emph{ID}. Hence
+hierarchical identities of maximal depth \emph{d ∈}N are of the form
+\emph{ID≤d}=\emph{d} HIBE for keys of bit length \emph{ℓ}=
+\emph{ℓ}(\emph{n}) is a tuple of PPT algorithms as follows:
+\emph{i}=0\emph{IDi}. A
+
+\emph{•} Setup(1\emph{d}) outputs a master public key \emph{mpk} and
+root-level secret key \emph{skε}. Here \emph{d} is the maximal depth of
+the hierarchy, specified in unary. (In the following, \emph{d} and
+\emph{mpk} are implicit parameters to every algorithm, and every user
+secret key \emph{skid} is assumed to include \emph{id} itself.)
+
+\emph{•} Extract(\emph{skid, id′}), given a user secret key for identity
+\emph{id ∈ID\textless d}=\emph{d−}1 \emph{i}=0\emph{IDi} that is a
+proper prefix of \emph{id′∈ID≤d}, outputs a user secret key \emph{skid′}
+for identity \emph{id′}.
+
+\emph{•} Encaps(\emph{id}) outputs a key \emph{κ ∈\{}0\emph{,}
+1\emph{\}ℓ}and its encapsulation as \emph{σ ∈\{}0\emph{,} 1\emph{\}∗},
+to identity \emph{id}.
+
+\emph{•} Decaps(\emph{skid, σ}) outputs a key \emph{κ}.
+\end{quote}
+
+The correctness requirement is: for any identity \emph{id ∈ID≤d}, first
+generate (\emph{mpk, skε}) \emph{←}Setup(1\emph{d}), then
+
+Then Decaps(\emph{skid, σ}) should output \emph{κ} with overwhelming
+probability (over all the randomness in the generate \emph{skid} via any
+legal sequence of calls to Extract starting from \emph{skε}, then
+generate (\emph{κ, σ}) \emph{←}Encaps(\emph{id}).
+
+\begin{quote}
+experiment).
+
+There are several attack notions for HIBE. One simple notion in
+indistinguishability under a chosen-plaintext, \emph{selective-identity}
+attack, or sid-ind-cpa security. The attack is defined as follows:
+first, the adversary \emph{A} is given 1\emph{d}and names a target
+identity \emph{id∗∈ID≤d}. Next, (\emph{mpk, skε})
+\emph{←}Setup(1\emph{d}), (\emph{κ, σ∗}) \emph{←}Encaps(\emph{id∗}), and
+\emph{κ′←\{}0\emph{,} 1\emph{\}ℓ}are generated. Then \emph{A} is given
+(\emph{mpk, κ∗, σ∗}), where \emph{κ∗}is either \emph{κ} or\emph{κ′}.
+Finally, \emph{A} may make extraction queries, i.e., it is given oracle
+access to Extract(\emph{skε, ·}), subject to the constraint that it may
+not query any identity that is a prefix of (or equal to) the target
+identity \emph{id∗}. The\emph{κ∗}= \emph{κ′}. HIBE (\emph{A}) is its
+distinguishing advantage between the two cases \emph{κ∗}= \emph{κ} and
+adversary's advantage \textbf{Adv}sid-ind-cpa
+
+A related notion is security against an \emph{adaptive-identity} attack,
+known as aid-ind-cpa or ``full'' security. Here the adversary is first
+given \emph{mpk} and has oracle access to Extract(\emph{skε, ·}) both
+before and after choosing its target identity \emph{id∗}; as above, the
+adversary may never query any identity that is a prefix of the
+\emph{id∗}it eventually names. Finally, both of the above notions may be
+extended to \emph{chosen-ciphertext} attacks in the natural way; since
+our focus is on chosen-plaintext security, we omit precise definitions.
+
+\textbf{2.3} \textbf{Lattices}
+\end{quote}
+
+In this work, we use \emph{m}-dimensional \emph{full-rank integer}
+lattices, which are discrete additive subgroups of Z\emph{m} having
+finite index, i.e., the quotient group Z\emph{m/}Λ is finite. A lattice
+Λ \emph{⊆}Z\emph{m}can equivalently be defined as
+
+10
+
+the set of all integer linear combinations of \emph{m} linearly
+independent \emph{basis} vectors \textbf{B} =
+\emph{\{}\textbf{b}1\emph{, . . . ,} \textbf{b}\emph{m\} ⊂}Z\emph{m}:
+
+\begin{quote}
+Λ = \emph{L}(\textbf{B}) = \textbf{Bc} =
+\emph{i∈}{[}\emph{m}{]}\emph{ci}\textbf{b}\emph{i} : \textbf{c}
+\emph{∈}Z\emph{m .}
+\end{quote}
+
+When \emph{m ≥}2, there are infinitely many bases that generate the same
+lattice.
+
+\emph{form} (HNF). The only facts about the HNF that we require are that
+it is unique, and that it may be computed Every lattice Λ
+\emph{⊆}Z\emph{m}has a \emph{unique} canonical basis \textbf{H} = HNF(Λ)
+\emph{∈}Z\emph{m×m}called its \emph{Hermite normal}
+
+\begin{quote}
+efficiently given an arbitrary basis \textbf{B} of the lattice (see
+{[}MW01{]} and references therein). We write HNF(\textbf{B}) to denote
+the Hermite normal form of the lattice generated by basis \textbf{B}.\\
+The following lemma will be useful in our constructions.
+
+\textbf{Lemma 2.1} ({[}MG02, Lemma 7.1, page 129{]})\textbf{.}
+\emph{There is a deterministic poly-time algorithm}
+ToBasis(\textbf{S}\emph{,} \textbf{B}) \emph{that, given a full-rank set
+(not necessarily a basis)} \textbf{S} \emph{of lattice vectors in} Λ =
+\emph{L}(\textbf{B})\emph{, outputs a basis} \textbf{T} \emph{of}
+Λ\emph{such that ∥}\textbf{t}\emph{i∥≤∥}\textbf{s}\emph{i∥for all i.}
+
+\textbf{2.3.1} \textbf{Hard Lattices and Problems}
+\end{quote}
+
+We will work with an certain family of integer lattices whose importance
+in cryptography was first demon-strated by Ajtai {[}Ajt96{]}. Let
+\emph{n ≥}1 and modulus \emph{q ≥}2 be integers; the dimension \emph{n}
+is the main cryptographic security parameter throughout this work, and
+all other parameters are implicitly functions of \emph{n}. An
+\emph{m}-dimensional lattice from the family is specified relative to
+the additive group Z\emph{n q}by a \emph{parity check} (more accurately,
+``arity check'') matrix \textbf{A} \emph{∈}Z\emph{n×m} . The associated
+lattice is defined as
+
+\begin{quote}
+Λ\emph{⊥}(\textbf{A}) = \textbf{x} \emph{∈}Z\emph{m}: \textbf{Ax} =
+\emph{j∈}{[}\emph{m}{]}\emph{xj ·} \textbf{a}\emph{j} = \textbf{0}
+\emph{∈}Z\emph{n} \emph{⊆}Z\emph{m.}
+
+One may check that Λ\emph{⊥}(\textbf{A}) contains \emph{q}Z\emph{m}(and
+in particular, the identity \textbf{0} \emph{∈}Z\emph{m}) and is closed
+under addition, hence it is a full-rank subgroup of (and lattice in)
+Z\emph{m}. For any \textbf{y} in the subgroup of Z\emph{n q}generated by
+the columns of \textbf{A}, we also define the coset
+\end{quote}
+
+Λ\emph{⊥}\textbf{y}(\textbf{A}) = \emph{\{}\textbf{x} \emph{∈}Z\emph{m}
+: \textbf{Ax} = \textbf{y}\emph{\}} = Λ\emph{⊥}(\textbf{A}) +
+¯\textbf{x}\emph{,}
+
+\begin{quote}
+where ¯\textbf{x} \emph{∈}Z\emph{m}is an arbitrary solution to
+\textbf{A}¯\textbf{x} = \textbf{y}.
+\end{quote}
+
+(Moreover, the subgroup generated by \textbf{A} can be computed
+efficiently.) Therefore, throughout the paper we columns of a uniformly
+random \textbf{A} \emph{∈}Z\emph{n×m} It is known (see, e.g., {[}Reg05,
+Claim 5.3{]}) that for any fixed constant \emph{C \textgreater{}} 1 and
+any \emph{m ≥Cn} lg \emph{q}, the generate all of Z\emph{n q}, except
+with 2\emph{−}Ω(\emph{n}) = negl(\emph{n}) probability.
+
+\begin{quote}
+sometimes implicitly assume that such a uniform \textbf{A} generates
+Z\emph{n q}.
+
+We recall the \emph{short integer solution} (SIS) and \emph{learning
+with errors} (LWE) problems, which may be seen as average-case problems
+related to the family of lattices described above.
+
+\textbf{Definition 2.2} (Short Integer Solution)\textbf{.} An instance
+of the SIS\emph{q,β} problem (in the \emph{ℓ}2 norm) is a uniformly
+random matrix \textbf{A} \emph{∈}Z\emph{n×m} for any desired \emph{m} =
+poly(\emph{n}). The goal is to find a \emph{nonzero} integer vector
+\textbf{v} \emph{∈}Z\emph{m} such that \emph{∥}\textbf{v}\emph{∥}2
+\emph{≤β} and \textbf{Av} = \textbf{0} \emph{∈}Z\emph{n q}, i.e.,
+\textbf{v} \emph{∈}Λ\emph{⊥}(\textbf{A}).
+\end{quote}
+
+denotes the vector obtained by adding (modulo \emph{q}) independent
+samples drawn from \emph{χ} to each entry of \textbf{v} Let \emph{χ} be
+some distribution over Z\emph{q}. For a vector \textbf{v}
+\emph{∈}Z\emph{ℓq}of any dimension \emph{ℓ≥}1, Noisy\emph{χ}(\textbf{v})
+\emph{∈}Z\emph{ℓ}
+
+(one sample per entry). For a vector \textbf{s} \emph{∈}Z\emph{n q},
+\emph{A}\textbf{s}\emph{,χ}is the distribution over Z\emph{n q×}
+Z\emph{q}obtained by choosing a
+
+11
+
+\begin{quote}
+vector \textbf{a} \emph{∈}Z\emph{n q}uniformly at random and outputting
+(\textbf{a}\emph{,} Noisy\emph{χ}(\emph{⟨}\textbf{a}\emph{,}
+\textbf{s}\emph{⟩})). In this work (and most others relating to LWE),
+\emph{χ} is always a discretized normal error distribution parameterized
+by some \emph{α ∈}(0\emph{,} 1), which is obtained by drawing \emph{x
+∈}R from the Gaussian distribution of width \emph{α} (i.e., \emph{x} is
+chosen with probability proportional to exp(\emph{−πx}2\emph{/α}2)) and
+outputting \emph{⌊q · x⌉}mod \emph{q}.
+\end{quote}
+
+\textbf{Definition 2.3} (Learning with Errors)\textbf{.} The
+LWE\emph{q,χ} problem is to distinguish, given oracle access to any
+
+desired \emph{m} = poly(\emph{n}) samples, between the distribution
+\emph{A}\textbf{s}\emph{,χ} (for uniformly random and secret \textbf{s}
+\emph{∈}Z\emph{n q}) and
+
+\begin{quote}
+the uniform distribution over Z\emph{n q×} Z\emph{q}.
+
+We write \textbf{Adv}SIS\emph{q,β}(\emph{A}) and
+\textbf{Adv}LWE\emph{q,χ}(\emph{A}) to denote the success probability
+and distinguishing advan-tage of an algorithm \emph{A} for the SIS and
+LWE problems, respectively. For appropriate parameters, solving SIS and
+LWE (on the average, with non-negligible advantage) is
+
+known to be as hard as approximating certain lattice problems, such as
+the (decision) shortest vector problem, in the worst case. Specifically,
+for \emph{q ≥β · ω}(\emph{√n} log \emph{n}), solving SIS\emph{q,β}
+yields approximation factors of \emph{O}(\emph{β · √n}) {[}MR04,
+GPV08{]}. For \emph{q ≥}(1\emph{/α}) \emph{· ω}(\emph{√n} log \emph{n}),
+solving LWE\emph{q,χ} yields approximation factors of
+\emph{O}(\emph{n/α}) (in some cases, via a quantum reduction); see
+{[}Reg05, Pei09b{]} for precise statements.
+
+\textbf{2.3.2} \textbf{Gaussians over Lattices}
+\end{quote}
+
+We briefly recall Gaussian distributions over lattices, specialized to
+the family described above; for more
+
+details see {[}MR04, GPV08{]}. For any \emph{s \textgreater{}} 0 and
+dimension \emph{m ≥}1, the Gaussian function \emph{ρs} :
+R\emph{m→}(0\emph{,} 1{]} is defined as \emph{ρs}(\textbf{x}) =
+exp(\emph{−π∥}\textbf{x}\emph{∥}2\emph{/s}2). For any coset
+Λ\emph{⊥}\textbf{y}(\textbf{A}), the \emph{discrete Gaussian
+distribution D}Λ\emph{⊥}\textbf{y}(\textbf{A})\emph{,s}
+
+\begin{quote}
+(centered at zero) over the coset assigns probability proportional to
+\emph{ρs}(\textbf{x}) to each \textbf{x} \emph{∈}Λ\emph{⊥}zero
+elsewhere. \textbf{y}(\textbf{A}), and probability
+
+We summarize several facts from the literature about discrete Gaussians
+over lattices, again specialized to
+
+our family of interest.
+\end{quote}
+
+\textbf{Lemma 2.4.} \emph{Let} \textbf{S} \emph{be any basis of}
+Λ\emph{⊥}(\textbf{A}) \emph{for some} \textbf{A} \emph{∈}Z\emph{n×m
+whose columns generate} Z\emph{n q, let} \textbf{y} \emph{∈}Z\emph{n
+qbe}
+
+\begin{quote}
+\emph{arbitrary, and let s ≥∥}\textbf{S}\emph{∥· ω}(\emph{√}log
+\emph{n})\emph{.}
+
+\emph{1. {[}MR04, Lemma 4.4{]}:}
+Pr\textbf{x}\emph{←D}Λ\emph{⊥}\textbf{y}(\textbf{A})\emph{,s}{[}\emph{∥}\textbf{x}\emph{∥\textgreater{}
+s · √m}{]} \emph{≤}negl(\emph{n})\emph{.}
+
+\emph{2. {[}PR06, Lemma 2.11{]}:}
+Pr\textbf{x}\emph{←D}Λ\emph{⊥}(\textbf{A})\emph{,s}{[}\textbf{x} =
+\textbf{0}{]} \emph{≤}negl(\emph{n})\emph{.}
+
+\emph{3. {[}Reg05, Corollary 3.16{]}: a set of O}(\emph{m}2)
+\emph{independent samples from D}Λ\emph{⊥}(\textbf{A})\emph{,s contains
+a set of m}
+
+\emph{linearly independent vectors, except with} negl(\emph{n})
+\emph{probability.}
+
+\emph{4. {[}GPV08, Theorem 3.1{]}: For} \textbf{x} \emph{←D}Z\emph{m,s,
+the marginal distribution of} \textbf{y} = \textbf{Ax} \emph{∈}Z\emph{n
+qis uniform (up to}
+
+negl(\emph{n}) \emph{statistical distance), and the conditional
+distribution of} \textbf{x} \emph{given} \textbf{y} \emph{is
+D}Λ\emph{⊥}\textbf{y}(\textbf{A})\emph{,s.}
+
+\emph{5. {[}GPV08, Theorem 4.1{]}: there is a PPT algorithm}
+SampleD(\textbf{S}\emph{,} \textbf{A}\emph{,} \textbf{y}\emph{, s})
+\emph{that generates a sample from}
+
+\emph{D}Λ\emph{⊥}\textbf{y}(\textbf{A})\emph{,s (up to} negl(\emph{n})
+\emph{statistical distance).}
+
+For Item 5 above, a recent work of Peikert {[}Pei10{]} gives an
+alternative SampleD algorithm that is more efficient and fully
+parallelizable; it works for any \emph{s ≥σ}1(\textbf{S}) \emph{·
+ω}(\emph{√}log \emph{n}), where \emph{σ}1(\textbf{S}) is the largest
+singular value of \textbf{S} (which is never smaller than \emph{∥}for
+details). \textbf{S}\emph{∥}, but is also not much larger in most
+important cases; see {[}Pei10{]}
+\end{quote}
+
+12
+
+\begin{quote}
+\textbf{3} \textbf{Principles of Bonsai Trees}
+
+In this section we lay out the framework and main techniques for the
+cultivation of bonsai trees. There are four basic principles: undirected
+growth, controlled growth, extending control over arbitrary new growth,
+and randomizing control.
+
+\textbf{3.1} \textbf{Undirected Growth}
+\end{quote}
+
+Undirected growth is useful primarily for allowing a simulator to embed
+an underlying challenge problem (i.e., SIS or LWE) into a tree. This is
+done simply by drawing fresh uniformly random and independent samples
+\textbf{a}\emph{i ∈}Z\emph{n} matrix \textbf{A}. \emph{q}from the
+problem distribution, and grouping them into (or appending them onto) a
+parity-check
+
+\begin{quote}
+More formally, let \textbf{A} \emph{∈}Z\emph{n×m} be arbitrary for some
+\emph{m ≥}0, and let \textbf{A}\emph{′}= \textbf{A}\emph{∥}¯\textbf{A}
+\emph{∈}Z\emph{n×m′}for some \emph{m′\textgreater{} m} be an arbitrary
+extension of \textbf{A}. Then it is easy to see that
+Λ\emph{⊥}(\textbf{A}\emph{′}) \emph{⊆}Z\emph{m′}is a
+\emph{higher-dimensional superlattice} of Λ\emph{⊥}(\textbf{A})
+\emph{⊆}Z\emph{m}, when the latter is lifted to Z\emph{m′}.
+Specifically, for any \textbf{v} \emph{∈}Λ\emph{⊥}(\textbf{A}), the
+vector \textbf{v}\emph{′}= \textbf{v}\emph{∥}\textbf{0}
+\emph{∈}Z\emph{m′}is in Λ\emph{⊥}(\textbf{A}\emph{′}) because
+\textbf{A}\emph{′}\textbf{v}\emph{′}= \textbf{Av} = \textbf{0}
+\emph{∈}Z\emph{n} In addition, the columns of \textbf{A}\emph{′}may be
+ordered arbitrarily (e.g., the columns of¯\\
+\emph{q}. \textbf{A} may be both appended and prepended to \textbf{A}),
+which simply results in the entries of the vectors in
+Λ\emph{⊥}(\textbf{A}\emph{′}) being permuted in the corresponding
+manner. That is,\\
+Λ\emph{⊥}(\textbf{A}\emph{′·} \textbf{P}) = \textbf{P} \emph{·}
+Λ\emph{⊥}(\textbf{A}\emph{′})\\
+for any permutation matrix \textbf{P} \emph{∈\{}0\emph{,}
+1\emph{\}m′×m′}, because (\textbf{A}\emph{′}\textbf{P})\textbf{x} =
+\textbf{A}\emph{′}(\textbf{Px}) \emph{∈}Z\emph{n q}for all \textbf{x} =
+Z\emph{m′}.
+
+\textbf{3.2} \textbf{Controlled Growth}
+\end{quote}
+
+We say that an arborist \emph{controls} a lattice if it knows a
+relatively good (i.e., short) basis for the lattice. The following lemma
+says that a random lattice from our family of interest can be generated
+under control.3
+
+\begin{quote}
+\textbf{Proposition 3.1} ({[}AP09{]})\textbf{.} \emph{There is a fixed
+constant C \textgreater{}} 1 \emph{and a probabilistic polynomial-time
+algorithm} GenBasis(1\emph{n,} 1\emph{m, q}) \emph{that, for}
+poly(\emph{n})\emph{-bounded m ≥Cn} lg \emph{q, outputs} \textbf{A}
+\emph{∈}Z\emph{n×m and} \textbf{S} \emph{∈}Z\emph{m×msuch that:} \emph{•
+the distribution of} \textbf{A} \emph{is within} negl(\emph{n})
+\emph{statistical distance of uniform,}
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{3.3}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{•} \textbf{S} \emph{is a basis of} Λ\emph{⊥}(\textbf{A})\emph{,
+and}\\
+\emph{• ∥}\textbf{S}\emph{∥≤L} = \emph{O}(\emph{√n} log
+\emph{q})\emph{.}
+
+\textbf{Extending Control}
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Here we describe how an arborist may extend its control of a lattice to
+an arbitrary higher-dimensional extension, without any loss of quality
+in the resulting basis.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Lemma 3.2.} \emph{There is a deterministic polynomial-time
+algorithm} ExtBasis \emph{with the following properties: given an
+arbitrary} \textbf{A} \emph{∈}Z\emph{n×m of}
+Λ\emph{⊥}(\textbf{A})\emph{, and an arbitrary}¯\textbf{A}
+\emph{∈}Z\emph{n×} ¯\emph{whose columns generate the entire group}
+Z\emph{n m ,} ExtBasis(\textbf{S}\emph{,} \textbf{A}\emph{′}=
+\textbf{A}\emph{∥}¯\textbf{A}) \emph{outputs a basis}
+\textbf{S}\emph{′of} Λ\emph{⊥}(\textbf{A}\emph{′}) \emph{⊆}Z\emph{m}+
+¯\emph{q, an arbitrary basis} \textbf{S} \emph{∈}Z\emph{m×m m}
+\end{minipage} \\
+\midrule()
+\endhead
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+3An earlier version of this paper {[}Pei09a{]} used a core lemma from
+{[}AP09{]} to directly extend a given random parity-check matrix
+\textbf{A} (\emph{without} known good basis) into a random matrix
+\textbf{A}\emph{′}= \textbf{A}\emph{∥}¯improve our applications' key
+sizes by a small constant factor, it also makes the applications more
+cumbersome to describe, so we \textbf{A} \emph{with} known good basis.
+While using that method can
+\end{quote}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+opt to use the above proposition instead.
+\end{quote}
+
+13
+
+\emph{such that ∥if columns of}¯\textbf{S}\emph{′∥}= \emph{∥}\textbf{A}
+\emph{are both appended and prepended to} \textbf{A}\emph{).}
+\textbf{S}\emph{∥. Moreover, the same holds even for any given
+permutation of the columns of} \textbf{A}\emph{′(e.g.,}
+
+\begin{quote}
+\emph{Proof.} Let \emph{m′}= \emph{m} + ¯\emph{m}. The
+ExtBasis(\textbf{S}\emph{,} \textbf{A}\emph{′}) algorithm computes and
+outputs an \textbf{S}\emph{′}of the form
+
+\textbf{S} \textbf{W}\\
+\textbf{S}\emph{′}= \textbf{0} \textbf{I} \emph{∈}Z\emph{m′×m′,}
+\end{quote}
+
+\textbf{AW} = \emph{−}¯\\
+where \textbf{I} \emph{∈}Z¯
+
+efficiently using, e.g., Gaussian elimination. \textbf{A}
+\emph{∈}Z\emph{n×} ¯\emph{m×} ¯\emph{m} is the identity matrix, and
+\textbf{W} \emph{∈}Z\emph{m×} ¯\emph{m} . Note that \textbf{W} exists by
+the hypothesis that \textbf{A} generates Z\emph{n m} is an arbitrary
+(not necessarily short) solution to \emph{q}, and it may be computed
+
+\begin{quote}
+We now analyze \textbf{S}\emph{′}. First,
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\multicolumn{5}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{1.0000} + 8\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{A}\emph{′}\textbf{S}\emph{′}= \textbf{AS}\emph{∥}(\textbf{AW} +
+¯\textbf{A}) = \textbf{0} \emph{∈}Z\emph{n×m′}
+
+by assumption on \textbf{S} and by construction of \textbf{W}, so
+\textbf{S}\emph{′⊂}Λ\emph{⊥}(\textbf{A}\emph{′}). Moreover,
+\textbf{S}\emph{′}is in fact a \emph{basis} of
+Λ\emph{⊥}(\textbf{A}\emph{′}):
+
+\begin{quote}
+let \textbf{v}\emph{′}= \textbf{v}\emph{∥}¯\textbf{v}
+\emph{∈}Λ\emph{⊥}(\textbf{A}\emph{′}) be arbitrary, where \textbf{v}
+\emph{∈}Z\emph{m}and ¯\textbf{v} \emph{∈}Z¯\emph{m}. Then
+\end{quote}
+
+\textbf{0} = \textbf{A}\emph{′}\textbf{v}\emph{′}= \textbf{Av} +
+¯\textbf{A}¯\textbf{v} = \textbf{Av} \emph{−}(\textbf{AW})¯\textbf{v} =
+\textbf{A}(\textbf{v} \emph{−}\textbf{W}¯\textbf{v}) \emph{∈}Z\emph{n
+q.}
+
+\begin{quote}
+Thus \textbf{v} \emph{−}\textbf{W}¯
+
+let \textbf{z}\emph{′}= \textbf{z}\emph{∥}¯\textbf{v} \emph{∈}Z\emph{m}+
+¯ \textbf{v} \emph{∈}Λ\emph{⊥}(\textbf{A}), so by assumption on
+\textbf{S} there exists some \textbf{z} \emph{∈}Z\emph{m}such that
+\textbf{Sz} = \textbf{v} \emph{−}\textbf{W}¯\emph{m}. By construction,
+we have \textbf{v}. Now
+\end{quote}
+
+\textbf{S}\emph{′}\textbf{z}\emph{′}= (\textbf{Sz} +
+\textbf{W}¯\textbf{v})\emph{∥}¯\textbf{v} =
+\textbf{v}\emph{∥}¯\textbf{v} = \textbf{v}\emph{′.}
+
+\begin{quote}
+Because \textbf{v}\emph{′∈}Λ\emph{⊥}(\textbf{A}\emph{′}) was arbitrary,
+\textbf{S}\emph{′}is therefore a basis of Λ\emph{⊥}(\textbf{A}\emph{′}).
+\end{quote}
+
+ization, it is easy to check that We next confirm that
+\emph{∥}\textbf{S}\emph{′∥}= \emph{∥}\textbf{S}\emph{∥}. By the design
+of \textbf{S}\emph{′}and the definition of Gram-Schmidt orthogonal-
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.4000} + 2\tabcolsep}}{%
+\multirow{2}{*}{\textbf{S}\emph{′}=}} & \textbf{S} & \textbf{0} &
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{,}
+\end{quote}
+\end{minipage}} \\
+& & \textbf{0} & \textbf{I} \\
+\multicolumn{5}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{1.0000} + 8\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+because \textbf{S} is full-rank. It follows that \emph{∥}For the final
+part of the lemma, we simply compute \textbf{S}\emph{′}for
+\textbf{A}\emph{′}= \textbf{A}\emph{∥}¯\textbf{S}\emph{′∥}=
+max\emph{\{∥}\textbf{S}\emph{∥,} 1\emph{\}} =
+\emph{∥}\textbf{S}\emph{∥}, because \textbf{A} as described above, and
+output \textbf{s}1 = \textbf{s}1 \emph{∈}Z\emph{m}is nonzero.
+
+\textbf{S}\emph{′′}= \textbf{PS}\emph{′}as a basis for
+Λ\emph{⊥}(\textbf{A}\emph{′·} \textbf{P}), where \textbf{P} is the given
+permutation matrix. The Gram-Schmidt lengths
+
+remain unchanged, i.e., \emph{∥}QR decompositions of
+\textbf{S}\emph{′}and \textbf{PS}\emph{′}are exactly the same.
+\textbf{s}\emph{′′i∥}= \emph{∥}\textbf{s}\emph{′i∥}, because \textbf{P}
+is orthogonal and hence the right-triangular matrices in the
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage}} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{3.3.1}
+\end{quote}
+\end{minipage} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.8000} + 6\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{An Optimization: Gaussian Sampling via Implicit Extension}
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+In many of our cryptographic applications, a common design pattern is to
+extend a basis \textbf{S} of an \emph{m}-dimensional lattice
+Λ\emph{⊥}(\textbf{A}) to a basis \textbf{S}\emph{′}of a
+dimension-\emph{m′}superlattice Λ\emph{⊥}(\textbf{A}\emph{′}), and then
+immediately sample (one or more times) from a discrete Gaussian over the
+superlattice. For the construction and analysis of our schemes, it is
+more convenient and modular to treat these operations separately;
+however, a naive implementation would be rather inefficient, requiring
+at least (\emph{m′})2space and time (where \emph{m′}can be substantially
+larger than \emph{m}). Fortunately, the special structure of the
+extended basis \textbf{S}\emph{′}, together with the recursive
+``nearest-plane''operation of the SampleD algorithm from {[}GPV08{]},
+can be exploited to avoid any \emph{explicit} computation of
+\textbf{S}\emph{′}, thus saving a significant amount of time and space
+over the naive approach.
+
+Consider a hypothetical execution of SampleD(\textbf{S}\emph{′,}
+\textbf{y}\emph{′, s}), where \textbf{S}\emph{′}= Let \textbf{S}
+\emph{∈}Z\emph{m×m}be a basis of Λ\emph{⊥}(\textbf{A}), and let
+\textbf{A}\emph{′}= \textbf{A}\emph{∥}¯\textbf{A} for some¯\textbf{A}
+\emph{∈}Z\emph{n×} ¯\textbf{S W} \textbf{0} \textbf{I} is the extended
+basis as \emph{m} , where \emph{m′}= \emph{m} + ¯\emph{m}.
+\end{quote}
+
+14
+
+\begin{quote}
+described in the proof of Lemma 3.2, and \textbf{S}\emph{′}= \textbf{S
+0} \textbf{0 I} . By inspection, it can be verified that a recursive
+execution of \textbf{v}\emph{′←}SampleD(\textbf{S}\emph{′,}
+\textbf{y}\emph{′, s}) simply chooses all the entries of ¯then chooses
+\textbf{v} \emph{←}SampleD(\textbf{S}\emph{,}
+\textbf{y}\emph{′−}¯perform exactly the same steps, thus avoiding any
+need to compute and store \textbf{W} itself. A similar optimization
+\textbf{A}¯\textbf{v}\emph{, s}), and outputs \textbf{v}\emph{′}=
+\textbf{v}\emph{∥}¯\textbf{v}. Therefore, the optimized algorithm can
+\textbf{v} \emph{∈}Z¯\emph{m independently} from \emph{D}Z\emph{,s},
+
+also works for any permutation of the columns of \textbf{A}\emph{′}.
+
+In the language of the ``preimage sampleable'' function
+\emph{f}\textbf{A}\emph{′}(\textbf{v}\emph{′}) :=
+\textbf{A}\emph{′}\textbf{v}\emph{′∈}Z\emph{n q}defined in {[}GPV08{]},
+the process described above corresponds to sampling a preimage from
+\emph{f−}1 \textbf{A}\emph{′} (\textbf{y}\emph{′}) by first computing
+¯\textbf{y} =
+
+\emph{f} ¯\textbf{A}(¯\textbf{v}) = ¯\textbf{A}¯\textbf{v}
+\emph{∈}Z\emph{n q}in the ``forward'' direction (for random ¯\textbf{v}
+\emph{←}DZ ¯\emph{m,s}), then choosing a random preimage \textbf{v}
+\emph{←f−}1 \textbf{A}(\textbf{y}\emph{′ −}¯\textbf{y}) under the
+appropriate Gaussian distribution, and outputting \textbf{v}\emph{′}=
+\textbf{v}\emph{∥}¯\textbf{v}.4
+
+\textbf{3.4} \textbf{Randomizing Control}
+\end{quote}
+
+Finally, we show how an arborist can randomize its lattice basis, with a
+slight loss in quality. This operation is useful for securely delegating
+control to another entity, because the resulting basis is still short,
+but is (essentially) statistically independent of the original basis.
+
+\begin{quote}
+The probabilistic polynomial-time algorithm RandBasis(\textbf{S}\emph{,
+s}) takes a basis \textbf{S} of an \emph{m}-dimensional integer lattice
+Λ and a parameter \emph{s ≥∥}\textbf{S}\emph{∥· ω}(\emph{√}log
+\emph{n}), and outputs a basis \textbf{S}\emph{′}of Λ, generated as
+follows.
+
+1. Let \emph{i ←}0. While \emph{i \textless{} m},
+
+(a) Choose \textbf{v} \emph{←}SampleD(\textbf{S}\emph{, s}). If
+\textbf{v} is linearly independent of \emph{\{}\textbf{v}1\emph{, . . .
+,} \textbf{v}\emph{i\}}, then let \emph{i ←i} + 1 and let
+\textbf{v}\emph{i} = \textbf{v}.
+
+2. Output \textbf{S}\emph{′}= ToBasis(\textbf{V}\emph{,}
+HNF(\textbf{S})).
+
+In the final step, the (unique) Hermite normal form basis
+HNF(\textbf{S}) of Λ is used to ensure that no information particular to
+\textbf{S} is leaked by the output; any other publicly available (or
+efficiently computable) basis of the lattice could also be used in its
+place.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{1.0000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Lemma 3.3.} \emph{With overwhelming probability,}
+\textbf{S}\emph{′←}RandBasis(\textbf{S}\emph{, s}) \emph{repeats Step 1a
+at most O}(\emph{m}2) \emph{times, and∥}\textbf{S}\emph{′∥≤s · √m.
+Moreover, for any two bases} \textbf{S}0\emph{,} \textbf{S}1 \emph{of
+the same lattice and any s ≥}max\emph{\{∥ω}(\emph{√}log \emph{n})\emph{,
+the outputs of} RandBasis(\textbf{S}0\emph{, s}) \emph{and}
+RandBasis(\textbf{S}1\emph{, s}) \emph{are within} negl(\emph{n})
+\emph{statistical distance.} \textbf{S}0\emph{∥, ∥}\textbf{S}1\emph{∥\}
+·}
+
+\emph{Proof.} The bound on \emph{∥}\textbf{S}\emph{′∥}and on the number
+of iterations follow immediately from Lemma 2.4, items 1 and 3,
+respectively. The claim on the statistical distance follows from the
+fact that each sample \textbf{v} drawn in
+
+Step 1a has the same distribution (up to negl(\emph{n}) statistical
+distance) whether \textbf{S}0 or \textbf{S}1 is used, and the fact
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6667} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+that HNF(\textbf{S}0) = HNF(\textbf{S}1) because the Hermite normal form
+of a lattice is unique.
+\end{quote}
+\end{minipage}} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{4}
+\end{quote}
+\end{minipage} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6667} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Signatures}
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+Here we use bonsai tree principles to construct a signature scheme that
+is existentially unforgeable under a \emph{static} chosen-message attack
+(i.e., eu-scma-secure). As discussed in Section 2.2, to convert this
+into an (offline / online) signature scheme that is unforgeable under
+adaptive chosen-message attack (eu-acma-secure), we need a suitable
+notion of chameleon hash, which we also construct here.
+
+\begin{quote}
+4An earlier version of this paper {[}CHK09{]} explicitly defined a
+sampling procedure using this algorithm, and gave a (somewhat involved)
+proof that it correctly samples from a discrete Gaussian over
+Λ\emph{⊥}(\textbf{A}\emph{′}). Here, correctness follows directly by
+examining the execution of SampleD on the structured basis
+\textbf{S}\emph{′}.
+\end{quote}
+
+15
+
+\begin{quote}
+\textbf{4.1} \textbf{Chameleon Hash}
+
+Let \emph{n ≥}1, \emph{q ≥}2 be integers, let \emph{m} =
+\emph{O}(\emph{n} log \emph{q}) and \emph{L} be as in Proposition 3.1,
+let \emph{s} = \emph{L · ω}(\emph{√}log \emph{n}) be a Gaussian
+parameter, and let \emph{k ≥}1 be an integer message length. Define a
+message space \emph{M} = \emph{\{}0\emph{,} 1\emph{\}k}, randomness
+space \emph{R} = \emph{\{}\textbf{r} \emph{∈}Z\emph{m}:
+\emph{∥}\textbf{r}\emph{∥≤s · √m\}} with distribution
+\emph{D}Z\emph{m,s} (restricted to \emph{R}, which by Item 1 of Lemma
+2.4 changes the distribution by only negl(\emph{n}) statistical
+distance), and range \emph{Y} = Z\emph{n q}.
+
+For \textbf{A}0 \emph{∈}Z\emph{n×k} , \textbf{A}1 \emph{∈}Z\emph{n×m}
+and \textbf{A} = \textbf{A}0\emph{∥}\textbf{A}1, define the hash
+function \emph{h}\textbf{A} : \emph{M × R →Y} as
+\end{quote}
+
+\emph{h}\textbf{A}(\textbf{m}; \textbf{r}) = \textbf{A} \emph{·}
+(\textbf{m}\emph{∥}\textbf{r}) = \textbf{A}0\textbf{m} +
+\textbf{A}1\textbf{r}\emph{.}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{1.0000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Lemma 4.1.} \emph{The family H} = \emph{\{h}\textbf{A}\emph{\}
+(under the uniform distribution over H) is a family of chameleon hash
+functions, assuming that} SIS\emph{q,β is hard for β} =\emph{k} +
+4\emph{s}2\emph{· m.}
+
+\emph{Proof.} It is easy to verify that all of the required properties
+described in Section 2.2 hold. First, each \emph{h}\textbf{A} is
+
+efficiently computable given \textbf{A}, and for every \textbf{m}
+\emph{∈M}, the distribution of (\textbf{A}\emph{,
+h}\textbf{A}(\textbf{m}; \textbf{r})) for \textbf{r}
+\emph{←D}Z\emph{m,s} is within negl(\emph{n}) statistical distance of
+uniform over \emph{H × Y} by Item 4 of Lemma 2.4.
+
+\begin{quote}
+For the trapdoor property, a uniformly random (up to negl(\emph{n})
+statistical distance) instance \emph{h}\textbf{A} =
+\textbf{A}0\emph{∥}\textbf{A}1 may be selected by choosing \textbf{A}0
+at random, and generating (\textbf{A}1\emph{,} \textbf{S})
+\emph{←}GenBasis(1\emph{n,} 1\emph{m, q}), where \textbf{S} is a basis
+of Λ\emph{⊥}(\textbf{A}1) and \emph{∥}Item 5 of Lemma 2.4 one can use
+the basis \textbf{S} to efficiently sample randomness \textbf{r} from (a
+distribution within \textbf{S}\emph{∥≤L}, as described in Proposition
+3.1. Then for any \textbf{y} \emph{∈}Z\emph{n q}and \textbf{m}
+\emph{∈M}, by
+\end{quote}
+
+negl(\emph{n}) statistical distance of)
+\emph{D}Λ\emph{⊥}\textbf{u}(\textbf{A}1)\emph{,s}, where \textbf{u} =
+\textbf{y} \emph{−}\textbf{A}0\textbf{m} \emph{∈}Z\emph{n q}. By Item 4
+of Lemma 2.4, this is the
+
+\begin{quote}
+distribution of \textbf{r} \emph{∈R} conditioned on
+\emph{h}\textbf{A}(\textbf{m}; \textbf{r}) = \textbf{y}.
+
+Finally, for the collision-resistance property, note that any collision
+\textbf{m}\emph{∥}\textbf{r} \emph{̸}=
+\textbf{m}\emph{′∥}\textbf{r}\emph{′∈M × R} for \emph{h}\textbf{A} (for
+uniformly random \textbf{A}) immediately yields a solution \textbf{z} =
+(\textbf{m} \emph{−}\textbf{m}\emph{′})\emph{∥}(\textbf{r}
+\emph{−}\textbf{r}\emph{′}) \emph{̸}= \textbf{0} to the instance
+\textbf{A} of SIS\emph{q,β}, because
+\end{quote}
+
+\textbf{Az} = \emph{h}\textbf{A}(\textbf{m}; \textbf{r})
+\emph{−h}\textbf{A}(\textbf{m}\emph{′}; \textbf{r}\emph{′}) =
+\textbf{0}\emph{,}
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6667} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+and \emph{∥}\textbf{z}\emph{∥}2\emph{≤k} + 4\emph{s}2\emph{· m} =
+\emph{β}2by the triangle inequality.
+\end{quote}
+\end{minipage}} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{4.2}
+\end{quote}
+\end{minipage} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6667} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Signature Scheme}
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+In addition to the main SIS parameters \emph{n} and \emph{q}, our
+signature scheme also involves:
+
+\emph{•} a dimension \emph{m} = \emph{O}(\emph{n} log \emph{q}) and a
+bound
+
+\emph{L} = \emph{O}(\emph{√n} log \emph{q}), as per Proposition 3.1;
+
+\emph{•} a (hashed) message length \emph{k ≥}1, which induces a `total
+dimension' \emph{m′}= \emph{m ·} (\emph{k} + 1); \emph{•} a Gaussian
+parameter \emph{s} = \emph{L · ω}(\emph{√}log \emph{n}).\\
+The scheme SIG is defined as follows.
+
+\emph{•} Gen: generate (\textbf{A}0\emph{,} \textbf{S}0)
+\emph{←}GenBasis(1\emph{n,} 1\emph{m, q}) (see Proposition 3.1), where
+\textbf{A}0 \emph{∈}Z\emph{n×m} is negligibly
+
+close to uniform and \textbf{S}0 is a basis of Λ\emph{⊥}(\textbf{A}0)
+with \emph{∥}\textbf{S}0\emph{∥≤L}. (Recall that the columns of
+\textbf{A}0 generate all of Z\emph{n q}, with overwhelming probability.)
+
+Then for each (\emph{b, j}) \emph{∈\{}0\emph{,} 1\emph{\} ×}
+{[}\emph{k}{]}, choose uniformly random and independent
+\textbf{A}(\emph{b})\emph{∈}Z\emph{n×m} . Output \emph{vk} =
+(\textbf{A}0\emph{, \{}\textbf{A}(\emph{b}) \emph{j\}}) and \emph{sk} =
+(\textbf{S}0\emph{, vk}).
+\end{quote}
+
+16
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{•} Sign(\emph{sk, µ ∈\{}0\emph{,} 1\emph{\}k}): let
+\textbf{A}\emph{µ} = \textbf{A}0\emph{∥}\textbf{A}(\emph{µ}1)
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{∥· · · ∥}\textbf{A}(\emph{µk})
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{∈}Z\emph{n×m′}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+. Output \textbf{v} \emph{←D}Λ\emph{⊥}(\textbf{A}\emph{µ})\emph{,s}, via
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{1.0000} + 6\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\textbf{v} \emph{←}SampleD(ExtBasis(\textbf{S}0\emph{,}
+\textbf{A}\emph{µ})\emph{,} \textbf{0}\emph{, s})\emph{.}
+
+\begin{quote}
+(In the rare event that \emph{∥}\textbf{v}\emph{∥\textgreater{} s ·}Note
+also that the optimization of Section 3.3.1 applies here.)\emph{√m′}or
+\textbf{v} = \textbf{0} (Lemma 2.4, items 1 and 2, respectively),
+resample \textbf{v}.
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\emph{•} Ver(\emph{vk, µ,} \textbf{v}): let \textbf{A}\emph{µ} be as
+above. Accept if \textbf{v} \emph{̸}= \textbf{0},
+\emph{∥}\textbf{v}\emph{∥≤s ·}
+
+\emph{√m′}, and \textbf{v} \emph{∈}Λ\emph{⊥}(\textbf{A}\emph{µ}); else,
+reject.
+
+Completeness is by inspection. Note that the matrix \textbf{A}0 can be
+omitted from the public key (thus making the total dimension \emph{m ·
+k}), at the expense of a secret key that contains \emph{two} short bases
+\textbf{S}(\emph{b}) \emph{b} = 0\emph{,} 1. The scheme and its security
+proof are easy to modify accordingly. of Λ\emph{⊥}(\textbf{A}(\emph{b})
+1), for
+
+\textbf{4.3} \textbf{Security}
+\end{quote}
+
+\textbf{Theorem 4.2.} \emph{There exists a PPT oracle algorithm (a
+reduction) S attacking the} SIS\emph{q,β problem for β} = \emph{s
+·√m′such that, for any adversary F mounting an eu-scma attack on} SIG
+\emph{and making at most Q queries,}
+
+\textbf{Adv}SIS\emph{q,β}(\emph{SF}) \emph{≥}\textbf{Adv}\emph{eu-scma}
+
+\begin{quote}
+(\emph{F})\emph{/}((\emph{k −}1) \emph{· Q} + 1)
+\emph{−}negl(\emph{n})\emph{.}
+
+\emph{Proof.} Let \emph{F} be an adversary mounting an eu-scma attack on
+SIG. We construct a reduction \emph{S} attacking SIS\emph{q,β}. The
+reduction \emph{S} takes as input \emph{m′′}= \emph{m ·} (2\emph{k} + 1)
+uniformly random and independent samples from Z\emph{n q}in the form of
+a matrix \textbf{A} \emph{∈}Z\emph{n×m′′}, parsing \textbf{A} as
+\end{quote}
+
+\textbf{A} = \textbf{A}0\emph{∥}\textbf{U}(0) 1\emph{∥}\textbf{U}(1)
+1\emph{∥· · · ∥}\textbf{U}(0) \emph{k∥}\textbf{U}(1)
+
+\begin{quote}
+for matrices \textbf{A}0\emph{,} \textbf{U}(\emph{b}) \emph{i}
+\emph{∈}Z\emph{n×m} .
+
+The reduction \emph{S} simulates the static chosen-message attack to
+\emph{F} as follows. First, \emph{S} invokes \emph{F} to receive
+\emph{Q′≤Q} messages \emph{µ}(1)\emph{, µ}(2)\emph{, . . . ,
+µ}(\emph{Q′})\emph{∈\{}0\emph{,} 1\emph{\}k}. Then \emph{S} computes the
+nonempty set \emph{P} of all strings \emph{p ∈\{}0\emph{,}
+1\emph{\}≤k}having the property that \emph{p} is a shortest string for
+which no \emph{µ}(\emph{i})has \emph{p} as a prefix. Equivalently,
+\emph{P} is the set of maximal subtrees of \emph{\{}0\emph{,}
+1\emph{\}≤k}(viewed as a tree) that do not contain any of the queried
+messages. Such a set may be computed iteratively as follows. Start with
+\emph{P} = \emph{\{ε\}}. Then for \emph{i} = 1\emph{, . . . , Q′}, do
+the following: if any element \emph{p ∈P} is a prefix of
+\emph{µ}(\emph{i})(there will be at most one such \emph{p}), then remove
+\emph{p} from \emph{P}, and add to \emph{P} all the
+\emph{k−\textbar p\textbar{}} elements \emph{p′∈\{}0\emph{,}
+1\emph{\}≤k}of length \emph{\textbar p′\textbar{}
+≥\textbar p\textbar{}}+1 that agree with the
+length-(\emph{\textbar p′\textbar−}1) prefix of \emph{µ}(\emph{i})on all
+but the last bit of \emph{p′}. By induction, it is straightforward to
+see that after the \emph{i}th iteration
+\end{quote}
+
+(the one dealing with \emph{µ}(\emph{i})), the set \emph{P} is correct
+for the message set \emph{\{µ}(1)\emph{, . . . , µ}(\emph{i})\emph{\}},
+so the algorithm is correct. Finally, the size of the output set
+\emph{P} is at most (\emph{k −}1) \emph{· Q} + 1, because initially
+\emph{\textbar P\textbar{}} = 1, and in each iteration the size of
+\emph{P} can grow by at most \emph{k −}1 elements (up to \emph{k} can be
+added, and only if one is removed).
+
+\begin{quote}
+Next, \emph{S} chooses some \emph{p} from \emph{P} uniformly at random,
+letting \emph{t} = \emph{\textbar p\textbar{}}. It then provides an SIG
+verification key \emph{vk} = (\textbf{A}0\emph{, \{}\textbf{A}(\emph{b})
+\emph{j\}}) to \emph{F}, generated as follows:
+
+\emph{• Uncontrolled growth:} for each \emph{i ∈}{[}\emph{t}{]}, let
+\textbf{A}(\emph{pi}) \textbf{A}(\emph{b}) \emph{i} =
+\textbf{U}(\emph{b}) \emph{i}.
+\end{quote}
+
+= \textbf{U}(0) \emph{i}. For \emph{i} = \emph{t} + 1\emph{, . . . , k},
+and \emph{b ∈\{}0\emph{,} 1\emph{\}}, let
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{• Controlled growth:} for each \emph{i ∈}{[}\emph{t}{]}, invoke
+Proposition 3.1 to generate
+\textbf{A}(1\emph{−pi})Λ\emph{⊥}(\textbf{A}(1\emph{−pi}) \emph{i} ) such
+that \emph{∥}\textbf{S}\emph{i∥≤L}.
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+and basis \textbf{S}\emph{i} of
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+17
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Next, \emph{S} generates signatures for each queried message \emph{µ} =
+\emph{µ}(\emph{j})as follows: let \emph{i ∈}{[}\emph{t}{]} be the first
+position at which \emph{µi ̸}= \emph{pi} (such \emph{i} exists by
+construction of \emph{p}). Then \emph{S} generates the signature
+\textbf{v} \emph{←D}Λ\emph{⊥}(\textbf{A}\emph{µ})\emph{,s} as
+\end{quote}
+
+\textbf{v} \emph{←}SampleD(ExtBasis(\textbf{S}\emph{i,}
+\textbf{A}\emph{µ})\emph{,} \textbf{0}\emph{, s})\emph{,}
+
+where \textbf{A}\emph{µ} = \textbf{A}\emph{L∥}\textbf{A}(1\emph{−pi})
+the form required by ExtBasis. (In the event that \textbf{v} =
+\textbf{0} or \emph{∥}\textbf{v}\emph{∥\textgreater{} β} = \emph{s
+·∥}\textbf{A}\emph{R} (for some matrices \textbf{A}\emph{L,}
+\textbf{A}\emph{R}) is exactly as in the signature scheme, and
+has\emph{m′}, resample \textbf{v}.)
+
+\begin{quote}
+Finally, if \emph{F} produces a valid forgery (\emph{µ∗,}
+\textbf{v}\emph{∗̸}= \textbf{0}), then we have
+\textbf{v}\emph{∗∈}Λ\emph{⊥}(\textbf{A}\emph{µ∗}), for
+\textbf{A}\emph{µ∗}as defined in the scheme. First, \emph{S} checks
+whether \emph{p} is a prefix of \emph{µ∗}. If not, \emph{S} aborts;
+otherwise, note that \textbf{A}\emph{µ∗}is the concatenation of
+\textbf{A}0 and \emph{k} blocks \textbf{U}(\emph{b}) \emph{i}.
+Therefore, by inserting zeros into \textbf{v}\emph{∗}, \emph{S} can
+generate a nonzero \textbf{v} \emph{∈}Z\emph{m′′}so that \textbf{Av} =
+\textbf{0} \emph{∈}Z\emph{n q}. Finally, \emph{S} outputs \textbf{v} as
+a solution to SIS.
+\end{quote}
+
+We now analyze the reduction. First observe that conditioned on any
+choice of \emph{p ∈P}, the verification the real attack (up to
+negligible statistical distance), by Lemma 2.4 and the fact that \emph{s
+≥∥}\textbf{S}\emph{i∥· ω}(\emph{√}log \emph{n}). key \emph{vk} given to
+\emph{F} is negligibly close to uniform, and the signatures given to
+\emph{F} are distributed exactly as in Therefore, \emph{F} outputs a
+valid forgery (\emph{µ∗,} \textbf{v}\emph{∗̸}= \textbf{0}) with
+probability at least \textbf{Adv}eu-scma
+(\emph{F})\emph{−}negl(\emph{n}). Finally, conditioned on the forgery,
+the choice of \emph{p ∈P} is still negligibly close to uniform, so
+\emph{p} is a prefix of \emph{µ∗}with probability at least
+1\emph{/\textbar P\textbar{} −}negl(\emph{n}) \emph{≥}1\emph{/}((\emph{k
+−}1) \emph{· Q} + 1) \emph{−}negl(\emph{n}). In such a case, \textbf{Av}
+= \textbf{0} and
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\emph{∥}\textbf{v}\emph{∥}= \emph{∥}\textbf{v}\emph{∗∥≤β} by
+construction, hence \textbf{v} is a valid solution to the given SIS
+instance, as desired.
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{5}
+\end{quote}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Hierarchical ID-Based Encryption}
+\end{quote}
+\end{minipage} \\
+\textbf{5.1} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Key Encapsulation Mechanism}
+\end{quote}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+For our HIBE schemes, it is convenient and more modular to abstract away
+the encryption and decryption processes into a key-encapsulation
+mechanism (KEM). The following LWE-based KEM from {[}GPV08{]} (which is
+dual to the scheme of Regev {[}Reg05{]}) is well-known. To progress to
+our HIBE systems, it is enough to simply understand the KEM interface
+(i.e., the forms of the public/secret keys and ciphertexts) and the
+conditions on the parameters needed for correct decapsulation.
+
+\begin{quote}
+The scheme KEM is parametrized by a modulus \emph{q}, dimension
+\emph{m}, and Gaussian parameter \emph{s} that deter-mines the error
+distribution \emph{χ} used for encapsulation. As usual, all these
+parameters are functions of the LWE dimension \emph{n}, and are
+instantiated based on the particular context in which KEM is used.
+
+\emph{•} Gen: Choose \textbf{A} \emph{←}Z\emph{n×m} uniformly at random,
+\textbf{x} \emph{←D}Z\emph{m,s} and set \textbf{y} = \textbf{Ax}
+\emph{∈}Z\emph{n q}. Output public key \emph{pk} =
+\textbf{A}\emph{∥}\textbf{y} \emph{∈}Z\emph{n×}(\emph{m}+1) and secret
+key \emph{sk} = \textbf{x}.
+
+\emph{•} Encaps(\emph{pk} = \textbf{A}\emph{∥}\textbf{y}): Choose
+\textbf{s} \emph{←}Z\emph{n q}and let
+
+\textbf{b} \emph{←}Noisy\emph{χ}(\textbf{A}\emph{t}\textbf{s}) and
+\emph{b′←}Noisy\emph{χ}(\textbf{y}\emph{t}\textbf{s} + \emph{κ ·
+⌊q/}2\emph{⌋})\emph{,}\\
+where \emph{κ ∈\{}0\emph{,} 1\emph{\}} is a uniformly random bit. Output
+\emph{κ} and encapsulation \emph{σ} = \textbf{b}\emph{∥b′∈}Z\emph{m}+1 .
+
+\emph{•} Decaps(\emph{sk} = \textbf{x}\emph{, σ} =
+\textbf{b}\emph{∥b′}): Compute \emph{b′−}\textbf{x}\emph{t}\textbf{b}
+mod \emph{q} and output 0 if the result is closer to 0 than
+to\emph{⌊q/}2\emph{⌋}modulo \emph{q}, and 1 otherwise.
+
+Observe that, conditioned on the public key
+\textbf{A}\emph{∥}\textbf{y}, the secret decapsulation key \textbf{x}
+has distribution \emph{D}Λ\emph{⊥}\textbf{y}(\textbf{A})\emph{,s}. Later
+on, our HIBE schemes will generate a decapsulation key for a given
+\textbf{A} and \textbf{y} using \textbf{x}
+\emph{←}SampleD(\textbf{S}\emph{,} \textbf{A}\emph{,} \textbf{y}\emph{,
+s}), where \textbf{S} is a suitable basis of Λ\emph{⊥}(\textbf{A}). By
+Item 5 of Lemma 2.4, the behavior of Decaps is the same (up to
+negligible error probability) using such an \textbf{x}.
+
+The following lemma is standard from prior work, e.g., {[}GPV08{]}.
+\end{quote}
+
+18
+
+\begin{quote}
+\textbf{Lemma 5.1} (Correctness and Security)\textbf{.} \emph{Let m ≥Cn}
+lg \emph{q for any fixed constant C \textgreater{}} 1\emph{, let q
+≥}4\emph{s}(\emph{m} + 1)\emph{, and let χ be the discretized Gaussian
+with parameter α, where} 1\emph{/α ≥s√m} + 1\emph{·ω}(\emph{√}log
+\emph{n})\emph{. Then} Decaps \emph{is correct with overwhelming
+probability over all the randomness of} Gen \emph{and} Encaps\emph{.
+Moreover, there exists a PPT oracle algorithm (a reduction) S attacking
+the} LWE\emph{q,χ problem such that, for any adversary A mounting an
+ind-cpa attack on} KEM\emph{,}
+\end{quote}
+
+\textbf{Adv}LWE\emph{q,χ}(\emph{SA}) \emph{≥}\textbf{Adv}\emph{ind-cpa}
+KEM(\emph{A}) \emph{−}negl(\emph{n})\emph{.}
+
+\begin{quote}
+As explained in {[}GPV08{]}, the basic single-bit scheme can be
+amortized to allow for keys of length
+\end{quote}
+
+\emph{ℓ}= poly(\emph{n}) bits, with ciphertexts in Z\emph{m}+\emph{ℓ}and
+public keys in Z\emph{n×}(\emph{m}+\emph{ℓ}) . Here the secret key
+consists of
+
+\textbf{y}\emph{i} = \textbf{Ax}\emph{i} (along with \textbf{A} itself).
+Each bit of the KEM key is concealed using a different syndrome,
+but\emph{ℓ}independent samples \textbf{x}\emph{i ←D}Z\emph{m,s} for
+\emph{i ∈}{[}\emph{ℓ}{]}, and the public key includes the corresponding
+syndromes
+
+\begin{quote}
+using the same \textbf{s} and `preamble' \textbf{b}
+\emph{←}Noisy\emph{χ}(\textbf{A}\emph{t}\textbf{s}). Furthermore, it is
+also possible to conceal Ω(log \emph{n}) encapsulated bits per syndrome
+by using a smaller error rate \emph{α}, which yields an amortized
+expansion factor of \emph{O}(1). For simplicity, in this work we deal
+only with encapsulation of single bits, but all of our schemes can be
+amortized in the manner described above.
+
+We point out one nice property of KEM, which is convenient for the
+security proof of our HIBE schemes: for any dimensions \emph{m ≤m′}(and
+leaving all other parameters the same), the adversary's view for
+dimension and \textbf{b} \emph{∈}Z\emph{m′m} may be produced by taking a
+view for dimension \emph{m′}, and truncating the values \textbf{A}
+\emph{∈}Z\emph{n×m′}to any \emph{m} out of \emph{m′}of their components
+(i.e., columns of \textbf{A} and corresponding entries of \textbf{b}).
+
+\textbf{5.2} \textbf{A Generalized Hierarchical Scheme}
+\end{quote}
+
+In this section we describe a generalized hierarchical identity-based
+encryption scheme, called GENHIBE, which we later instantiate in
+different ways to yield concrete constructions in both the random oracle
+and standard models. The generalized system captures the essential
+features of all of our HIBE systems, which are the ability to encrypt to
+any node in an (implicit) authority tree, and any node's ability to
+securely delegate a secret key to any of its descendants.
+
+In GENHIBE there is an identity tree of depth \emph{d} over some
+alphabet \emph{ID}, which is identified with the set \emph{ID≤d}in the
+natural way: the empty string \emph{ε ∈ID≤d}is the root of the tree, and
+an identity \emph{id′}is a descendant of \emph{id} if and only if
+\emph{id} is a proper prefix of \emph{id′}. Each identity \emph{id} is
+implicitly assigned a public key \emph{pkid} =
+\textbf{A}\emph{id∥}\textbf{y}\emph{id} for the KEM scheme described
+above in Section 5.1. These public keys must have the property that if
+\emph{id′}is a descendant of \emph{id}, then \textbf{A}\emph{id′} is an
+extension of \textbf{A}\emph{id} (that is, \textbf{A}\emph{id′} =
+\textbf{A}\emph{id∥}¯\textbf{A} for some \textbf{A}). The secret key for
+an identity \emph{id} consists of a decapsulation key
+\textbf{x}\emph{id} for its KEM public key
+\textbf{A}\emph{id∥}\textbf{y}\emph{id}, as well as a relatively short
+basis \textbf{S}\emph{id} for the lattice
+Λ\emph{⊥}(\textbf{A}\emph{id}). (In our instantiations, the short basis
+is used only for delegation, and so it can be omitted for users at the
+leaves of the hierarchy.)\\
+In GENHIBE we deliberately leave out the Setup algorithm, which must be
+provided by an instantiation. The algorithm should output a master
+public key \emph{mpk} and the root-level secret key (\textbf{S}\emph{ε,}
+\textbf{x}\emph{ε}), as well a description of the mapping from an
+identity \emph{id} to a KEM public key \emph{pkid}. These are the only
+aspects of GENHIBE that need to be defined when instantiating it. (The
+Extract, Encaps, and Decaps algorithms are common to all the
+instantiations, and rely on the assignment of KEM public keys to
+identities.) Looking ahead, an instantiation of GENHIBE will assign
+public keys to identities either via a random oracle, or (in the
+standard model) by piecing together different parts of the master public
+key.
+
+\begin{quote}
+The GENHIBE scheme is parametrized by a few quantities that are indexed
+by depth within the hierarchy.
+
+For an identity at depth \emph{t ≥}0 (where \emph{t} = 0 corresponds to
+the root),
+\end{quote}
+
+19
+
+\begin{quote}
+\emph{• mt} is the maximum possible dimension of the identity's
+associated lattice, where we require \emph{mj ≤mt} for all \emph{j
+\textless{} t}. (In our instantiations, all identities at a given depth
+have the same lattice dimension);
+
+\emph{•Lt} is an upper bound on the Gram-Schmidt lengths of the user's
+secret short basis;
+
+\emph{• st} is the Gaussian parameter used to generate the decapsulation
+key and (when \emph{t ≥}1) the secret basis, which must exceed \emph{Lj
+· ω}(\emph{√}log \emph{n}) for all \emph{j \textless{} t}.
+\end{quote}
+
+These parameters, along with the maximum length of any possible
+delegation chain (which is always at
+
+most \emph{d}, but can be less in instantiations), determine the modulus
+\emph{q} and error rate \emph{α} used in the underlying
+
+\begin{quote}
+KEM. We instantiate all the parameters after defining the GENHIBE
+scheme.
+
+\textbf{Definition of} GENHIBE\textbf{.} The algorithms of GENHIBE are
+as follows:
+
+\emph{•} Extract(\emph{skid} = (\textbf{S}\emph{id,}
+\textbf{x}\emph{id})\emph{, id′}= \emph{id∥}¯\emph{id}): if \emph{t′}=
+\emph{\textbar id′\textbar{} \textgreater{} d}, output \emph{⊥}.
+Otherwise, let \emph{pkid′} = \textbf{A}\emph{id′∥}\textbf{y}\emph{id′},
+where \textbf{A}\emph{id′} is an extension of the \textbf{A}\emph{id}
+component of \emph{pkid} by assumption. Sample a decapsulation key
+\end{quote}
+
+\textbf{x}\emph{id′ ←}SampleD(ExtBasis(\textbf{S}\emph{id,}
+\textbf{A}\emph{id′})\emph{,} \textbf{A}\emph{id′,} \textbf{y}\emph{id′,
+st′})\emph{,}
+
+\begin{quote}
+and a basis
+\end{quote}
+
+\textbf{S}\emph{id′ ←}RandBasis(ExtBasis(\textbf{S}\emph{id,}
+\textbf{A}\emph{id′})\emph{, st′})\emph{.}
+
+\begin{quote}
+Output \emph{skid′} = (\textbf{S}\emph{id′,} \textbf{x}\emph{id′}).
+
+(Note that as required by RandBasis, we have \emph{st′ ≥Lt ·
+ω}(\emph{√}log \emph{n}) \emph{≥∥}\textbf{S}\emph{id∥· ω}(\emph{√}log
+\emph{n}), where \emph{t} = \emph{\textbar id\textbar{} \textless{} t′}.
+Note also that if \emph{\textbar id′\textbar{}} = \emph{t′}= \emph{d},
+we need not generate \textbf{S}\emph{id′}, because it is only needed for
+extracting keys for descendants, not decapsulation.)
+
+\emph{•} Encaps(\emph{id}): Output (\emph{κ, σ})
+\emph{←}KEM\emph{.}Encaps(\emph{pkid}).
+
+\emph{•} Decaps(\emph{skid} = (\textbf{S}\emph{id,}
+\textbf{x}\emph{id})\emph{, σ}): Output \emph{κ
+←}KEM\emph{.}Decaps(\textbf{x}\emph{id, σ}).
+\end{quote}
+
+A multi-bit version of GENHIBE follows in the same way from the
+multi-bit KEM scheme, by using multiple
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\multicolumn{6}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{1.0000} + 10\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+uniform syndromes \textbf{y}\emph{i ∈}Z\emph{n q}and corresponding
+decapsulation keys \textbf{x}\emph{i}, one for each bit of the KEM key.
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Instantiating the parameters.}
+\end{quote}
+\end{minipage}} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.6667} + 6\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Suppose that GENHIBE is instantiated in a setting in which Extract is
+\end{quote}
+\end{minipage}} \\
+\multicolumn{6}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{1.0000} + 10\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+invoked only on identities \emph{id′}whose lengths are a multiple of
+some integer \emph{k ≥}1. (Looking forward, our random-oracle
+instantiation will use \emph{k} = 1, and in our standard-model schemes
+\emph{k} will be the output length of
+
+\begin{quote}
+some hash function.) Then it is enough to define \emph{st} and \emph{Lt}
+only for values of \emph{t} that are multiples of \emph{k}.
+\end{quote}
+
+multiple of \emph{k}, let Let \emph{L}0 be determined by a concrete
+instantiation, and let \emph{s}0 = \emph{L}0 \emph{· ω}(\emph{√}log
+\emph{n}). For \emph{t \textgreater{}} 0 that is a
+\end{minipage}} \\
+\emph{st} = &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}}{%
+\emph{Lt−k · ω}(} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+log \emph{n})
+\end{quote}
+\end{minipage} & and & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{Lt} = \emph{st · √mt ≤st · √md.}
+\end{quote}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Note that as required, with overwhelming probability unwind the above
+recurrences to obtain the bounds
+\end{quote}
+
+\emph{Lt ≥∥}\textbf{S}\emph{id∥}when \emph{\textbar id\textbar{}} =
+\emph{t}, by Lemma 3.3. Now
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{st ≤s}0 \emph{·}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{√md · ω}(
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+log \emph{n})
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{t/k−}1
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+and
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{Lt ≤}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{L}0 \emph{·}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{√md · ω}(
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+log \emph{n})
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{t/k.}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+20
+
+\begin{quote}
+Finally, to satisfy the hypotheses of Lemma 5.1 that are needed for
+completeness, we can let
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+1\emph{/α}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{≥}
+\end{minipage} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}}{%
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{sd · √md} + 1 \emph{· ω}(
+
+\begin{quote}
+\emph{L}0 \emph{·}˜\emph{O}(\emph{√md})\emph{d/k,}
+
+4\emph{sd ·} (\emph{md} + 1)
+
+\emph{L}0 \emph{·}˜\emph{O}(\emph{√md})\emph{d/k}+1\emph{.}
+\end{quote}
+\end{minipage}}} &
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+log \emph{n})
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+(5.1)
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} \\
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{q}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{≥}
+\end{minipage} & & & &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+(5.2)
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{6}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{1.0000} + 10\tabcolsep}@{}}{%
+(Note also that for each level of the hierarchy it is possible to use a
+different error rate \emph{αt}, which varies inversely with \emph{st ·
+mt}.)} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.5000} + 4\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Extensions: Anonymity and chosen-ciphertext security.}
+\end{quote}
+\end{minipage}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.5000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+With a small modification, GENHIBE (or more
+\end{quote}
+\end{minipage}} \\
+\multicolumn{6}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{1.0000} + 10\tabcolsep}@{}}{%
+accurately, our concrete instantiations of it) may be made
+\emph{anonymous} over all levels of the hierarchy. That} \\
+\bottomrule()
+\end{longtable}
+
+is, a ciphertext computationally hides the particular identity to which
+it was encrypted. The modification is simply to extend the \textbf{b}
+component of the KEM ciphertext to have length exactly (\emph{d} +
+1)\emph{m}, by padding it with uniformly random and independent elements
+of Z\emph{q}. (The decapsulation algorithm simply ignores the padding.)
+Anonymity then follows immediately from the pseudorandomness of the LWE
+distribution.
+
+\begin{quote}
+Security under chosen-ciphertext attack also follows directly by a
+transformation of {[}BCHK07{]}, from ind-cpa-secure HIBE for depth
+\emph{d} + 1 to ind-cca-secure HIBE for depth \emph{d}.
+
+\textbf{5.3} \textbf{Full Security in the Random Oracle Model}
+\end{quote}
+
+Here we construct a fully (i.e., aid-ind-cpa) secure HIBE in the random
+oracle model. (It is also selec-tively secure under a tighter security
+reduction.) The scheme can be seen as a generalization of the GPV IBE
+{[}GPV08{]} to hierarchical identities. Essentially, we hash (via a
+random oracle \emph{H}) the components of an identity tuple \emph{id} =
+(\emph{id}1\emph{, . . . , idℓ}) to dimension-\emph{m} matrices
+\textbf{A}\emph{i,id}, which are then concatenated to obtain a KEM
+public key \textbf{A}\emph{id} for the user. In the security proof, the
+main technical difficulty is that we have to embed a given KEM challenge
+public key as the user public key \textbf{A}\emph{id∗}of the eventual
+challenge identity \emph{id∗}, while at the same time being able to
+simulate user secret keys for all identities on which Extract is
+queried. The problem is that the simulator does not know the challenge
+identity \emph{id∗}in advance when answering random oracle queries.
+Therefore, our simulator ``guesses'' \emph{id∗}(by guessing in which
+\emph{H}-query it appears), and ``programs'' \emph{H}'s outputs on the
+fly, so that it returns parts of the KEM challenge when queried on the
+corresponding parts of \emph{id∗}, and returns controlled matrices with
+known trapdoors on all other queries. This allows for a straightforward
+simulation, provided that we guess \emph{id∗}correctly, but needs a
+programmable random oracle. We remark that due to this guessing
+strategy, the security reduction loses a factor of roughly \emph{Qd H}in
+its advantage, where \emph{QH} is the number of random oracle queries
+and \emph{d} is the depth of the hierarchy. (In a selective-identity
+attack, of course, the simulator knows exactly at which query it should
+embed the KEM challenge, which leads to a tight reduction.)\\
+We remark that to obtain a fully secure HIBE in the random oracle model,
+it is also possible to use a generic transformation of Boneh and Boyen
+{[}BB04a{]}, which starts from a selectively secure HIBE and applies
+hash functions to the identities. (We give a standard-model selectively
+secure HIBE in Section 5.4.1 below.) Compared to this generic
+transformation, our specific construction is more efficient, mainly
+because using the random oracle we can directly encode each identity
+component as a matrix of dimension \emph{m}, instead of dimension
+\emph{k · m} where \emph{k} is the output length of the random oracle.
+Overall, then, the dimension of the lattice associated to an identity
+\emph{id} at depth \emph{ℓ}is \emph{ℓm}, instead of (\emph{ℓ}+
+1)\emph{km} when using the generic transformation. (We also remark that
+in the generic transformation, the security reduction also loses a
+factor of roughly \emph{Qd H} in advantage, relative to the selectively
+secure system.)
+
+21
+
+\begin{quote}
+\textbf{Definition of} ROHIBE\textbf{.} Our random-oracle scheme ROHIBE
+is an instantiation of GENHIBE from Sec-
+\end{quote}
+
+tion 5.2, so we need only specify the Setup algorithm and define how an
+identity \emph{id} maps to a KEM public
+
+key \textbf{A}\emph{id∥}\textbf{y}\emph{id}. Let \emph{H} :
+\emph{\{}0\emph{,} 1\emph{\}∗→}Z\emph{n×m} oracles.
+
+and \emph{G} : \emph{\{}0\emph{,} 1\emph{\}∗→}Z\emph{n q}be hash
+functions modelled as random
+
+\begin{quote}
+\emph{•} Setup(1\emph{d}): Generate (\textbf{A}0\emph{,} \textbf{S}0)
+\emph{←}GenBasis(1\emph{n,} 1\emph{m, q}), where \textbf{A}0
+\emph{∈}Z\emph{n×m} is negligibly far from
+\end{quote}
+
+uniform, and \textbf{S}0 is a basis of Λ\emph{⊥}(\textbf{A}0) with
+\emph{∥}\textbf{S}\emph{∥≤L}0. Output \emph{mpk} = (\textbf{A}0\emph{,
+d}) and \emph{msk} = \textbf{S}0.
+
+\begin{quote}
+For an identity vector \emph{id} = (\emph{id}1\emph{, . . . , idt})
+\emph{∈}(\emph{\{}0\emph{,} 1\emph{\}∗})\emph{t}of length \emph{t ≤d},
+the KEM public key \emph{pkid} = \textbf{A}\emph{id∥}\textbf{y}\emph{id}
+for \emph{id} is defined using \emph{mpk} and the hash functions
+\emph{H}, \emph{G} as:
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.5000} + 4\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{A}\emph{id} = \textbf{A}0\emph{∥}\textbf{A}1\emph{∥· · ·
+∥}\textbf{A}\emph{t ∈}Z\emph{n×}(\emph{t}+1)\emph{m}
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{,}
+\end{quote}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{y}\emph{id} = \emph{G}(\emph{id}) \emph{∈}Z\emph{n q,}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{6}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{1.0000} + 10\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+where \textbf{A}\emph{i} = \emph{H}(\emph{id}1\emph{, . . . , idi})
+\emph{∈}Z\emph{n×m} For technical reasons related to the proof, we also
+need to modify the Extract algorithm (from GENHIBE) .
+
+so that the same \textbf{x}\emph{id′} is returned every time identity
+\emph{id′}is queries. This means that the actual algorithm should
+
+either be made stateful, or should use a PRF in the standard way to get
+repeatable randomness. Alternatively,
+
+\textbf{x}\emph{id′} can itself be computed using \textbf{S}\emph{id′},
+at the expense of using a slightly larger parameter in the SampleD
+
+\begin{quote}
+algorithm, i.e., by running \textbf{x}\emph{id′
+←}SampleD(\textbf{S}\emph{id′,} \textbf{A}\emph{id′,}
+\textbf{y}\emph{id′, ∥}\textbf{S}\emph{id′∥· ω}(\emph{√}log \emph{n})).
+
+\textbf{Instantiating the parameters.} In this instantiation of GENHIBE,
+the lattice dimension for an identity at
+\end{quote}
+
+depth \emph{t} is \emph{mt} = (\emph{t} + 1) \emph{· m}, and the initial
+Gram-Schmidt bound \emph{m} = \emph{O}(\emph{n} log \emph{q}), we can
+therefore set the parameters \emph{q}, \emph{α} using Equations (5.1)
+and (5.2) so that \emph{L}0 = \emph{O}(\emph{√n} log \emph{q}). Using
+the bound
+\end{minipage}} \\
+log \emph{q} = ˜\emph{O}(\emph{d}) & and &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}}{%
+1\emph{/α} =} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{√dn ·}˜\emph{O}(\emph{d√n})\emph{d.}
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\textbf{Theorem 5.2} (Security of ROHIBE)\textbf{.} \emph{There exists a
+PPT oracle algorithm (a reduction) S attacking} KEM \emph{(instantiated
+with dimension dm and q, α as above) such that, for any adversary A
+mounting an aid-ind-cpa attack on} ROHIBE \emph{making QH queries to the
+random oracle H and QG queries to the random oracle G,}
+
+\textbf{Adv}KEM(\emph{SA}) \emph{≥}\textbf{Adv}\emph{aid-ind-cpa}
+ROHIBE(\emph{A})\emph{/}(\emph{dQd−}1 \emph{HQG})
+\emph{−}negl(\emph{n})\emph{.}
+
+\emph{Proof.} Let \emph{A} be an adversary mounting an
+aid-ind-cpa-attack on ROHIBE. We construct a reduction \emph{S}
+attacking KEM. It is given a uniformly random public key \emph{pk} =
+\textbf{A}\emph{∥}\textbf{y} \emph{∈}Z\emph{n×dm×} Z\emph{n q}, an
+encapsulation
+
+\begin{quote}
+\textbf{b}\emph{∥b′∈}Z\emph{dm×} Z\emph{q}, and a bit \emph{κ} which
+either is encapsulated by \textbf{b}\emph{∥b′}or is uniform and
+independent of everything else; the goal of \emph{S} is to determine
+which is the case.
+
+Let \emph{QG} and \emph{QH} be the numbers of queries that \emph{A}
+issues to \emph{H} and \emph{G}, respectively. In our analysis, we will
+actually be more generous and let the adversary issue at most \emph{d ·
+QH} total queries, where it is allowed \emph{QH} queries to \emph{H} for
+each length of the input tuple. To simplify the analysis, we also assume
+without loss of
+
+generality that (1) whenever \emph{A} queries \emph{H}(\emph{id}1\emph{,
+. . . , idi}), it has already issued the queries
+\emph{H}(\emph{id}1\emph{, . . . , idj}) for \emph{j \textless{} i}, and
+(2) that when \emph{A} asks for \emph{skid}, it has already queried
+\emph{H}(\emph{id}) and \emph{G}(\emph{id}).
+\end{quote}
+
+encapsulated key, and some secret internal state as follows: \emph{S}
+simulates the attack game on ROHIBE to \emph{A} as follows. First,
+\emph{S} produces a master public key \emph{mpk},
+
+\begin{quote}
+\emph{• Guess length of challenge identity and random oracle queries.}
+Choose \emph{t∗←}{[}\emph{d}{]}, a guess for the length of the challenge
+identity. Choose a vector \textbf{j}\emph{∗}= (\emph{j∗}1\emph{, . . . ,
+j∗t∗−}1) \emph{←\{}1\emph{, . . . , QH\}t∗−}1 and an index
+\emph{j∗←\{}1\emph{, . . . , QG\}}. (These guesses means that \emph{S}
+hopes that the \emph{j∗i}-th distinct query of length
+
+1 \emph{≤i ≤t∗−}1 to \emph{H}(\emph{·}) is a prefix of the challenge
+identity and that the \emph{j∗}-th distinct query to \emph{G}(\emph{·})
+is the challenge identity.)
+\end{quote}
+
+22
+
+\begin{quote}
+\emph{• Parse the} KEM \emph{inputs.} Parse \textbf{A} as \textbf{A} =
+\textbf{A}0\emph{∥}\textbf{A}1\emph{∥· · · ∥}\textbf{A}\emph{d−}1
+\emph{∈}Z\emph{n×dm} Z\emph{n×m} for all \emph{i ∈}{[}\emph{d −}1{]}.
+Similarly, truncate \textbf{b} to \textbf{b}\emph{∗∈}Z\emph{t∗m} . for
+\textbf{A}0 \emph{∈}Z\emph{n×m} and \textbf{A}\emph{i ∈}
+\end{quote}
+
+\emph{S} gives to \emph{A} the master public key \emph{mpk} =
+(\textbf{A}0\emph{, d}). To simulate the attack game for \emph{A},
+\emph{S} must simulate answers to oracle queries to \emph{H} and
+\emph{G}, queries for user secret keys, and it must also generate the
+challenge
+
+\begin{quote}
+encapsulation. To do this, it maintains two lists, denoted \emph{H} and
+\emph{G}, which are initialized to be empty and will store tuples of
+values. \emph{S} processes queries as follows.
+
+Queries to \emph{H}. On \emph{A}'s \emph{ji}-th distinct query
+(\emph{idji,}1\emph{, . . . , idji,i}) of length \emph{i} to
+\emph{H}(\emph{·}), do the following: if \emph{i ≤t∗−}1 and \emph{ji} =
+\emph{j∗i}, then return \textbf{A}\emph{i} (i.e., this branch undergoes
+\emph{undirected growth}). Otherwise, if \emph{i ≥t∗}or \emph{ji ̸}=
+\emph{j∗i}, run GenBasis(1\emph{n,} 1\emph{m, q}) to generate
+\textbf{A}\emph{i,ji∈}Z\emph{n×m} with corresponding short basis
+\textbf{S}\emph{i,ji} (i.e.,
+
+this branch undergoes \emph{controlled growth}). Store the tuple
+((\emph{idji,}1\emph{, . . . , idji,i})\emph{,} \textbf{A}\emph{i,ji,}
+\textbf{S}\emph{i,ji}) in list \emph{H}, and return
+\textbf{A}\emph{i,ji}.
+
+Queries to \emph{G}. On \emph{A}'s \emph{j}-th distinct query \emph{idj}
+to \emph{G}(\emph{·}), do the following: if \emph{j} = \emph{j∗}then
+return \textbf{y}. (Recall that \textbf{y} was obtained from the KEM
+input.) Otherwise for \emph{j ̸}= \emph{j∗}, sample \textbf{x}\emph{j
+←D}Z\emph{m,st} (where \emph{t} is the depth of \emph{idj}) and set
+\textbf{y}\emph{j} := \textbf{A}(\emph{idj,}1\emph{,...,idj,t−}1)
+\emph{·} \textbf{x}\emph{j ∈}Z\emph{n q}. (Recall that we assumed
+\emph{A} has already made all relevant queries to \emph{H} that in
+particular define \textbf{A}(\emph{idj,}1\emph{,...,idj,t−}1) =
+\emph{H}(\emph{idj,}1\emph{, . . . , idj,t−}1).) Return
+\textbf{y}\emph{j}
+
+and store (\emph{idj,} \textbf{y}\emph{j,} \textbf{x}\emph{j}) in list
+\emph{G}.
+
+Queries to Extract. When \emph{A} asks for a user secret key for
+\emph{id} = (\emph{id}1\emph{, . . . , idt}), we again assume that
+\emph{A} has already made all relevant queries to \emph{G} and \emph{H}
+that define \textbf{y}\emph{id} and \textbf{A}\emph{id}. If, for some
+\emph{i ∈}{[}\emph{t −}1{]}, \textbf{A}\emph{idi} =
+\emph{H}(\emph{id}1\emph{, . . . , idi}) is contained in list \emph{H},
+then \emph{S} can compute a properly distributed short basis
+\textbf{S}\emph{id} for \textbf{A}\emph{id} by running
+RandBasis(ExtBasis(\textbf{S}\emph{i,idi,} \textbf{A}\emph{id})\emph{,
+st}), where \textbf{S}\emph{i,idi} is obtained from \emph{H}. If
+\textbf{y}\emph{id} is contained in list \emph{G}, then \emph{S} can
+retrieve a properly distributed vector \textbf{x}\emph{id} from \emph{G}
+satisfying \textbf{A}(\emph{id}1\emph{,...,idt−}1)\textbf{x}\emph{id} =
+\textbf{y}\emph{id}. If the generation of \emph{skid} =
+(\textbf{S}\emph{id,} \textbf{x}\emph{id}) was successful, then \emph{S}
+returns \emph{skid}. In all other cases, \emph{S} aborts (and returns a
+random bit).
+
+Challenge query for \emph{id∗}. Let \emph{t} be the depth of \emph{id∗}.
+If \emph{t ̸}= \emph{t∗}, or \emph{G}(\emph{id∗}) \emph{̸}= \textbf{y},
+or \emph{H}(\emph{id∗}1\emph{, . . . , id∗i}) \emph{̸}=
+\textbf{A}\emph{i}(for one 1 \emph{≤i ≤t∗−}1), then abort. Otherwise,
+return the encapsulation \textbf{b}\emph{∗∥b′}and the key bit \emph{κ}.
+
+\emph{S} runs until \emph{A} halts, and it outputs whatever bit \emph{A}
+outputs.
+\end{quote}
+
+the construction of KEM and Proposition 3.1. By the same proposition, we
+have that oracle queries to \emph{H} It remains to analyze the
+reduction. The master public key given to \emph{A} is negligibly far
+from uniform by
+
+are properly simulated, up to negligible statistical distance. Oracle
+responses for \emph{G} are negligibly far from
+
+uniform by Item 4 of Lemma 2.4. Due to the truncation property of KEM,
+the challenge encapsulation is
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+properly distributed, conditioned on the event that \emph{S} does not
+abort. Thus all that remains to check is the probability that \emph{S}
+does not abort; this is at least 1\emph{/}(\emph{dQGQd−}1 \emph{H})
+\emph{−}negl(\emph{n}), because its choice of \emph{t∗}, \emph{j∗}, and
+\textbf{j}\emph{∗}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+are perfectly hidden conditioned on the view of \emph{A} (up to the
+negl(\emph{n}) statistical error of \emph{S}'s simulation).
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{5.4}
+\end{quote}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Standard-Model Constructions}
+\end{quote}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+Here we give HIBE constructions in the standard model that are secure
+under both selective and fully adaptive
+
+attacks. In Section 5.4.1 we describe a binary tree encryption (BTE)
+system which is at the heart of all our
+
+various HIBE constructions, and prove its selective security in Section
+5.4.2. In Section 5.4.3 and beyond we
+
+\begin{quote}
+extend our HIBE to full adaptive security.
+\end{quote}
+
+23
+
+\begin{quote}
+\textbf{5.4.1} \textbf{Binary Tree Encryption}
+
+Here we instantiate GENHIBE to obtain a standard-model HIBE for a
+restricted identity hierarchy in the form of a binary tree, i.e., with
+identity alphabet \emph{ID} = \emph{\{}0\emph{,} 1\emph{\}}. This is
+essentially the notion of ``binary tree encryption'' (BTE) from
+{[}CHK03{]}. Later on we realize selectively and adaptively secure HIBE
+schemes for large identity alphabets \emph{ID}, by mapping them onto a
+binary tree.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Definition of} BTE\textbf{.}
+\end{quote}
+\end{minipage} &
+\multicolumn{9}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.9000} + 16\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+We need only define the Setup algorithm and specify how it defines a
+public mapping
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{10}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{1.0000} + 18\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+from identities in \emph{ID≤d}= \emph{\{}0\emph{,} 1\emph{\}≤d}to KEM
+public keys.
+
+\emph{•} Setup(\emph{d}): Generate (\textbf{A}0\emph{,} \textbf{S}0)
+\emph{←}GenBasis(1\emph{n,} 1\emph{m, q}) (see Proposition 3.1), where
+\textbf{A}0 \emph{∈}Z\emph{n×m} is negligibly close to uniform and
+\textbf{S}0 is a basis of Λ\emph{⊥}(\textbf{A}0) with
+\emph{∥}\textbf{S}0\emph{∥≤L}0.
+
+. Choose \textbf{y} \emph{∈}Z\emph{n} For each (\emph{b, j})
+\emph{∈\{}0\emph{,} 1\emph{\} ×} {[}\emph{d}{]}, generate uniform and
+independent \textbf{A}(\emph{b})\emph{∈}Z\emph{n×m}\\
+uniformly at random, and choose \textbf{x}\emph{ε
+←}SampleD(\textbf{S}0\emph{,} \textbf{A}0\emph{,} \textbf{y}\emph{,
+s}0). Output \emph{mpk} = (\textbf{A}0\emph{, \{}\textbf{A}(\emph{b})
+and \emph{skε} = (\textbf{S}0\emph{,} \textbf{x}\emph{ε}). \emph{j\},}
+\textbf{y}\emph{, d})
+\end{quote}
+
+for \emph{id} is defined relative to \emph{mpk} as For an identity
+\emph{id} = (\emph{id}1\emph{, . . . , idt}) \emph{∈\{}0\emph{,}
+1\emph{\}t}of length \emph{t} = \emph{\textbar id\textbar{} ≤d}, the KEM
+public key \emph{pkid} = \textbf{A}\emph{id∥}\textbf{y}\emph{id}\strut
+\end{minipage}} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.2000} + 2\tabcolsep}}{%
+\textbf{A}\emph{id} = \textbf{A}0\emph{∥}\textbf{A}(\emph{id}1)} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.2000} + 2\tabcolsep}}{%
+\emph{∥· · · ∥}\textbf{A}(\emph{idt})} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.2000} + 2\tabcolsep}}{%
+\emph{∈}Z\emph{n×}(\emph{t}+1)\emph{m}} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{,}
+\end{quote}
+\end{minipage} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.3000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{y}\emph{id} = \textbf{y}\emph{.}
+\end{quote}
+\end{minipage}} \\
+\multicolumn{10}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{1.0000} + 18\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Instantiating the parameters.} For this instantiation of
+GENHIBE, the lattice dimension for an identity
+\end{quote}
+
+at depth \emph{t} is \emph{mt} = (\emph{t} + 1)\emph{m}, and the initial
+Gram-Schmidt bound \emph{L}0 = \emph{O}(\emph{√n} log \emph{q}). As in
+Section 5.2,
+
+suppose that BTE is used in a setting where Extract is called only on
+identities of length divisible by some
+
+integer \emph{k}. Then letting \emph{d′}= \emph{⌊d/k⌋}and using the
+bound \emph{m} = \emph{O}(\emph{n} log \emph{q}), using Equations (5.1)
+and (5.2) we can set the parameters \emph{q}, \emph{α} so that
+\end{minipage}} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.2000} + 2\tabcolsep}}{%
+log \emph{q} = ˜\emph{O}(\emph{d′})} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+and
+\end{quote}
+\end{minipage} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.2000} + 2\tabcolsep}}{%
+1\emph{/α} =} & \emph{√d′n ·}˜ &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.2000} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{d′√kn}
+\end{quote}
+\end{minipage}} & \emph{d′} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage} \\
+\multicolumn{10}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{1.0000} + 18\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{HIBE from BTE.} We recall from {[}CHK03{]} how to obtain HIBE
+for any identity space \emph{ID} from any BTE. The HIBE master public
+key is simply a BTE public key, plus a hash function \emph{h}: \emph{ID
+→\{}0\emph{,} 1\emph{\}k}drawn at random from a family of universal
+one-way (or collision resistant) hash functions. Each HIBE identity
+\end{quote}
+
+\emph{id} = (\emph{id}1\emph{, . . . , idℓ}) = \emph{ID≤d}is mapped to
+the BTE identity (\emph{h}(\emph{id}1)\emph{, . . . , h}(\emph{idℓ}))
+\emph{∈}(\emph{\{}0\emph{,} 1\emph{\}k})\emph{ℓ}. Therefore, to emulate
+a HIBE hierarchy of depth \emph{d′}requires a BTE hierarchy of depth
+\emph{d} = \emph{d′k}, and Extract in the BTE
+
+is only ever called on identities of length divisible by \emph{k}. It is
+easy to verify that if the BTE is selectively
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+(sid-ind-cpa) secure, then so is the resulting HIBE.
+
+\begin{quote}
+\textbf{5.4.2} \textbf{Selective Security of} BTE
+
+Recall that in a selective-identity (sid-ind-cpa) attack, the adversary
+first has to declare its challenge identity before receiving the master
+public key \emph{mpk}. In the security proof, the simulator can
+therefore set up \emph{mpk} to depend on the challenge identity. In our
+simulation, all matrices in \emph{mpk} will either be undirected, or
+controlled by the simulator. As we have seen, a matrix \textbf{A} =
+\textbf{A}1\emph{∥. . . ∥}\textbf{A}\emph{ℓ}is undirected if all
+\textbf{A}\emph{i} are undirected, while \textbf{A} is controlled if and
+only if at least one \textbf{A}\emph{i} is controlled. In the
+simulation, \textbf{A}0 will be undirected, so a user secret key for
+identity \emph{id} can be constructed if and only if at least one of the
+\textbf{A}(\emph{idi}) \emph{i} is controlled. We will set
+\end{quote}
+
+24
+
+up these matrices so that: (1) for all \emph{id} that can appear in
+Extract queries (i.e., those which differ from \emph{id∗}in
+
+\begin{quote}
+at least one position), \textbf{A}\emph{id} is controlled, and (2) for
+the challenge identity \emph{id∗}, \textbf{A}\emph{id∗}is undirected.
+\end{quote}
+
+\textbf{Theorem 5.3} (Security of BTE)\textbf{.} \emph{There exists a
+PPT oracle algorithm (a reduction) S attacking} KEM \emph{(instantiated
+with dimension} (\emph{d} + 1)\emph{m and q, α as above) such that, for
+any adversary A mounting a sid-ind-cpa attack on} BTE\emph{,}
+
+\textbf{Adv}KEM(\emph{SA}) \emph{≥}\textbf{Adv}\emph{sid-ind-cpa}
+
+\begin{quote}
+(\emph{A}) \emph{−}negl(\emph{n})\emph{.}
+
+\emph{Proof.} We construct a reduction \emph{S} attacking KEM, which has
+oracle access to an adversary \emph{A} mounting a sid-ind-cpa attack on
+BTE. The reduction is given a uniformly random KEM public key \emph{pk}
+= \textbf{A}\emph{∥}\textbf{y} \emph{∈}Z\emph{n×}(\emph{d}+1)\emph{m×}
+Z\emph{n q}, an encapsulation \textbf{b}\emph{∥b′
+∈}Z(\emph{d}+1)\emph{m×} Z\emph{q}, and a bit \emph{κ} which either is
+encapsulated by \textbf{b}\emph{∥b′}or is uniform and independent of
+everything else; the goal of \emph{S} is to determine which is the
+case.\\
+\emph{S} simulates the (selective-identity) attack on BTE to \emph{A} as
+follows. First, \emph{S} invokes \emph{A} on 1\emph{d}and receives its
+challenge identity \emph{id∗}of length \emph{t∗}=
+\emph{\textbar id∗\textbar{} ∈}{[}\emph{d}{]}. Then \emph{S} produces a
+master public key \emph{mpk}, encapsulation, and some secret internal
+state as follows:
+
+\emph{• Parsing the} KEM \emph{inputs.} Parse \textbf{A} as \textbf{A} =
+\textbf{A}0\emph{∥}\textbf{A}1\emph{∥· · · ∥}\textbf{A}\emph{d
+∈}Z\emph{n×}(\emph{d}+1)\emph{m} for \textbf{A}\emph{i ∈}Z\emph{n×m} for
+all
+
+\emph{i ∈\{}0\emph{, . . . , d\}}. Similarly, truncate \textbf{b} to
+\textbf{b}\emph{∗∈}Z(\emph{t∗}+1)\emph{m} .
+
+\emph{• Undirected growth.} For each \emph{i ∈}{[}\emph{t∗}{]}, let
+\textbf{A}(\emph{id∗i}) = \textbf{A}\emph{i}.
+
+\emph{• Controlled growth.} For each \emph{i ∈}{[}\emph{t∗}{]}, generate
+\textbf{A}(1\emph{−id∗} \emph{i}) \emph{∈}Z\emph{n×m} and basis
+\textbf{S}\emph{i} by invoking
+
+GenBasis(1\emph{n,} 1\emph{m, q}). If \emph{t∗\textless{} d}, then for
+each \emph{b ∈\{}0\emph{,} 1\emph{\}} generate \textbf{A}(\emph{b})
+\emph{t∗}+1and basis \textbf{S}(\emph{b}) \emph{t∗}+1by two
+
+independent invocations of GenBasis(1\emph{n,} 1\emph{m, q}). For each
+\emph{i \textgreater{} t∗}+ 1 (if any) and \emph{b ∈\{}0\emph{,}
+1\emph{\}}, generate \textbf{A}(\emph{b}) \emph{i} \emph{∈}Z\emph{n×m}
+uniformly at random.
+
+\emph{S} gives to \emph{A} the master public key \emph{mpk} =
+(\textbf{A}0\emph{, \{}\textbf{A}(\emph{b}) \emph{j\},}
+\textbf{y}\emph{, d}), the encapsulation \textbf{b}\emph{∗∥b′}, and the
+key bit \emph{κ}. Then \emph{S} answers each Extract query on an
+identity \emph{id} that is not a prefix of (or equal to) \emph{id∗}as
+follows:
+
+\emph{•} If \emph{t} = \emph{\textbar id\textbar{} ≤t∗}, then let
+\emph{i ≥}1 be the first position at which \emph{idi ̸}=
+\emph{id∗}(\textbf{S}\emph{id,} \textbf{x}\emph{id}), which are computed
+by \emph{i}. Answer the query with
+\end{quote}
+
+\textbf{S}\emph{id ←}RandBasis(ExtBasis(\textbf{S}\emph{i,}
+\textbf{A}\emph{id})\emph{, st})
+
+\textbf{x}\emph{id ←}SampleD(ExtBasis(\textbf{S}\emph{i,}
+\textbf{A}\emph{id})\emph{,} \textbf{A}\emph{id,} \textbf{y}\emph{id,
+st})\emph{.}
+
+\begin{quote}
+\emph{•} If \emph{t} = \emph{\textbar id\textbar{} \textgreater{} t∗},
+answer the query with (\textbf{S}\emph{id,} \textbf{x}\emph{id}), which
+are computed by
+\end{quote}
+
+\textbf{S}\emph{id ←}RandBasis(ExtBasis(\textbf{S}(\emph{idt∗}+1)
+\emph{,} \textbf{A}\emph{id})\emph{, st})
+
+\textbf{x}\emph{id ←}SampleD(ExtBasis(\textbf{S}(\emph{idt∗}+1) \emph{,}
+\textbf{A}\emph{id})\emph{,} \textbf{A}\emph{id,} \textbf{y}\emph{id,
+st})\emph{.}
+
+\begin{quote}
+Finally, \emph{S} outputs whatever bit \emph{A} outputs.
+\end{quote}
+
+uniform (hence properly distributed), by hypothesis on KEM and by
+Proposition 3.1. Next, the answers to We now analyze the reduction.
+First, observe that the master public key given to \emph{A} is
+negligibly close to
+
+Extract queries are negligibly close to those in the real attack, by
+Lemma 3.3; note that the Gram-Schmidt
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+vectors of each basis \textbf{S}\emph{i,} \textbf{S}(\emph{b})
+\emph{t∗}+1are sufficiently short to invoke RandBasis and SampleD as
+above. Finally,
+
+the encapsulation \textbf{b}\emph{∗∥b′}(for identity \emph{id∗}) and key
+bit \emph{κ} are distributed as in the real attack, by the truncation
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+property of KEM. Therefore, \emph{S}'s overall advantage is within
+negl(\emph{n}) of \emph{A}'s advantage, as desired.
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+25
+
+\begin{quote}
+\textbf{5.4.3} \textbf{Fully Secure HIBE}
+
+Our fully secure HIBE is essentially our BTE scheme, with identity
+components mapped to binary strings via a suitable kind of hash function
+(not just a UOWHF, which was sufficient for selectively secure HIBE). An
+identity \emph{id} = (\emph{id}1\emph{, . . . , idℓ}) \emph{∈ID≤d}maps
+to a BTE identity (\emph{H}1(\emph{id}1)\emph{, . . . , Hℓ}(\emph{idℓ}))
+\emph{∈}(\emph{\{}0\emph{,} 1\emph{\}λ})\emph{ℓ}for suitable hash
+functions \emph{Hi} specified in the public key.
+\end{quote}
+
+As before, we need the simulator to embed an undirected KEM challenge
+into the master public key so that it corresponds to the public key
+\textbf{A}\emph{id∗}of the target identity, while also having enough
+controlled matrices to allow for answering Extract queries. In a fully
+adaptive attack, the adversary may choose the challenge identity
+\emph{id∗}dynamically and adaptively, making this a difficult balance to
+strike. To overcome this obstacle, we employ a probabilistic argument
+along the lines of the one in {[}BB04a{]}. Concretely, we set up the
+master public key such that each \textbf{A}\emph{id} is totally
+undirected with a certain probability. A sophisticated construction of
+the hash functions \emph{Hi} will ensure that the corresponding events
+are sufficiently independent. That is, even an adversary that adaptively
+asks for user secret keys cannot manage to produce an identity \emph{id}
+for which \textbf{A}\emph{id} is \emph{guaranteed} to be either
+undirected or controlled. By setting the probabilities in the right way
+(depending on the adversary's complexity), we can ensure that with
+significant probability, all \textbf{A}\emph{id} associated with Extract
+queries are controlled, while \textbf{A}\emph{id∗}is undirected. In this
+event, a successful simulation will be possible. Of course, we will have
+to take care that the event of a successful simulation is (at least
+approximately) independent of the adversary's view. To achieve this
+independence, we will employ an ``artificial abort'' strategy similar to
+the one from {[}Wat05{]}.
+
+\textbf{Definition of} SMHIBE\textbf{.} properties are described below
+in Section 5.4.4. Let \emph{H} = (\emph{Hn})\emph{n} be a family of hash
+functions \emph{H} : \emph{\{}0\emph{,} 1\emph{\}n→\{}0\emph{,}
+1\emph{\}λ}, whose
+
+\begin{quote}
+Our standard-model HIBE scheme SMHIBE is just the BTE scheme from
+Section 5.4.1, implemented with a suitable mapping from HIBE to BTE
+identities. Concretely, to obtain a HIBE scheme that supports identities
+\emph{id} = (\emph{id}1\emph{, . . . , idℓ}) \emph{∈}(\emph{\{}0\emph{,}
+1\emph{\}n})\emph{ℓ}of up to \emph{d} levels, we will add to BTE's
+master public key \emph{d} hash functions \emph{H}1\emph{, . . . , Hd}.
+A HIBE identity (\emph{id}1\emph{, . . . , idℓ}) then maps to the binary
+string (i.e., BTE identity)
+\end{quote}
+
+(\emph{H}1(\emph{id}1)\emph{, . . . , Hℓ}(\emph{idℓ}))
+\emph{∈\{}0\emph{,} 1\emph{\}λ·ℓ.}
+
+\begin{quote}
+For convenience, we restate the entire modified Setup algorithm; we also
+slightly modify the notation so it is easier to see how the pieces of
+\emph{mpk} are assembled to generate user public keys.
+
+\emph{•} Setup(1\emph{d}): Using Proposition 3.1, generate \textbf{A}0
+\emph{∈}Z\emph{n×m} and a corresponding short basis \textbf{S}0
+\emph{∈}Z\emph{m×m} with \emph{∥}\textbf{S}0\emph{∥≤L}0. Also sample
+uniformly random and independent matrices \textbf{B}\emph{i,u,b
+∈}Z\emph{n×m} for \emph{i ∈}{[}\emph{d}{]}, \emph{u ∈}{[}\emph{λ}{]},
+\emph{b ∈\{}0\emph{,} 1\emph{\}}, and a vector \textbf{y}
+\emph{∈}Z\emph{n q}. Finally, choose \emph{H}1\emph{, . . . , Hd←Hn}.
+Output
+
+\emph{mpk} = (\textbf{A}0\emph{,} \textbf{y}\emph{,
+\{}\textbf{B}\emph{i,u,b\}}(\emph{i,u,b})\emph{∈}{[}\emph{d}{]}\emph{×}{[}\emph{λ}{]}\emph{×\{}0\emph{,}1\emph{\},
+\{Hi\}i∈}{[}\emph{d}{]}) and \emph{msk} = (\emph{mpk,}
+\textbf{S}0)\emph{.}
+
+For a HIBE identity \emph{id} = (\emph{id}1\emph{, . . . , idℓ})
+\emph{∈}(\emph{\{}0\emph{,} 1\emph{\}n})\emph{ℓ}, we define
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+where
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{A}\emph{id} := \textbf{A}0\emph{∥}\textbf{A}1\emph{,id}1\emph{∥.
+. . ∥}\textbf{A}\emph{ℓ,idℓ∈}Z\emph{n×}(\emph{λℓ}+1)\emph{m}
+\textbf{A}\emph{i,idi} := \textbf{B}\emph{i,}1\emph{,t}1\emph{∥. . .
+∥}\textbf{B}\emph{i,λ,tλ ∈}Z\emph{n×λm ,}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+(5.3)
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+where (\emph{t}1\emph{, . . . , tλ}) := \emph{Hi}(\emph{idi})
+\emph{∈\{}0\emph{,} 1\emph{\}λ}. Note that the user secret key for an
+identity \emph{id} therefore consists of a basis part
+\textbf{S}\emph{id} for Λ\emph{⊥}(\textbf{A}\emph{id}) and a
+decapsultion key \textbf{x}\emph{id} satisfying
+\textbf{A}\emph{id}\textbf{x}\emph{id} = \textbf{y}. For brevity, we
+will write \emph{id\textbar ℓ}:= (\emph{id}1\emph{, . . . , idℓ}) for
+\emph{ℓ≤\textbar id\textbar{}}.
+\end{quote}
+
+26
+
+\begin{quote}
+\textbf{Instantiating the parameters.} In our scheme SMHIBE, each
+resulting BTE identity component \emph{idi} is a\emph{λ}-bit string, and
+thus leads to \emph{k} = \emph{λ} matrices of dimension \emph{m}, which
+are appended to form \textbf{A}\emph{id}. Furthermore,
+\end{quote}
+
+the root matrix \textbf{A}\emph{ε} is of dimension \emph{m}. With a
+maximal depth of \emph{d}, each individual KEM public key matrix
+\textbf{A}\emph{id} is therefore of dimension at most (\emph{dλ} +
+1)\emph{m}. In particular, we can use parameters as in Section 5.4.1,
+with \emph{k} = \emph{λ}.
+
+\begin{quote}
+\textbf{5.4.4} \textbf{Admissible hash functions}
+
+\textbf{Definition.} To achieve full security, we will require a hash
+function (mapping identities to bit strings)
+\end{quote}
+
+with certain special properties. Concretely, we use a variant of the
+admissible hash functions from {[}BB04b{]}.
+
+\begin{quote}
+Let \emph{H} = \emph{\{Hn\}} be a collection of distributions of
+functions \emph{H} : \emph{Cn →Dn} = \emph{\{}0\emph{,} 1\emph{\}λ}. For
+\emph{H ∈Hn}, \emph{K ∈\{}0\emph{,} 1\emph{, ⊥\}λ}, and \emph{x ∈Cn},
+define
+
+\emph{FK,H}(\emph{x}) = CO if \emph{∃u ∈\{}1\emph{, . . . , λ\}} :
+\emph{tu} = \emph{Ku} for (\emph{t}1\emph{, . . . , tλ}) =
+\emph{H}(\emph{x})\emph{.} UN if \emph{∀u ∈\{}1\emph{, . . . , λ\}} :
+\emph{tu ̸}= \emph{Ku}
+\end{quote}
+
+For \emph{µ ∈\{}0\emph{, . . . , λ\}}, denote by \emph{Kµ} the uniform
+distribution on all keys \emph{K ∈\{}0\emph{,} 1\emph{, ⊥\}λ}having
+exactly \emph{µ}non-\emph{⊥}components. For a function ∆: N2\emph{→}R,
+we say that \emph{H} is ∆\emph{-admissible} if for every polynomially
+bounded \emph{Q} = \emph{Q}(\emph{n}), there exists an efficiently
+computable function \emph{µ} = \emph{µ}(\emph{n}), and efficiently
+recognizable
+
+\begin{quote}
+sets bad\emph{H ⊆}(\emph{Cn})\emph{∗}(\emph{H ∈Hn}), so that the
+following holds:\\
+\emph{•} For every PPT algorithm \emph{C} that, on input a function
+\emph{H ∈Hn}, outputs a vector \textbf{x} \emph{∈CQ}+1 , the function
+
+\textbf{Adv}\emph{adm H} (\emph{C}) := Pr{[}\textbf{x}
+\emph{∈}bad\emph{H \textbar{} H ←Hn} ; \textbf{x} \emph{←C}(\emph{H}){]}
+
+is negligible in \emph{n}.
+
+\emph{•} For every \emph{H ∈Hn} and every \textbf{x} = (\emph{x}0\emph{,
+. . . , xQ}) \emph{∈CQ}+1
+
+\emph{\textbackslash{}} bad\emph{H}, we have that
+
+Pr{[}\emph{FK,H}(\emph{x}0) = UN \emph{∧FK,H}(\emph{x}1) = \emph{· · ·}
+= \emph{FK,H}(\emph{xQ}) = CO{]} \emph{≥}∆(\emph{n, Q})\emph{,}
+
+where the probability is over uniform \emph{K ∈Kµ}(\emph{n,Q}).
+\end{quote}
+
+We say that \emph{H} is \emph{admissible} if \emph{H} is admissible for
+some ∆= ∆(\emph{n, Q}) which is significant for every polynomial
+\emph{Q} = \emph{Q}(\emph{n}).
+
+\begin{quote}
+\textbf{Intuition.} We will eventually use \emph{H} on input an identity
+component \emph{id ∈Cn}. The output \emph{t} = \emph{H}(\emph{id})
+\emph{∈\{}0\emph{,} 1\emph{\}λ}will determine a selection
+\textbf{B}1\emph{,t}1\emph{, . . . ,} \textbf{B}\emph{λ,tλ} out of
+2\emph{λ} matrices \textbf{B}\emph{u,b} (for (\emph{u, b})
+\emph{∈}{[}\emph{λ}{]} \emph{× \{}0\emph{,} 1\emph{\}}). The vector
+\emph{K ∈\{}0\emph{,} 1\emph{, ⊥\}λ}indicates for which
+\textbf{B}\emph{u,b} we know a trapdoor during our security proof.
+(Concretely, we will know a trapdoor for \textbf{B}\emph{u,Ku}; if
+\emph{Ku} = \emph{⊥}, then we will not know a trapdoor for either
+\textbf{B}\emph{u,}0 or \textbf{B}\emph{u,}1.) Using this setup,
+\emph{FK,H}(\emph{id}) = CO means that we know a trapdoor for at least
+one of the matrices \textbf{B}\emph{u,tu}
+
+appearing in
+\end{quote}
+
+\textbf{B} := \textbf{B}1\emph{,t}1\emph{∥. . . ∥}\textbf{B}\emph{λ,tλ,}
+
+where \emph{t} = \emph{H}(\emph{id}). Hence, we can derive a trapdoor
+for \textbf{B} using Lemma 3.2, and we can say that \textbf{B} is
+
+\emph{controlled}. If \emph{FK,H}(\emph{id}) = UN, then we can hope to
+embed an \emph{undirected} KEM challenge into this matrix.
+
+\begin{quote}
+(This also explains the notation of \emph{F}-images.)
+
+In the definition of admissibility, we consider adversarially chosen
+identities \emph{x}0\emph{, . . . , xQ}, where \emph{x}0 is the
+\end{quote}
+
+challenge identity, and the \emph{xi} (for \emph{i ≥}1) are identities
+from user secret key queries. We will be interested in
+
+27
+
+\begin{quote}
+the case that \emph{x}0 is mapped to an undirected matrix (i.e.,
+\emph{FK,H}(\emph{x}0) = UN), while the other \emph{xi} are mapped to
+controlled matrices (i.e., \emph{FK,H}(\emph{xi}) = CO). The second
+condition of admissibility requires that the probability that this
+happens is at least ∆for a suitable choice of keys \emph{K} and ``good''
+query vectors \textbf{x}. The first condition states that it is
+computationally infeasible to find ``bad'' query vectors. (In the
+concrete construction mentioned below, ``bad'' query vectors correspond
+to collisions of an underlying cryptographic hash function.) Note that
+the first condition (``bad'' vectors are infeasible to find) is
+computational, while the second condition is purely statistical.
+\end{quote}
+
+key queries of an adversary attacking SMHIBE refer to controlled
+matrices \textbf{B}, while (2) the (adversarially Taken together,
+admissibility of \emph{H} hence simply means that with significant
+probability, (1) all user secret
+
+\begin{quote}
+selected) challenge identity is mapped to an undirected matrix
+\textbf{B}.
+
+We stress that while the \emph{security reduction} depends on the
+parameter ∆(and thus on the number \emph{Q} of user secret key queries),
+the hash function itself does not. In particular, the resulting HIBE
+scheme does not make any assumptions about \emph{Q} (except, of course,
+that \emph{Q} is bounded by \emph{some} a-priori unknown polynomial).
+
+\textbf{Difference from the definition of {[}BB04b{]}.} Note that our
+definition of admissibility is conceptually different from that of
+{[}BB04b{]}. The reason for the change is that our definition is better
+suited for our purposes. Concretely, their definition is based upon
+indistinguishability from a (biased) random function. However, their
+construction only achieves asymptotic indistinguishability (i.e.,
+negligible distinguishing advantage) when the ``target'' random function
+is constant. (In their notation, this corresponds to the case when
+\emph{γ} is negligible, so that Pr{[}\emph{FK,H}(\emph{x}) = 1{]} = 1
+\emph{−}negl(\emph{n}).) Such a function is not very useful for
+aymptotic purposes. In an asymptotic sense, their construction becomes
+useful only with parameters that cause the distinguishing advantage to
+become non-negligible (but still smaller than the inverse of a given
+polynomial). With that parameter choice, our definition allows for a
+conceptually simpler analysis. Namely, it separates certain negligible
+error probabilities (of \textbf{x} \emph{∈}bad\emph{H}) from
+significant, by purely combinatorial bounds on the probability of the
+`simulation-enabling' event
+\end{quote}
+
+good := {[}\emph{FK,H}(\emph{x}0) = UN \emph{∧FK,H}(\emph{x}1) = \emph{·
+· ·} = \emph{FK,H}(\emph{xQ}) = CO{]}\emph{.}
+
+\begin{quote}
+Specifically, we can bound Pr{[}good{]} for \emph{every} \textbf{x}
+\emph{̸∈}bad\emph{H}, which simplifies the artificial abort step below.
+Note that while the original analysis from {[}BB04b{]} does not
+incorporate an artificial abort step, this actually would have been
+necessary to guarantee sufficient independence in (their version of) the
+event good. This becomes an issue in {[}BB04b, Claim 2{]}, when the
+success probability of an adversary conditioned on good is related to
+its original (unconditioned) success probability.
+\end{quote}
+
+\textbf{Constructions.} In {[}BB04b{]} it is shown how to construct
+admissible hash functions from a given collision-resistant hash function
+family. And since collision-resistant hash functions can be built from
+the SIS problem (which is no easier than the LWE problem), this does not
+entail extra assumptions in the encryption context. While the
+construction from {[}BB04b{]} is proved to satisfy the definition of
+admissibility from that work, the proof actually transfers directly to
+our definition as well. For parameter choices as in {[}BB04b, Section
+5.3{]}, we get a single hash function with output length \emph{λ} =
+\emph{O}(\emph{n}2+\emph{ε}) (for arbitrary \emph{ε \textgreater{}} 0)
+that is ∆-admissible with∆= Θ(1\emph{/Q}2).5
+
+\begin{quote}
+5In the notation of {[}BB04b{]}, we replace the output length \emph{βH}
+of the original hash function with \emph{k}, and bound the number
+\emph{Q} of hash function queries by 2\emph{kε/}2. Note that \emph{Q}
+will later correspond to the number of (online) user secret key queries,
+so we bound \emph{Q} by a comparatively small exponential function.
+\end{quote}
+
+28
+
+\begin{quote}
+\textbf{5.4.5} \textbf{Full security of} SMHIBE
+\end{quote}
+
+If the hash function family \emph{H} is admissible, then we can prove
+full security. Unfortunately, we only know constructions of admissible
+hash functions that require \emph{λ} = \emph{O}(\emph{n}2+\emph{ε}), so
+the resulting scheme is not very
+
+practical. We base the security of SMHIBE on that of the KEM scheme of
+Section 5.1 (with \emph{q′}= \emph{q}, \emph{n′}= \emph{n},
+
+\begin{quote}
+and \emph{m′}= 2\emph{dλm}).
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\multicolumn{5}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{1.0000} + 8\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Theorem 5.4.} \emph{Let A be an adversary mounting an
+aid-ind-cpa attack on} SMHIBE \emph{that makes at most Q}(\emph{n})
+Extract \emph{queries. Then for every polynomial S} =
+\emph{S}(\emph{n})\emph{, there exists an adversary SAon} KEM\emph{'s
+ind-cpa security, and an adversary C on H's admissibility such that}
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\textbf{Adv}\emph{aid-ind-cpa} SMHIBE(\emph{A}) \emph{≤d ·}
+\textbf{Adv}\emph{adm} & (\emph{C})
++\textbf{Adv}\emph{ind-cpa}∆(\emph{n, Q})\emph{d} KEM(\emph{SA}) & + &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+1\\
+\emph{S}(\emph{n}) + negl(\emph{n})\emph{.}
+\end{quote}\strut
+\end{minipage} & (5.4) \\
+\bottomrule()
+\end{longtable}
+
+\emph{The running time of C is roughly that of the aid-ind-cpa
+experiment with A, and the running time of SAis roughly that of the
+aid-ind-cpa experiment with A, plus O}(\emph{n}2\emph{QS/}∆\emph{d})
+\emph{steps.}
+
+\begin{quote}
+Note that for the admissible hash function from {[}BB04b{]}, ∆(\emph{n,
+Q})\emph{d}= Θ(1\emph{/Q}2\emph{d}) is inverse polynomial
+
+for any fixed \emph{d}. Since \emph{S} in Theorem 5.4 is arbitrary, we
+obtain:
+
+\textbf{Corollary 5.5.} \emph{If H is admissible, and if} KEM \emph{is
+ind-cpa secure, then} SMHIBE \emph{is aid-ind-cpa-secure.}
+
+\textbf{5.4.6} \textbf{Proof of Theorem 5.4}
+
+We proceed in games, with \textbf{Game} 0 being the original aid-ind-cpa
+experiment with adversary \emph{A}. We assume without loss of generality
+that \emph{A} always makes exactly \emph{Q} = \emph{Q}(\emph{n}) user
+secret key queries. We denote these queries by \emph{idj}= (\emph{idj}
+1\emph{, . . . , idjℓj}) (for 1 \emph{≤j ≤Q}), and the challenge
+identity chosen by \emph{A} as \emph{id∗}= (\emph{id∗}1\emph{, . . . ,
+id∗ℓ∗}). By \emph{outi}, we denote the experiment's output in Game
+\emph{i}. By definition,
+
+\emph{\textbar{}}Pr{[}\emph{out}0 = 1{]}
+\emph{−}1\emph{/}2\emph{\textbar{}} = \textbf{Adv}aid-ind-cpa
+SMHIBE(\emph{A})\emph{.} (5.5)
+
+In the following, for every \emph{i ∈}{[}\emph{d}{]}, let \emph{IDQ i}:=
+\emph{j\{idj i\}} be the set of all level-\emph{i} identities contained
+in user secret key queries. Let \emph{ID∗i}:= \emph{\{id∗i\}} be the
+level-\emph{i} challenge identity (or the empty set if
+\emph{ℓ∗\textless{} i}). Note that 1 \emph{≤\textbar IDQ}\\
+\emph{i\textbar{} ≤Q} and 0 \emph{≤\textbar ID∗i\textbar{} ≤}1. For our
+upcoming probabilistic argument we need actually identity sets of a
+fixed size, so we pad all \emph{IDQ i}and \emph{ID∗i}in some canonical
+(but arbitrary) way with unused identities.
+
+and \emph{\textbar ID}CO\\
+undirected matrices, while the \emph{ID}CO
+
+\emph{ID}UN\emph{−IDi ∈}(\emph{\{}0\emph{,} 1\emph{\}n})\emph{Q}+1plays
+the role of the input vector \textbf{x} in the definition of
+admissibility. (That is, we will be interested in the case that its
+first component is mapped to an undirected matrix, while the other
+components\emph{−→i}, and whose remaining \emph{Q} components are the
+elements of \emph{ID}CO\\
+Concretely, for all \emph{i}, let \emph{ID}UN
+
+Furthermore, let\emph{−}\\
+\emph{i\textbar{}} = \emph{Q}. Intuitively, the (singleton) sets
+\emph{ID}UN
+
+\emph{IDi ∈}(\emph{\{}0\emph{,} 1\emph{\}n})\emph{Q}+1be the vector
+whose first component is the (unique) element of\emph{−→}\\
+\emph{⊇ID∗}
+\end{quote}
+
+should map to controlled matrices.
+
+\emph{i}and \emph{ID}CO\emph{⊇IDQ} contain those identities which we
+need to map to \emph{i\textbackslash{} ID∗i}be disjoint, and such that
+\emph{\textbar ID}UN
+
+\begin{quote}
+(in some canonical order). Intuitively,\\
+\emph{i\textbar{}} = 1
+
+are mapped to controlled matrices.)
+\end{quote}
+
+whenever\emph{−}In \textbf{Game} 1, we eliminate the ``bad
+\emph{H}-queries.'' Namely, Game 1 aborts (and outputs a uniform bit)
+
+\begin{quote}
+\emph{IDi ∈}bad\emph{Hi} for some \emph{i}. Here, bad\emph{Hi} denotes
+the set of ``bad \emph{H}-queries'' that comes with the\emph{−→}
+\end{quote}
+
+admissibility of \emph{H}. In the concrete admissible hash function
+mentioned above, e.g., the set bad\emph{Hi} corresponds to collisions of
+an underlying cryptographic hash function. A straightforward reduction
+shows
+
+\emph{\textbar{}}Pr{[}\emph{out}1 = 1{]} \emph{−}Pr{[}\emph{out}0 =
+1{]}\emph{\textbar{} ≤d ·} \textbf{Adv}\emph{adm} (\emph{C})\emph{.}
+
+29
+
+for a suitable adversary \emph{C} on \emph{H}'s admissibility. The
+factor of \emph{d} comes from the fact that we are actually using
+\emph{d} different admissible hash functions, one for each level.
+
+In \textbf{Game} 2, after the adversary has terminated, we let an event
+good2 occur independently with probability∆\emph{d}. (That is, we
+independently toss a coin with bias ∆\emph{d}, and let good2 be the
+event that the coin comes out 1.) We abort the experiment (and output a
+uniformly random bit) if \emph{¬}good2 occurs. We get\\
+Pr{[}\emph{out}2 = 1{]} \emph{−}1\emph{/}2 = Pr{[}good2{]}
+(Pr{[}\emph{out}1 = 1{]} \emph{−}1\emph{/}2) =
+∆\emph{d}(Pr{[}\emph{out}1 = 1{]} \emph{−}1\emph{/}2) \emph{.}
+
+Intuitively, this seemingly meaningless and unforced artificial abort
+step paves the way for our later refine-ments. In particular, we will
+later on have to deal with a (forced) abort event which can happen with
+a probability \emph{up to} (but not necessarily exactly) ∆\emph{d}.
+However, the adversary's output distribution should be (at least
+approximately) independent of the abort event. Hence, we will fix the
+probability for an abort to ∆\emph{d}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{1.0000} + 6\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+already at this point, and later on take care that the abort always
+happens with (roughly) the same probability.
+
+\begin{quote}
+In \textbf{Game} 3, we change the abort policy. Namely, after the
+adversary has terminated, we first attach labels
+
+to the identities in all\emph{−IDi}. To this end, let\emph{−→}
+
+\emph{Fi}(\emph{id}) = \emph{FKi,Hi}(\emph{id}) = CO if \emph{∃u
+∈\{}1\emph{, . . . , λ\}} : \emph{tu} = \emph{Ki u}
+
+UN if \emph{∀u ∈\{}1\emph{, . . . , λ\}} : \emph{tu ̸}= \emph{Ki u}
+\end{quote}
+
+for (\emph{t}1\emph{, . . . , tλ}) = \emph{Hi}(\emph{id}). Here, for
+every \emph{i}, \emph{Ki}= (\emph{Ki} 1\emph{, . . . , Kiλ})
+\emph{∈\{}0\emph{,} 1\emph{, ⊥\}λ} is initially chosen by the
+
+experiment uniformly among all \emph{K ∈\{}0\emph{,} 1\emph{, ⊥\}λ}with
+exactly \emph{µ} non-\emph{⊥}components. If \emph{Fi}(\emph{id}) = CO,
+then \emph{id} is \emph{controlled}, and if \emph{Fi}(\emph{id}) = UN,
+then \emph{id} is \emph{undirected}. Later on, controlled identities
+will correspond to
+
+\begin{quote}
+controlled matrices, while undirected identities will correspond to
+undirected matrices.
+\end{quote}
+
+\emph{id ∈ID}UN Let \emph{Ei} denote the event that in Game 3,
+\emph{Fi}(\emph{id}) = CO for all \emph{id ∈ID}CO \emph{i}. Let \emph{E}
+:=\emph{d i}=1\emph{Ei}. By assumption about \emph{H}, we know that
+Pr{[}\emph{E}{]} \emph{≥}∆\emph{d}. and \emph{Fi}(\emph{id}) = UN for
+all
+
+\begin{quote}
+Ideally, we would like to replace event good2 from Game 2 with event
+\emph{E}. Unfortunately, however, \emph{E}
+
+might not be independent of \emph{A}'s view, so we cannot (directly)
+proceed that way. Instead, we use artificial abort techniques. That is,
+given the identities in all\emph{−IDi}, we approximate \emph{pE} :=
+Pr\emph{−→} \emph{E \textbar{}} (\emph{−IDi})\emph{i−→} by sufficiently
+\end{quote}
+
+we can obtain an approximation ˜often sampling values of \emph{K} and
+attaching colors. Hoeffding's inequality yields that with
+\emph{⌈nS/}∆\emph{d⌉}samples,
+
+\emph{pE ≥}∆\emph{d}of \emph{pE} that satisfies
+\end{minipage}} \\
+\midrule()
+\endhead
+Pr & \emph{\textbar pE −}˜\emph{pE\textbar{} ≥}∆\emph{d} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{≤}1 2\emph{n .}
+\end{quote}
+\end{minipage}} \\
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{1.0000} + 6\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Now we finally abort if \emph{E} does not occur. But even if \emph{E}
+occurs (which might be with probability \emph{pE \textgreater{}}
+∆\emph{d}), we artificially enforce an abort with probability 1
+\emph{−}∆\emph{d/} ˜always have \emph{pE}. Call good3 the event that we
+do not abort. We
+\end{quote}
+\end{minipage}} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}}{%
+Pr{[}good3{]} = \emph{pE ·}∆\emph{d}} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+= ∆\emph{d pE pE}
+\end{quote}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Hence, except with probability 1\emph{/}2\emph{n},
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{\textbar{}}Pr{[}good3{]} \emph{−}Pr{[}good2{]}\emph{\textbar{}} =
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+∆\emph{d −}∆\emph{d pE}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+= ∆\emph{d}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{pE −pE pE}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{≤}∆\emph{d} ∆\emph{d pE}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{≤}∆\emph{d S .}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+(5.6)
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{7}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{1.0000} + 12\tabcolsep}@{}}{%
+Since (5.6) holds for arbitrary\emph{−}between the output of Game 2 and
+Game 3 is bounded by ∆\emph{d/S} + 2\emph{−n}. Hence, \emph{IDi} except
+with probability 1\emph{/}2\emph{n}, we obtain that the statistical
+distance\emph{−→}} \\
+\multicolumn{5}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.7143} + 8\tabcolsep}}{%
+\emph{\textbar{}}Pr{[}\emph{out}3 = 1{]} \emph{−}Pr{[}\emph{out}2 =
+1{]}\emph{\textbar{} ≤}∆\emph{d S}+ 1 2\emph{n .}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.2857} + 2\tabcolsep}@{}}{%
+(5.7)} \\
+\bottomrule()
+\end{longtable}
+
+30
+
+In \textbf{Game} 4, we set up the public key differently. We call
+matrices that are chosen uniformly \emph{undirected,} and matrices that
+are chosen along with a short basis (using Proposition 3.1)
+\emph{controlled.} Now in Game 4, we will set up the public key as
+follows:
+
+\begin{quote}
+\emph{•} \textbf{A}0 as controlled (as in the earlier games),\\
+\emph{•} \textbf{B}\emph{i,u,b} as controlled if \emph{Ki u}= \emph{b}
+(and as undirected if \emph{Ki u̸}= \emph{b}).
+
+By Proposition 3.1, this change affects the distribution of the public
+key only negligibly. (Note that bases for the controlled
+\textbf{B}\emph{i,u,b} are generated, but never used in Game 4.) We
+obtain
+
+\emph{\textbar{}}Pr{[}\emph{out}4 = 1{]} \emph{−}Pr{[}\emph{out}3 =
+1{]}\emph{\textbar{}} = negl(\emph{n})\emph{.} (5.8)
+
+In \textbf{Game} 5, we make the following conceptual change regarding
+user secret key queries. Namely, upon receiving a user secret key
+request for \emph{id} = (\emph{id}1\emph{, . . . , idℓ}), the experiment
+immediately aborts (with uniform output) if \emph{Fi}(\emph{idi}) = UN
+for all \emph{i}. This change is purely conceptual: since \emph{id} is
+not a prefix of the challenge identity \emph{id∗}, there is an \emph{i}
+with \emph{idi ∈ID}CO\emph{⊇IDQ i\textbackslash{} ID∗i}. But since
+\emph{Fi}(\emph{idi}) = UN for this \emph{i}, there is a partial
+identity \emph{idi ∈ID}COwhich \emph{should} map to a controlled matrix
+but does not (since actually \emph{Fi}(\emph{idi}) = UN).
+\end{quote}
+
+This implies \emph{¬Ei} according to the definition of \emph{Ei} in Game
+3, and thus \emph{¬E}. But \emph{¬E} implies that we would have aborted
+anyway, so our additional abort criterion from Game 5 is purely
+conceptual. We get
+
+\begin{quote}
+Pr{[}\emph{out}5 = 1{]} = Pr{[}\emph{out}4 = 1{]}\emph{.} (5.9)
+
+In \textbf{Game} 6, we change the way user secret keys queries \emph{id}
+= (\emph{id}1\emph{, . . . , idℓ}) are answered. By the change from Game
+5, we may assume that \emph{Fi}(\emph{idi}) = CO for some \emph{i}.
+Hence, \emph{tu} = \emph{Ki u}for (\emph{t}1\emph{, . . . , tλ}) =
+\emph{Hi}(\emph{idi}) and some \emph{u}. Thus, the matrix
+\textbf{B}\emph{i,u,tu} that appears in the decomposition of
+\textbf{A}\emph{id} (see (5.3)) is controlled by our public key setup.
+To generate a user secret key, we have to find a short basis for
+\textbf{A}\emph{id}. In Game 4, this is achieved by algorithms ExtBasis
+and RandBasis, using the short basis of the first matrix \textbf{A}0 in
+the decomposition of \textbf{A}\emph{id}. In Game 6, we instead use the
+short basis of \textbf{B}\emph{i,u,tu} that we have initially generated.
+By Lemma 3.3, this results in the same distribution of bases
+\emph{uskid} = (\textbf{S}\emph{id,} \textbf{x}\emph{id}), up to
+negligible statistical distance. Hence
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{\textbar{}}Pr{[}\emph{out}6 = 1{]} \emph{−}Pr{[}\emph{out}5 =
+1{]}\emph{\textbar{}} = negl(\emph{n})\emph{.} (5.10)
+
+In \textbf{Game} 7, we set up \textbf{A}0 as undirected instead of
+controlled. (Note that since Game 6, we do not need a
+\end{quote}
+
+short basis of \textbf{A}0 anymore to generate user secret keys.) Again,
+by Proposition 3.1, this change affects the
+
+\begin{quote}
+distribution of the public key only negligibly. We get
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\emph{\textbar{}}Pr{[}\emph{out}7 = 1{]} \emph{−}Pr{[}\emph{out}6 =
+1{]}\emph{\textbar{}} = negl(\emph{n})\emph{.} & (5.11) \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+We finally claim that\\
+Pr{[}\emph{out}7 = 1{]} \emph{−}1\emph{/}2 = \textbf{Adv}ind-cpa
+KEM(\emph{SA}) (5.12)
+\end{quote}
+
+for our LWE-based KEM KEM with parameters of \emph{q′}= \emph{q},
+\emph{n′}= \emph{n}, and \emph{m′}= (2\emph{dλ} + 1)\emph{m}, and the
+following
+
+\begin{quote}
+adversary \emph{SA}. Recall that \emph{SA}is given a KEM public key
+\emph{pk}, which it parses as
+\end{quote}\strut
+\end{minipage}} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{pk} = \textbf{A}\emph{∥}\textbf{y} =
+\textbf{A}0\emph{∥}\textbf{B}1\emph{,}1\emph{,}0\emph{∥. . .
+∥}\textbf{B}\emph{d,λ,}1\emph{∥}\textbf{y} \emph{∈}
+Z\emph{n×}(2\emph{dλ}+1)\emph{m}+1
+\end{quote}
+
+with \textbf{A}0\emph{,} \textbf{B}\emph{i,u,b ∈}Z\emph{n×m}
+and\textbf{y} \emph{∈}Z\emph{m q}. Furthermore, \emph{SA} receives an
+encapsulation \emph{σ∗}= \textbf{b}\emph{∗∥b′} with
+
+\begin{quote}
+\textbf{b}\emph{∗}\textbf{b}\emph{∗}
+
+\textbf{b}\emph{∗}
+
+\emph{d,λ,}1\\
+1\emph{,}1\emph{,}0
+
+. . . 0:= \textbf{b}\emph{∗←}Noisy\emph{χ}
+\textbf{B}\emph{d,λ,}1 \textbf{B}1\emph{,}1\emph{,}0
+\end{quote}
+
+\textbf{A}0
+
+. . .
+
+\emph{t}\textbf{s}
+
+\emph{t}\textbf{s}
+
+\begin{quote}
+\emph{t}\textbf{s}  \emph{,} \emph{b′←}Noisy\emph{χ}(\textbf{ys} +
+\emph{κ∗· ⌊q/}2\emph{⌋})
+\end{quote}\strut
+\end{minipage} & (5.13) \\
+\bottomrule()
+\end{longtable}
+
+31
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{1.0000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+for a uniformly chosen KEM key \emph{κ∗∈\{}0\emph{,} 1\emph{\}}.
+Finally, \emph{SA}receives a challenge\emph{κ}, which is either equal to
+\emph{κ∗}, or an independently and uniformly random bit.
+
+\begin{quote}
+Now \emph{SA}sets up an environment for \emph{A} as in Game 7. First,
+\emph{SA}prepares an SMHIBE master public key \emph{mpk}. In this,
+\emph{SA}embeds its own challenge matrices \textbf{A}0 and
+\textbf{B}\emph{i,u,b} as the undirected matrices of \emph{mpk}.
+Concretely, \emph{SA}sets \textbf{A}0 := \textbf{A}0, and
+\textbf{B}\emph{i,u,b} := \textbf{B}\emph{i,u,b} whenever \emph{b ̸}=
+\emph{Ki u}. For \emph{b} = \emph{Ki u}, \emph{SA} chooses
+\textbf{B}\emph{i,u,b} controlled as in Game 7. With this setup,
+\emph{SA}can perfectly play Game 7 with \emph{A}; in particular,
+\emph{SA}can answer all of \emph{A}'s user secret key queries (or abort
+if necessary as in Game 7).
+\end{quote}
+
+identity \emph{id∗}= (\emph{id∗}It remains to embed \emph{SA}'s own
+challenge \emph{σ∗}into the SMHIBE challenge encapsulation \emph{σ∗}=
+\textbf{b}\emph{∗∥b′}for 1\emph{, . . . , id∗ℓ∗}). Since otherwise Game
+7 aborts with uniform output, we may assume that \emph{E}
+
+\begin{quote}
+occurs. Hence, for all \emph{i}, for (\emph{ti} 1\emph{, . . . , tiλ}) =
+\emph{Hi}(\emph{id∗i}), and all \emph{u}, we have \emph{Ki u̸}= \emph{ti
+u}. Thus, we can write
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6667} + 2\tabcolsep}}{%
+\textbf{A}\emph{id∗}= \textbf{A}0\emph{∥}\textbf{B}1\emph{,}1\emph{,t}1
+1\emph{∥. . . ∥}\textbf{B}\emph{ℓ∗,λ,tℓ∗}} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+= \textbf{A}0\emph{∥}\textbf{B}1\emph{,}1\emph{,t}1 1\emph{∥. . .
+∥}\textbf{B}\emph{ℓ∗,λ,tℓ∗}
+\end{quote}
+\end{minipage} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{1.0000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+as a concatenation undirected matrices that are part of \textbf{A}. This
+allows to construct \emph{σ∗}from \emph{σ∗}(as given by
+
+(5.13)) through \emph{b′}:= \emph{b′}and
+
+\textbf{b}\emph{∗}:=\textbf{b}\emph{∗}\textbf{b}\emph{∗}
+
+\begin{quote}
+\emph{ℓ∗,λ,tℓ∗}\\
+1\emph{,}1\emph{,t}1
+\end{quote}
+
+\textbf{b}\emph{∗}
+
+. . .
+
+0
+
+\begin{quote}
+\emph{λ.} 1 
+
+Observe that this makes \emph{σ∗}an SMHIBE encapsulation of
+\emph{κ∗}(from (5.13)). Hence, we have a direct
+\end{quote}
+
+correspondence between SMHIBE and KEM challenges. Thus, we can set the
+SMHIBE challenge key as
+
+\begin{quote}
+\emph{κ} :=\emph{κ}, and let \emph{SA}output whatever \emph{A}
+eventually outputs. This finally yields (5.12). Taking (5.5-5.12)
+together shows (5.4).
+\end{quote}\strut
+\end{minipage}} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Doing without artificial abort.}
+\end{quote}
+\end{minipage} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.6667} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+The reason why we needed an artificial abort step in Game 3 is that a
+\end{quote}
+\end{minipage}} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{1.0000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+certain event \emph{E} (that determines whether we can carry through the
+simulation) is not independent of \emph{A}'s view. In Game 3, we changed
+the abort policy to make good3 (the event that we do not abort)
+sufficiently
+
+independent. (This strategy resembles Waters' strategy from
+{[}Wat05{]}.) Unfortunately, this results in a
+
+\begin{quote}
+rather large computational overhead, since we need to approximate the
+probability \emph{pE} = Pr \emph{E \textbar{}} (\emph{−IDi})\emph{i−→}
+\end{quote}
+
+on the fly. Observe that if we had better (i.e., tight lower \emph{and}
+upper) bounds on \emph{pE} in the first place (e.g.,
+
+\emph{\textbar pE −}∆\emph{d\textbar{} \textless{}} ∆\emph{d/S} always),
+we would not need this approximation/abort step at all, since (5.6) and
+hence (5.7) followed directly by these better bounds. The good news is
+that the analysis of \emph{H} from {[}BB04b{]} provides such better
+bounds for Pr{[}\emph{E}{]}, resp. \emph{pE}. The bad news is that this
+comes at a price: using the analysis
+
+of {[}BB04b{]}, \emph{\textbar pE −}∆\emph{d\textbar/}∆\emph{d}depends
+in an inversely polynomial way on \emph{Q}, the number of user secret
+key queries. Hence, to achieve \emph{\textbar pE −}∆\emph{d\textbar{}
+\textless{}} ∆\emph{d/S}, we would need to choose fixed \emph{H}
+parameters that work for \emph{arbitrary} polynomial values of \emph{Q}.
+Of course, in an asymptotic sense, we already do consider arbitrary
+
+\begin{quote}
+polynomial values of \emph{Q}, because \emph{A} may make up to \emph{Q}
+user secret key queries. However, in a concrete sense, the number of
+(online) user secret key queries will typically be much lower than the
+inverse of \emph{A}'s distinguishing advantage. Hence, when considering
+concrete parameters, we can work with much smaller \emph{H} parameters
+when implementing our artificial abort step, at the price of a slower
+reduction. This is why we
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+decided for an artificial abort step.
+\end{quote}
+
+32
+
+\begin{quote}
+\textbf{Acknowledgments}
+\end{quote}
+
+We thank the anonymous reviewers for their helpful comments, and for
+pointing out a small error in an earlier formulation of RandBasis.
+
+\begin{quote}
+\textbf{References}
+
+{[}AB09{]} S. Agrawal and X. Boyen. Identity-based encryption from
+lattices in the standard model, July 2009. Manuscript.
+
+{[}ABB10{]} S. Agrawal, D. Boneh, and X. Boyen. Efficient lattice (H)IBE
+in the standard model. In \emph{EUROCRYPT}, pages 553--572. 2010.
+
+{[}ABC+05{]} M. Abdalla, M. Bellare, D. Catalano, E. Kiltz, T. Kohno, T.
+Lange, J. Malone-Lee, G. Neven, P. Paillier, and H. Shi. Searchable
+encryption revisited: Consistency properties, relation to anonymous IBE,
+and extensions. \emph{J. Cryptology}, 21(3):350--391, 2008. Preliminary
+version in CRYPTO 2005.
+
+{[}Ajt96{]} M. Ajtai. Generating hard instances of lattice problems.
+\emph{Quaderni di Matematica}, 13:1--32, 2004. Preliminary version in
+STOC 1996.
+
+{[}Ajt99{]} M. Ajtai. Generating hard instances of the short basis
+problem. In \emph{ICALP}, pages 1--9. 1999.
+
+{[}AP09{]} J. Alwen and C. Peikert. Generating shorter bases for hard
+random lattices. In \emph{STACS}, pages 75--86. 2009.
+
+{[}BB04a{]} D. Boneh and X. Boyen. Efficient selective-ID secure
+identity-based encryption without random oracles. In \emph{EUROCRYPT},
+pages 223--238. 2004.
+
+{[}BB04b{]} D. Boneh and X. Boyen. Secure identity based encryption
+without random oracles. In \emph{CRYPTO}, pages 443--459. 2004.
+
+{[}BBDP01{]} M. Bellare, A. Boldyreva, A. Desai, and D. Pointcheval.
+Key-privacy in public-key encryption. In \emph{ASIACRYPT}, pages
+566--582. 2001.
+
+{[}BCHK07{]} D. Boneh, R. Canetti, S. Halevi, and J. Katz.
+Chosen-ciphertext security from identity-based encryption. \emph{SIAM J.
+Comput.}, 36(5):1301--1328, 2007.
+
+{[}BCOP04{]} D. Boneh, G. D. Crescenzo, R. Ostrovsky, and G. Persiano.
+Public key encryption with keyword search. In \emph{EUROCRYPT}, pages
+506--522. 2004.
+
+{[}BF01{]} D. Boneh and M. K. Franklin. Identity-based encryption from
+the weil pairing. \emph{SIAM J.} \emph{Comput.}, 32(3):586--615, 2003.
+Preliminary version in CRYPTO 2001.
+
+{[}BGH07{]} D. Boneh, C. Gentry, and M. Hamburg. Space-efficient
+identity based encryption without pairings. In \emph{FOCS}, pages
+647--657. 2007.
+
+{[}Boy10{]} X. Boyen. Lattice mixing and vanishing trapdoors: A
+framework for fully secure short signatures and more. In \emph{Public
+Key Cryptography}, pages 499--517. 2010.
+\end{quote}
+
+33
+
+{[}BW06{]} X. Boyen and B. Waters. Anonymous hierarchical identity-based
+encryption (without random oracles). In \emph{CRYPTO}, pages 290--307.
+2006.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+{[}CHK03{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+R. Canetti, S. Halevi, and J. Katz.
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+A forward-secure public-key encryption scheme.
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{J.}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\emph{Cryptology}, 20(3):265--294, 2007. Preliminary version in
+EUROCRYPT 2003.
+\end{quote}
+
+{[}CHK09{]} D. Cash, D. Hofheinz, and E. Kiltz. How to delegate a
+lattice basis. Cryptology ePrint Archive, Report 2009/351, July 2009..
+
+{[}Coc01{]} C. Cocks. An identity based encryption scheme based on
+quadratic residues. In \emph{IMA Int. Conf.}, pages 360--363. 2001.
+
+{[}CS07{]} G. D. Crescenzo and V. Saraswat. Public key encryption with
+searchable keywords based on Jacobi symbols. In \emph{INDOCRYPT}, pages
+282--296. 2007.
+
+{[}DDN00{]} D. Dolev, C. Dwork, and M. Naor. Nonmalleable cryptography.
+\emph{SIAM J. Comput.}, 30(2):391-- 437, 2000.
+
+{[}DF02{]} Y. Dodis and N. Fazio. Public key broadcast encryption for
+stateless receivers. In \emph{ACM} \emph{Workshop on Digital Rights
+Management}, pages 61--80. 2002.
+
+{[}Gen06{]} C. Gentry. Practical identity-based encryption without
+random oracles. In \emph{EUROCRYPT}, pages 445--464. 2006.
+
+{[}GGH97{]} O. Goldreich, S. Goldwasser, and S. Halevi. Public-key
+cryptosystems from lattice reduction problems. In \emph{CRYPTO}, pages
+112--131. 1997.
+
+{[}GH09{]} C. Gentry and S. Halevi. Hierarchical identity based
+encryption with polynomially many levels. In \emph{TCC}, pages 437--456.
+2009.
+
+{[}GMR84{]} S. Goldwasser, S. Micali, and R. L. Rivest. A digital
+signature scheme secure against adaptive chosen-message attacks.
+\emph{SIAM J. Comput.}, 17(2):281--308, 1988. Preliminary version in
+FOCS 1984.
+
+{[}GPV08{]} C. Gentry, C. Peikert, and V. Vaikuntanathan. Trapdoors for
+hard lattices and new cryptographic constructions. In \emph{STOC}, pages
+197--206. 2008.
+
+{[}GS02{]} C. Gentry and A. Silverberg. Hierarchical ID-based
+cryptography. In \emph{ASIACRYPT}, pages 548--566. 2002.
+
+{[}HHGP+03{]} J. Hoffstein, N. Howgrave-Graham, J. Pipher, J. H.
+Silverman, and W. Whyte. NTRUSIGN: Digital signatures using the NTRU
+lattice. In \emph{CT-RSA}, pages 122--140. 2003.
+
+{[}HL02{]} J. Horwitz and B. Lynn. Toward hierarchical identity-based
+encryption. In \emph{EUROCRYPT}, pages 466--481. 2002.
+
+{[}HPS98{]} J. Hoffstein, J. Pipher, and J. H. Silverman. NTRU: A
+ring-based public key cryptosystem. In \emph{ANTS}, pages 267--288.
+1998.
+
+{[}HW09{]} S. Hohenberger and B. Waters. Short and stateless signatures
+from the RSA assumption. In \emph{CRYPTO}, pages 654--670. 2009.
+
+34
+
+{[}KR00{]} H. Krawczyk and T. Rabin. Chameleon signatures. In
+\emph{NDSS}. 2000.
+
+{[}LM06{]} V. Lyubashevsky and D. Micciancio. Generalized compact
+knapsacks are collision resistant. In \emph{ICALP (2)}, pages 144--155.
+2006.
+
+{[}LM08{]} V. Lyubashevsky and D. Micciancio. Asymptotically efficient
+lattice-based digital signatures. In \emph{TCC}, pages 37--54. 2008.
+
+{[}LN09{]} G. Leurent and P. Q. Nguyen. How risky is the random-oracle
+model? In \emph{CRYPTO}, pages 445--464. 2009.
+
+{[}LPR10{]} V. Lyubashevsky, C. Peikert, and O. Regev. On ideal lattices
+and learning with errors over rings. In \emph{EUROCRYPT}, pages 1--23.
+2010.
+
+{[}MG02{]} D. Micciancio and S. Goldwasser. \emph{Complexity of Lattice
+Problems: a cryptographic perspective}, volume 671 of \emph{The Kluwer
+International Series in Engineering and Computer Science}. Kluwer
+Academic Publishers, Boston, Massachusetts, 2002.
+
+{[}Mic02{]} D. Micciancio. Generalized compact knapsacks, cyclic
+lattices, and efficient one-way functions. \emph{Computational
+Complexity}, 16(4):365--411, 2007. Preliminary version in FOCS 2002.
+
+{[}MR04{]} D. Micciancio and O. Regev. Worst-case to average-case
+reductions based on Gaussian measures. \emph{SIAM J. Comput.},
+37(1):267--302, 2007. Preliminary version in FOCS 2004.
+
+{[}MW01{]} D. Micciancio and B. Warinschi. A linear space algorithm for
+computing the Hermite normal form. In \emph{ISSAC}, pages 231--236.
+2001.
+
+{[}NY89{]} M. Naor and M. Yung. Universal one-way hash functions and
+their cryptographic applications. In \emph{STOC}, pages 33--43. 1989.
+
+{[}Pei09a{]} C. Peikert. Bonsai trees (or, arboriculture in
+lattice-based cryptography). Cryptology ePrint Archive, Report 2009/359,
+July 2009..
+
+{[}Pei09b{]} C. Peikert. Public-key cryptosystems from the worst-case
+shortest vector problem. In \emph{STOC}, pages 333--342. 2009.
+
+{[}Pei10{]} C. Peikert. An efficient and parallel Gaussian sampler for
+lattices. In \emph{CRYPTO}. 2010. To appear.
+
+{[}PR06{]} C. Peikert and A. Rosen. Efficient collision-resistant
+hashing from worst-case assumptions on cyclic lattices. In \emph{TCC},
+pages 145--166. 2006.
+
+{[}PR07{]} C. Peikert and A. Rosen. Lattices that admit logarithmic
+worst-case to average-case connection factors. In \emph{STOC}, pages
+478--487. 2007.
+
+{[}PVW08{]} C. Peikert, V. Vaikuntanathan, and B. Waters. A framework
+for efficient and composable oblivious transfer. In \emph{CRYPTO}, pages
+554--571. 2008.
+
+{[}Rab79{]} M. O. Rabin. Digitalized signatures and public-key functions
+as intractable as factorization. Technical Report MIT/LCS/TR-212, MIT
+Laboratory for Computer Science, 1979.
+
+35
+
+{[}Reg05{]} O. Regev. On lattices, learning with errors, random linear
+codes, and cryptography. \emph{J. ACM}, 56(6):1--40, 2009. Preliminary
+version in STOC 2005.
+
+{[}R¨uc10{]} M. R¨uckert. Strongly unforgeable signatures and
+hierarchical identity-based signatures from lattices without random
+oracles. In \emph{PQCrypto}, pages 182--200. 2010.
+
+{[}Sha84{]} A. Shamir. Identity-based cryptosystems and signature
+schemes. In \emph{CRYPTO}, pages 47--53. 1984.
+
+{[}SSTX09{]} D. Stehl´e, R. Steinfeld, K. Tanaka, and K. Xagawa.
+Efficient public key encryption based on ideal lattices. In
+\emph{ASIACRYPT}, pages 617--635. 2009.
+
+{[}ST01{]} A. Shamir and Y. Tauman. Improved online/offline signature
+schemes. In \emph{CRYPTO}, pages 355--367. 2001.
+
+{[}Wat05{]} B. Waters. Efficient identity-based encryption without
+random oracles. In \emph{EUROCRYPT}, pages 114--127. 2005.
+
+{[}Wat09{]} B. Waters. Dual system encryption: Realizing fully secure
+IBE and HIBE under simple assumptions. In \emph{CRYPTO}, pages 619--636.
+2009.
+
+{[}YFDL04{]} D. Yao, N. Fazio, Y. Dodis, and A. Lysyanskaya. ID-based
+encryption for complex hierarchies with applications to forward security
+and broadcast encryption. In \emph{ACM Conference on} \emph{Computer and
+Communications Security}, pages 354--363. 2004.
+
+36
+
+\end{document}

@@ -1,0 +1,3363 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{longtable,booktabs,array}
+\usepackage{multirow}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage[normalem]{ulem}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\author{}
+\date{}
+
+\begin{document}
+
+Secure Identity-Based Encryption in the Quantum Random Oracle Model
+
+\begin{quote}
+Mark Zhandry\\
+Stanford University, USA\\
+mzhandry@stanford.edu
+\end{quote}
+
+\textbf{Abstract}
+
+\begin{quote}
+We give the first proof of security for an identity-based encryption
+scheme in the \emph{quantum} random oracle model. This is the first
+proof of security for \emph{any} scheme in this model that requires no
+additional assumptions. Our techniques are quite general and we use them
+to obtain security proofs for two random oracle hierarchical
+identity-based encryption schemes and a random oracle signature scheme,
+all of which have previously resisted quantum security proofs, even
+using additional assumptions. We also explain how to remove the extra
+assumptions from prior quantum random oracle model proofs. We accomplish
+these results by developing new tools for arguing that quantum
+algorithms cannot distinguish between two oracle distributions. Using a
+particular class of oracle distributions, so called \emph{semi-constant}
+distributions, we argue that the aforementioned cryptosystems are secure
+against quantum adversaries.
+
+\emph{Keywords}: Quantum, Random Oracle, IBE, Signatures
+
+\textbf{1} \textbf{Introduction}
+\end{quote}
+
+While quantum computation is not yet viable, Shor {[}Sho97{]} showed
+that when fully realized, quantum computers will break most of the
+cryptosystems used today, namely those based on the difficulty factoring
+and the discrete log problem. This has sparked the field of post-quantum
+cryptography, the search for classical systems secure against quantum
+adversaries. To be secure in this setting, a system must have an
+underlying difficult problem for quantum computers, as well as a
+security reduction showing how to solve this problem using a quantum
+adversary that breaks the system. Problems based on lattices have so far
+resisted quantum attacks, and there is a considerable amount of
+literature on lattice-based cryptosystems. However, random oracle
+security proofs for these constructions typically only consider
+classical adversaries, thus failing to show security in the quantum
+world.
+
+\begin{quote}
+The random oracle model {[}BR93{]} is one area where many classical
+proofs lack quantum equivalents. This model is of interest because
+random oracle schemes tend to be more efficient than their standard
+model counterparts. Consequently, the most efficient lattice-based
+schemes are often constructed in the random oracle model. For example,
+Gentry, Peikert, and Vaikuntanathan {[}GPV08{]} show how to construct
+signatures and identity-based encryption (IBE). Cash et al. {[}CHKP10{]}
+and Agrawal, Boneh, and Boyen {[}ABB10{]} give hierarchical IBE schemes
+both in the standard model and the random oracle model, with the random
+oracle constructions being more efficient than the corresponding
+standard model schemes. Gordon, Katz, and Vaikuntanathan {[}GKV10{]}
+give a group signature
+\end{quote}
+
+1
+
+\begin{quote}
+scheme, while Boneh and Freeman {[}BF11{]} demonstrate a homomorphic
+signature scheme, all in the random oracle model.
+\end{quote}
+
+All of these papers prove security against adversaries with classical
+access to the random oracle. However, when the scheme is instantiated,
+the random oracle is replaced with a hash function \emph{H}, which a
+quantum adversary may evaluate on a quantum superposition of inputs. To
+model this ability, it is necessary to allow a quantum adversary to make
+quantum queries to the random oracle. We call this model the quantum
+random oracle model.
+
+\begin{quote}
+Proving security in the quantum random oracle model presents many
+challenges. Among them is the difficulty of efficiently simulating the
+random oracle. In the classical case, the random oracle is simulated on
+the fly, only generating randomness as needed. In the quantum setting,
+the adversary can query the oracle on an exponential superposition of
+inputs. Therefore, to make even the first query look random to the
+adversary, it would seem that we would need exponential randomness.
+
+In addition to this difficulty, there are classical random oracle
+techniques that do not make sense if the adversary has quantum access to
+the random oracle. One such technique is that of Bellare and Rogaway
+{[}BR93{]} for proving the security of the Full Domain Hash signature
+scheme. In this technique, the reduction algorithm is given a challenge
+\emph{c} to solve, and randomly guesses which oracle query the adversary
+will use to break the scheme. The algorithm embeds \emph{c} into the
+response for this query, and if both the guess is correct and the
+adversary breaks the scheme, then the algorithm will be able to solve
+\emph{c}.
+
+In the quantum setting, this argument no longer applies because each
+oracle query might be over a superposition of exponentially many inputs.
+We could choose a random query and plug \emph{c} into all outputs for
+that query, but this will not look like a random oracle to the
+adversary. Alternatively, we could choose one oracle input and plug
+\emph{c} into the corresponding output for all queries. However, our
+chance of guessing correctly will then be exponentially small.
+
+\textbf{1.1} \textbf{Our Contributions}
+\end{quote}
+
+We resolve some of the issues outlined above by giving a quantum analog
+of the technique of Bellare and Rogaway {[}BR93{]} and demonstrating how
+to simulate a random oracle without any additional computational
+assumptions. Specifically, we:
+
+\begin{quote}
+\emph{•} Describe new ways to argue that quantum algorithms cannot
+distinguish between two distri-butions of oracles.
+
+\emph{•} Apply these techniques to a new type of distribution of
+oracles, which we call \emph{semi-constant} distributions, showing that
+they cannot be distinguished from random oracles.
+
+\emph{•} Use our results on semi-constant distributions to prove that
+the random oracle IBE scheme of Gentry et al. {[}GPV08{]} is secure
+against quantum adversaries. The basic idea is to plug the challenge
+\emph{c} into a small fraction of inputs to the oracle, making the
+oracle seen by the adversary a semi-constant distribution. The adversary
+thus behaves as though the oracle is random. If the adversary happens to
+use any of the inputs in this fraction, we are able to solve \emph{c}.
+
+\emph{•} Show that this technique is general by applying it to the
+random oracle hierarchical IBE schemes of Cash et al. {[}CHKP10{]} and
+Agrawal et al. {[}ABB10{]}.
+
+\emph{•} Prove that the generic Full Domain Hash signature scheme
+{[}BR93{]} is secure against quantum adversaries, though this remains a
+theoretical result until a trapdoor permutation is found that is secure
+against quantum adversaries.
+\end{quote}
+
+2
+
+\begin{quote}
+\emph{•} Use our techniques and \emph{k}-wise independent functions to
+solve the problem of simulating quantum random oracles, thus making the
+above results unconditional.
+
+\textbf{1.2} \textbf{Related Work}
+
+Quantum random oracles have been used in several prior works. For
+example, Bennett et al. {[}BBBV97{]} prove several quantum complexity
+results, including a proof that quantum com-puters cannot solve all of
+NP, relative to a random oracle. In a cryptographic setting, quantum
+random oracles have been used by Aaronson {[}Aar09{]} to construct
+quantum money and by Brassard and Salvail {[}BS08{]} and Brassard et al.
+{[}BHK+11{]} to construct quantum analogs of Merkle's Puzzles.
+\end{quote}
+
+Boneh et al. {[}BDF+11{]} give a random oracle scheme that is secure
+against quantum adversaries with classical access to the oracle, but is
+insecure once the adversary has quantum access to the oracle. Despite
+this result, they show that there are circumstances in which a classical
+random oracle security reduction can also be used in the quantum
+setting. However, their proof techniques do not apply to the schemes
+analyzed in this paper. Additionally, their proof simulates the random
+oracle using a pseudorandom function (PRF) that is secure against
+quantum adversaries, hence making their results conditional on the
+existence of a so-called quantum-secure PRF. We note that Zhandry
+{[}Zha12{]} shows that such PRFs can be built from quantum-secure
+pseudorandom generators, which can, in turn, be built from lattices.
+
+\begin{quote}
+There has also been progress toward converting classical security proofs
+into quantum proofs outside of the random oracle model. For instance,
+Unruh{[}Unr10{]} shows that classical statistical security in Canetti's
+universal composabitily (UC) model implies quantum statistical security.
+Hallgren, Smith, and Song {[}HSS11{]} give a two-party protocol that is
+quantum computationally secure in the UC.
+
+\textbf{2} \textbf{Preliminaries}
+\end{quote}
+
+A function \emph{ϵ}(\emph{n}) is negligible if it is non-negative and
+smaller than any inverse polynomial. That is, for any polynomial
+\emph{p}(\emph{n}), \emph{ϵ}(\emph{n}) \emph{\textless{}}
+1\emph{/p}(\emph{n}) for all sufficiently large \emph{n}.
+
+\begin{quote}
+A probabilistic polynomial time (PPT) algorithm is a classical
+randomized algorithm that runs in time polynomial in the size of its
+input. We also call such algorithms efficient.
+
+\textbf{2.1} \textbf{Weight Assignments}
+\end{quote}
+
+A weight assignment on a set \emph{X} is a function \emph{D} : \emph{X
+→}R such that write Pr\emph{D}{[}\emph{event}{]} to represent the sum of
+the weights of all outcomes consistent with that event. A
+\emph{x∈XD}(\emph{x}) = 1. We sometimes
+
+distribution on \emph{X} is a weight-assignment \emph{D} such that
+\emph{D}(\emph{x}) \emph{≥}0 for all \emph{x ∈X}. If \emph{D} is a
+distribution, way that \emph{x} occurs with probability
+\emph{D}(\emph{x}). Let \emph{UX} denote the uniform distribution over
+\emph{X}. That is, \emph{UX} (\emph{x}) = 1\emph{/\textbar X\textbar{}}.
+When the set \emph{X} is clear, we may omit the subscript.
+
+\begin{quote}
+We define the distance between two weight assignments \emph{D}1 and
+\emph{D}2 over a set \emph{X} as
+
+\emph{\textbar D}1 \emph{−D}2\emph{\textbar{}} =
+\emph{\textbar D}1(\emph{x}) \emph{−D}2(\emph{x})\emph{\textbar{}}\\
+\emph{x∈X}
+
+If \emph{\textbar D}1 \emph{−D}2\emph{\textbar{} ≤ϵ}, we say that
+\emph{D}1 and \emph{D}2 are \emph{ϵ}-close.
+\end{quote}
+
+3
+
+\begin{quote}
+Given a set of weight assignments \emph{Dy} over \emph{X}, indexed by
+\emph{y ∈Y}, and a weight assignment \emph{D} over \emph{Y}, we can
+define a weight assignment \emph{D′}over \emph{X} where
+
+\emph{D′}(\emph{x}) = \emph{D}(\emph{y})\emph{Dy}(\emph{x})
+\end{quote}
+
+\emph{y∈Y}
+
+\begin{quote}
+assignments \emph{D}1 and \emph{D}2 over \emph{Y}, define \emph{D′} We
+write \emph{D′}= \emph{y∈YD}(\emph{y})\emph{Dy}. Say each of the
+\emph{Dy}s are actually distributions. Given two weight 1=
+\emph{y∈YD}1(\emph{y})\emph{Dy} and \emph{D′}2=
+\emph{y∈YD}2(\emph{y})\emph{Dy}. Then:
+
+\emph{D′}1\emph{−D′}2 = (\emph{D}1(\emph{y})
+\emph{−D}2(\emph{y}))\emph{Dy}(\emph{x})\\
+\emph{x∈X y∈Y}
+
+\emph{≤} \emph{\textbar{}}(\emph{D}1(\emph{y})
+\emph{−D}2(\emph{y}))\emph{Dy}(\emph{x})\emph{\textbar{}}\\
+\emph{x∈X,y∈Y}\\
+= \emph{\textbar D}1(\emph{y})
+\emph{−D}2(\emph{y})\emph{\textbar Dy}(\emph{x})\\
+\emph{x∈X,y∈Y}\\
+= \emph{\textbar D}1(\emph{y}) \emph{−D}2(\emph{y})\emph{\textbar{}} =
+\emph{\textbar D}1 \emph{−D}2\emph{\textbar{}}\\
+\emph{y∈Y}
+\end{quote}
+
+Consider the set of functions \emph{H} : \emph{X →Y} for sets \emph{X}
+and \emph{Y}, denoted by \emph{HX,Y}. Consider a weight assignment
+\emph{D} on \emph{HX,Y}. Let \emph{W ⊆X}. We define the marginal weight
+assignment \emph{DW} of \emph{D} on \emph{HW,Y} where the weight of a
+function \emph{HW} : \emph{W →Y} is equal to the sum of the weights of
+all \emph{H ∈HX,Y} that agree with \emph{HW} on \emph{W}. In other
+words,
+
+\emph{DW}(\emph{HW}) = Pr \emph{D}{[}\emph{H}(\emph{w}) =
+\emph{HW}(\emph{w})\emph{∀w ∈W}{]}
+
+\begin{quote}
+We call two weight assignments \emph{D}1 and \emph{D}2 on \emph{HX,Y
+k}-wise equivalent if for all \emph{W ⊆X} of size \emph{k}, the marginal
+weight assignments \emph{D}1\emph{,W} and \emph{D}2\emph{,W} (of
+\emph{D}1 and \emph{D}2) over \emph{HW,Y} are identical.
+
+\textbf{2.2} \textbf{Quantum Computation}
+\end{quote}
+
+A quantum algorithm is an algorithm executed on a quantum computer that
+produces a classical output. Most of the background in quantum
+computation needed to understand this paper is for the proof of Theorem
+3.1. Since this proof appears in Appendix B, we present the necessary
+background there. In the meantime, we recall a couple basic facts about
+quantum computation, and refer the reader to {[}NC00{]} for a more
+thorough discussion.
+
+\begin{quote}
+\textbf{Fact 1.} Any classical computation can be implemented on a
+quantum computer.
+
+\textbf{Fact 2.} Any function that has an efficient classical algorithm
+computing it can be implemented efficiently as a quantum-accessible
+oracle.
+\end{quote}
+
+\textbf{Fact 3.} Given a quantum algorithm \emph{A} with oracle access
+to an oracle \emph{O}, each oracle \emph{O} defines a probability
+distribution of the outputs of \emph{A}. Hence, any weight assignment of
+oracles leads to a weight assignment of outputs of \emph{A}, and if two
+weight assignments \emph{D}1 and \emph{D}2 are a distance \emph{ϵ}
+apart, the weight assignment of the outputs of \emph{A} under these
+distributions are a distance at most \emph{ϵ} apart.
+
+4
+
+\begin{quote}
+\textbf{2.3} \textbf{Cryptographic Primitives}
+
+Here we briefly outline a few cryptographic primitives, and refer to
+Appendix A for details. All primitives depend on a security parameter
+\emph{n}.
+\end{quote}
+
+An encryption scheme E is a triple of PPT algorithms
+(E\emph{.}Gen\emph{,} E\emph{.}Enc\emph{,} E\emph{.}Dec), where
+E\emph{.}Gen(1\emph{n}) generates secret/public keys (sk\emph{,} pk),
+E\emph{.}Encpk encrypts a message, and E\emph{.}Decsk decrypts a
+ciphertext. We use the indistinguishability under chosen plaintext
+attack (IND-CPA) notion of security {[}GM84{]}.
+
+\begin{quote}
+An identity-based encryption (IBE) scheme IBE = (IBE\emph{.}Gen\emph{,}
+IBE\emph{.}Extract\emph{,} IBE\emph{.}Enc\emph{,} IBE\emph{.}Dec) is a
+4-tuple of PPT algorithms where IBE\emph{.}Gen(1\emph{n}) generates
+master secret/public keys (msk\emph{,} mpk), IBE\emph{.}Extractmsk
+generates secret keys for given identities, IBE\emph{.}Encmpk encrypts a
+message to an identity, and IBE\emph{.}Dec decrypts a ciphertext sent to
+an identity by using the corresponding secret key. We use the
+indistinguishability under chosen plaintext attack (IND-ID-CPA) notion
+of security {[}BF01{]}.
+
+A signature scheme S = (S\emph{.}Gen\emph{,} S\emph{.}Sign\emph{,}
+S\emph{.}Ver) is a triple of PPT algorithms where
+S\emph{.}Gen(1\emph{n}) generates secret/public keys (sk\emph{,} pk),
+S\emph{.}Signsk signs a message, and S\emph{.}Verpk verifies a
+signature. We use the existential unforgeablility under chosen message
+attack (UF-CMA) notion of security {[}GMR88{]}.
+
+A pre-image sampleable function (PSF) is a quadruple of algorithms F =
+(F\emph{.}Gen\emph{,} F\emph{.}Sample\emph{, f, f−}1) where F\emph{.}Gen
+generates private/public keys (sk\emph{,} pk), \emph{f}pk is a function,
+F\emph{.}Sample samples \emph{x} from a sk(\emph{y}) samples from
+\emph{D} conditioned on \emph{f}pk(\emph{x}) = \emph{y}. distribution
+\emph{D} such that \emph{f}pk(\emph{x}) is uniform, and \emph{f−}1\\
+For security, we use the notion of one-wayness.
+
+A trapdoor permutation (TDP) is a special case of a PSF where \emph{f}
+is bijective and F\emph{.}Sample simply returns a random element in the
+domain of \emph{f}pk. Since F\emph{.}Sample is already defined, we omit
+it from the specification.
+
+\textbf{2.4} \textbf{Random Oracle Model}
+
+In the Random Oracle Model, we assume the existence of a random function
+\emph{H}, and give all parties oracle access to this function. If
+\emph{A} makes queries to an oracle \emph{H}, we denote this as
+\emph{AH}. If a system \emph{S} uses a random oracle in its
+specification, we denote this as \emph{SH}. The algorithms comprising
+any cryptographic protocol can use \emph{H}, as can the adversary. Thus
+we modify the security games for all cryptographic systems to allow the
+adversary to make random oracle queries.
+
+When a random oracle scheme is implemented, some suitable hash function
+\emph{H} is included in the specification. Any algorithm (adversary
+included) now replaces oracle queries with evaluations of this hash
+function. In the quantum setting, because a quantum algorithm can
+evaluate \emph{H} on an arbitrary superposition, we must allow the
+quantum adversary to make quantum queries to the random oracle. We call
+this the quantum random oracle model.
+
+\textbf{3} \textbf{Distinguishing Oracles With Quantum Queries}
+
+In this section, we give some tools for arguing that quantum algorithms
+cannot distinguish between two distributions of oracles. The trivial way
+to bound the ability of any quantum algorithm to distinguish two oracle
+distributions \emph{D}1 and \emph{D}2 is to bound the distance between
+\emph{D}1 and \emph{D}2 themselves. However, in many cases, the
+distributions we are interested in are in fact very far apart, so we
+need some new techniques for arguing indistinguishability. First, we
+show that \emph{k}-wise equivalent distributions are indistinguishable,
+using techniques similar to that of Meyer and Pommersheim {[}MP11{]}:
+\end{quote}
+
+5
+
+\textbf{Theorem 3.1.} \emph{Let A be a quantum algorithm making q
+quantum queries to an oracle H} : \emph{X →Y. If we draw H from some
+weight assignment D, then for every z, the quantity}
+Pr\emph{H←D}{[}\emph{AH}() = \emph{z}{]} \emph{is}
+
+\emph{a linear combination of the quantities}
+Pr\emph{H←D}{[}\emph{H}(\emph{xi}) = \emph{ri∀i ∈\{}1\emph{, ...,}
+2\emph{q\}}{]} \emph{for all possible settings of the xi and ri.}
+
+\begin{quote}
+This is proved in Appendix B, and immediately implies two important
+facts:
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}@{}}
+\toprule()
+\multicolumn{9}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{1.0000} + 16\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{•} If two weight assignments on oracles, \emph{D}1 and \emph{D}2,
+are 2\emph{q}-wise equivalent, then any \emph{q} query quantum algorithm
+behaves the same under both weight assignments, since for all 2\emph{q}
+pairs
+
+(\emph{xi, ri}), Pr\emph{H←D}1{[}\emph{H}(\emph{xi}) = \emph{ri∀i
+∈\{}1\emph{, ...,} 2\emph{q\}}{]} = Pr\emph{H←D}2{[}\emph{H}(\emph{xi})
+= \emph{ri∀i ∈\{}1\emph{, ...,} 2\emph{q\}}{]}.
+
+\emph{•} If the quantities Pr\emph{H←D}{[}\emph{H}(\emph{xi}) =
+\emph{ri∀i ∈\{}1\emph{, ...,} 2\emph{q\}}{]} are low-degree polynomials
+in some param-eter \emph{λ}, then so is Pr\emph{H←D}{[}\emph{AH}() =
+\emph{z}{]}, since it is a linear combination of the
+Pr\emph{H←D}{[}\emph{H}(\emph{xi}) =
+
+\emph{ri∀i ∈\{}1\emph{, ...,} 2\emph{q\}}{]}. Moreover,
+Pr\emph{H←D}{[}\emph{AH}() \emph{∈S}{]} for any set \emph{S} is also a
+low-degree polynomial.
+
+We use the second fact to prove the following theorem:
+
+\textbf{Theorem 3.2.} \emph{Fix q, and let Dλ be a family of
+distributions on HX,Y indexed by λ ∈}{[}0\emph{,} 1{]}\emph{. Suppose
+there are integers d and} ∆\emph{such that for every} 2\emph{q pairs}
+(\emph{xi, ri}) \emph{∈X × Y, the function p}(\emph{λ}) =
+Pr\emph{H←Dλ}{[}\emph{H}(\emph{xi}) = \emph{ri∀i ∈\{}1\emph{, ...,}
+2\emph{q\}}{]} \emph{satisfies:}
+
+\emph{• p is a polynomial in λ of degree at most d.}
+
+\emph{• p}(\emph{i})(0)\emph{, the ith derivative of p at 0, is 0 for
+each i ∈\{}1\emph{, ...,} ∆\emph{−}1\emph{\}.}
+\end{quote}
+
+\emph{Then any quantum algorithm A making q quantum queries can only
+distinguish Dλ from D}0 \emph{with}
+
+\begin{quote}
+\emph{probability at most} (2∆)!\emph{λ}∆\emph{d}2∆\emph{.}
+\end{quote}
+
+\textbf{Proof}\emph{.} By the assumptions of the theorem, for any
+2\emph{q} pairs (\emph{xi, ri}), the quantity
+Pr\emph{H←Dλ}{[}\emph{H}(\emph{xi}) =
+
+\emph{ri∀i ∈\{}1\emph{, ...,} 2\emph{q\}}{]} is a polynomial of degree
+\emph{d} in \emph{λ} with the first ∆\emph{−}1 derivatives at 0 being 0.
+By Theorem 3.1, for a \emph{q}-query quantum algorithm \emph{A},
+Pr\emph{H←Dλ}{[}\emph{AH}() = \emph{z}{]} is a linear combination of
+
+these values. Thus, for any \emph{z}, Pr\emph{H←Dλ}{[}\emph{AH}() =
+\emph{z}{]} is also a polynomial in \emph{λ} of degree \emph{d} with the
+
+\begin{quote}
+first ∆\emph{−}1 derivatives at 0 being 0. Now, suppose that \emph{A}
+distinguishes \emph{Dλ} from \emph{D}0 with probability
+\emph{ϵ}(\emph{λ}). That is
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\emph{z} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.3333} + 4\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{H←Dλ}{[}\emph{AH}() = \emph{z}{]} \emph{−}
+\end{quote}
+\end{minipage}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.3333} + 4\tabcolsep}}{%
+\emph{H←D}0{[}\emph{AH}() = \emph{z}{]}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.2222} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+= \emph{ϵ}(\emph{λ}) \emph{.}
+\end{quote}
+\end{minipage}} \\
+\multicolumn{8}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.8889} + 14\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Let \emph{Zλ} be the set of \emph{z} such that \emph{z} is a more likely
+output under \emph{Dλ} than \emph{D}0. Pr\emph{H←Dλ}{[}\emph{AH}() =
+\emph{z}{]} \emph{\textgreater{}} Pr\emph{H←D}0{[}\emph{AH}() =
+\emph{z}{]}. It is not difficult to show that
+\end{quote}
+\end{minipage}} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+That is,
+\end{quote}
+\end{minipage} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.3333} + 4\tabcolsep}}{%
+\emph{H←Dλ}{[}\emph{AH}() \emph{∈Zλ}{]} \emph{−}} &
+\multicolumn{6}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.6667} + 10\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{H←D}0{[}\emph{AH}() \emph{∈Zλ}{]} = \emph{ϵ}(\emph{λ})\emph{/}2
+\emph{.}
+\end{quote}
+\end{minipage}} \\
+\multicolumn{9}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{1.0000} + 16\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Fix \emph{λ}0, and consider the quantity
+\end{quote}
+\end{minipage}} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.2222} + 2\tabcolsep}}{%
+\emph{pλ}0(\emph{λ}) \emph{≡}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.3333} + 4\tabcolsep}}{%
+\emph{H←Dλ}{[}\emph{AH}() \emph{∈Zλ}0{]} =} & \emph{z∈Zλ}0 &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.3333} + 4\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{H←Dλ}{[}\emph{AH}() = \emph{z}{]} \emph{.}
+\end{quote}
+\end{minipage}} \\
+\multicolumn{9}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{1.0000} + 16\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+Then \emph{pλ}(\emph{λ}) \emph{−pλ}(0) = \emph{ϵ}(\emph{λ})\emph{/}2.
+Further, for each \emph{λ}0, \emph{pλ}0 is a degree-d polynomial in
+\emph{λ} such that \emph{p}(\emph{i})\emph{λ}0(0) = 0 for \emph{i
+∈\{}1\emph{, ...,} ∆\emph{−}1\emph{\}}. It also lies in the range
+{[}0\emph{,} 1{]} for all \emph{λ ∈}{[}0\emph{,} 1{]}, so we can use an
+
+\begin{quote}
+inequality by the Markov brothers {[}DS41{]} to bound the ∆-th
+derivative for all \emph{λ ∈}{[}0\emph{,} 1{]}:
+
+\emph{p}(∆)\emph{λ}0(\emph{λ}) \emph{≤}4∆∆! 2(2∆)!\emph{d}2∆
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+6
+
+\begin{quote}
+Thus we can bound \emph{pλ}0(\emph{λ}) \emph{≤pλ}0(0) +
+
+2(2∆)!\emph{λ}∆\emph{d}2∆. Setting \emph{λ}0 = \emph{λ}, we get
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{ϵ}(\emph{λ}) = 2(\emph{pλ}(\emph{λ}) \emph{−pλ}(0)) \emph{≤}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+4∆\\
+(2∆)!\emph{λ}∆\emph{d}2∆\emph{.}
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+We conclude this section with another general approach toward arguing
+that no quantum
+\end{quote}
+
+algorithm can distinguish between two oracle distributions \emph{D}1 and
+\emph{D}2: construct a weight assignment \emph{D}1\emph{,}2 which is
+2\emph{q}-wise equivalent to \emph{D}1 (so that the behaviors of
+\emph{A} under \emph{D}1 and \emph{D}1\emph{,}2 are the same) and that
+is a distance at most \emph{ϵ} from \emph{D}2 (so that the behaviors of
+\emph{A} under \emph{D}1\emph{,}2 and \emph{D}2 are \emph{ϵ}-close).
+Then the behaviors of \emph{A} under \emph{D}1 and \emph{D}2 are also
+\emph{ϵ}-close. We formalize this latter idea with a new pseudometric on
+oracle distributions:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Definition 3.3.} \emph{Let D}1 \emph{and D}2 \emph{be two weight
+assignments on oracles. Fix k. Then define the}
+
+\emph{pseudometric \textbar D}1 \emph{−D}2\emph{\textbar{}}(\emph{k})
+\emph{as the minimum of \textbar D}1\emph{,}2 \emph{−D}2\emph{\textbar{}
+over all weight assignments D}1\emph{,}2 \emph{that are k-wise
+equivalent D}1\emph{.}
+
+\textbf{Theorem 3.4.} \emph{The minimum D}1\emph{,}2 \emph{in Definition
+3.3 exists, and \textbar D}1 \emph{−D}2\emph{\textbar{}}(\emph{k})
+\emph{defines a pseudometric on weight assignments on oracles.}
+
+\textbf{Proof}\emph{.} If \emph{D} is \emph{k}-wise equivalent to
+\emph{D}1 and a distance \emph{ϵ} from \emph{D}2, we say that \emph{D}
+is a witness to
+
+\begin{quote}
+\emph{\textbar D}1 \emph{−D}2\emph{\textbar{}}(\emph{k}) \emph{≤ϵ}. If
+\emph{ϵ} = \emph{\textbar D}1 \emph{−D}2\emph{\textbar{}}(\emph{k}), we
+call \emph{D} an optimal witness.
+\end{quote}
+
+\emph{\textbar D}1 \emph{−D}2\emph{\textbar{}}. Thus to find
+\emph{D}1\emph{,}2, we are minimizing \emph{\textbar D}1\emph{,}2
+\emph{−D}2\emph{\textbar{}} (a continuous function in
+\emph{D}1\emph{,}2) over First, we argue that an optimal witness exists:
+We see that \emph{D}1 itself is a witness to \emph{\textbar D}1
+\emph{−D}2\emph{\textbar{}}(\emph{k}) \emph{≤}
+
+the set of assignments \emph{D}1\emph{,}2 that are \emph{k}-wise similar
+to \emph{D}1 (a closed set) and at most \emph{\textbar D}1
+\emph{−D}2\emph{\textbar{}} away from \emph{D}2 (a compact set). Thus we
+are minimizing over a compact set, so the minimum is actually
+
+\begin{quote}
+obtained.
+
+We now show that \emph{\textbar D}1
+\emph{−D}2\emph{\textbar{}}(\emph{k}) satisfies the properties of a
+pseudometric:
+
+\emph{• \textbar D}1 \emph{−D}1\emph{\textbar{}}(\emph{k}) = 0, since
+\emph{D}1 is a witness to \emph{\textbar D}1
+\emph{−D}1\emph{\textbar{}}(\emph{k}) \emph{≤}0, and \emph{\textbar D}1
+\emph{−D}2\emph{\textbar{}}(\emph{k}) is non-negative for all weight
+assignments \emph{D}1 and \emph{D}2.
+
+\emph{• \textbar D}1 \emph{−D}2\emph{\textbar{}}(\emph{k}) =
+\emph{\textbar D}2 \emph{−D}1\emph{\textbar{}}(\emph{k}). Let
+\emph{D}1\emph{,}2 be an optimal witness for \emph{\textbar D}1
+\emph{−D}2\emph{\textbar{}}(\emph{k}). Then define \emph{D}2\emph{,}1 =
+\emph{D}1 \emph{−D}1\emph{,}2 + \emph{D}2. The sums of all weights add
+to 1, so this is a weight assignment. Further, it is easy to see that
+\emph{\textbar D}2\emph{,}1 \emph{−D}1\emph{\textbar{}} =
+\emph{\textbar D}2 \emph{−D}1\emph{,}2\emph{\textbar{}} =
+\emph{\textbar D}1 \emph{−D}2\emph{\textbar{}}(\emph{k}). Further, since
+\emph{D}1 is \emph{k}-wise equivalent to \emph{D}1\emph{,}2, when
+looking at the marginal weight assignment over any \emph{k} inputs,
+
+\emph{D}1 and \emph{D}1\emph{,}2 cancel, leaving \emph{D}2\emph{,}1 to
+be \emph{k}-wise equivalent to \emph{D}2. Thus, \emph{D}2\emph{,}1 is a
+witness to
+
+\emph{\textbar D}2 \emph{−D}1\emph{\textbar{}}(\emph{k})
+\emph{≤\textbar D}1 \emph{−D}2\emph{\textbar{}}(\emph{k}). We can
+perform the same argument in reverse to get the other inequality.
+
+\emph{• \textbar D}1 \emph{−D}3\emph{\textbar{}}(\emph{k})
+\emph{≤\textbar D}1 \emph{−D}2\emph{\textbar{}}(\emph{k}) +
+\emph{\textbar D}2 \emph{−D}3\emph{\textbar{}}(\emph{k}). Let
+\emph{D}1\emph{,}2 and \emph{D}2\emph{,}3 be the optimal witnesses for
+\emph{\textbar D}1 \emph{−D}2\emph{\textbar{}}(\emph{k}) and
+\emph{\textbar D}2 \emph{−D}3\emph{\textbar{}}(\emph{k}). Define
+\emph{D}1\emph{,}3 = \emph{D}1\emph{,}2 \emph{−D}2 + \emph{D}2\emph{,}3.
+It is easy to see that \emph{D}3 is a weight assignment and that
+\emph{\textbar D}1\emph{,}3 \emph{−D}3\emph{\textbar{}
+≤\textbar D}1\emph{,}2 \emph{−D}2\emph{\textbar{}} +
+\emph{\textbar D}2\emph{,}3 \emph{−D}3\emph{\textbar{}}. It is also not
+difficult to show that, since \emph{D}2\emph{,}3 is \emph{k}-wise
+equivalent to \emph{D}2, \emph{D}1\emph{,}3 must be \emph{k}-wise
+equivalent to \emph{D}1\emph{,}2,
+
+which is \emph{k}-wise equivalent to \emph{D}1. Hence \emph{D}1\emph{,}3
+is a witness for the identity in question.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Observe that \emph{\textbar D}1 \emph{−D}2\emph{\textbar{}}(\emph{k}) =
+0 if and only if \emph{D}1 is \emph{k}-wise equivalent to \emph{D}2.
+Thus, we can rephrase Theorem 3.1 as follows: if \emph{\textbar D}1
+\emph{−D}2\emph{\textbar{}}(2\emph{q}) = 0, then no quantum algorithm
+making \emph{q} quantum queries can distinguish the oracle weight
+assignments \emph{D}1 and \emph{D}2. We now generalize this
+
+to \emph{\textbar D}1 \emph{−D}2\emph{\textbar{}}(2\emph{q}) \emph{̸}=
+0:
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+7
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Corollary 3.5.} \emph{Let D}1 \emph{and D}2 \emph{be two oracle
+distributions. Then the output weight assignment of}
+
+\begin{quote}
+\emph{any q-query quantum algorithm A under D}1 \emph{and D}2 \emph{are
+\textbar D}1 \emph{−D}2\emph{\textbar{}}(2\emph{q})\emph{-close.}
+\end{quote}
+
+Theorem 3.1, the behaviors of the \emph{A} under \emph{D}1 and
+\emph{D}1\emph{,}2 are identical. The behavior of \emph{A} under
+\emph{D}2 \textbf{Proof}\emph{.} Let \emph{D}1\emph{,}2 be an optimal
+witness for \emph{\textbar D}1 \emph{−D}2\emph{\textbar{}}(2\emph{q}).
+\emph{D}1\emph{,}2 is 2\emph{q}-wise equivalent to \emph{D}1, so by
+
+\begin{quote}
+is \emph{\textbar D}1\emph{,}2 \emph{−D}2\emph{\textbar{}} =
+\emph{\textbar D}1 \emph{−D}2\emph{\textbar{}}(2\emph{q})-close to that
+under \emph{D}1\emph{,}2, and hence \emph{D}1.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+We note that a slightly weaker version of Theorem 3.2 can also be proved
+using the above ideas.
+
+Roughly, we pick some constants \emph{λi} and find functions
+\emph{ai}(\emph{λ}) such that
+\end{quote}
+
+\emph{p}(\emph{λ}) =1 \emph{−d−}∆
+
+\emph{i}=0 \emph{ai}(\emph{λ})\emph{p}(0) + \emph{d−}∆
+
+\begin{quote}
+\emph{i}=0\\
+\emph{ai}(\emph{λ})\emph{p}(\emph{λi})
+\end{quote}
+
+for any polynomial \emph{p} of degree \emph{d} such that
+\emph{p}(\emph{i})(0) = 0 for \emph{i ∈\{}1\emph{, ...,}
+∆\emph{−}1\emph{\}}. The \emph{ai}(\emph{λ}) are basically modified
+Lagrange interpolating polynomials. Next, we define a new weight
+assignment
+
+\emph{D′λ}=1 \emph{−d−}∆
+
+\emph{i}=0 \emph{ai}(\emph{λ})\emph{D}0 + \emph{d−}∆
+
+\begin{quote}
+\emph{i}=0\\
+\emph{ai}(\emph{λ})\emph{Dλi .}
+
+By defining \emph{D′λ}in this way, \emph{D′λ}turns out to be
+2\emph{q}-wise equivalent to \emph{Dλ}. Because \emph{Dλi} are
+\end{quote}
+
+all distributions, the distance between \emph{D′λ}and \emph{D}0 is at
+most 2\emph{d−}∆\emph{i}=0\emph{\textbar ai}(\emph{λ})\emph{\textbar{}},
+thus showing that
+
+\emph{\textbar Dλ −D}0\emph{\textbar{}}(2\emph{q}) also satisfies this
+bound. By picking the right values for \emph{λi}, we can get this bound
+to be small. We can then use Corollary 3.5 to bound the distance between
+the output distributions of
+
+\begin{quote}
+the \emph{q}-query quantum algorithm \emph{A}.
+\end{quote}\strut
+\end{minipage}} \\
+\midrule()
+\endhead
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{4}
+\end{quote}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Semi-Constant Distributions}
+\end{quote}
+\end{minipage} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+In this section, we define a class of distributions on oracles in
+\emph{HX,Y} called semi-constant distributions. Our motivation for these
+distributions is to support quantum Full Domain Hash-type arguments,
+
+where a random value is inserted into a small but significant fraction
+of oracle inputs. The following
+
+\begin{quote}
+definition captures the essence of the this idea:
+\end{quote}
+
+\textbf{Definition 4.1.} \emph{Define} SC\emph{λ, the semi-constant
+distribution, as the distribution over HX,Y resulting from the following
+process:}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\emph{• First, pick a random element y from Y.}
+
+\emph{• For each x ∈X, do one of the following:}\\
+\textbf{--} \emph{With probability λ, set H}(\emph{x}) = \emph{y. We
+call x a distinguished input to H.}
+
+\textbf{--} \emph{Otherwise, set H}(\emph{x}) \emph{to be a random
+element in Y.}
+
+First, notice that SC0 is the uniform distribution, since in this case,
+the probability that an input is distinguished is 0. We bound the
+ability of a quantum algorithm to distinguish between SC\emph{λ} and SC0
+= \emph{U} using the ideas of Section 3.
+\end{quote}
+
+\textbf{Lemma 4.2.} \emph{Fix k. For each k pairs} (\emph{xi,
+ri})\emph{, the probability} Pr\emph{H←}SC\emph{λ}{[}\emph{H}(\emph{xi})
+= \emph{ri∀i ∈\{}1\emph{, ..., k\}}{]} \emph{is a degree-k polynomial in
+λ whose first derivative is 0 at λ} = 0\emph{.}
+
+8
+
+\begin{quote}
+This, proved in Appendix C, shows that for any \emph{qH}, we can set
+\emph{d} = \emph{k} = 2\emph{qH} and ∆= 2 in the assumptions of Theorem
+3.2. We immediately get:
+
+\textbf{Corollary 4.3.} \emph{The distribution of outputs of a quantum
+algorithm making qH queries to an oracle drawn from} SC\emph{λ is at
+most a distance}\uline{8 3}\emph{q}4 \emph{Hλ}2 \emph{away from the case
+when the oracle is drawn from the uniform distribution.}
+
+We note that using standard quantum query results, it is possible to
+prove this corollary for a bound that is first-order in \emph{λ}.
+However, we will see in Section 5 that we need a bound that is
+second-order in \emph{λ} for our security results.
+
+We do not know if this bound is tight. In Appendix C, we adapt the
+collision search algorithm of Brassard et al. {[}BHT97{]} to SC\emph{λ},
+obtaining a distinguishing probability of Ω(\emph{q}3 \emph{Hλ}2).
+
+\textbf{5} \textbf{Quantum Security Arguments}
+
+In this section, we explore the random oracle proof technique of Bellare
+and Rogaway {[}BR93{]}. In this technique, we plug a challenge \emph{c}
+into a randomly chosen hash query, and hope that the adversary uses
+\emph{c} to break the system. If so, we can use the adversary to solve
+the underlying problem.
+
+In the quantum setting, the straight-forward application of this
+technique breaks down. The adversary can now query the hash function on
+a superposition of exponentially many inputs. If we plug \emph{c} to one
+of those inputs, the probability that the adversary uses \emph{c} is
+exponentially small.
+
+We instead plug \emph{c} into some small but significant fraction of the
+inputs, so that the oracle is distributed according to SC\emph{λ}. As we
+have shown, a quantum algorithm cannot detect that this oracle is not
+random, but now the adversary uses \emph{c} with significant
+probability.
+
+\textbf{5.1} \textbf{Identity-Based Encryption from Lattices}
+
+Here we prove the security of the IBE scheme from Gentry et al.
+{[}GPV08{]}. Their scheme is constructed from an encryption scheme E =
+(E\emph{.}Gen\emph{,} E\emph{.}Enc\emph{,} E\emph{.}Dec), for which
+there exists a trapdoor allowing the computation of secret keys from
+public keys.
+
+More specifically, let F = (F\emph{.}Gen\emph{,} F\emph{.}Sample\emph{,
+f, f−}1) be a pre-image sampleable function (PSF). Suppose
+E\emph{.}Gen(1\emph{n}) works as follows: generate (msk\emph{,} mpk)
+\emph{←}F\emph{.}Gen(1\emph{n}). F\emph{.}Sample(1\emph{n}), and compute
+pk = \emph{f}mpk(sk). Output (sk\emph{,} (pk\emph{,} mpk)). Then, sample
+sk \emph{←}
+\end{quote}
+
+Gentry et al. give such an encryption scheme based on the hardness of
+lattice problems. Their se-curity reduction treats the adversary as a
+black box, so their proof holds in the quantum setting. They then prove
+the security of the IBE scheme IBE = (IBE\emph{.}Gen =
+F\emph{.}Gen\emph{,} IBE\emph{.}Extract\emph{H,} IBE\emph{.}Enc\emph{H,}
+IBE\emph{.}Dec) where \emph{H} maps identities to public keys of E and:
+
+\begin{quote}
+\emph{•} IBE\emph{.}Extractmsk(id)\emph{H}= \emph{f−}1
+msk(\emph{H}(id))\\
+\emph{•} IBE\emph{.}Encmpk(id\emph{, m})\emph{H}=
+E\emph{.}Enc\emph{H}(id)(\emph{m})\\
+\emph{•} IBE\emph{.}Decskid(\emph{c}) = E\emph{.}Decskid(\emph{c})
+\end{quote}
+
+\textbf{Theorem 5.1.} \emph{Let} E \emph{and} F \emph{be as above, and
+suppose that} E \emph{is quantum IND-CPA-secure. If we model H as a
+random oracle, then} IBE \emph{is quantum IND-ID-CPA-secure.}
+
+\begin{quote}
+\textbf{Proof}\emph{.} Let \emph{A} be a quantum adversary making
+\emph{qH} hash queries, \emph{qE} extract queries queries, that breaks
+IBE with advantage \emph{ϵ}.
+\end{quote}
+
+9
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Let Game0 be the standard attack game for IBE: the challenger generates
+(msk\emph{,} mpk) from
+\end{quote}
+
+IBE\emph{.}Gen, and sends mpk to the adversary. The adversary can make
+(classical) extraction queries
+
+on identities id\emph{i}, to which the challenger responds with
+IBE\emph{.}Extract\emph{H} msk(id\emph{i}), and (quantum) hash
+
+queries to the random oracle \emph{H}. \emph{A} then produces an
+identity id\emph{∗}, along with messages \emph{m}0 and \emph{m}1.
+
+The challenger chooses a random bit \emph{b}, and responds with
+IBE\emph{.}Encmpk(id\emph{, mb}). \emph{A} is allowed to make
+
+more extraction and hash queries, and produces a bit \emph{b′}. \emph{A}
+wins if \emph{b′}= \emph{b} and for all \emph{i}, id\emph{i ̸}=
+id\emph{∗}. By definition, this happens with probability\uline{1 2}+
+\emph{ϵ}.
+
+\begin{quote}
+Assume without loss of generality that \emph{A} never asks for the
+secret key corresponding to id\emph{∗}.
+\end{quote}
+
+Let \emph{A′}be the following algorithm that makes quantum queries to an
+oracle \emph{H}, and simulates the
+
+interaction between \emph{A} and the challenger: generate (msk\emph{,}
+mpk) from IBE\emph{.}Gen, send mpk to \emph{A}. Run
+
+\emph{A}, forwarding all hash queries to \emph{H}, and answering
+extraction queries using IBE\emph{.}Extract\emph{H}. Similarly,
+
+answer the challenge query by choosing a random \emph{b} and encrypting
+\emph{mb} to the identity id generated
+
+by \emph{A}. The output of \emph{A′}is (\emph{c,} id\emph{∗, Q}) where
+\emph{c} = \emph{b ⊕b′}and \emph{Q} is the list of extraction queries
+made by \emph{A}. We can now think of Game0 as follows: run
+\emph{A′}with a random oracle \emph{H} to obtain (\emph{c,} id\emph{∗,
+Q}).
+
+Report that the game is won if and only if \emph{c} = 0. The number of
+queries to \emph{H} made by \emph{A′}is \emph{qH} for
+
+direct queries, \emph{qE} for queries through the extract algorithm, and
+1 for the encryption of \emph{mb}, for a
+
+\begin{quote}
+total of \emph{qH} + \emph{qE} + 1 queries.
+
+Let \emph{λ ∈}(0\emph{,} 1) to be chosen later. Let \emph{M} be the
+identity space. Define Game1 as follows: first, pick a subset \emph{X}
+of \emph{M} where each id \emph{∈M} is put in \emph{X} with independent
+probability \emph{λ}. Run \emph{A′}as before to obtain (\emph{c,}
+id\emph{∗, Q}). However, now we decide if the game is won as follows: if
+id\emph{∗∈X} and \emph{QX} = \emph{∅}, then the game is won if \emph{c}
+= 0. Otherwise, flip a random coin to decide if the game is won. By our
+assumption that \emph{A} never asks for a secret key for the challenge
+identity,
+\end{quote}
+
+we must have that id\emph{∗/∈Q}. Therefore, every identity in \emph{Q},
+as well as id\emph{∗}, has an independent probability \emph{λ} of being
+in \emph{X}. Thus, the conditions to not flip a coin are met with
+probability at least\emph{λ}(1 \emph{−λqE}), independent of the
+probability that \emph{c} = 0. Thus, Game1 is won with probability at
+least
+
+\begin{quote}
+Let Game2 be Game1, except that we choose a random pk in the public key
+space of E, and set 2+ \emph{λϵ −qEλ}2.
+\end{quote}
+
+\emph{H}(\emph{x}) = \emph{pk} for all \emph{x} in \emph{X}, and choose
+\emph{H}(\emph{x}) randomly for all other \emph{x}. \emph{H} is now
+distributed according to SC\emph{λ}.
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\textbf{Claim 1.} \emph{There exists a polynomial ℓ}(\emph{·, ·})
+\emph{such that A′wins} Game2 \emph{with probability at least}
+\end{quote}
+
+\sout{2}+ \emph{λϵ −ℓ}(\emph{qH, qE})\emph{λ}2\emph{.}
+
+We defer the precise proof to Appendix D, and instead give an informal
+justification: by Corollary 4.3, the output distribution of \emph{A′}in
+Game2 is at most a distance\uline{8 3}(\emph{qH} +\emph{qE}+1)4\emph{λ}2
+from that of Game1. Thus, we would expect \emph{A′}to win Game2 with
+probability at least\uline{1 2}+\emph{λϵ−} \emph{qE} +\uline{8
+3}(\emph{qH} + \emph{qE} + 1)4 \emph{λ}2,
+
+which has the desired form. Of course, deciding if \emph{A′}wins Game2
+depends on the set of distinguished inputs \emph{X}, so a more careful
+analysis is required to justify the claim.
+
+attack game for IBE using \emph{H} as the random oracle. When \emph{A}
+produces \emph{b′}, first check that no Let us now restate Game2 in
+terms of \emph{A}: pick \emph{X} and \emph{H} as above, and perform the
+standard
+
+extraction queries were in \emph{X} and that the identity
+id\emph{∗}produced by \emph{A is} in \emph{X}. If so, \emph{A} wins if
+and only if \emph{b} = \emph{b′}. Otherwise, if the check fails, flip a
+coin to decide if \emph{A} wins. We can now make the following
+observation: once an extraction query in \emph{X} is made or the
+challenge query with id\emph{∗/} made, we can abort running \emph{A},
+since we no longer need \emph{A} to determine if the game is
+won.\emph{∈X} is
+
+10
+
+\begin{quote}
+Now we describe an adversary \emph{B} that breaks E. Assume \emph{B} has
+quantum access to two random oracles \emph{O}1 and \emph{O}2. \emph{O}1
+maps identities to randomness used by Sample. \emph{O}2 maps identities
+to bits, outputting 1 with probability is \emph{λ}. In Section 6, we
+will show how to efficiently simulate these oracles. On input
+(mpk\emph{,} pk), \emph{B} works as follows:
+
+\emph{•} Send mpk to \emph{A} and simulate \emph{A}, playing the role of
+challenger to \emph{A}.\emph{•} Construct a (quantum) oracle \emph{H}
+such that
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{H}(id) =
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+pk
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+if \emph{O}2(id) = 1
+\end{quote}
+\end{minipage} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+\emph{f}mpk(Sample(; \emph{O}1(id)))
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+otherwise
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+where Sample(; \emph{r}) means run Sample with randomness \emph{r}.
+
+\emph{•} When \emph{A} asks for the secret key for id\emph{i}, compute
+\emph{O}2(id\emph{i}). If the result is 1, output a random bit and
+abort. Otherwise, respond with sk\emph{i} = Sample(;
+\emph{O}1(id\emph{i})).
+
+\emph{•} When \emph{A} produces the challenge query (id\emph{∗,
+m}0\emph{, m}1), check if \emph{O}2(id\emph{∗}) = 1. If so, send
+(\emph{m}0\emph{, m}1) to \emph{B}'s challenger. Otherwise, output a
+random bit and abort.
+
+\emph{•} When the challenger responds with a ciphertext, send it to
+\emph{A}.\emph{•} When \emph{A} outputs a bit \emph{b′}, output the same
+bit.
+\end{quote}
+
+are equivalent to Game2. For each extract query id\emph{i} that
+succeeds, we have that \emph{O}2(id\emph{i}) = 0, so Let \emph{X} be the
+set of identities id such that \emph{O}2(id) = 1. We can then see that
+the abort conditions
+
+\emph{f}mpk(sk\emph{i}) = \emph{f}mpk(Sample(; \emph{O}1(id\emph{i}))) =
+\emph{H}(id\emph{i})
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{1.0000} + 6\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+Thus sk\emph{i} is a correct secret key for id\emph{i}, and it is
+distributed correctly (since it is a random pre-image of
+\emph{H}(id\emph{i})). If \emph{B} does not abort on the challenge
+query, it means \emph{O}2(id\emph{∗}) = 1, so \emph{H}(id\emph{∗}) = pk.
+Also, we can see that \emph{H} is distributed according to SC\emph{λ}.
+Therefore, if \emph{B} aborts, we win with probability
+
+\begin{quote}
+2, and if we do not abort, we win if and only if \emph{A} wins. Thus,
+the view of \emph{A} as a subroutine of \emph{B} is the same as in
+Game2, and \emph{B} wins with the same probability that \emph{A} does.
+Therefore, \emph{B} wins with probability at least\uline{1 2}+ \emph{λϵ
+−ℓ}(\emph{q\uline{H},q\uline{E}})\emph{λ}2.
+\end{quote}
+
+advantage occurs when \emph{λ} = 2\emph{ϵ/ℓ}(\emph{qH, qE}), which gives
+The advantage of \emph{B} is at least \emph{λϵ −ℓ}(\emph{qH,
+qE})\emph{λ}2\emph{/}4. We can now choose \emph{λ}: the maximum
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}}{%
+\emph{AdvB ≥}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\emph{ϵ}2\\
+\emph{ℓ}(\emph{qH, qE})\strut
+\end{minipage}} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.7500} + 4\tabcolsep}}{%
+Thus, if \emph{A} had non-negligible advantage, so does \emph{B}.} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{5.2}
+\end{quote}
+\end{minipage} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.7500} + 4\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Hierarchical IBE from Lattices}
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+In this section, we show the general idea behind adapting the techniques
+above to proving the security of the hierarchical identity-based
+encryption (HIBE) schemes of Agrawal et al. {[}ABB10{]} and Cash et al.
+{[}CHKP10{]}.
+
+In a HIBE scheme, identities are structured as a tree, with the identity
+of any node containing the identity of its parent as a proper prefix.
+Any node on the tree can produce private keys for any nodes in the
+subtree rooted at that node. We allow an adversary to adaptively take
+control of an arbitrary number of nodes in the tree (and thus the
+subtrees rooted there). An HIBE scheme
+\end{quote}
+
+11
+
+\begin{quote}
+is secure if the adversary cannot decrypt messages encrypted to an
+identity id\emph{∗}of the adversaries choice but not under its control.
+
+In {[}ABB10{]}, the random oracle scheme has an oracle \emph{H} that
+maps identities to some random quantities. The reduction has the
+following high-level structure:
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{•} Guess which level \emph{w} of the tree contains the identity
+id\emph{∗•} For each level \emph{i}, generate some random quantities
+\emph{Ri}.
+
+\emph{•} For each level \emph{i}, simulate a separate random oracle for
+identities at that level. For \emph{i}, guess which query number
+\emph{qi} will contain the hash of the level-\emph{i} parent of
+id\emph{∗}.
+
+\emph{•} Answer the \emph{j}th random oracle query at level \emph{i} on
+id\emph{i,j} as follows: if \emph{j} = \emph{qi}, output \emph{Ri}.
+Otherwise, output a random value.
+
+\emph{•} Answer secret key queries on id in some special way, but fail
+if for all prefixes id\emph{i} of id, id\emph{i} = id\emph{i,qi}. That
+is, fail if \emph{H}(id\emph{i}) = \emph{Ri}.
+
+\emph{•} When the adversary generates the identity id\emph{∗}, we
+succeed if both the adversary succeeds and if id\emph{∗}is at level
+\emph{w} and all prefixes id\emph{∗i}of id\emph{∗}satisfy id\emph{∗i}=
+id\emph{i,qi}.
+
+We now show how to prove security by repeatedly applying the arguments
+of Theorem 5.1.
+\end{quote}
+
+Basically, we iterate over levels \emph{i}, and insert \emph{Ri} into a
+\emph{λi} fraction of identities at that level. In
+
+iteration \emph{i}, we say the adversary wins if it won in the previous
+iteration, the level-\emph{i} prefix of the
+
+chosen identity id\emph{∗}is in the \emph{λi} fraction of distinguished
+identities (that is, \emph{H}(id\emph{∗i}) = \emph{Ri}), and no
+
+signature query is. Let \emph{ℓ}= \emph{ℓ}(\emph{qH, qE}), where
+\emph{ℓ}(\emph{·, ·}) is the polynomial from Theorem 5.1. If the
+iteration \emph{i} advantage is \emph{ϵi}, then using the same
+techniques as in Theorem 5.1, we can set \emph{λi} so that
+
+\emph{ϵi ≥ϵ}2 \emph{i−}1
+
+\emph{ℓ}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+We will say that in iteration 0, the adversary wins if it normally would
+win and we guessed which level id\emph{∗}belonged to correctly. That is,
+\emph{ϵ}0 = \emph{ϵ/d}, where \emph{ϵ} is the adversary's advantage in
+the standard game. This gives us a total advantage after iteration
+\emph{d} of at least
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+(\emph{ϵ/d})2\emph{d}\\
+\emph{ℓ}(2\emph{d−}1) = \emph{ℓ}
+\end{quote}\strut
+\end{minipage}}} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{ϵ}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+2\emph{d}
+\end{quote}
+\end{minipage} \\
+& & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{dℓ}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{1.0000} + 6\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Notice that the dependence on \emph{d} in doubly-exponential, whereas in
+the classical proof it was singly exponential. Thus, for the same
+security parameters, this proof only works for much smaller depth than
+the classical proof.
+
+These techniques apply as well to the random oracle HIBE of Cash et al.
+{[}CHKP10{]}, though their reduction is a bit more complicated, as there
+is a second random oracle \emph{G} which needs to be handled in a
+similar way.
+\end{quote}
+\end{minipage}} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{5.3}
+\end{quote}
+\end{minipage} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.7500} + 4\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Signatures from Trapdoor Permutations}
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Here we discuss the security of the Full Domain Hash (FDH) signature
+scheme:
+\end{quote}
+
+\textbf{Definition 5.2} (FDH Signatures)\textbf{.} \emph{Let} F =
+(F\emph{.}Gen\emph{, f, f−}1) \emph{be a trapdoor permutation, and a
+hash function H that maps messages to images of f, let} S\emph{H}=
+(S\emph{.}Gen = F\emph{.}Gen\emph{,} S\emph{.}Sign\emph{H,}
+S\emph{.}Ver\emph{H}) \emph{where:}
+
+\begin{quote}
+\emph{•} S\emph{.}Sign\emph{H} sk(\emph{m}) = \emph{f−}1
+sk(\emph{H}(\emph{m}))
+\end{quote}
+
+12
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{•} S\emph{.}Ver\emph{H} pk(\emph{m, σ}) =
+\end{quote}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+accept
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{if f}pk(\emph{σ}) = \emph{H}(\emph{m})
+\end{quote}
+\end{minipage} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+reject
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{ortherwise}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+We now state the main theorem of this section:
+
+\textbf{Theorem 5.3.} \emph{Let} F \emph{be a quantum one-way trapdoor
+permutation. If we model H as a random oracle, then} S \emph{is quantum
+UF-CMA-secure}
+
+The proof of this theorem is very similar to that of Theorem 5.1, and
+appears in Appendix E.
+
+\textbf{6} \textbf{Simulating Random Oracles}
+
+In this last section, we explain how to efficiently simulate random
+oracles. All quantum random oracle proofs to date require the reduction
+algorithm to have quantum access to a random oracle, but a truly random
+oracle requires exponentially many bits of randomness to construct. We
+show that this is not a problem:
+
+\textbf{Theorem 6.1.} \emph{Any quantum algorithm A making quantum
+queries to random oracles Oi can be efficiently simulated by a quantum
+algorithm B, which has the same output distribution, but makes no
+queries.}
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Proof}\emph{.} We construct an algorithm \emph{B} which
+simulates \emph{A}, and answers queries to oracle \emph{Oi} with
+evaluations of efficient functions \emph{fi}. Boneh et al. {[}BDF+11{]}
+use pseudorandom functions (PRF) for the \emph{fi}. At first glance,
+this seems like the only option, as we need a function \emph{fi} that
+cannot be distinguished from random.
+\end{quote}
+
+Notice, however, that \emph{fi} need not be secure against all
+adversaries, just the adversary we are simulating. We know that our
+adversary makes \emph{qi} queries to oracle \emph{Oi}, so it suffices to
+have \emph{fi} be PRFs secure for up to \emph{qi} quantum queries. In
+the classical setting, \emph{qi}-wise independent functions (functions
+that are \emph{qi}-wise equivalent to a random function) serve as
+\emph{perfectly} secure PRFs for up to \emph{qi} classical queries. We
+could hope that something similar holds in the quantum world: indeed,
+according to Theorem 3.1, if \emph{fi} is 2\emph{qi}-wise equivalent to
+a random function, then the behavior of our adversary is the same when
+the oracle is random and when it is \emph{fi}. Thus if the \emph{fi} are
+2\emph{qi}-wise independent, algorithm \emph{A}, as a subroutine of
+\emph{B}, behaves identically to the case where \emph{A} is given truly
+random oracles. Hence, the output distribution of \emph{B} is identical
+to that of \emph{A}.
+
+\begin{quote}
+Efficient constructions of \emph{k}-wise independent functions have been
+known for some time {[}Jof74, KM94{]}, and they have been used
+extensively in the derandomization literature {[}Lub85, ABI86, KM93{]}.
+One common approach to construct a \emph{k}-wise independent function
+\emph{f} from \emph{X} to \emph{Y} is to assume that \emph{N} =
+\emph{\textbar Y\textbar{}} is a prime power and interpret \emph{Y} as
+the field F\emph{N}. Then define a matrix \emph{C} with the following
+properties:
+
+\emph{•} The entries are elements in F\emph{N}.
+
+\emph{•} There are \emph{\textbar X\textbar{}} rows and some small
+number \emph{r} of columns.
+
+\emph{•} Each subset of \emph{k} rows is linearly independent.
+
+One such example is the Vandermonde matrix, which is used by Alon et
+al.{[}ABI86{]}. To define the function \emph{f}, we then pick a random
+vector \emph{v} in F\emph{r N}. \emph{f}(\emph{x}) is then the
+\emph{x}th element of of the vector \emph{Cv}. Since any \emph{k} rows
+of \emph{C} are linearly independent, any \emph{k} elements of \emph{Cv}
+are independent, and hence \emph{f} is \emph{k}-wise independent. The
+key to making this efficient is that to compute \emph{f}(\emph{x}), we
+only need the \emph{x}th row of \emph{C}, which we can compute on the
+fly.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+13
+
+\begin{quote}
+Hence, we can simulate \emph{O}1 from Theorem 5.1. To simulate
+\emph{O}2, which outputs a bit such that \emph{O}2(\emph{x}) = 1 with
+probability \emph{λ}, approximate \emph{λ} by some rational number
+\emph{a/b} where \emph{b} is a prime power, and construct a
+\emph{k}-wise independent function \emph{f′}with range \emph{Y} =
+\emph{\{}1\emph{, ..., b\}}. Then set
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{7}
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Conclusion}
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{f}(\emph{x}) =
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+1
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+if \emph{f′}(\emph{x}) \emph{≤a}\\
+otherwise
+\end{quote}\strut
+\end{minipage}} \\
+& & & \begin{minipage}[b]{\linewidth}\raggedright
+0
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+We have shown how to adapt certain classical random oracle arguments to
+the quantum random oracle model. Specifically, we gave quantum security
+proofs for the IBE scheme of Gentry et al. {[}GPV08{]} and the Full
+Domain Hash signature scheme. We achieved this by defining a
+distribution of oracles, called semi-constant distributions, and showing
+that such oracles cannot be distinguished from a random oracle by a
+quantum adversary. We also show how these techniques can be applied to
+the random oracle HIBE schemes of Cash et al. {[}CHKP10{]} and Agrawal
+et al. {[}ABB10{]}. Lastly, we have shown how to remove the need for
+quantum-secure pseudorandom functions from prior work.
+
+\begin{quote}
+Although we have made progress toward converting classical random oracle
+proofs into quantum proofs, there is still much work to be done. First,
+reductions using our technique result in an algorithm whose advantage is
+the square of the advantage of the underlying adversary, divided by some
+other factors. While improving the reduction to first-order in the
+adversary's advantage would still be of interest for the IBE scheme and
+Full Domain Hash, it would not affect the qualitative security
+statements. However, for the HIBE schemes, this second-order behavior
+results in an exponential weakening of the security relative to the
+classical reduction for deep identity trees. Therefore, to get the same
+qualitative security statements as in the classical world, our technique
+needs to be refined to make the reduction first-order in \emph{ϵ}.
+
+Further work lies in proving the security of other Random Oracle Model
+schemes. For example, the construction of signatures from identification
+protocols by Fiat and Shamir {[}FS87{]}, though similar to the proofs in
+this paper, still needs a quantum proof. The difficulty in the
+Fiat-Shamir reduction is that the plugging step initiates the underlying
+identification protocol, and there is no obvious quantum analog for this
+strategy. Also, different types of security arguments, such as Fujisaki
+and Okamoto's generic conversion of weakly secure encryption schemes
+into a CCA-secure encryption scheme {[}FO99{]}, still lack a quantum
+proof of security.
+
+\textbf{Acknowledgments}
+\end{quote}
+
+We would like to thank Dan Boneh for his guidance and many insightful
+discussions. This work was supported by NSF and DARPA. Any opinions,
+findings, and conclusions or recommendations expressed in this material
+are those of the author(s) and do not necessarily reflect the views of
+the Department of Defense or the U.S. Government.
+
+\begin{quote}
+\textbf{References}
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+{[}Aar09{]}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Scott Aaronson. Quantum Copy-Protection and Quantum Money.
+\emph{Proceedings of the 24th Annual IEEE Conference on Computaitonal
+Complexity (CCC)}, 2009.
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+14
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+{[}ABB10{]}
+
+{[}ABI86{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Shweta Agrawal, Dan Boneh, and Xavier Boyen. Lattice Basis Delegation in
+Fixed Dimension and Shorter-Ciphertext Hierarchical IBE. \emph{Advances
+in Cryptology - CRYPTO 2010}, pages 98--115, 2010.
+
+Noga Alon, L´aszl´o Babai, and Alon Itai. A Fast and Simple Randomized
+Parallel Algorithm for the Maximal Independent Set Problem.
+\emph{Journal of algorithms}, 7(4):567--583, 1986.
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+{[}BBBV97{]} Charles H. Bennett, Ethan Bernstein, Gilles Brassard, and
+Umesh Vazirani. Strengths and Weaknesses of Quantum Computing.
+\emph{SIAM Journal on Computing}, 26:1510--1523, 1997.
+
+{[}BDF+11{]} Dan Boneh, Ozgur Dagdelen, Marc Fischlin, Anja Lehmann,
+Christian Schaffner, and Mark Zhandry. Random Oracles in a Quantum
+World. In \emph{Advances in Cryptology -ASIACRYPT 2011}, 2011.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+{[}BF01{]} {[}BF11{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Dan Boneh and Matthew Franklin. Identity-Based Encryption from the Weil
+Pairing. \emph{Advances in Cryptology - CRYPTO 2001}, 32(3):586--615,
+2001.
+
+Dan Boneh and David Freeman. Homomorphic Signatures for Polynomial
+Functions. \emph{Advances in Cryptology - EUROCRYPT 2011},
+6632:149--168, 2011.
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+{[}BHK+11{]} Gilles Brassard, Peter Høyer, Kassem Kalach, Marc Kaplan,
+Sophie Laplante, and Louis Salvail. Merkle Puzzles in a Quantum World.
+\emph{Advances in Cryptology - CRYPTO 2011}, pages 391--410, 2011.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+{[}BHT97{]} {[}BR93{]}
+
+{[}BS08{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Gilles Brassard, Peter Høyer, and Alain Tapp. Quantum Algorithm for the
+Collision Problem. \emph{ACM SIGACT News (Cryptology Column)},
+28:14--19, 1997.
+
+Mihir Bellare and Philip Rogaway. Random Oracles are Practical: A
+Paradigm for Designing Efficient Protocols. In \emph{Proceedings of the
+1st ACM Conference on Computer and Communications Security (CCS)},
+number November 1993, pages 62--73. ACM, 1993.
+
+Gilles Brassard and Louis Salvail. Quantum Merkle Puzzles. \emph{Second
+International Conference on Quantum, Nano and Micro Technologies (ICQNM
+2008)}, pages 76--79, February 2008.
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+{[}CHKP10{]} David Cash, Dennis Hofheinz, Eike Kiltz, and Chris Peikert.
+Bonsai Trees, or How to Delegate a Lattice Basis. \emph{Advances in
+Cryptology - EUROCRYPT 2010}, pages 523--552, 2010.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+{[}DS41{]} {[}FO99{]}
+
+{[}FS87{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+R J Duffin and A C Schaffer. A Refinement of an Inequality of the
+Brothers Markoff. \emph{Trans. Amer. Math. Soc}, 44(3):289--297, 1941.
+
+Eiichiro Fujisaki and Tatsuaki Okamoto. Secure Integration of Asymmetric
+and Sym-metric Encryption Schemes. In \emph{Advances in Cryptology -
+CRYPTO 1999}, pages 79--79. Springer, 1999.
+
+Amos Fiat and Adi Shamir. How to Prove Yourself: Practical Solutions to
+Identification and Signature Problems. In \emph{Advances in Cryptology -
+CRYPTO 1986}, pages 186--194. Springer, 1987.
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+15
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+{[}GKV10{]}
+
+{[}GM84{]}
+
+{[}GMR88{]}
+
+{[}GPV08{]}
+
+{[}Gro96{]}
+
+{[}HSS11{]}
+
+{[}Jof74{]}
+
+{[}KM93{]}
+
+{[}KM94{]}
+
+{[}Lub85{]}
+
+{[}MP11{]}
+
+{[}NC00{]}
+
+{[}Sho97{]}
+
+{[}Unr10{]}
+
+{[}Zha12{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+S. Dov Gordon, Jonathan Katz, and Vinod Vaikuntanathan. A Group
+Signature Scheme from Lattice Assumptions. \emph{Advances in Cryptology
+- ASIACRYPT 2010}, pages 395--412, 2010.
+
+Shafi Goldwasser and Silvio Micali. Probabilistic Encryption.
+\emph{Journal of computer and system sciences}, pages 270--299, 1984.
+
+Shafi Goldwasser, Silvio Micali, and Ronald L. Rivest. A Digital
+Signature Scheme Secure Against Adaptive Chosen-Message Attacks.
+\emph{SIAM Journal on Computing}, 17(2):281--308, 1988.
+
+Craig Gentry, Chris Peikert, and Vinod Vaikuntanathan. Trapdoors for
+Hard Lattices and New Cryptographic Constructions. \emph{Proceedings of
+the 40th Annual ACM symposium on Theory of computing (STOC)}, page 197,
+2008.
+
+Lov K. Grover. A Fast Quantum Mechanical Algorithm for Database Search.
+\emph{Proceedings of the 28th Annual ACM Symposium on Theory of
+Computing (STOC)}, pages 212--219, 1996.
+
+Sean Hallgren, Adam Smith, and Fang Song. Classical Cryptographic
+Protocols in a Quantum World. \emph{Advances in Cryptology - CRYPTO
+2011}, pages 411--428, 2011.
+
+A. Joffe. On a Set of Almost Deterministic k-Independent Random
+Variables. \emph{The Annals of Probability}, 2(1):161--162, 1974.
+
+Daphne Koller and Nimrod Megiddo. Constructing Small Sample Spaces
+Satisfying Given Constraints. In \emph{Proceedings of the 25th Annual
+ACM Symposium on Theory of Computing (STOC)}, pages 268--277. ACM, 1993.
+
+Howard Karloff and Yishay Mansour. On Construction of k -Wise
+Independent Random Variables. \emph{Proceedings of the 26th Annual ACM
+Symposium on Theory of Computing (STOC)}, 17:564--573, 1994.
+
+Michael Luby. A Simple Parallel Algorithm for the Maximal Independent
+Set Problem. In \emph{Proceedings of the 17th Annual ACM symposium on
+Theory of computing (STOC)}, pages 1--10. ACM, 1985.
+
+David Meyer and James Pommersheim. On the Uselessness of Quantum
+Queries. \emph{Theoretical Computer Science}, (March):1--12, 2011.
+
+Michael A. Nielsen and Isaac Chuang. Quantum Computation and Quantum
+Information. \emph{American Journal of Physics}, 70(5):558, 2000.
+
+Peter W. Shor. Polynomial-Time Algorithms for Prime Factorization and
+Discrete Logarithms on a Quantum Computer. \emph{SIAM Journal on
+Computing}, 26(5):1484--1509, 1997.
+
+Dominique Unruh. Universally Composable Quantum Multi-Party Computation.
+\emph{Ad-vances in Cryptology - EUROCRYPT 2010}, pages 486--505, 2010.
+
+Mark Zhandry. How to Construct Quantum Random Functions, April 2012.
+Full version available at the Cryptology ePrint Archives:.
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+16
+
+\begin{quote}
+\textbf{A Cryptographic Primitives}
+\end{quote}
+
+\textbf{Definition A.1} (Encryption Scheme)\textbf{.} \emph{A public key
+encryption scheme} E \emph{is a triple of PPT}
+
+\begin{quote}
+\emph{algorithms} (E\emph{.}Gen\emph{,} E\emph{.}Enc\emph{,}
+E\emph{.}Dec) \emph{where}
+
+\emph{•} E\emph{.}Gen(1\emph{n}) \emph{generates a secret/public key
+pair} (sk\emph{,} pk)\emph{.}
+
+\emph{•} E\emph{.}Encpk(\emph{m}) \emph{computes a ciphertext c.}
+
+\emph{•} E\emph{.}Decsk(\emph{c}) \emph{computes the plaintext m, such
+that} E\emph{.}Decsk(E\emph{.}Encpk(\emph{m})) = \emph{m.}
+
+We use the standard chosen plaintest attack (CPA) game {[}GM84{]} to
+model security:
+
+\emph{•} The challenger generates (sk\emph{,} pk)
+\emph{←}E\emph{.}Gen(1\emph{n}), and sends pk to the adversary \emph{A}.
+
+\emph{• A} generates the challenge plaintext (\emph{m}0\emph{, m}1).
+
+\emph{•} The challenger chooses a bit \emph{b}, and responds with the
+challenge ciphertext \emph{c} = E\emph{.}Encpk(\emph{mb}).\emph{• A}
+makes a guess \emph{b′}for \emph{b}.
+
+The advantage of \emph{A} is \emph{ϵ}, where\uline{1 2}+ \emph{ϵ} is the
+probability that \emph{b} = \emph{b′}. We say that E is (quantum)
+
+IND-CPA-secure if all efficient (quantum) algorithms have only
+negligible advantage (in \emph{n}).
+
+An identity-based encryption (IBE) scheme IBE is an encryption scheme
+where identities serve
+
+as public keys, and a trusted authority hands out the corresponding
+secret keys. In particular:
+\end{quote}
+
+\textbf{Definition A.2} (IBE Scheme)\textbf{.} \emph{An identity-based
+encryption (IBE) scheme} IBE \emph{is a quadruple of}
+
+\emph{PPT algorithms} (IBE\emph{.}Gen\emph{,} IBE\emph{.}Extract\emph{,}
+IBE\emph{.}Enc\emph{,} IBE\emph{.}Dec) \emph{where}
+
+\begin{quote}
+\emph{•} IBE\emph{.}Gen(1\emph{n}) \emph{generates a master
+secret/public key pair} (msk\emph{,} mpk)\emph{.}\\
+\emph{• The trusted authority uses} IBE\emph{.}Extractmsk(id) \emph{to
+compute a secret key} skid \emph{corresponding to the identity}
+id\emph{.}
+
+\emph{•} IBE\emph{.}Encmpk(id\emph{, m}) \emph{encrypts m to identity}
+id\emph{.}\\
+\emph{•} IBE\emph{.}Decskid(\emph{c}) \emph{decrypts c, such that}
+\end{quote}
+
+IBE\emph{.}DecIBE\emph{.}Extractmsk(id)(IBE\emph{.}Encmpk(id\emph{, m}))
+= \emph{m}
+
+\begin{quote}
+We use the standard CPA attack game for IBE schemes, where the adversary
+can choose the
+\end{quote}
+
+identity id for which it will attempt to decrypt, and can get the secret
+keys corresponding to any
+
+\begin{quote}
+other identities {[}BF01{]}. Specifically,
+
+\emph{•} The challenger generates (msk\emph{,} mpk)
+\emph{←}IBE\emph{.}Gen(1\emph{n}), and sends mpk to the adversary
+\emph{A}.\emph{•} The adversary can make extraction queries on
+identities id\emph{i}, to which the challenger responds with
+IBE\emph{.}Extractmsk(id\emph{i}).
+
+\emph{•} The adversary generates an identity id, and two messages
+(\emph{m}0\emph{, m}1).\emph{•} The challenger chooses a random bit
+\emph{b}, and responds with IBE\emph{.}Encid(\emph{mb}).\emph{• A} makes
+a guess \emph{b′}for \emph{b}.
+\end{quote}
+
+that IBE is (quantum) IND-ID-CPA-secure if all efficient (quantum)
+algorithms have only negligible The advantage of \emph{A} is \emph{ϵ},
+where\uline{1 2}+ \emph{ϵ} is the probability that id \emph{̸}=
+id\emph{i} for any \emph{i} and \emph{b} = \emph{b′}. We say
+
+\begin{quote}
+advantage (in \emph{n}).
+\end{quote}
+
+17
+
+\begin{quote}
+\textbf{Definition A.3} (Signature Scheme)\textbf{.} \emph{A signature
+scheme} S \emph{is a triple of PPT algorithms}
+\end{quote}
+
+(S\emph{.}Gen\emph{,} S\emph{.}Sign\emph{,} S\emph{.}Ver) \emph{where}
+
+\begin{quote}
+\emph{•} S\emph{.}Gen(1\emph{n}) \emph{generates a secret/public key
+pair} (sk\emph{,} pk)\emph{.}
+
+\emph{•} S\emph{.}Signsk(\emph{m}) \emph{computes a signature σ on the
+message m.}
+
+\emph{•} S\emph{.}Verpk(\emph{m, σ}) \emph{outputs} accept \emph{or}
+reject\emph{, such that} S\emph{.}Verpk(\emph{m,}
+S\emph{.}Signsk(\emph{m})) = accept\emph{.}
+\end{quote}
+
+We will use the standard chosen message attack (CMA) game to define
+security {[}GMR88{]}:
+
+\begin{quote}
+\emph{•} The challenger generates (sk\emph{,} pk)
+\emph{←}S\emph{.}Gen(1\emph{n}), and sends pk to the adversary
+\emph{A}.\\
+\emph{• A} can make signature queries on messages \emph{mi}, to which
+the challenger responds with S\emph{.}Signsk(\emph{mi}).
+
+\emph{• A} produces a forgery candidate (\emph{m, σ}).
+\end{quote}
+
+that S is (quantum) UF-CMA-secure if all efficient (quantum) adversaries
+have negligible advantage The advantage of \emph{A} is the probability
+that \emph{m ̸}= \emph{mi} for any \emph{i} and Verpk(\emph{m, σ}) =
+accept. We say
+
+(in \emph{n}).
+
+\begin{quote}
+\textbf{Definition A.4} (PSF)\textbf{.} \emph{A pre-image sampleable
+function (PSF) is a quadruple of algorithms}
+
+F = (F\emph{.}Gen\emph{,} F\emph{.}Sample\emph{, f, f−}1) \emph{where:}
+
+\emph{•} F\emph{.}Gen(1\emph{n}) \emph{generates a secret/public key
+pair} (sk\emph{,} pk)\emph{.}
+
+\emph{• f}pk \emph{is a function.}
+
+\emph{•} F\emph{.}Sample \emph{samples x from a distribution D such that
+f}pk(\emph{x}) \emph{is uniform.• f−}1 sk(\emph{y}) \emph{samples from D
+conditioned on f}pk(\emph{x}) = \emph{y.}
+
+We model security with the following game:
+
+\emph{•} The challenger generates (sk\emph{,} pk)
+\emph{←}F\emph{.}Gen(1\emph{n}), and sends pk to the adversary \emph{A}.
+It also sends \emph{y} = \emph{f}pk(F\emph{.}Sample()) to \emph{A}.
+
+\emph{• A} makes a guess \emph{x}.
+
+The advantage of \emph{A} is the probability that \emph{f}pk(\emph{x}) =
+\emph{y}. We say that F is (quantum) one-way if
+
+all efficient (quantum) algorithms have negligible advantage.
+
+A trapdoor permutation (TDP) is a special case of a PSF where \emph{f}
+is bijective and F\emph{.}Sample
+\end{quote}
+
+simply returns a random element in the domain of \emph{f}pk. Since
+F\emph{.}Sample is already defined, we omit
+
+\begin{quote}
+it from the specification.
+
+\textbf{B Quantum Computation}
+\end{quote}
+
+We give some background on quantum computation. For a more thorough
+discussion, please see
+
+{[}NC00{]}. We also prove Theorem 3.1, which states that the output
+distribution of a quantum
+
+algorithm making \emph{qH} queries to a quantum oracle drawn from some
+distribution \emph{D} depends only on
+
+\begin{quote}
+the marginal distributions of \emph{D} on all subsets of 2\emph{q}
+inputs.
+
+Let \emph{H} be a Hilbert space with an inner product
+\emph{⟨·\textbar·⟩}, and let \emph{B} = \emph{\{\textbar x⟩\}} be an
+orthonormal basis for \emph{H}, index by a parameter \emph{x ∈X}. The
+state of a quantum system on \emph{H} is specified by a vector
+\emph{\textbar φ⟩∈H} of norm 1.
+\end{quote}
+
+18
+
+\begin{quote}
+\textbf{Quantum Measurement} Given a state \emph{\textbar φ⟩}, we can
+measure \emph{\textbar φ⟩}in the basis \emph{B}, obtaining the value
+\emph{x ∈X} with probability \emph{\textbar⟨x\textbar φ⟩\textbar{}}2.
+Thus, to each \emph{\textbar φ⟩}, we associate a distribution \emph{Dφ}
+where \emph{Dφ}(\emph{x}) = \emph{\textbar⟨x\textbar φ⟩\textbar{}}2. The
+normalization constant and the fact that \emph{B} is an orthonormal
+basis ensure that this is in fact a valid distribution. After
+measurement, the system is in state \emph{\textbar x⟩}.
+
+If \emph{B} = \emph{\{\textbar x, y⟩\}} for \emph{x ∈X} and \emph{y ∈Y},
+then we can also perform a partial measurement over \emph{X}.
+\end{quote}
+
+\emph{y∈Y\textbar⟨x, y\textbar φ⟩\textbar{}}2. The resulting state is
+the result of projecting \emph{\textbar φ⟩}to The distribution over
+\emph{X} is the marginal distribution of \emph{Dφ} when restricted to
+\emph{X}. That is, we obtain the value \emph{x} with probability\\
+the space spanned by \emph{\{\textbar x, y⟩\}} for \emph{y ∈Y}, and
+renormalizing so that the norm is 1.
+
+\begin{quote}
+\textbf{Quantum Algorithms} A quantum algorithm \emph{A} over a Hilbert
+space \emph{H} with an orthonormal basis \emph{B} is specified by
+unitary transformation \emph{U}. The input to \emph{A} is an element
+\emph{x}0 \emph{∈X}. The system is initialized to the basis state
+\emph{\textbar x}0\emph{⟩}, and \emph{U} is applied to the system,
+obtaining the final state \emph{\textbar φ⟩}=
+\emph{U\textbar x}0\emph{⟩}. Then the state is sampled according to the
+distribution \emph{Dφ}.
+
+Let \emph{X} and \emph{Y} be sets such that \emph{Y} is a commutative
+group with addition operation \emph{⊕}. For notational convenience, we
+assume that every element has order at most 2 (\emph{y ⊕y} is the
+identity for all \emph{y ∈Y}). Given a function \emph{H} : \emph{X →Y}
+and third set \emph{Z}, define the orthonormal basis \emph{B} as the set
+\emph{\{\textbar x, y, z⟩\}} for \emph{x ∈X}, \emph{y ∈Y}, and \emph{z
+∈Z}. Define the unitary transformation \emph{H}trans over the Hilbert
+space spanned by \emph{B} as the transformation that takes
+\emph{\textbar x, y, z⟩}into \emph{\textbar x, y ⊕H}(\emph{x})\emph{,
+z⟩}. \emph{H}trans is unitary, it's own inverse, and Hermitian. As an
+abuse of notation, we will frequently use \emph{H}trans
+
+and \emph{H} interchangeably.
+
+A quantum algorithm \emph{A} making \emph{q} quantum queries to \emph{H}
+is then specified by a sequence of
+\end{quote}
+
+unitary transformations \emph{U}0\emph{, ..., Uq}. The evaluation of
+\emph{A} then consists of alternately applying \emph{Ui} and
+
+\begin{quote}
+\emph{H} to the initial state \emph{\textbar x⟩}. We call
+\end{quote}
+
+\emph{Ui−}1\emph{H...U}1\emph{HU}0\emph{\textbar x⟩}
+
+\begin{quote}
+the state of \emph{A} before the \emph{i}th query, and
+\end{quote}
+
+\emph{HUi−}1\emph{H...U}1\emph{HU}0\emph{\textbar x⟩}
+
+\begin{quote}
+the state after the \emph{i}th query. The final state of the algorithm
+is
+\end{quote}
+
+\emph{UqH...U}1\emph{HU}0\emph{\textbar x⟩}
+
+\begin{quote}
+We say that a quantum algorithm is efficient if \emph{q} is a
+polynomial, and all the \emph{Ui} are composed of
+\end{quote}
+
+a polynomial number of universal basis gates (the Hadamard, CNOT, and
+phase shift gates are
+
+\begin{quote}
+commonly used).
+
+Classical queries to an oracle are made by partial sampling over
+\emph{X} before performing the query.
+
+\textbf{Density Matrix} Suppose we have quantum states
+\emph{\textbar φw⟩}for \emph{w ∈W}, and we have a weight assignment
+\emph{D} on \emph{W}. Then we define the density matrix
+
+\emph{ρ} = \emph{D}(\emph{x})\emph{\textbar φw⟩⟨φw\textbar{}}
+\end{quote}
+
+\emph{w∈W}
+
+this weight assignment is also a distribution, and the weight
+corresponds to the probability of The weight of an outcome \emph{y} from
+measurement is given by \emph{⟨y\textbar ρ\textbar y⟩}. If \emph{D} is a
+distribution, then
+
+obtaining \emph{y} if we first pick \emph{w} with probability
+\emph{D}(\emph{w}), and then sample \emph{\textbar φw⟩}. In this case,
+the density matrix \emph{ρ} summarizes the statistical behavior of the
+quantum system.
+
+19
+
+\begin{quote}
+Suppose we have two weight assignments \emph{D}1 and \emph{D}2 on
+\emph{W}. Let \emph{D′}1and \emph{D′}2be the corresponding
+\end{quote}
+
+weight assignments of outcomes of measurement. Since the weight
+assignment induced by each \emph{\textbar φw⟩}
+
+\begin{quote}
+is in fact a distribution,
+\emph{\textbar D′}1\emph{−D′}2\emph{\textbar{} ≤\textbar D}1
+\emph{−D}2\emph{\textbar{}}.
+\end{quote}
+
+is the final state of some quantum algorithm \emph{A} that makes
+\emph{q} queries to the oracle \emph{H}. For this paper, we will focus
+on the case where \emph{W} is the set of oracles \emph{H} from \emph{X
+→Y}, and \emph{\textbar φH⟩}
+
+\begin{quote}
+\textbf{B.1} \textbf{Proof of Theorem 3.1}
+
+\textbf{Proof of Theorem 3.1.}
+
+Let \emph{A} be some quantum oracle algorithm. Suppose right before the
+first query, the state of
+\end{quote}
+
+the system is \emph{\textbar φ}0\emph{⟩}= convenience that all the
+transition matrices \emph{Ui} are identical and equal to \emph{U} (the
+proof in the general \emph{xyzαxyz\textbar xyz⟩}(which is independent of
+the oracle). Assume for notational
+
+\begin{quote}
+case is essentially identical). Let \emph{\textbar φq,H⟩}be the state of
+\emph{A} after \emph{q} queries to oracle \emph{H}. That is,
+\end{quote}
+
+\emph{\textbar φq,H⟩}= \emph{UHU....UH\textbar φ}0\emph{⟩}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{D}:
+\end{minipage}} &
+\multicolumn{5}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.8333} + 8\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+Let \emph{ρq} be the density matrix for \emph{A} after \emph{q} queries
+when the oracle \emph{H} is drawn from a distribution
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+\emph{ρq} =
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{H}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Pr \emph{D}{[}\emph{H}{]}\emph{\textbar φq,H⟩⟨φq,H\textbar{}} =
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{H}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Pr
+\emph{D}{[}\emph{H}{]}\emph{UHU...UH\textbar φ}0\emph{⟩⟨φ}0\emph{\textbar HU∗...U∗HU∗}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Observe that
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+(\emph{UH})\emph{xyzx′y′z′}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{⟨xyz\textbar UH x′y′z′}
+
+\emph{⟨xyz\textbar U x′y′⊕H}(\emph{x′})\emph{z′}=
+\emph{Uxyz,x′y′⊕H}(\emph{x′})\emph{z′}
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+We can now evaluate \emph{ρq} component-wise:
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}@{}}
+\toprule()
+\multirow{6}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+(\emph{ρq})\emph{xyz,x′y′z′}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} &
+\multirow{6}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+. . .
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{H}
+\end{minipage} &
+\multicolumn{6}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.6000} + 10\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Pr
+\emph{D}{[}\emph{H}{]}(\emph{UHU...UH\textbar φ}0\emph{⟩⟨φ}0\emph{\textbar HU∗...U∗HU∗})\emph{xyz,x′y′z′}
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} & & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{H}
+\end{minipage} &
+\multicolumn{6}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.6000} + 10\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Pr
+\emph{D}{[}\emph{H}{]}((\emph{UH})(\emph{UH})\emph{...}(\emph{UH})\emph{\textbar φ}0\emph{⟩⟨φ}0\emph{\textbar{}}(\emph{UH})\emph{∗...}(\emph{UH})\emph{∗}(\emph{UH})\emph{∗})\emph{xyz,x′y′z′}
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} & & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{H}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Pr \emph{D}{[}\emph{H}{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{xqyqzq}
+\end{minipage} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.4000} + 6\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{x′qy′qz′q}
+\end{quote}
+\end{minipage}} \\
+& \multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage}} & &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{H}
+\end{minipage}} &
+\multicolumn{6}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.6000} + 10\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{Uxyzxqyq⊕H}(\emph{xq})\emph{zq}((\emph{UH})\emph{...}(\emph{UH})\emph{\textbar φ}0\emph{⟩⟨φ}0\emph{\textbar{}}(\emph{UH})\emph{∗...}(\emph{UH})\emph{∗})\emph{U∗x′y′z′x′qy′q⊕H}(\emph{x′q})\emph{z′q}
+\end{minipage}} \\
+& & & & \begin{minipage}[b]{\linewidth}\raggedright
+Pr \emph{D}{[}\emph{H}{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{xqyqzq}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{x′qy′qz′q}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{· · ·}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{x}1\emph{y}1\emph{z}1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{x′}1\emph{y′}1\emph{z′}1
+\end{quote}
+\end{minipage} \\
+& & & &
+\multicolumn{6}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.6000} + 10\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{Uxyzxqyq⊕H}(\emph{xq})\emph{zqUxqyqzqxq−}1\emph{yq−}1\emph{⊕H}(\emph{xq−}1)\emph{zq−}1\emph{...Ux}2\emph{y}2\emph{z}2\emph{,x}1\emph{y}1\emph{⊕H}(\emph{x}1)\emph{z}1\emph{αx}1\emph{y}1\emph{z}1
+\end{quote}
+
+\emph{α∗x′}1\emph{y′}1\emph{z′}1\emph{U∗x′}2\emph{y′}2\emph{z′}2\emph{,x′}1\emph{y′}1\emph{⊕H}(\emph{x′}1)\emph{z′}1\emph{...U∗x′qy′qz′qx′q−}1\emph{y′q−}1\emph{⊕H}(\emph{x′q−}1)\emph{z′q−}1\emph{U∗x′y′z′x′qy′q⊕H}(\emph{x′q})\emph{z′q}
+\end{minipage}} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Now we can rearrange the order of summation as
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{xqyqzq}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{x′qy′qz′q}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{· · ·}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{x}1\emph{y}1\emph{z}1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{x′}1\emph{y′}1\emph{z′}1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{H}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Pr \emph{D}{[}\emph{H}{]}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+20
+
+\begin{quote}
+Next, notice that the summand only depends on \emph{H}(\emph{xi})\emph{,
+H}(\emph{x′}
+
+\emph{H} sum, we can sum out all the inputs \emph{x} for which \emph{x
+̸}= \emph{xi, x′}have that the summation over \emph{H} simplifies to
+\emph{i}) for \emph{i ∈\{}1\emph{, ..., q\}}. This means, in the
+\emph{i}. Letting \emph{ri} = \emph{H}(\emph{xi})\emph{, r′i}=
+\emph{H}(\emph{x′i}), we
+\end{quote}
+
+Pr \emph{D}{[}\emph{H}(\emph{xi}) = \emph{ri, H}(\emph{x′i}) =
+\emph{r′i∀i ∈\{}1\emph{, ..., q\}}{]}
+
+\begin{quote}
+\emph{r}1\emph{...rq,r′}1\emph{...r′q}
+
+Putting it back together,
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.2222} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+(\emph{ρq})\emph{xyz,x′y′z′}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{xqyqzq}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{x′qy′qz′q}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{· · ·}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{x}1\emph{y}1\emph{z}1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{x′}1\emph{y′}1\emph{z′}1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{r}1\emph{...rq,r′}1\emph{...r′q}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{9}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{1.0000} + 16\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+Pr \emph{D}{[}\emph{H}(\emph{xi}) = \emph{ri, H}(\emph{x′i}) =
+\emph{r′i∀i ∈\{}1\emph{, ..., q\}}{]}
+
+\emph{Uxyzxqyq⊕rqzqUxqyqzqxq−}1\emph{yq−}1\emph{⊕rq−}1\emph{zq−}1\emph{...Ux}2\emph{y}2\emph{z}2\emph{,x}1\emph{y}1\emph{⊕r}1\emph{z}1\emph{αx}1\emph{y}1\emph{z}1
+
+\emph{α∗x′}1\emph{y′}1\emph{z′}1\emph{U∗x′}2\emph{y′}2\emph{z′}2\emph{,x′}1\emph{y′}1\emph{⊕r′}1\emph{z′}1\emph{...U∗x′qy′qz′qx′q−}1\emph{y′q−}1\emph{⊕r′q−}1\emph{z′q−}1\emph{U∗x′y′z′x′qy′q⊕r′qz′q}
+
+\begin{quote}
+Thus, the density matrix \emph{ρq}, which contains all the statistical
+information about the algorithm \emph{A},
+
+is a linear combination of the quantities
+Pr\emph{D}{[}\emph{H}(\emph{xi}) = \emph{ri, H}(\emph{x′}
+\end{quote}
+
+probability of any particular output is on the diagonal of \emph{ρq},
+and is thus a linear combination. Since \emph{i}) = \emph{r′i∀i
+∈\{}1\emph{, ..., q\}}{]}. In particular, the
+
+\begin{quote}
+the probabilities are real, we can take the coefficients of
+Pr\emph{D}{[}\emph{H}(\emph{xi}) = \emph{ri, H}(\emph{x′}
+
+to be real as well. \emph{i}) = \emph{r′i∀i ∈\{}1\emph{, ..., q\}}{]}
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage}} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{C}
+\end{quote}
+\end{minipage} &
+\multicolumn{8}{>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.8889} + 14\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{More on Semi-Constant Distributions}
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+In this section, we prove Lemma 4.2, which states that the marginal
+distributions for any \emph{k} inputs
+
+of oracles drawn from SC\emph{λ} specified by polynomials of degree
+\emph{k} for which the \emph{λ}1coefficient is 0. We
+
+\begin{quote}
+also describe a quantum algorithm for finding collisions in SC\emph{λ}
+using \emph{O}(\emph{λ−}2\emph{/}3) oracle queries.
+
+\textbf{C.1 Proof of Lemma 4.2}
+
+\textbf{Proof of Lemma 4.2.} Recall that SC\emph{λ} is defined as
+follows:
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{•} Pick \emph{y} at random from \emph{Y}.\\
+\emph{•} For each \emph{x ∈X}, with probability 1 \emph{−λ}, set
+\emph{H}(\emph{x}) to be a random element of \emph{Y}. With probability
+\emph{λ}, set \emph{H}(\emph{x}) = \emph{y}.
+\end{quote}
+
+that \emph{xj} maps to \emph{rj} for \emph{k} values of \emph{xj} and
+\emph{rj}. Suppose there are \emph{ℓ}distinct \emph{rj}, denoted
+\emph{tm}, and let \emph{km} Suppose \emph{Y} contains \emph{N}
+elements. Let \emph{α}((\emph{xj})\emph{,} (\emph{rj})) =
+Pr{[}\emph{H}(\emph{xi}) = \emph{rj∀i ∈\{}1\emph{, ..., k\}}{]}, the
+probability be the number of \emph{rj} equal to \emph{tm} (note
+that\emph{ℓm}=1\emph{km} = \emph{k}). Let \emph{F} be the set
+\emph{\{}1\emph{, ..., ℓ, ⊥\}}. For each with the event that \emph{tf} =
+\emph{y}. \emph{f ∈F}, if \emph{f} =\emph{⊥}, \emph{f} is associated
+with the event that \emph{tm ̸}= \emph{y} for all \emph{m}, and
+otherwise, \emph{f} is associated Let eqf\emph{,}m be 1 if \emph{f} =
+\emph{m}, 0 otherwise. The probability that \emph{O}(\emph{xj}) =
+\emph{tm} is 1\emph{/N} if we are choosing the output at random, and
+otherwise, it is 1 if \emph{tm} = \emph{y} and 0 otherwise. In other
+words, this probability is\\
+(1 \emph{−λ}) 1 \emph{N}+ \emph{λ}eq\emph{f,m} = 1 \emph{N}+ \emph{λ}
+eq\emph{f,m −}1 \emph{N} \emph{.}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+21
+
+\begin{quote}
+Since there are \emph{km} copies of each \emph{tm} among the \emph{rj},
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Pr{[}\emph{H}(\emph{x}) = \emph{ri}1\emph{, ..., kf}{]} =
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{ℓ}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1 + \emph{λ}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+eq1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{km}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\emph{ij∀ ∈\{\}\textbar{}} & \emph{i}=\emph{m} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{N}
+\end{quote}
+\end{minipage} & \emph{f,m −N} & & \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Summing over all \emph{f} gives
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+(() ()) =
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Pr{[}{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{ℓ}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1 +
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+eq1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{km}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\emph{αxi,rj} & \emph{f} & \emph{f} & \emph{i}=\emph{m} & \emph{N λ} &
+\emph{f,m −N} & & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+This is a polynomial in \emph{λ}. It is a sum of products of\emph{km} =
+\emph{k} monomials in \emph{λ}, so its total degree is at most \emph{k}.
+Now, we shall approximate this to first order in \emph{λ}, and show that
+the first-order coefficient is 0:
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.1429} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{α}((\emph{xi})\emph{,} (\emph{rj}))
+\end{minipage}}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{f}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Pr{[}\emph{f}{]}
+\end{quote}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{ℓ}
+\end{minipage} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.1429} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1\\
+\emph{N}+ \emph{λ}
+\end{quote}\strut
+\end{minipage}}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.1429} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+eq\emph{f,m −}1 \emph{N}
+\end{minipage}}} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.2857} + 6\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{km}
+\end{quote}
+\end{minipage}}} \\
+& & & & & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{m}=1
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.2143} + 4\tabcolsep}}{%
+\multirow{2}{*}{=}} & \multirow{2}{*}{\emph{f}} &
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Pr{[}\emph{f}{]}
+\end{quote}
+\end{minipage}} & \emph{ℓ} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.2143} + 4\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+1\\
+\emph{Nkm} + \emph{km}
+\end{quote}\strut
+\end{minipage}}} & 1 &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.1429} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+eq\emph{f,m −}1 \emph{N}
+\end{quote}
+\end{minipage}}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.1429} + 2\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
++ \emph{O}(\emph{λ}2)
+\end{quote}
+\end{minipage}}} \\
+& & & & & \emph{m}=1 & & & & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{Nkm−}1
+\end{quote}
+\end{minipage} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.2143} + 4\tabcolsep}}{%
+\multirow{2}{*}{=}} & \multirow{2}{*}{\emph{N}} & 1 & &
+\multirow{2}{*}{Pr{[}\emph{f}{]}} & \emph{ℓ} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.2143} + 4\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+1 + \emph{kmNλ}
+\end{quote}
+\end{minipage}}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.1429} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+eq\emph{f,m −}1 \emph{N}
+\end{quote}
+\end{minipage}}} &
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
++ \emph{O}(\emph{λ}2)
+\end{quote}
+\end{minipage}} \\
+& & & & \emph{mkm} & \emph{f} & & \emph{m}=1 \\
+\multicolumn{14}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{1.0000} + 26\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+=
+
+\emph{Nk}
+
+1
+
+\emph{f}
+
+\begin{quote}
+Pr{[}\emph{f}{]} 1 + \emph{Nλ}
+
+\emph{m}=1\\
+\emph{ℓ}
+
+\emph{km} eq\emph{f,m −}1 \emph{N}
+\end{quote}
+
++ \emph{O}(\emph{λ}2)
+
+\begin{quote}
+= \emph{Nk} +
+\end{quote}
+
+1
+
+\emph{Nk−}1
+
+\emph{λ}
+
+\begin{quote}
+\emph{m}=1\\
+\emph{ℓ}
+
+\emph{km}\emph{f} Pr{[}\emph{f}{]}eq\emph{f,m −}1 \emph{N}+
+\emph{O}(\emph{λ}2)
+
+Notice that \emph{f}Pr{[}\emph{f}{]}eq\emph{f,m}is the probability that
+\emph{tm} = \emph{y}, which is equal to 1\emph{/N}. Thus, all
+\end{quote}
+
+the terms in the first-order coefficient cancel out, so the
+\emph{λ}1coefficient is 0. This completes the
+
+\begin{quote}
+lemma.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}\strut
+\end{minipage}} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{C.2}
+\end{quote}
+\end{minipage} &
+\multicolumn{13}{>{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.9286} + 24\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Finding Collisions in Semi-Constant Distributions}
+\end{quote}
+\end{minipage}} \\
+\multicolumn{14}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{1.0000} + 26\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Here we explore the problem of finding a collision in an oracle drawn
+from a semi-constant distribution SC\emph{λ} over \emph{HX,Y}. Our
+motivation for studying the collision problem is as follows: a classical
+algorithm making \emph{qH} queries can only distinguish SC\emph{λ} from
+random with probability \emph{O}(\emph{λ}2\emph{q}2 \emph{H}), since it
+can only distinguish the two cases if it happens to query two
+distinguished points. Further, querying random points, and outputting 1
+if a collision is found achieves this bound. Thus, a collision search is
+the best way to distinguish SC\emph{λ} from random in the classical
+setting, and the same may also be true in the quantum setting
+\end{quote}
+
+requires (with high probability) finding a collision in the
+distinguished inputs. Let \emph{N} = \emph{\textbar Y\textbar{}} be the
+number of elements in \emph{Y}, and assume that \emph{λ
+\textgreater\textgreater{}}1 \emph{N}so that finding a collision
+
+Let \emph{c} be the minimum constant such that SC\emph{λ} is
+indistinguishable from uniform with except with probability
+\emph{O}(\emph{qcλ}2). Corollary 4.3 shows us that \emph{c ≤}4. We will
+now show that \emph{c ≥}3, using
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+22
+
+\begin{quote}
+the following algorithm. The algorithm is basically the algorithm of
+Brassard et al. {[}BHT97{]}, but modified for our purposes. It operates
+as follows:
+
+\emph{•} Let \emph{p} = (\emph{q −}1)\emph{/}2). Select a subset \emph{W
+⊆X} of size \emph{p}. For each \emph{x ∈W}, store the pair (\emph{x,
+H}(\emph{x})) in a table, sorted by the second coordinate. Check if
+there is a collision in \emph{W}. If so, output this collision.
+
+\emph{•} Construct the oracle \emph{O}(\emph{x}) which is 1 if and only
+if \emph{x /∈W} and \emph{H}(\emph{x}) = \emph{H}(\emph{x}0) for some
+\emph{x}0 \emph{∈W}. Since the entries to \emph{W} are sorted by the
+second coordinate, this test can be performed efficiently.
+
+\emph{•} Run Grover's algorithm on this oracle for \emph{p} queries,
+looking for an \emph{x /∈W} such that \emph{H}(\emph{x}) =
+\emph{H}(\emph{x}0) for some \emph{x}0 \emph{∈W}.
+
+\emph{•} Output (\emph{x, x}0).
+
+The first step uses \emph{p} queries. If the algorithm is given an
+oracle from SC\emph{λ}, the probability that we find a distinguished
+input in the first step is
+\end{quote}
+
+1 \emph{−}(1 \emph{−λ})\emph{\textbar W\textbar{}}= 1 \emph{−}(1
+\emph{−λ})\emph{p≥pλ}
+
+\begin{quote}
+Grover's algorithm {[}Gro96{]} finds an \emph{x} such that
+\emph{O}(\emph{x}) = 1 with probability Ω(\emph{p}2\emph{f}) using
+\emph{p} queries, where \emph{f} is the fraction of inputs to \emph{O}
+that map to 1. Thus, \emph{f} is the fraction of \emph{x} such that
+\end{quote}
+
+\emph{x /} input, this fraction is (in expectation) at least
+\emph{λ}.\emph{∈W} (which is most of them) and \emph{H}(\emph{x}) =
+\emph{H}(\emph{x}0) for some \emph{x}0 \emph{∈W}. If we found a
+distinguished
+
+\begin{quote}
+If we found a distinguished input in the first step (which happens with
+probability at least \emph{pλ}), Grover's algorithm will find an
+\emph{x} such that \emph{O}(\emph{x}) = 1 with probability
+Ω(\emph{p}2\emph{λ}) using \emph{p} queries. Thus, out algorithm uses
+2\emph{p} queries, and finds a collision with probability
+Ω(\emph{p}3\emph{λ}2).
+
+If this algorithm is given a random oracle instead, the probability that
+we find a collision is negligible. By adding an extra check that the
+output of the algorithm is indeed a collision (requiring 1 extra query
+since \emph{H}(\emph{x}0) has already been recorded), we get an
+algorithm using 2\emph{p}+1 = \emph{q} quantum queries that
+distinguishes SC\emph{λ} from random with probability
+Ω(\emph{p}3\emph{λ}2) = Ω(\emph{q}3\emph{λ}2), showing that \emph{c ≥}3.
+
+\textbf{D} \textbf{Proof of Claim 1}
+
+Here we complete the proof of Theorem 5.1 by proving Claim 1.
+\end{quote}
+
+\textbf{Proof of Claim 1.} Recall the setup: \emph{A′}makes \emph{q ≡qH}
++ \emph{qS} + 1 queries to an oracle \emph{H} drawn from SC\emph{λ}, and
+outputs (\emph{c,} id\emph{∗, Q}). Let \emph{X} be the set of
+distinguished inputs to \emph{H}. If id\emph{∗∈X} and \emph{QX} =
+\emph{∅}, \emph{A′}wins if \emph{c} = 0. Otherwise, we flip a coin to
+decide if \emph{A′}wins. Let \emph{p}(\emph{λ}) be the probability that
+\emph{A′}wins. We want to show that \emph{p}(\emph{λ}) \emph{≥}\uline{1
+2}+ \emph{λϵ −ℓ}(\emph{q\uline{H},q\uline{S}})\emph{λ}2for some
+polynomial\emph{ℓ}(\emph{·, ·}), where \emph{ϵ} is the probability that
+\emph{c} = 0 when \emph{A′}is given a truly random oracle, minus
+\emph{frac}12. We assume without loss of generality that \emph{A′}never
+outputs id\emph{∗∈Q}. By Theorem 3.1,
+
+\emph{H←D}{[}\emph{A′H}() = (\emph{c,} id\emph{∗, Q}){]} =
+\emph{x}1\emph{,...,x}2\emph{q,r}1\emph{,...,r}2\emph{qβ}(\emph{c,}
+id\emph{∗, Q,} (\emph{xi})\emph{,} (\emph{ri})) Pr
+\emph{H←D}{[}\emph{H}(\emph{xi}) = \emph{ri∀i ∈\{}1\emph{, ...,}
+2\emph{q\}}{]}
+
+23
+
+\begin{quote}
+for some coefficients \emph{β}(\emph{c,} id\emph{∗, Q,}
+(\emph{xi})\emph{,} (\emph{ri})). Then notice that
+
+1
+
+\sout{2}+ \emph{ϵ} = id\emph{∗,Q
+x}1\emph{,...,x}2\emph{q,r}1\emph{,...,r}2\emph{q}
+\end{quote}
+
+\emph{β}(0\emph{,} id\emph{∗, Q,} (\emph{xi})\emph{,} (\emph{ri})) Pr
+\emph{H}{[}\emph{H}(\emph{xi}) = \emph{ri∀i ∈\{}1\emph{, ...,}
+2\emph{q\}}{]}
+
+\begin{quote}
+where \emph{H} is a random oracle.
+\end{quote}
+
+probability of obtaining (\emph{c,} id\emph{∗, Q}) such that (id\emph{∗,
+Q}) is good. The probability \emph{A′}wins is then: Call (id\emph{∗, Q})
+good if id\emph{∗∈X} and \emph{QX} = \emph{∅}, and bad otherwise. For
+each \emph{c}, let \emph{γc} be the
+
+\emph{p}(\emph{λ}) = \emph{γ}0 + (1 \emph{−γ}0 \emph{−γ}1)1 \sout{2}= 1
+2(1 + \emph{γ}0 \emph{−γ}1) \emph{.}
+
+\begin{quote}
+Fix a set \emph{X}, and let SC\emph{X} be the distribution on oracles
+\emph{H} where a \emph{y} is chosen at random, and
+
+for each \emph{x ∈X}, \emph{H}(\emph{x}) = \emph{y}, and for each
+\emph{x /} We can now compute \emph{γc}: \emph{∈X}, \emph{H}(\emph{x})
+is chosen at random.
+
+\emph{γc} =
+
+\emph{X}\\
+Pr{[}\emph{X}{]}
+
+id\emph{∗∈X Q}:\emph{Q} \emph{X}=\emph{∅H←}SC\emph{X}{[}\emph{AH}() =
+(\emph{c,} id\emph{∗, Q}){]}
+\end{quote}
+
+where Pr{[}\emph{X}{]} is the probability that \emph{X} is chosen as the
+set of distinguished inputs, and \emph{Q} ranges over sets of size
+\emph{qS}. We can rewrite \emph{γc} as
+
+\begin{quote}
+\emph{γc} =
+
+id\emph{∗}
+
+id\emph{∗/}
+
+\emph{Q}:
+
+\emph{∈Q}id\emph{∗∈X,Q}
+\end{quote}
+
+\emph{X}:
+
+\emph{X}=\emph{∅}Pr{[}\emph{X}{]} \emph{H←}SC\emph{X}{[}\emph{AH}() =
+(\emph{c,} id\emph{∗, Q}){]}
+
+\begin{quote}
+=
+
+id\emph{∗}
+
+id\emph{∗/}
+
+\emph{Q}:
+
+\emph{∈Q}id\emph{∗∈X,Q}
+\end{quote}
+
+\emph{X}:
+
+\begin{quote}
+\emph{X}=\emph{∅}\\
+Pr{[}\emph{X}{]} \emph{x}1\emph{,...,x}2\emph{q}
+\end{quote}
+
+\emph{r}1\emph{,...,r}2\emph{qβ}(\emph{c,} id\emph{∗, Q,}
+(\emph{xi})\emph{,} (\emph{ri}))
+\emph{H←}SC\emph{X}{[}\emph{H}(\emph{xi}) = \emph{ri∀i}{]}
+
+\begin{quote}
+=
+
+id\emph{∗}
+
+id\emph{∗/}
+
+\emph{Q}:
+
+\emph{∈Q}\emph{x}1\emph{,...,x}2\emph{q}
+
+\emph{r}1\emph{,...,r}2\emph{q}\\
+\emph{β}(\emph{c,} id\emph{∗, Q,} (\emph{xi})\emph{,} (\emph{ri}))
+\end{quote}
+
+id\emph{∗∈X,Q}
+
+\emph{X}:
+
+\emph{X}=\emph{∅}Pr{[}\emph{X}{]}
+\emph{H←}SC\emph{X}{[}\emph{H}(\emph{xi}) = \emph{ri∀i}{]}
+
+\begin{quote}
+We now look at the quantity
+\end{quote}
+
+\emph{X}:
+
+\begin{quote}
+Pr{[}\emph{X}{]} \emph{H←}SC\emph{X}{[}\emph{H}(\emph{xi}) = \emph{ri∀i
+∈\{}1\emph{, ...,} 2\emph{q\}}{]} \emph{.} (D.1)
+
+id\emph{∗∈X,Q} \emph{X}=\emph{∅}
+
+Since Pr\emph{X←}SC\emph{X} {[}\emph{H}(\emph{xi}) = \emph{ri∀i
+∈\{}1\emph{, ...,} 2\emph{q\}}{]} only depends on the inputs \emph{xi},
+and each \emph{x} is put in
+\end{quote}
+
+\emph{X} with independent probability \emph{λ}, we can sum out all
+\emph{x} other than id\emph{∗}, \emph{xi}, or those in \emph{Q}.
+Therefore,
+
+\begin{quote}
+we only consider \emph{X} drawn as a subset of \emph{\{xi} : \emph{i
+∈\{}1\emph{, ...,} 2\emph{q\}\}Q\{}id\emph{∗\}}.
+
+Let \emph{X′}be drawn from the subsets of \emph{\{xi} : \emph{i
+∈\{}1\emph{, ...,} 2\emph{q\}, xi /∈Q, xi ̸}= id\emph{∗\}} where each
+element is
+\end{quote}
+
+in \emph{X′}with independent probability \emph{λ}. We can then rewrite
+Pr{[}\emph{X}{]} as the probability that id\emph{∗∈X}
+
+(which is \emph{λ}) times the probability that \emph{Q} is disjoint from
+\emph{X} (which is (1\emph{−λ})\emph{qS}) times the probability
+
+\begin{quote}
+of drawing \emph{X′}, where \emph{X′}= \emph{X \textbackslash{}
+\{}id\emph{∗\}}. Thus, (D.1) becomes
+
+\emph{λ}(1 \emph{−λ})\emph{qS}
+\end{quote}
+
+\emph{X′}Pr{[}\emph{X′}{]} \emph{H←}SC\emph{X′∪\{}id\emph{∗\}}
+
+\begin{quote}
+Pr {[}\emph{H}(\emph{xi}) = \emph{ri∀i ∈\{}1\emph{, ...,} 2\emph{q\}}{]}
+(D.2)
+\end{quote}
+
+24
+
+\begin{quote}
+Now, each Pr{[}\emph{X′}{]} has the form \emph{λc}(1 \emph{−λ})\emph{d},
+where \emph{c} is the number of elements in \emph{X′}, and \emph{d} is
+the number of elements left out. Thus \emph{c} + \emph{d ≤}2\emph{q}, so
+Pr{[}\emph{X′}{]} is a polynomial of degree at most 2\emph{q} in
+\emph{λ}.
+\end{quote}
+
+Thus, (D.2) is a polynomial of degree at most 2\emph{q} + \emph{qS} + 1.
+Moreover, if we let \emph{λ →}0, Pr{[}\emph{X′}{]} \emph{→}0, and thus
+(D.2) becomes
+
+\emph{λ}
+
+\begin{quote}
+\emph{H←}SC\emph{\{}id\emph{∗\}} Pr {[}\emph{H}(\emph{xi}) = \emph{ri∀i
+∈\{}1\emph{, ...,} 2\emph{q\}}{]}
+\end{quote}
+
+choose \emph{H}(\emph{x}) randomly. This is identical to a truly random
+oracle, so (D.2) is equal to Notice that SC\emph{\{}id\emph{∗\}} is
+drawn as follows: pick a random \emph{y}, and set \emph{H}(id\emph{∗}) =
+\emph{y}, for all other \emph{x},
+
+\emph{λ} Pr \emph{H}{[}\emph{H}(\emph{xi}) = \emph{ri∀i ∈\{}1\emph{,
+...,} 2\emph{q\}}{]} + \emph{O}(\emph{λ}2) \emph{.}
+
+\begin{quote}
+Plugging this into our expression for \emph{γc}, we get that \emph{γc}
+is a polynomial of degree at most
+
+2\emph{q} + \emph{qS} + 1, and that it is equal to
+
+\emph{γc} =
+
+id\emph{∗}
+
+id\emph{∗/}\\
+\emph{Q}:
+
+\emph{∈Q}\emph{x}1\emph{,...,x}2\emph{q}
+
+\emph{r}1\emph{,...,r}2\emph{qβ}(\emph{c,} id\emph{∗, Q,}
+(\emph{xi})\emph{,} (\emph{ri})) Pr \emph{H}{[}\emph{H}(\emph{xi}) =
+\emph{ri∀i ∈\{}1\emph{, ..., q\}}{]}\emph{λ} + \emph{O}(\emph{λ}2)
+
+Notice that the first-order coefficient is the probability that the
+first bit of the output of \emph{A′}is \emph{c}
+\end{quote}
+
+when given a truly random oracle. Thus:
+
+\begin{quote}
+\emph{γ}0 = 1
+
+\sout{2}+ \emph{ϵ} \emph{λ} + \emph{O}(\emph{λ}2)
+
+\emph{γ}1 = 1
+
+2\emph{−ϵ} \emph{λ} + \emph{O}(\emph{λ}2)
+
+Thus, the probability \emph{A′}wins is
+\end{quote}
+
+\emph{p}(\emph{λ}) = 1 2(1 + \emph{γ}0 \emph{−γ}1) = 1 \sout{2}+
+\emph{ϵλ} + \emph{O}(\emph{λ}2)
+
+and is specified by a polynomial of degree at most 2\emph{q} + \emph{qS}
++ 1. Since this probability is always
+
+\begin{quote}
+between 0 and 1 for all \emph{λ ∈}{[}0\emph{,} 1{]}, we can use the
+Markov brother's inequality {[}DS41{]} to bound the magnitude of the
+second derivative to at most
+\emph{\textbar p′′}(\emph{λ})\emph{\textbar{} ≤}\uline{2} the first
+derivative to 3(2\emph{q} + \emph{qS} + 1)4. Integrating, we can bound
+\end{quote}
+
+\emph{p′}(\emph{λ}) \emph{≥p′}(0) \emph{−}2 3(2\emph{q} + \emph{qS} +
+1)4\emph{λ} = \emph{ϵ −}2 3(2\emph{q} + \emph{qS} + 1)4\emph{λ .}
+
+\begin{quote}
+Performing the integration once more, we get that
+\end{quote}
+
+\emph{p}(\emph{λ}) \emph{≥p}(0) + \emph{ϵλ −}1 3(2\emph{q} + \emph{qS} +
+1)\emph{λ}2 = 1 \sout{2}+ \emph{ϵλ −ℓ}(\emph{qH, qH})\emph{λ}2
+
+where \emph{ℓ}(\emph{qH, qS}) =\uline{4 3}(2\emph{qH} + 3\emph{qS} +
+2)4.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+25
+
+\begin{quote}
+\textbf{E} \textbf{Proof of Theorem 5.3}
+\end{quote}
+
+We prove Theorem 5.3, which states that the FDH signature scheme is
+secure in the quantum random oracle model if the underlying trapdoor
+permutation is secure against quantum adversaries.
+
+\begin{quote}
+\textbf{Proof of Theorem 5.3.} Suppose towards contradiction that there
+is a quantum adversary \emph{A} making \emph{qH} hash queries, \emph{qS}
+signature queries, that breaks S with probability \emph{ϵ}. Assume
+without loss of generality that \emph{A} never tries to forge a
+signature on a message it already received a secret key for.
+
+Let Game0 be the standard attack game for S: the challenger generates
+(sk\emph{,} pk) from S\emph{.}Gen, and sends pk to the adversary. The
+adversary can make (classical) signature queries on messages \emph{mi},
+to which the challenger responds with S\emph{.}Sign\emph{H}
+sk(\emph{mi}), and (quantum) hash queries to the random oracle \emph{H}.
+
+pk(\emph{m∗, σ∗}) = accept. \emph{A} wins if it can produce a pair
+(\emph{m∗, σ∗}) such that \emph{m∗̸}= \emph{mi} for any \emph{i}, and
+S\emph{.}Ver\emph{H}\\
+The success probability in Game0 is \emph{ϵ}.
+
+Assume without loss of generality that \emph{A} never asks for a
+signature on \emph{m∗}. Let \emph{A′}be the following algorithm that
+makes quantum queries to an oracle \emph{H}, and simulates the
+interaction between \emph{A} and the challenger: generate (sk\emph{,}
+pk) from S\emph{.}Gen, send pk to \emph{A}. Run \emph{A}, forwarding all
+hash queries to \emph{H}, and answering extraction queries using
+S\emph{.}Sign\emph{H}. The output of \emph{A′}is (S\emph{.}Ver\emph{H}
+pk(\emph{m∗, σ∗})\emph{, m∗, σ∗, Q}) where \emph{Q} is the list of
+signature queries made by \emph{A}. We can now think of Game0 as
+follows: run \emph{A′}with a random oracle \emph{H} to obtain (\emph{m∗,
+σ∗, Q}). Report that the game is won if and only if
+S\emph{.}Ver\emph{H}\\
+pk(\emph{m∗, σ∗}) = accept. The number of queries to \emph{H} made by
+\emph{A′} is \emph{qH}for direct queries, \emph{qS} for queries through
+the signature algorithm, and 1 for the check S\emph{.}Ver\emph{H}
+pk(\emph{m∗, σ∗}), for a total of \emph{qH} + \emph{qS} + 1 queries.
+
+Let \emph{λ ∈}(0\emph{,} 1) to be chosen later. Let \emph{M} be the
+message space. Let Game1 be Game0, except that we choose a subset
+\emph{X} of \emph{M} as follows: for each \emph{m ∈M}, we put \emph{m}
+in \emph{X} with probability\emph{λ}. If \emph{A} asks for a signature
+on a message in \emph{X}, abort and \emph{A} loses. If the message
+\emph{A} attempts to
+\end{quote}
+
+wins. The message \emph{A} tries to forge must be distinct from the
+messages it received signatures for, forge is \emph{not} in \emph{X},
+also abort and \emph{A} loses. Otherwise, follow the criteria in Game0
+to decide if \emph{A}
+
+\begin{quote}
+so the probabilities that each of these messages are in \emph{X} is
+independent. Therefore, the no-abort conditions are met with probability
+at least \emph{λ}(1 \emph{−λqS}). Thus, \emph{A} wins in Game1 with
+probability at least \emph{λ}(1 \emph{−λqS})\emph{ϵ ≥λϵ −qSλ}2. Let
+Game2 be Game1, except that we choose a random \emph{y} in the public
+key space of S, and set \emph{H}(\emph{x}) = \emph{y} for all \emph{x}
+in \emph{X}. \emph{H} is now distributed according to SC\emph{λ}, and by
+the same arguments as in the proof of Theorem 5.1, the probability
+\emph{A} wins in Game2 is at least \emph{λϵ
+−ℓ}(\emph{q\uline{H},q\uline{S}})\emph{λ}2for some polynomial
+\emph{ℓ}(\emph{·, ·}).
+\end{quote}
+
+attack game for S using \emph{H} as the random oracle. When \emph{A}
+produces (\emph{m∗, σ∗}), first check that no Let us now restate Game2
+in terms of \emph{A}: pick \emph{X} and \emph{H} as above, and perform
+the standard
+
+\begin{quote}
+signature queries were in \emph{X} and that the message
+\emph{m∗}produced by \emph{A is} in \emph{X}. If so, \emph{A} wins if
+and only if S\emph{.}Ver\emph{H} pk(\emph{m∗, σ∗}) = accept. Otherwise,
+if the check fails, \emph{A} loses. We can now make the following
+observation: once an extraction query in \emph{X} is made, we can abort
+running \emph{A}, since we no longer need \emph{A} to determine if the
+game is won.
+
+Now we are ready to define an algorithm \emph{B} what inverts \emph{f}.
+Give \emph{B} access to two random oracles \emph{O}1 and \emph{O}2.
+\emph{O}1 maps messages to inputs to \emph{f}. \emph{O}2 maps messages
+to bits, where the probability of outputting 1 is \emph{λ}. On input
+(pk\emph{, y}), \emph{B} works as follows:
+
+\emph{•} Send pk to \emph{A}, and simulate \emph{A}, playing the role of
+challenger to \emph{A}.
+\end{quote}
+
+26
+
+\begin{quote}
+\emph{•} Construct the (quantum) oracle \emph{H} such that
+
+\emph{H}(\emph{m}) = \emph{y} if \emph{O}2(\emph{m}) = 1\\
+\emph{f}pk(\emph{O}1(\emph{m})) otherwise
+
+\emph{•} When \emph{A} makes a signature query on a message \emph{mi},
+compute \emph{O}2(\emph{mi}). If the result is 1, abort. Otherwise,
+return \emph{σi} = \emph{O}1(\emph{mi}).\\
+\emph{•} When \emph{A} returns a forgery candidate (\emph{m, σ}), test
+if \emph{O}2(\emph{m}) = 1 and \emph{f}pk(\emph{σ}) = \emph{y}. If so,
+output \emph{σ}. Otherwise, abort.
+\end{quote}
+
+Using an analysis similar to that of Theorem 5.1, we get that the
+advantage of \emph{B} is at least
+
+\begin{quote}
+\emph{ϵ}2\\
+\emph{ℓ}(\emph{qH, qS})
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+when we set \emph{λ} = 2\emph{ϵ/ℓ}(\emph{qH, qS}).
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+27
+
+\end{document}

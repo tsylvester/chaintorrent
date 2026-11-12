@@ -1,0 +1,3506 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{longtable,booktabs,array}
+\usepackage{multirow}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage[normalem]{ulem}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\author{}
+\date{}
+
+\begin{document}
+
+\begin{quote}
+\textbf{Security of the Fiat-Shamir Transformation in the Quantum
+Random-Oracle Model\emph{⋆}}
+\end{quote}
+
+Jelle Don1\emph{,}2, Serge Fehr1\emph{,}3\emph{,}4, Christian
+Majenz2\emph{,}4, and Christian Schaffner2\emph{,}4
+
+\begin{quote}
+1 Centrum Wiskunde \& Informatica (CWI), Amsterdam, Netherlands\\
+2 Institute for Logic, Language and Computation, University of
+Amsterdam, Amsterdam, Netherlands 3 Mathematical Institute, Leiden
+University, Netherlands\\
+4 QuSoft, Amsterdam, Netherlands\\
+jelle.don@cwi.nl, serge.fehr@cwi.nl, c.majenz@uva.nl, c.schaffner@uva.nl
+
+\textbf{Abstract.} The famous Fiat-Shamir transformation turns any
+public-coin three-round interactive proof, i.e., any so-called
+Σ-protocol, into a non-interactive proof in the random-oracle model. We
+study this transformation in the setting of a \emph{quantum adversary}
+that in particular may query the random oracle in quantum superposition.
+
+Our main result is a generic reduction that transforms any quantum
+dishonest prover attacking the Fiat-Shamir transformation in the quantum
+random-oracle model into a similarly successful quantum dishonest prover
+attacking the underlying Σ-protocol (in the standard model). Applied to
+the standard soundness and proof-of-knowledge definitions, our reduction
+implies that both these security properties, in both the computational
+and the statistical variant, are preserved under the Fiat-Shamir
+transforma-tion even when allowing quantum attacks. Our result improves
+and completes the partial results that have been known so far, but it
+also proves wrong certain claims made in the literature.
+
+In the context of post-quantum secure signature schemes, our results
+imply that for any Σ-protocol that is a proof-of-knowledge against
+quantum dishonest provers (and that satisfies some additional natural
+properties), the corresponding Fiat-Shamir signature scheme is secure in
+the quantum random-oracle model. For example, we can conclude that the
+non-optimized version of Fish, which is the bare Fiat-Shamir variant of
+the NIST candidate Picnic, is secure in the quantum random-oracle model.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{1}
+\end{quote}
+\end{minipage} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.7500} + 4\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Introduction}
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{The (quantum) random-oracle model.}
+\end{quote}
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+The \emph{random-oracle model} (ROM) is a means to treat a cryp-
+\end{quote}
+\end{minipage}} \\
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{1.0000} + 6\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+tographic hash function \emph{H} as an ideal primitive. In the ROM, the
+only way to ``compute'' the hash \emph{H}(\emph{x}) of any value
+\emph{x} is by making a \emph{query} to an imaginary entity, the
+\emph{random oracle} (RO), which has chosen \emph{H} uniformly at random
+from the set of \emph{all} functions with the considered domain and
+range.
+
+The hope is that if a cryptographic scheme is secure in the ROM then it
+is also secure in the standard model, as long as \emph{H} is
+instantiated with a ``good enough'' cryptographic hash function. Even
+though in general we cannot hope to obtain provable security in the
+standard model in this way, (since there exist artificial counter
+examples {[}CGH04{]}), this approach works extremely well in practice,
+leading to very efficient schemes that tend to resist all known attacks.
+
+What makes the ROM particularly convenient is that in the security proof
+of a cryptographic scheme, we can control the RO. For instance, simply
+by recording the queries that the adversary makes to the RO, we know
+exactly which hash values he knows, and the hash value
+\emph{H}(\emph{x}) is random to him for any \emph{x} that he has not
+queried. Furthermore, we can \emph{reprogram} the RO, meaning that we
+can let \emph{H}(\emph{x}) be some particular value \emph{y} for some
+specific \emph{x}, as long as it is random from the adversary's
+perspective.
+
+When considering a \emph{quantum} adversary, the picture changes a bit.
+In order to model that such an adversary can evaluate any hash function
+\emph{in superposition} on different inputs, we must allow such a
+quantum
+\end{quote}
+\end{minipage}} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.7500} + 4\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+adversary in the ROM to make superposition queries to the RO: for any
+superposition
+\end{quote}
+\end{minipage}} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{xαx\textbar x⟩}it may
+\end{quote}
+\end{minipage} \\
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{1.0000} + 6\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\emph{⋆}c\emph{⃝}IACR 2019. This is a reformatted and slightly modified
+version of the article submitted by the authors to the IACR and to
+Springer-Verlag in May 2019. The published version is available from the
+proceedings of CRYPTO
+
+\begin{quote}
+2019.
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+learn \emph{model} (QROM) {[}BDF+11{]}.
+\emph{xαx\textbar x⟩\textbar H}(\emph{x})\emph{⟩}by making a single
+query to the RO. This is referred to as the \emph{quantum random-oracle}
+
+\begin{quote}
+Unfortunately, these superposition queries obstruct the above mentioned
+advantages of the ROM. By basic properties of quantum mechanics one
+cannot observe or locally copy such superposition queries made by the
+adversary without disturbing them. Also, reprogramming is usually done
+for an \emph{x} that is queried by the adversary at a certain point, so
+also here we are stuck with the problem that we cannot look at the
+queries without disturbing them.
+
+As a consequence, security proofs in the ROM almost always do not carry
+over to the QROM. This lack of proof does not mean that the schemes
+become insecure; on the contrary, unless there is some failure because
+of some other reason5, we actually expect typical schemes to remain
+secure. However, it is often not obvious how to find a security proof in
+the QROM. Some examples where security in the QROM has been established
+are {[}Unr14, Zha15, ES15, Unr15, KLS18, ABB+17, Zha18, SXY18,
+BDK+18{]}.
+
+\textbf{Main technical result.} Our main technical result (Theorem 2)
+can be understood as a particular way to overcome --- to some extent ---
+the above described limitation in the QROM of not being able to ``read
+out'' any query to the RO and to then reprogram the corresponding hash
+value. Concretely, we achieve the following.
+\end{quote}
+
+pair (\emph{x, z}), where \emph{z} is supposed to satisfy some relation
+with respect to \emph{H}(\emph{x}), e.g., \emph{z} = \emph{H}(\emph{x}).
+We then show We consider an arbitrary quantum algorithm \emph{A} that
+makes queries to the RO and in the end outputs a
+
+\begin{quote}
+how to \emph{extract} early on, by measuring one of the queries that
+\emph{A} makes, the very \emph{x} that \emph{A} will output, and to
+\emph{reprogram} the RO at the point \emph{x} with a fresh random value
+\emph{Θ}, with the effect that the pair (\emph{x, z}) that \emph{A} then
+outputs now satisfies the given relation with respect to \emph{Θ}, with
+a not too large loss in probability.
+
+The way this works is surprisingly simple. We choose the query that we
+measure uniformly at random among all the queries that \emph{A} makes
+(also counting \emph{A}'s output), in order to (hopefully) obtain
+\emph{x}. Subsequently we reprogram the RO, so as to answer \emph{x}
+with \emph{Θ}, \emph{either} from this point on \emph{or} from the
+following query on, where this binary choice is made at random. This
+last random decision seems counter-intuitive, but it makes our proof
+work. Indeed, we prove that the probability that (\emph{x, z}) satisfies
+the required relation drops by no more than a factor
+\emph{O}(\emph{q}2), where \emph{q} is the number of oracle queries
+\emph{A} makes.
+
+\textbf{Application to the Fiat-Shamir transformation.} The Fiat-Shamir
+transformation {[}FS87{]} turns any public-coin three-round interactive
+proof, i.e., any so-called Σ-protocol, into a non-interactive proof in
+the (Q)ROM. In the classical case it is well known that the security
+properties of the Σ-protocol are inherited by the Fiat-Shamir
+transformation {[}BR93, FKMV12{]}. In the quantum setting, when
+considering the security of the Fiat-Shamir transformation against
+quantum dishonest provers in the QROM, mainly negative results are known
+--- see below for a more detailed exposition of previous results and how
+they compare to ours.
+
+It is quite easy to see that the above result on the reprogrammability
+of the RO is exactly what is needed to turn a quantum prover that
+attacks the Fiat-Shamir transformation into a quantum prover that
+attacks the underlying \emph{Σ} protocol. Indeed, from any Fiat-Shamir
+dishonest prover \emph{A} that tries to produce a proof\emph{π} =
+(\emph{a, z}) for a statement \emph{x}, we obtain an interactive
+dishonest prover for the \emph{Σ} protocol that extracts \emph{a} from
+\emph{A} and sends it to the verifier, and then uses the received
+challenge \emph{c} to reprogram the RO, so that the \emph{z} output by
+\emph{A} will be a correct reply with respect to \emph{c} with a
+probability not much smaller than the probability that \emph{A} succeeds
+in forging \emph{π} in the QROM.
+
+This gives us a very generic transformation (stated in Theorem 8 below)
+from a Fiat-Shamir dishonest prover to a Σ-protocol dishonest prover
+that is similarly successful, up to a loss in probability of order
+\emph{O}(\emph{q}2). Applied to the standard notions of soundness and
+proof-of-knowledge, we prove that both these security properties, in
+both the computational and the statistical variant, are preserved under
+the Fiat-Shamir transformation in the QROM (Corollaries 13 and 16).
+
+5 E.g., the underlying computational hardness assumption does not hold
+anymore in the context of a quantum adversary.
+\end{quote}
+
+2
+
+\begin{quote}
+\textbf{Comparison with prior results.} Mainly negative results are
+known about the security of the Fiat-Shamir transformation against
+quantum attacks. {[}ARU14{]} presented attacks (relative to some oracle)
+against Σ-protocols that satisfy only \emph{computational} unique
+responses (see Section 5 for an informal definition) as opposed to
+\emph{perfect} unique responses, and showed that these attacks carry
+over to a Fiat-Shamir transformed protocol.
+
+Currently, the only known positive result on the security of the
+Fiat-Shamir transformation against quantum attacks is the result by
+Unruh {[}Unr17{]}, which shows that statistical soundness of the
+Σ-protocol implies statistical soundness of the Fiat-Shamir
+transformation.6One of the implications of our result is that this
+carries over to \emph{computational} soundness: if the Σ-protocol is
+\emph{computationally sound} (as a `proof'), then its Fiat-Shamir
+transformation is computationally sound as well. Interestingly, Unruh
+seems to suggest in {[}Unr17{]} (right after Theorem 21) that this is
+not true in general, due to a counterexample from {[}ARU14{]}. The
+counter example is, however, a Σ-protocol that is computationally
+\emph{special} sound but not computationally sound (the issue being that
+in the quantum setting, special soundness does not imply ordinary
+soundness).
+
+We point out that {[}DFG13{]} claims an impossibility result about the
+soundness of the Fiat-Shamir trans-formation as a quantum proof of
+knowledge, which contradicts the implications of our result to proofs of
+knowledge. However, their result only applies to a restricted notion of
+proof of knowledge where the extractor is not allowed to measure any of
+the adversary's queries to the random oracle. The rational for this
+restriction was that such a measurement would disturb the adversary's
+quantum state beyond control; however, our technical result shows that
+it actually is possible to measure one of the adversary's queries and
+still have sufficient control over the adversary's behavior.
+
+Indeed, our generic transformation from a Fiat-Shamir dishonest prover
+to a Σ-protocol dishonest prover implies that \emph{any} security
+property (against dishonest provers) of the Σ-protocol carries over
+unchanged to the Fiat-Shamir transformation, be it computational or
+statistical, plain soundness or the stronger proof-of-knowledge
+property.
+
+\textbf{Circumventing prior negative results.} At first glance, the
+negative results from {[}ARU14{]} against Σ-protocols together with our
+new positive results seem to give a complete answer to the question of
+the security of the Fiat-Shamir transformation against quantum attacks.
+However, there is actually more to it.
+
+We consider a \emph{stronger} but still meaningful notion of
+\emph{computationally unique responses}, which is in the spirit of the
+\emph{collapsing property} as introduced by Unruh {[}Unr16{]}. We call
+the new notion \emph{quantum computationally unique responses} and
+define it in Definition 24. Adapting a proof from {[}Unr12{]}, it is not
+hard to see that a Σ-protocol with (perfect or computational) special
+soundness and quantum computationally unique responses is a
+computational proof of knowledge. Therefore, our main result then
+implies that its Fiat-Shamir transformation is a computational proof of
+knowledge as well.
+
+Thus, with the right adjustments of the considered \emph{computational}
+soundness properties, the negative results from {[}ARU14{]} may actually
+be turned into positive answers. One caveat here is that we expect
+proving quantum computationally unique responses to be much harder than
+computationally unique responses.
+
+\textbf{Application to signatures.} Our positive results on the
+Fiat-Shamir transformation have direct appli-cations to the security of
+Fiat-Shamir signatures. From the proof-of-knowledge property of the
+Fiat-Shamir transformation we immediately obtain the security of the
+Fiat-Shamir signature scheme under a \emph{no-message attack}, assuming
+that the public key is a hard instance (Theorem 21). Furthermore,
+{[}Unr17{]} and {[}KLS18{]} have shown that for Fiat-Shamir signatures,
+up to some loss in the security parameter and under some ad-ditional
+mild assumptions on the underlying Σ-protocol, one can also derive
+security under \emph{chosen-message attack}.
+
+In conclusion, Fiat-Shamir signatures offer security against quantum
+attacks (in the QROM) if the un-derlying Σ-protocol is a proof of
+knowledge against quantum attacks and satisfies a few additional natural
+assumptions (Theorem 22).
+
+6 In the (quantum) random-oracle model, \emph{statistical} security
+considers a computationally unbounded attacker with a polynomially
+bounded number of oracle queries. {[}Unr17{]} in contrast refers to this
+setting as `computational'.
+\end{quote}
+
+3
+
+\begin{quote}
+As a concrete application, assuming the hash function used in creating
+the commitments is collapsing, we can conclude that the non-optimized
+version of Fish, which is the Fiat-Shamir variant of Picnic, is secure
+in the QROM.
+
+\textbf{Comparison with concurrent results.} In concurrent and
+independent work {[}LZ19{]}7, Liu and Zhandry show results that are very
+similar to ours: they also show the security of the Fiat-Shamir
+transformation in the QROM, and they introduce a similar stronger
+version of the computational unique responses property in order to argue
+that a Σ-protocol is a (computational) proof of knowledge against a
+quantum adversary. In short, {[}LZ19{]} differs from the work here in
+the following aspects. In {[}LZ19{]}, the result on the Fiat-Shamir
+transformation is obtained using a very different approach, resulting in
+a greater loss in the reduction: \emph{O}(\emph{q}9) compared to the
+\emph{O}(\emph{q}2) loss that we obtain. On the other hand, on the
+quantum proof of knowledge front, Liu and Zhandry introduce some
+additional techniques that, for instance, allow them to prove that the
+Σ-protocol underlying Dilithium satisfies (their variant) of the newly
+introduced strong version of the computational unique responses
+property, while we phrase this as a conjecture in order to conclude the
+security of (some variant of) the Dilithium signature scheme.
+
+\textbf{2} \textbf{Reprogramming the Quantum Random Oracle}
+
+We show and analyze a particular way to reprogram a random oracle in the
+quantum setting, where the oracle can be queried in superposition.
+
+\textbf{2.1 Notation}
+
+We consider a quantum oracle algorithm \emph{A} that makes \emph{q}
+queries to an \emph{oracle}, i.e., an unspecified function \emph{H} :
+\emph{X →Y} with finite non-empty sets \emph{X, Y}. We may assume
+without loss of generality that \emph{A} makes no intermediary
+measurements. Formally, \emph{A} is then described by a sequence of
+unitaries \emph{A}1\emph{, . . . , Aq} and an initial state
+\emph{\textbar φ}0\emph{⟩}.8The unitaries \emph{Ai} act on registers
+\emph{X, Y, Z, E}, where \emph{X} and \emph{Y} have respective
+\emph{\textbar X\textbar{}}- and \emph{\textbar Y\textbar{}}-dimensional
+state spaces, while \emph{Z} and \emph{E} is arbitrary. As will become
+clear, \emph{X} and \emph{Y} are the quantum registers for the queries
+to \emph{H} as well as for the final output \emph{x}, \emph{Z} is for
+the output \emph{z}, and \emph{E} is internal memory.
+
+For any concrete choice of \emph{H} : \emph{X →Y}, we can write
+\end{quote}
+
+\emph{AH\textbar φ}0\emph{⟩}:= \emph{AqOH· · ·
+A}1\emph{OH\textbar φ}0\emph{⟩,}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{1.0000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+for the execution of \emph{A} with the oracle instantiated by \emph{H},
+where \emph{OH}is the unitary \emph{OH}:
+\emph{\textbar x⟩\textbar y⟩→\textbar x⟩\textbar y⊕H}(\emph{x})\emph{⟩}that
+acts on registers \emph{X} and \emph{Y}.
+
+\begin{quote}
+It will be convenient to introduce the following notation. For 0
+\emph{≤i, j ≤q} we set
+\end{quote}
+
+\emph{AH i→j}:= \emph{AjOH · · · Ai}+1\emph{OH}
+
+\begin{quote}
+with the convention that \emph{AH i→j}:= 1 for \emph{j ≤i}. Furthermore,
+we set
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\emph{\textbar φH i⟩}:= & \emph{AH} 0\emph{→i} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{\textbar φ}0\emph{⟩}
+\end{quote}
+\end{minipage} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{1.0000} + 4\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+to be the state of \emph{A} after the \emph{i}-th step but right before
+the (\emph{i}+1)-st query, and so that \emph{\textbar φH q⟩}equals
+\emph{AH} 0\emph{→q} \emph{\textbar φ}0\emph{⟩}
+
+= \emph{AH\textbar φ}0\emph{⟩}, the output state produced by \emph{A}.
+
+Finally, for a given function \emph{H} : \emph{X →Y} and for fixed
+\emph{x ∈X} and \emph{Θ ∈Y}, we define the \emph{reprogrammed}
+\end{quote}
+
+function \emph{H ∗Θx} : \emph{X →Y} that coincides with \emph{H} on
+\emph{X \textbackslash{} \{x\}} but maps \emph{x} to \emph{Θ}. With this
+notation at hand, we can then write
+
+\begin{quote}
+\emph{AH∗Θx AH} 0\emph{→i} \emph{\textbar φ}0\emph{⟩}= \emph{AH∗Θx
+\textbar φH i⟩}
+
+7 The paper {[}LZ19{]} was put on eprint (ia.cr/2019/262) a few days
+after our eprint version (ia.cr/2019/190).
+
+8 Alternatively, we may understand \emph{\textbar φ}0\emph{⟩}as an
+auxiliary input given to \emph{A}.
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+4
+
+\begin{quote}
+for an execution of \emph{A} where the oracle is reprogrammed at a given
+point \emph{x} after the \emph{i}-th query.\\
+We are interested in the probability that after the execution of
+\emph{AH}and upon measuring register \emph{X} in the computational basis
+to obtain \emph{x ∈X}, the state of register \emph{Z} is of a certain
+form dependent on \emph{x} and \emph{H}(\emph{x}). This relation is
+captured by a projection \emph{GH x}, where, more generally, for
+\emph{x, x′ ∈X} and \emph{Θ ∈Y} we set
+\end{quote}
+
+\emph{GΘx,x′} = \emph{\textbar x′⟩⟨x′\textbar{} ⊗}1 \emph{⊗Πx,Θ ⊗}1
+\emph{,}
+
+where \emph{\{Πx,Θ\}x∈X,Θ∈Y} is a family of projections acting on
+\emph{Z}, which we refer to as a \emph{quantum predicate}. We use the
+short hands \emph{GΘx}for \emph{GΘx,x}and \emph{GH x}for
+\emph{GH}(\emph{x}) , i.e.,
+
+\emph{GH x}= \emph{\textbar x⟩⟨x\textbar{} ⊗}1 \emph{⊗Πx,H}(\emph{x})
+\emph{⊗}1 \emph{.}
+
+\begin{quote}
+For an arbitrary but fixed \emph{x◦∈X}, we then consider the probability
+\end{quote}
+
+\emph{∥GH x◦\textbar φH q⟩∥}2 2\emph{.}
+
+Understanding \emph{AH}as an algorithm that outputs the measured
+\emph{x} together with the state \emph{z} in register \emph{Z}, we will
+denote this probability also by
+
+\begin{quote}
+Pr \emph{x}=\emph{x◦∧V} (\emph{x, H}(\emph{x})\emph{, z}) : (\emph{x,
+z}) \emph{←AH} \emph{,}
+
+understanding \emph{V} to be a quantum predicate specified by the
+projections \emph{Πx,H}(\emph{x}).
+
+\textbf{2.2 Main technical result}
+
+We consider a quantum oracle algorithm \emph{A} as formalized above, and
+we define a two-stage algorithm \emph{S} with black-box access to
+\emph{A} as follows. In the first stage, \emph{S} tries to predict
+\emph{A}'s future output \emph{x}, and then, upon input a (random)
+\emph{Θ}, in the second stage tries to output what \emph{A} is supposed
+to output, but now with respect to \emph{Θ} instead of
+\emph{H}(\emph{x}).
+\end{quote}
+
+counting the final output in register \emph{X}) is selected uniformly at
+random and this query is measured, and the \emph{S} works by running
+\emph{A}, but with the following modifications. First, one of the
+\emph{q} + 1 queries of \emph{A} (also
+
+\begin{quote}
+measurement outcome \emph{x} is output by (the first stage of) \emph{S}.
+Then, this very query of \emph{A} is answered either using the original
+\emph{H or} using the reprogrammed oracle \emph{H ∗Θx}, with the choice
+being made at random, while all the remaining queries of \emph{A} are
+answered using oracle \emph{H ∗Θx}.9Finally, (the second stage of)
+\emph{S} outputs whatever \emph{A} outputs.
+
+Here, the figure of merit is the probability that for a fixed \emph{x},
+both the intermediate measurement and a
+\end{quote}
+
+measurement of the register \emph{X} return \emph{x and} that the
+register \emph{Z} contains a state that satisfies the considered
+
+quantum predicate with respect to \emph{x} and its (now reprogrammed)
+hash value \emph{Θ}. Formally, this probability
+
+\begin{quote}
+is captured by
+\end{quote}
+
+2
+
+\begin{quote}
+\emph{Θ,i,b} E \emph{GΘx} \emph{AH∗Θx} \emph{AH i→i}+\emph{b}
+\emph{X\textbar φH i⟩} 2
+
+where here and from now on, we use \emph{X} as a short hand for the
+projection \emph{\textbar x⟩⟨x\textbar{}} acting on \emph{X}. The
+expectation is taken over \emph{Θ ∈Y}, \emph{i ∈\{}0\emph{, ..., q\}}
+and \emph{b ∈\{}0\emph{,} 1\emph{\}} uniformly random. Note that the
+random bit \emph{b ∈\{}0\emph{,} 1\emph{\}} determines whether the
+measured query is answered with \emph{H} or with \emph{H∗Θx}.
+
+We write \emph{SA}{[}\emph{H}{]} to emphasize that \emph{S} only makes
+black-box access to \emph{A} and that it depends on \emph{H}. Our main
+technical lemma below then ensures that for any \emph{H} and for a
+random \emph{Θ ∈Y}, the success probability of \emph{SA}{[}\emph{H}{]}
+is up to an order-\emph{q}2loss not much smaller than that of
+\emph{AH∗Θx}, and therefore not much smaller than that of \emph{AH}in
+case of a random \emph{H}.
+
+9 If it is the final output that is measured then there is nothing left
+to reprogram.
+\end{quote}
+
+5
+
+\begin{quote}
+\textbf{Lemma 1} \emph{For any H} : \emph{X →Y and x ∈X, it holds that}
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+E
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{GΘ}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{H∗Θx}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{H}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{XφH}
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+2
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+E\emph{Θ}
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{GΘx\textbar φH∗Θx}
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{⟩}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+2
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{X\textbar φH q⟩}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+2
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+2
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+\end{minipage}} \\
+& & & & & & & & & & \begin{minipage}[b]{\linewidth}\raggedright
+2
+\end{minipage} \\
+\midrule()
+\endhead
+\emph{Θ,i,b} & \emph{x} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{A}
+\end{quote}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{A i→i}+\emph{b}
+\end{quote}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{\textbar{} i⟩}
+\end{quote}
+\end{minipage} & 2 & \emph{≥} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.3077} + 6\tabcolsep}}{%
+2(\emph{q} + 1)(2\emph{q} + 3)} & \emph{−} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+2(\emph{q} + 1)\emph{\textbar Y\textbar.}
+\end{quote}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\emph{where the expectation is over random Θ ∈Y, i ∈\{}0\emph{, . . . ,
+q\} and b ∈\{}0\emph{,} 1\emph{\}.}10
+
+\emph{Proof.} We assume that the \emph{Y}-register of \emph{\textbar φH
+q⟩}= \emph{AH} 0\emph{→q} \emph{\textbar φ}0\emph{⟩}is
+\emph{\textbar{}}0\emph{⟩}no matter what \emph{H} is; this is without
+loss
+\end{quote}
+
+of generality since it can always be achieved by an insignificant
+modification to \emph{A}, i.e., by swapping \emph{Y} with a
+
+default register within \emph{E}. For the purpose of the proof, we
+introduce an additional step \emph{AH q→q}+1that simply
+
+applies \emph{OH}, and we expand the notions of \emph{\textbar φH j⟩}and
+\emph{AH i→j}to allow \emph{j} = \emph{q} + 1. Finally, we ``enhance''
+\emph{GΘx}to11
+
+\emph{GΘx}:= \emph{GΘx}(1 \emph{⊗\textbar Θ⟩⟨Θ\textbar{} ⊗}1 \emph{⊗}1)
+= \emph{X ⊗\textbar Θ⟩⟨Θ\textbar{} ⊗Πx,Θ ⊗}1 \emph{.}
+
+\begin{quote}
+For any 0 \emph{≤i ≤q}, inserting a resolution of the identity and
+exploiting that
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{AH∗Θx i}+1\emph{→q}+1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{AH i→i}+1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+1 \emph{−X}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{\textbar φH i⟩}=
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{AH∗Θx i→q}+1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+1 \emph{−X}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{\textbar φH i⟩,}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+we can write
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}@{}}
+\toprule()
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{AH∗Θx i}+1\emph{→q}+1
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{\textbar φH i}+1\emph{⟩}=
+\end{minipage} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.3636} + 6\tabcolsep}}{%
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{AH∗Θx i}+1\emph{→q}+1 \emph{AH i→i}+1 1 \emph{−X}
+\emph{\textbar φH i⟩}+
+
+\emph{AH∗Θx i→q}+1 1 \emph{−X} \emph{\textbar φH i⟩} +
+
+\emph{AH∗Θx i→q}+1 \emph{\textbar φH i⟩−} \emph{AH∗Θx i→q}+1
+\emph{X\textbar φH i⟩}+
+\end{quote}
+\end{minipage}}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.1818} + 2\tabcolsep}}{%
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{AH∗Θx i}+1\emph{→q}+1
+
+\emph{AH∗Θx i}+1\emph{→q}+1
+
+\emph{AH∗Θx i}+1\emph{→q}+1
+\end{minipage}}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.1818} + 2\tabcolsep}}{%
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{AH i→i}+1
+
+\emph{AH i→i}+1
+
+\emph{AH i→i}+1
+\end{quote}
+\end{minipage}}} &
+\multirow{6}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{X\textbar φH i⟩}
+
+\emph{X\textbar φH i⟩}
+
+\emph{X\textbar φH i⟩}
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} \\
+\multicolumn{10}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.9091} + 18\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Rearranging terms, applying˜\emph{GΘx}and using the triangle equality,
+we can thus bound
+\end{quote}
+\end{minipage}} \\
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{GΘx}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{AH∗Θx i→q}+1
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{\textbar φH i⟩}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+2\emph{≤}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{GΘx}
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.1818} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{AH∗Θx i}+1\emph{→q}+1 \emph{\textbar φH i}+1\emph{⟩}2
+
++ \emph{GΘx} \emph{AH∗Θx i→q}+1 \emph{X\textbar φH i⟩}
+
++ \emph{GΘx} \emph{AH∗Θx i}+1\emph{→q}+1
+\end{quote}
+\end{minipage}}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+2
+\end{quote}
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{X\textbar φH i⟩}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+2\emph{.}
+\end{minipage}} \\
+& & & & & & & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{AH i→i}+1
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Summing up the respective sides of the inequality over \emph{i} =
+0\emph{, . . . , q}, we get
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{GΘx\textbar φH∗Θx}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{⟩}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+2\emph{≤}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{GΘx\textbar φH q}+1\emph{⟩}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+2+
+\end{quote}
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{GΘx}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{AH∗Θx i}+\emph{b→q}+1
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{AH i→i}+\emph{b}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{X\textbar φH i⟩}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+2\emph{.}
+\end{quote}
+\end{minipage}} \\
+& & & & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+0\emph{≤i≤q}\\
+\emph{b∈\{}0\emph{,}1\emph{\}}
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+By squaring both sides, dividing by 2\emph{q} + 3 (i.e., the number of
+terms on the right hand side), and using
+
+\begin{quote}
+Jensen's inequality on the right hand side, we obtain
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}@{}}
+\toprule()
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.1905} + 6\tabcolsep}}{%
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{GΘ}˜
+
+\emph{x\textbar φH∗Θx}
+
+2\emph{q} + 3
+\end{minipage}}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{⟩}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+2
+\end{minipage} &
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{≤}
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0952} + 2\tabcolsep}}{%
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{GΘx\textbar φH q}+1\emph{⟩}
+\end{minipage}}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.1429} + 4\tabcolsep}}{%
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+2\\
+2+
+\end{quote}\strut
+\end{minipage}}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0952} + 2\tabcolsep}}{%
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{GΘx}
+\end{minipage}}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{H∗Θx}
+\end{quote}
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0952} + 2\tabcolsep}}{%
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{AH i→i}+\emph{b}
+\end{minipage}}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{H}
+\end{minipage}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.1429} + 4\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+2
+\end{quote}
+\end{minipage}}} \\
+& & & & & \begin{minipage}[b]{\linewidth}\raggedright
+2
+\end{minipage} \\
+& & & & \multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage}} & & & & & & & & &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{A i}+\emph{b→q}+1
+\end{minipage}} & & &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{X\textbar φi⟩}
+\end{minipage}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.1429} + 4\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+2
+\end{quote}
+\end{minipage}}} \\
+& & & & & & & & &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.1429} + 4\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+0\emph{≤i≤q}\\
+\emph{b∈\{}0\emph{,}1\emph{\}}
+\end{quote}\strut
+\end{minipage}} \\
+\midrule()
+\endhead
+\multirow{3}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+and thus
+\end{quote}
+\end{minipage}} & \multirow{2}{*}{} & \multirow{2}{*}{\emph{Θ}} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.1905} + 6\tabcolsep}}{%
+\multirow{3}{*}{\emph{AH∗Θx i}+\emph{b→q}+1}} & \multirow{3}{*}{\emph{AH
+i→i}+\emph{b}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0952} + 2\tabcolsep}}{%
+\multirow{3}{*}{\emph{X\textbar φH i⟩}}} &
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+2
+\end{quote}
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0952} + 2\tabcolsep}}{%
+\multirow{3}{*}{\emph{≥}}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.1429} + 4\tabcolsep}}{%
+\multirow{3}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+2(\emph{q} + 1)(2\emph{q} + 3)\emph{−} \emph{GΘ}˜
+
+\emph{x\textbar φH∗Θx⟩}
+\end{quote}
+
+2
+
+2
+\end{minipage}}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0952} + 2\tabcolsep}}{%
+\multirow{3}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{GΘ}˜
+\end{quote}
+
+\emph{x\textbar φH q}+1\emph{⟩}
+
+\begin{quote}
+2(\emph{q} + 1)
+\end{quote}
+\end{minipage}}} & 2 &
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage}} & \multirow{3}{*}{(1)} \\
+& & & & & & & & & & & & & & & & & & 2 \\
+& \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+E\\
+\emph{i,b}
+\end{quote}\strut
+\end{minipage} & \emph{x} & & & & & & & &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+2
+\end{quote}
+\end{minipage} & & & & & & & & &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage} \\
+\multicolumn{21}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{1.0000} + 40\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+10We consider \emph{\textbar Y\textbar{}} to be superpolynomial in the
+security parameter, so that 2(\emph{q}+1)\emph{\textbar Y\textbar{}}is
+negligible and can be neglected.
+
+\begin{quote}
+In cases where \emph{\textbar Y\textbar{}} is polynomial, the presented
+bound is not optimal, but an improved bound can be derived with the same
+kind of techniques.
+\end{quote}
+
+11 Informally, these modifications mean that we let \emph{A} make one
+more query to get \emph{H}(\emph{x}) into register \emph{Y}, and ˜would
+then check that \emph{Y} indeed contains \emph{H}(\emph{x}).
+\emph{GH}(\emph{x})
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+6
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}@{}}
+\toprule()
+\multicolumn{9}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.9000} + 16\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Since both \emph{\textbar Θ⟩⟨Θ\textbar{}} and \emph{AH∗Θx q→q}+1=
+\emph{OH∗Θx} commute with \emph{GΘx}, we get
+\end{quote}
+\end{minipage}} &
+\multirow{6}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+(2)
+
+(3)
+
+(4)
+
+\emph{⊓}
+\end{minipage}} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.2000} + 2\tabcolsep}}{%
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{GΘx}
+\end{minipage}}} &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{AH∗Θx i}+\emph{b→q}+1
+\end{minipage}} &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{AH i→i}+\emph{b}
+\end{minipage}} &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{X\textbar φH i⟩}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+2\\
+2\emph{≤}
+\end{quote}\strut
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{GΘx}
+\end{minipage}} &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{AH∗Θx i}+\emph{b→q}+1 \emph{AH i→i}+\emph{b X\textbar φH i⟩}
+\end{quote}
+
+2
+
+\begin{quote}
+\emph{AH∗Θx} \emph{AH i→i}+\emph{b} \emph{X\textbar φH i⟩} 2\emph{.}
+\end{quote}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+2
+\end{quote}
+\end{minipage} \\
+& & & & & & & &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+2
+\end{quote}
+\end{minipage}} \\
+& & & & & \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{GΘx}
+\end{minipage} \\
+\multicolumn{9}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.9000} + 16\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Also, because (\emph{X ⊗\textbar Θ⟩⟨Θ\textbar{}})\emph{OH∗Θx}= (\emph{X
+⊗}1)\emph{OH∗Θx}, and \emph{OH∗Θx}commutes with \emph{GΘx}, we get
+
+2 2
+
+\emph{GΘx\textbar φH∗Θx⟩}2= \emph{GΘx\textbar φH∗Θx⟩} 2\emph{.}
+
+Finally,
+
+2 2 1 2
+
+\emph{Θ}
+
+E \emph{GΘx\textbar φH q}+1\emph{⟩} 2 \emph{≤}E (\emph{X
+⊗\textbar Θ⟩⟨Θ\textbar{}})\emph{OH\textbar φH q⟩} 2
+\emph{≤\textbar Y\textbar{}} \emph{X\textbar φH q⟩} 2\emph{.}
+
+Inserting (2), (3) and (4) into (1) yields the claimed result.
+\end{quote}
+\end{minipage}} \\
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{2.3}
+\end{quote}
+\end{minipage} &
+\multicolumn{8}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.8000} + 14\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Switching notation, and simulating the random oracle}
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Introducing more algorithmic-probabilistic notation, we write
+
+(\emph{x, x′, z}) \emph{←⟨SA}{[}\emph{H}{]}\emph{, Θ⟩}\\
+to specify the probability space determined as follows, relying on the
+above construction of the two-stage algorithm \emph{S} when given
+\emph{A}. In the first stage \emph{SA}{[}\emph{H}{]} produces \emph{x},
+and then in the second stage, upon receiving\emph{Θ}, it produces
+\emph{x′}and \emph{z}, where \emph{z} may be quantum. Our figure of
+merit above, i.e., the left hand side of the bound in Lemma 1 (with
+\emph{x} replaced by \emph{x◦}), is then denoted by
+
+Pr\emph{Θx}=\emph{x◦∧x′}=\emph{x◦∧V} (\emph{x, Θ, z}) : (\emph{x, x′,
+z}) \emph{←⟨SA}{[}\emph{H}{]}\emph{, Θ⟩} \emph{,}
+
+where the subscript \emph{Θ} in Pr\emph{Θ} denotes that the probability
+is averaged over a random choice of \emph{Θ}. Using this notation, but
+also weakening the bound slightly by not requiring \emph{x′}= \emph{x◦},
+for any \emph{H} and \emph{x◦}the bound from Lemma 1 then becomes
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Pr\\
+\emph{Θ}
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{x}=\emph{x◦∧V} (\emph{x, Θ, z}) : (\emph{x, z})
+\emph{←⟨SA}{[}\emph{H}{]}\emph{, Θ⟩}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+≳
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1\\
+\emph{O}(\emph{q}2) Pr
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{x}=\emph{x◦∧V} (\emph{x, H}(\emph{x})\emph{, z}) : (\emph{x, z})
+\emph{←AH∗Θx}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{5}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{1.0000} + 8\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+where the approximate inequality ≳hides the term
+
+output \emph{z} may be a quantum state, in which case the predicate
+\emph{V} is given by a measurement that depends
+2(\emph{q}+1)\emph{\textbar Y\textbar{}}Pr\emph{H} 1 \emph{x} =
+\emph{x◦}: (\emph{x, z}) \emph{←AH} \emph{.} Recall that the
+
+on \emph{x}, and \emph{H}(\emph{x}) or \emph{Θ}, respectively.
+
+We fix a family \emph{H} of 2(\emph{q} + 1)-wise independent hash
+functions and average the above inequality over a random choice of
+\emph{H ∈H} from this family. We simply write \emph{S} for
+\emph{S}{[}\emph{H}{]} with \emph{H} chosen like that. Furthermore, we
+observe that, for any fixed \emph{x}, the family \emph{\{H ∗Θx
+\textbar{} H ∈H, Θ ∈\{}0\emph{,} 1\emph{\}n\}} is a family of 2(\emph{q}
++ 1)-wise independent hash functions as well. Finally, we use that
+\emph{A} (together with the check \emph{V} (\emph{x, H}(\emph{x})\emph{,
+z})) cannot distinguish a random function \emph{H∗Θx} in that family
+from a fully random function \emph{H} {[}Zha12{]}. This gives us the
+following variation of Lemma 1, which we state as our main technical
+theorem:
+
+\textbf{Theorem 2 (Measure-and-reprogram)} \emph{Let X, Y be finite
+non-empty sets. There exists a black-box polynomial-time two-stage
+quantum algorithm S with the following property. Let A be an arbitrary
+ora-cle quantum algorithm that makes q queries to a uniformly random H}
+: \emph{X →Y and that outputs some x ∈X and a (possibly quantum) output
+z. Then, the two-stage algorithm SAoutputs some x ∈X in the first stage
+and, upon a random Θ ∈Y as input to the second stage, a (possibly
+quantum) output z, so that for any x◦∈X and any predicate}12\emph{V :}
+\end{quote}
+
+1
+
+\begin{quote}
+Pr
+
+\emph{Θx}=\emph{x◦∧V} (\emph{x, Θ, z}) : (\emph{x, z}) \emph{←⟨SA,
+Θ⟩}≳\emph{O}(\emph{q}2) Pr \emph{x}=\emph{x◦∧V} (\emph{x,
+H}(\emph{x})\emph{, z}) : (\emph{x, z}) \emph{←AH} \emph{,}
+\end{quote}
+
+\emph{where the} \uline{≳}\emph{hides a term that is bounded by}
+2\emph{q\textbar Y\textbar when summed over all x◦.}13 12 We recall that
+in case \emph{z} is a quantum state, \emph{V} is given by means of a
+measurement.
+
+13 Note added: In follow-up work, {[}DFM20{]} proves a slightly improved
+version of this theorem that avoids the (neg-
+
+\begin{quote}
+ligible) additive error term. As a consequence, the additive error term
+in Theorem 8 can be avoided as well.
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+7
+
+\textbf{Remark 3} We do not spell out in detail what it means for a
+quantum algorithm like \emph{S} to be \emph{black-box}; see e.g.
+{[}Unr17{]} for a rigorous definition. What we obviously need here is
+that \emph{SA}has access to \emph{A}'s initial state
+\emph{\textbar φ}0\emph{⟩}and to \emph{q}, and is given black-box access
+to the unitaries \emph{Ai}. Furthermore, for later purposes, we need the
+following composition property: if \emph{S} is a black-box algorithm
+with access to \emph{A}, and \emph{K} is a black-box algorithm with
+access to \emph{SA}, then there exists a black-box algorithm
+\emph{KS}with access to \emph{A} so that (\emph{KS})\emph{A}=
+\emph{K}(\emph{SA}).
+
+\textbf{3} \textbf{Security of the Fiat-Shamir Transformation}
+
+In this section, we show how to reduce security of the Fiat-Shamir
+transformation to the security of the underlying Σ-protocol: any
+dishonest prover attacking the Fiat-Shamir transformation can be turned
+into a dishonest prover that succeeds to break the underlying Σ-protocol
+with the same probability up to a polynomial loss. This reduction is
+obtained by a straightforward application of Theorem 2. Our security
+reduction holds very generically and is not strongly tight to the
+considered notion of security, as long as the respective security
+definitions for the Σ-protocol and the Fiat-Shamir transformation
+``match up''.
+
+\textbf{3.1}Σ\textbf{-protocols}
+
+We recall the definition of a Σ-protocol.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Definition 4 (}Σ\textbf{-protocol)} \emph{A} Σ\emph{-protocol} Σ
+= (\emph{P, V}) \emph{for a relation R ⊆X × W is a three-round two-party
+interactive protocol of the form:}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{Prover P}(\emph{x, w})
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{a}\\
+\emph{−→}
+
+\emph{c}\\
+\emph{←−}\\
+\emph{z}\\
+\emph{−→}
+\end{quote}\strut
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{Verifier V}(\emph{x})
+\end{quote}
+\end{minipage} \\
+& & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+\emph{c←C}
+
+Accept iff \emph{V} (\emph{x, a, c, z}) = 1
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Using our terminology and notation from above, \emph{P} is a two-stage
+algorithm and we can write
+
+(\emph{a, z}) \emph{←⟨P}(\emph{x, w})\emph{, c⟩}
+
+for the generation of the first message \emph{a} in the first stage and
+the reply \emph{z} in the second stage once given the challenge
+\emph{c}.
+
+\textbf{Remark 5} We allow the set of \emph{instances X}, the set of
+\emph{witnesses W} and the relation \emph{R} to depend on a security
+parameter \emph{η}. Similarly, the interactive algorithms \emph{P} and
+\emph{V} may depend on \emph{η} (or have \emph{η} as part of their
+input). However, for ease of notation, we suppress these dependencies on
+\emph{η} unless they are crucial.
+
+\textbf{Remark 6} We do not necessarily require a Σ-protocol to be
+perfectly or statistically correct. This allows us to include protocols
+that use \emph{rejection sampling}, where with a constant probability,
+the value \emph{z} would leak too much information on the witness
+\emph{w} and so the prover sends \emph{⊥}instead. On the other hand, by
+default we consider the soundness/knowledge error to be negligible,
+i.e., a dishonest prover succeeds only with negligible probability to
+make the verifier accept if \emph{x} is not a valid instance or the
+prover has no witness for it (depending on the considered soundness
+notion). Negligible soundness/knowledge error can always be achieved by
+parallel repetition (see e.g. {[}Dam10{]}).
+
+8
+
+\textbf{3.2 The Fiat-Shamir transformation}
+
+The \emph{Fiat-Shamir transformation} turns a Σ-protocol Σ into a
+non-interactive proof system, denoted FS{[}Σ{]},
+
+by replacing the verifier's random choice of \emph{c ∈C} with \emph{c}
+:= \emph{H}(\emph{x, a}), where \emph{H} : \emph{X′→C} is a hash
+function with a domain \emph{X′}that contains all pairs \emph{x′}=
+(\emph{x, a}) with \emph{x ∈X} and \emph{a} produced by \emph{P}. In
+other words, upon input \emph{x} and \emph{w}, the honest FS-prover
+produces \emph{π} = (\emph{a, z}) by running the two-stage Σ-protocol
+prover \emph{P} but using \emph{c} = \emph{H}(\emph{x, a}) as challenge
+(i.e., as input to the second stage). In case Σ is not statistically
+correct, the
+
+above process of producing \emph{π} = (\emph{a, z}) is repeated
+sufficiently many times until \emph{V} (\emph{x, a, H}(\emph{x,
+a})\emph{, z}) is satisfied
+
+(or some bound is reached). In either case, we will write this as
+
+\emph{π} = (\emph{a, z}) \emph{←PH F S}(\emph{x, w}) \emph{.}
+
+We may write as \emph{VH F S}(\emph{x, π}) the FS-verifier's check
+whether \emph{V} (\emph{x, a, H}(\emph{x, a})\emph{, z}) is satisfied or
+not. In the
+
+security analysis, the hash function \emph{H} is modeled by a random
+oracle, i.e. by oracle access to a uniformly
+
+random \emph{H} : \emph{X′→C}.
+
+When considering an \emph{adversary A} that tries to \emph{forge} a
+proof for some instance \emph{x ∈X}, one can distinguish between an
+\emph{arbitrary but fixed x}, and an \emph{x} that is \emph{chosen} by
+\emph{A} and output along with \emph{a} in case of Σ-protocols,
+respectively along with \emph{π} in case of the Fiat-Shamir
+transformation. If \emph{x} is fixed then the adversary is called
+
+\emph{static}, otherwise it is called \emph{adaptive}. For the typical
+security definitions for Σ-protocols this distinction
+
+between a static and an adaptive \emph{A} makes no difference (see
+Lemmas 12 and 15 below), but for the Fiat-Shamir transformation it
+(potentially) does.
+
+\textbf{3.3 The generic security reduction}
+
+Since an adaptive adversary is clearly not less powerful than a static
+adversary, we restrict our attention
+
+for the moment to the adaptive case. Recall that such an adaptive
+FS-adversary \emph{A} outputs the instance \emph{x ∈X} along with the
+proof \emph{π} = (\emph{a, z}), and the figure of merit is the
+probability that \emph{x, a, z} satisfies \emph{V} (\emph{x, a,
+H}(\emph{x, a})\emph{, z}). Thus, we can simply apply Theorem 2, with
+(\emph{x, a}) playing the role of what is referred to
+
+as \emph{x} in the theorem statement, to obtain the existence of an
+adaptive \emph{Σ}-adversary \emph{SA}that produces (\emph{x, a}) in a
+first stage, and upon receiving a random challenge \emph{c} produces
+\emph{z}, such that for any \emph{x◦∈X}
+
+1
+
+\begin{quote}
+Pr
+
+\emph{c} \emph{x}=\emph{x◦∧V} (\emph{x, a, c, z}) : (\emph{x, a, z})
+\emph{←⟨SA, c⟩} ≳\emph{O}(\emph{q}2) Pr \emph{x}=\emph{x◦∧V} (\emph{x,
+a, H}(\emph{x, a})\emph{, z}) : (\emph{x, a, z}) \emph{←AH} \emph{,}
+\end{quote}
+
+where the approximate inequality hides a term that is bounded by
+2\emph{q\textbar C\textbar{}}when summed over all \emph{x◦∈X}.
+
+Understanding that \emph{x} is given to \emph{V} along with the first
+message \emph{a} but also treating it as an output of \emph{SA}, while
+\emph{V}'s output \emph{v} is its decision to accept or not, we write
+this as
+
+1
+
+\begin{quote}
+Pr \emph{x}=\emph{x◦∧v} = \emph{accept} : (\emph{x, v}) \emph{←⟨SA, V⟩}
+≳\emph{O}(\emph{q}2) Pr \emph{x}=\emph{x◦∧VH F S}(\emph{x, π}) :
+(\emph{x, π}) \emph{←AH} \emph{.}
+\end{quote}
+
+Summed over all \emph{x◦∈X}, this in particular implies that
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Pr
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{⟨SA, V⟩}= \emph{accept}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{≥}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1\\
+\emph{O}(\emph{q}2) Pr
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{VH F S}(\emph{x, π}) : (\emph{x, π}) \emph{←AH}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{−}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1\\
+2\emph{q\textbar C\textbar.}
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\multicolumn{7}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{1.0000} + 12\tabcolsep}@{}}{%
+\textbf{Remark 7} We point out that the above arguments extend to a
+FS-adversary \emph{A} that, besides the instance \emph{x} and the proof
+\emph{π} = (\emph{a, z}), also produces some local (possibly quantum)
+output satisfying some (quantum)
+
+predicate that may depend on \emph{x, a, z}. The resulting
+\emph{Σ}-adversary \emph{SA}is then ensured to produce a local output
+that satisfies the considered predicate as well, up to the given loss in
+the probability. Indeed, we can
+
+simply include this local output in \emph{z} and extend the predicate
+\emph{V} accordingly.
+
+that ``\emph{achieves the same thing}'' up to a \emph{O}(\emph{q}2) loss
+in success probability. Hence, for matching corresponding In a very
+broad sense, the above means that for \emph{any} FS-adversary \emph{A}
+there exists a \emph{Σ}-adversary \emph{SA}} \\
+\bottomrule()
+\end{longtable}
+
+9
+
+security definitions, security of a Σ-protocol (against a dishonest
+prover) implies security of its Fiat-Shamir
+
+\begin{quote}
+transform.
+
+We summarize here the above basic transformation from an adaptive
+FS-adversary \emph{A} to an adaptive\emph{Σ}-adversary \emph{SA}.
+
+\textbf{Theorem 8} \emph{There exists a black-box quantum
+polynomial-time two-stage quantum algorithm S such that for any adaptive
+Fiat-Shamir adversary A, making q queries to a uniformly random function
+H with appropriate domain and range, and for any x◦∈X:}
+\end{quote}
+
+1
+
+\begin{quote}
+Pr \emph{x}=\emph{x◦∧v} = \emph{accept} : (\emph{x, v}) \emph{←⟨SA, V⟩}
+≳\emph{O}(\emph{q}2) Pr \emph{x}=\emph{x◦∧VH F S}(\emph{x, π}) :
+(\emph{x, π}) \emph{←AH} \emph{,}
+\end{quote}
+
+\emph{where the} ≳\emph{hides a term that is bounded by}
+
+\begin{quote}
+2\emph{q\textbar C\textbar when summed over all x◦.}
+\end{quote}
+
+Below, we apply the above general reduction to the respective standard
+definitions for \emph{soundness} and \emph{proof}
+
+\emph{of knowledge}. Each property comes in the variants
+\emph{computational} and \emph{statistical}, for guarantees against
+
+computationally bounded or unbounded adversaries respectively, and one
+may consider the static or the
+
+\begin{quote}
+adaptive case.
+
+\textbf{3.4 Preservation of soundness}
+
+Let Σ = (\emph{P, V}) be a Σ-protocol for a relation \emph{R}, and let
+FS{[}Σ{]} be its Fiat-Shamir transformation. We set \emph{L} :=
+\emph{\{x ∈X \textbar{} ∃w ∈W} : \emph{R}(\emph{x, w})\emph{\}}. It is
+understood that \emph{P} and \emph{V}, as well as \emph{R} and thus
+\emph{L}, may depend on a security parameter \emph{η}. We note that in
+the following definition, we overload notation a bit by writing \emph{A}
+for both for the ordinary static and for the adaptive adversary (even
+though a given \emph{A} is usually either static or adaptive).
+\end{quote}
+
+\textbf{Definition 9} Σ \emph{is \textbf{(computationally/statistically)
+sound} if there exists a negligible function µ}(\emph{η}) \emph{such}
+
+\begin{quote}
+\emph{that for any (quantum polynomial-time/unbounded) adversary A and
+any η ∈}N\emph{:}
+\end{quote}
+
+Pr {[}\emph{⟨A, V}(\emph{x})\emph{⟩}= \emph{accept}{]}
+\emph{≤µ}(\emph{η})
+
+\begin{quote}
+\emph{for all x /∈L; respectively, in case of an} \textbf{adaptive}
+\emph{A:}
+\end{quote}
+
+Pr {[}\emph{x ̸∈L ∧v} = \emph{accept} : (\emph{x, v}) \emph{←⟨A, V⟩}{]}
+\emph{≤µ}(\emph{η}) \emph{.}
+
+FS{[}Σ{]} \emph{is \textbf{(computationally/statistically) sound} if
+there exists a negligible function µ}(\emph{η}) \emph{and a constant}
+
+\begin{quote}
+\emph{e such that for any (quantum polynomial-time/unbounded) adversary
+A and any η ∈}N\emph{:}
+\end{quote}
+
+Pr
+
+\begin{quote}
+\emph{H VH F S}(\emph{x, π}) : \emph{π ←AH≤qeµ}(\emph{η})
+
+\emph{for all x /∈L; respectively, in case of an} \textbf{adaptive}
+\emph{A:}
+\end{quote}
+
+Pr
+
+\begin{quote}
+\emph{H} \emph{VH F S}(\emph{x, π}) \emph{∧x /∈L} : (\emph{x, π})
+\emph{←AH} \emph{≤qeµ}(\emph{η}) \emph{.}
+\end{quote}
+
+\textbf{Remark 10} Note that for the soundness of FS{[}Σ{]}, the
+adversary \emph{A}'s success probability may unavoidably grow with the
+number \emph{q} of oracle queries, but we require that it grows only
+polynomially in \emph{q}.
+
+\begin{quote}
+\textbf{Remark 11} In line with Section 2, the description of a quantum
+algorithm \emph{A} is understood to include the initial state
+\emph{\textbar φ}0\emph{⟩}. As such, when quantifying over all \emph{A}
+it is understood that this includes a quantification over all
+\emph{\textbar φ}0\emph{⟩}as well. This stays true when considering
+\emph{A} to be quantum polynomial-time, which means that the unitaries
+\emph{Ai} can be computed by polynomial-time quantum circuits, and
+\emph{q} is polynomial in size, but
+\end{quote}
+
+does not put any restriction on \emph{\textbar φ}0\emph{⟩}.14This is in
+line with {[}Unr12, Def. 1{]}, which explicitly spells out this
+quantification.
+
+14In other words, \emph{A} is then \emph{non-uniform} quantum
+polynomial-time with \emph{quantum} advice.
+
+10
+
+We consider the following to be folklore knowledge; for completeness, we
+still give a proof in Appendix A. \textbf{Lemma 12} \emph{If} Σ \emph{is
+computationally/statistically sound for} static \emph{adversaries then
+it is also computation-ally/statistically sound for} adaptive
+\emph{adversaries.}
+
+The following is now an immediate application of Theorem 8 and the above
+observation regarding static and adaptive security for Σ-protocols.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.0769}}@{}}
+\toprule()
+\multicolumn{13}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{1.0000} + 24\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Corollary 13} \emph{Let} Σ \emph{be a} Σ\emph{-protocol with
+superpolynomially sized challenge space C. If} Σ \emph{is
+computation-ally/statistically sound against a static adversary then}
+FS{[}Σ{]} \emph{is computationally/statistically sound against}
+
+\emph{an adaptive adversary.}
+
+\emph{Proof.} Applying Theorem 8, we find that for any adaptive
+FS-adversary \emph{A}, polynomially bounded in the computational
+setting, there exists an adaptive Σ-protocol adversary \emph{SA},
+polynomially bounded if \emph{A} is, so that
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.1538} + 2\tabcolsep}}{%
+Pr} &
+\multicolumn{11}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.8462} + 20\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{x /∈L ∧VH F S}(\emph{x, π}) : (\emph{x, π}) \emph{←AH}
+\end{quote}
+\end{minipage}} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.2308} + 4\tabcolsep}}{%
+=} & \emph{x◦/∈L} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.1538} + 2\tabcolsep}}{%
+Pr} &
+\multicolumn{7}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.5385} + 12\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{x}=\emph{x◦∧VH F S}(\emph{x, π}) : (\emph{x, π}) \emph{←AH}
+\end{quote}
+\end{minipage}} \\
+\multicolumn{5}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.3846} + 8\tabcolsep}}{%
+\multirow{2}{*}{\emph{≤O}(\emph{q}2) \emph{·}}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.2308} + 4\tabcolsep}}{%
+\multirow{2}{*}{\emph{x◦/∈L}}} & Pr &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.1538} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{x}=\emph{x◦∧v} = \emph{accept} : (\emph{x, v}) \emph{←⟨SA, V⟩}
+\end{quote}
+\end{minipage}}} & + & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+1
+\end{quote}
+\end{minipage} \\
+& & & & & & & & & & & & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+2\emph{q\textbar C\textbar{}}
+\end{quote}
+\end{minipage} \\
+\multicolumn{5}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.3846} + 8\tabcolsep}}{%
+= \emph{O}(\emph{q}2) \emph{·}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.1538} + 2\tabcolsep}}{%
+Pr} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.2308} + 4\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{x ̸∈L ∧v} = \emph{accept} : (\emph{x, v}) \emph{←⟨SA, V⟩}
+\end{quote}
+\end{minipage}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.2308} + 4\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
++\emph{O}(\emph{q})\\
+\emph{\textbar C\textbar{}}
+\end{quote}\strut
+\end{minipage}}} \\
+\multicolumn{10}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.7692} + 18\tabcolsep}}{%
+\emph{≤O}(\emph{q}2) \emph{· µ}(\emph{η}) +\emph{O}(\emph{q})
+\emph{\textbar C\textbar{}}} \\
+\multicolumn{13}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{1.0000} + 24\tabcolsep}@{}}{%
+where the last inequality holds for some negligible function
+\emph{µ}(\emph{η}) if Σ is sound against an adaptive adversary. The
+latter is ensured by the assumed soundness against a static adversary
+and Lemma 12. This bound can obviously be written as
+\emph{q}2\emph{µ′}(\emph{η}) for another negligible function
+\emph{µ′}(\emph{η}), showing the claimed soundness of} \\
+\multicolumn{5}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.3846} + 8\tabcolsep}}{%
+FS{[}Σ{]}.} &
+\multicolumn{8}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.6154} + 14\tabcolsep}@{}}{%
+\emph{⊔}} \\
+\textbf{3.5} &
+\multicolumn{12}{>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{0.9231} + 22\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Preservation as a proof of knowledge}
+\end{quote}
+\end{minipage}} \\
+\multicolumn{13}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 24\tabcolsep) * \real{1.0000} + 24\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+We now recall the definition of a proof of knowledge, sometimes also
+referred to as (witness) extractability,
+
+tailored to the case of a negligible ``knowledge error''. Informally,
+the requirement is that if \emph{A} succeeds in proving an instance
+\emph{x}, then by using \emph{A} as a black-box only it is possible to
+extract a witness for \emph{x}. In case of an arbitrary but fixed
+\emph{x}, this property is formalized in a rather straightforward way;
+however, in case of
+
+an adaptive \emph{A}, the formalization is somewhat subtle, because one
+can then not refer to \emph{the x} for which \emph{A} manages to produce
+a proof. We adopt the approach (though not the precise formalization)
+from {[}Unr17{]},
+
+which requires \emph{x} to satisfy an arbitrary but fixed predicate.
+
+\textbf{Definition 14} Σ \emph{is a \textbf{(computational/statistical)
+proof of knowledge} if there exists a quantum}
+
+\emph{polynomial-time black-box `knowledge extractor' K, a polynomial
+p}(\emph{η})\emph{, a constant d ≥}0\emph{, and a negligible function
+κ}(\emph{η}) \emph{such that for any (quantum polynomial-time/unbounded)
+adversary A, any η ∈}N \emph{and any x ∈X:}
+
+1
+
+\begin{quote}
+Pr (\emph{x, w}) \emph{∈R} : \emph{w
+←KA}(\emph{x})\emph{≥p}(\emph{η})\emph{·} Pr {[}\emph{⟨A,
+V}(\emph{x})\emph{⟩}= \emph{accept}{]}\emph{d −κ}(\emph{η}) ;
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\emph{respectively, in case of an} \textbf{adaptive} \emph{A:}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Pr
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{x ∈X ∧}(\emph{x, w}) \emph{∈R} : (\emph{x, w}) \emph{←KA}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{≥}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1\\
+\emph{p}(\emph{η})\emph{·} Pr {[}\emph{x ∈X ∧v} = \emph{accept} :
+(\emph{x, v}) \emph{←⟨A, V⟩}{]}\emph{d −κ}(\emph{η})
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+11
+
+\emph{for any subset X ⊆X.} FS{[}Σ{]} \emph{is a
+\textbf{(computational/statistical) proof of knowledge} if there exists
+a polynomial-time black-}
+
+\emph{box `knowledge extractor' E, a polynomial p}(\emph{η})\emph{,
+constants d, e ≥}0\emph{, and a negligible function µ}(\emph{η})\emph{,
+such that for any (quantum polynomial-time/unbounded) algorithm A, any η
+∈}N \emph{and any x ∈X:}
+
+1
+
+\begin{quote}
+Pr (\emph{x, w}) \emph{∈R} : \emph{w ←EA}(\emph{x})
+\emph{≥qep}(\emph{η})\emph{·} Pr \emph{VH F S}(\emph{x, π}) : \emph{π
+←AHd −µ}(\emph{η})\emph{.} ;
+\end{quote}
+
+\emph{respectively, in case of an} \textbf{adaptive} \emph{A:}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Pr
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{x ∈X ∧}(\emph{x, w}) \emph{∈R} : (\emph{x, w}) \emph{←EA}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{≥}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1\\
+\emph{qep}(\emph{η})\emph{·} Pr
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{x ∈X ∧VH F S}(\emph{x, π}) : (\emph{x, π}) \emph{←AHd
+−µ}(\emph{η})
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\emph{for any subset X ⊆X, where q is the number of queries A makes.}
+
+Also here, for Σ-protocols static security implies adaptive security.
+
+\textbf{Lemma 15} \emph{If} Σ \emph{is a computational/statistical proof
+of knowledge for} static \emph{A then it is also a
+computa-tional/statistical proof of knowledge for} adaptive \emph{A.}
+
+Again, the following is now an immediate application of Theorem 8 and
+the above observation regarding
+
+static and adaptive security for Σ-protocols.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.0625}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.0625}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.0625}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.0625}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.0625}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.0625}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.0625}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.0625}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.0625}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.0625}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.0625}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.0625}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.0625}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.0625}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.0625}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.0625}}@{}}
+\toprule()
+\multicolumn{16}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{1.0000} + 30\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Corollary 16} \emph{Let} Σ \emph{be a} Σ\emph{-protocol with
+superpolynomially sized C. If} Σ \emph{is a computational/statistical
+proof of knowledge for static adversaries then} FS{[}Σ{]} \emph{is a
+computational/statistical proof of knowledge for adaptive}
+
+\emph{adversaries.}
+
+\emph{Proof.} First, we observe that by Lemma 15, we may assume Σ to be
+a computational/statistical proof of
+
+knowledge for \emph{adaptive} adversaries. Let \emph{K} be the black-box
+knowledge extractor. Let \emph{A} be an (quantum
+polynomial-time/unbounded) adaptive FS-adversary \emph{A}. We define a
+black-box knowledge extractor \emph{E} for FS{[}Σ{]} as follows.
+\emph{EA}simply works by running \emph{KSA}, where \emph{SA}the adaptive
+Σ-protocol adversary obtained by invoking Theorem 8. For any subset
+\emph{X ⊆X}, invoking the proof-of-knowledge property of Σ and using
+Theorem 8, we see that
+\end{minipage}} \\
+\midrule()
+\endhead
+Pr &
+\multicolumn{15}{>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.9375} + 28\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{x ∈X ∧}(\emph{x, w}) \emph{∈R} : (\emph{x, w}) \emph{←EA}
+\end{quote}
+\end{minipage}} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.1875} + 4\tabcolsep}}{%
+= Pr} &
+\multicolumn{13}{>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.8125} + 24\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{x ∈X ∧}(\emph{x, w}) \emph{∈R} : (\emph{x, w}) \emph{←KSA}
+\end{quote}
+\end{minipage}} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.1250} + 2\tabcolsep}}{%
+=} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.1875} + 4\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+1\\
+\emph{p}(\emph{η})\emph{·} Pr
+\end{quote}\strut
+\end{minipage}} &
+\multicolumn{5}{>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.3125} + 8\tabcolsep}}{%
+\emph{x ∈X ∧v} = \emph{accept}(\emph{x, v}) \emph{←⟨SA, V⟩}} &
+\multicolumn{6}{>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.3750} + 10\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{d −κ}(\emph{η})
+\end{quote}
+\end{minipage}} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.1250} + 2\tabcolsep}}{%
+=} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.1250} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+1\\
+\emph{p}(\emph{η})\emph{·}
+\end{quote}\strut
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.1250} + 2\tabcolsep}}{%
+\emph{x◦∈X}} & Pr &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.2500} + 6\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{x} = \emph{x◦∧v} = \emph{accept}(\emph{x, v}) \emph{←⟨SA, V⟩}
+\end{quote}
+\end{minipage}} & \emph{d} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.1250} + 2\tabcolsep}}{%
+\emph{−κ}(\emph{η})} & \multirow{2}{*}{\emph{d}} &
+\multirow{4}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{−κ}(\emph{η})
+\end{quote}
+\end{minipage}} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.1250} + 2\tabcolsep}}{%
+\multirow{2}{*}{\emph{≥}}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.1250} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+1
+\end{quote}
+\end{minipage}} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.2500} + 6\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+1
+\end{quote}
+\end{minipage}} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+P
+\end{quote}
+\end{minipage} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.1250} + 2\tabcolsep}}{%
+\multirow{2}{*}{\emph{x} = \emph{x◦∧VH F S}(\emph{x, π}) : (\emph{x, π})
+\emph{←AH}}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.1250} + 2\tabcolsep}}{%
+\multirow{2}{*}{\emph{−}}} & 1 \\
+& &
+\multicolumn{6}{>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.3750} + 10\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{p}(\emph{η}) \emph{O}(\emph{q}2)
+\end{quote}
+
+\emph{x◦∈X}
+
+1
+
+\emph{p}(\emph{η}) \emph{· O}(\emph{q}2\emph{d})\emph{·} Pr
+\end{minipage}}} & \begin{minipage}[t]{\linewidth}\raggedright
+P\\
+\emph{H}\strut
+\end{minipage} & & & & & 2\emph{q\textbar C\textbar{}} &
+\multirow{2}{*}{} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.1250} + 2\tabcolsep}}{%
+\emph{≥}} & & & & & & &
+\multicolumn{6}{>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.3750} + 10\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{x ∈X ∧VH F S}(\emph{x, π}) : (\emph{x, π}) \emph{←AHd
+−µ}(\emph{η})
+\end{quote}
+\end{minipage}} \\
+\multicolumn{11}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.6875} + 20\tabcolsep}}{%
+for some negligible function \emph{µ}(\emph{η}).} &
+\multicolumn{5}{>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{0.3125} + 8\tabcolsep}@{}}{%
+\emph{⊔}} \\
+\multicolumn{16}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 30\tabcolsep) * \real{1.0000} + 30\tabcolsep}@{}}{%
+\textbf{Remark 17} We point out that in {[}Unr17{]} Unruh considers a
+stronger notion of extractability than our Definition 14, where it is
+required that, in some sense, the extractor also recovers any local
+(possibly quantum) output of the adversary \emph{A}. In the light of
+Remark 7, we expect that our result also applies to this stronger notion
+of extractability.} \\
+\bottomrule()
+\end{longtable}
+
+12
+
+\begin{quote}
+\textbf{4} \textbf{Application to Fiat-Shamir signatures}
+\end{quote}
+
+Any Fiat-Shamir non-interactive proof system can easily be transformed
+into a public-key signature scheme.15
+
+The signer simply proves knowledge of a witness (the secret key) for a
+composite statement \emph{x∗}:= \emph{x∥m}, which includes the public
+key \emph{x} as well as the message \emph{m}. The signature \emph{σ}
+then consists of a proof for \emph{x∗}.
+
+\textbf{Definition 18} \emph{A binary relation R with instance generator
+G is said to be} hard \emph{if for any quantum}
+
+\begin{quote}
+\emph{polynomial-time algorithm A we have}
+\end{quote}
+
+Pr {[}(\emph{x, w′}) \emph{∈R} : (\emph{x, w}) \emph{←G,
+w′←A}(\emph{x}){]} \emph{≤µ}(\emph{η})
+
+\begin{quote}
+\emph{for some negligible function µ}(\emph{η})\emph{, where G is such
+that it always outputs a pair} (\emph{x, w}) \emph{∈R.}
+\end{quote}
+
+\textbf{Definition 19} \emph{A} Fiat-Shamir signature scheme \emph{based
+on a} Σ\emph{-protocol} Σ = (\emph{P, V}) \emph{for a hard relation R
+with instance generator G, denoted by} Sig{[}Σ{]} \emph{is defined by
+the triple (Gen, Sign, Verify), with}
+
+\begin{quote}
+\textbf{--} Gen\emph{: Pick} (\emph{x, w}) \emph{←G, set sk} :=
+(\emph{x, w}) \emph{and pk} := \emph{x.}\textbf{--}
+Sign\emph{H}(\emph{sk, m})\emph{: Return} (\emph{m, σ}) \emph{where σ
+←PH F S}(\emph{x∥m, w})\emph{.}\textbf{--} Verify\emph{H}(\emph{pk, m,
+σ})\emph{: Return VH F S}(\emph{x∥m, σ})\emph{.}
+
+\emph{Here} (\emph{PH F S, V H F S}) = FS{[}Σ\emph{∗}{]}\emph{, where}
+Σ\emph{∗}= (\emph{P∗, V∗}) \emph{is the} Σ\emph{-protocol obtained from}
+Σ \emph{by setting P∗}(\emph{x∥m}) = \emph{P}(\emph{x}) \emph{and
+V∗}(\emph{x∥m}) = \emph{V}(\emph{x}) \emph{for any m.}
+
+Note that by definition of FS in Section 3.2, we use \emph{VH}
+
+We investigate the following standard security notions for signature
+schemes. \emph{F S}(\emph{x∥m, σ}) as shortcut for \emph{V} (\emph{x∥m,
+a, H}(\emph{x∥m, a})\emph{, z}).
+
+\textbf{Definition 20 (}sEUF\emph{−}CMA\emph{/}EUF\emph{−}NMA\textbf{)}
+\emph{A signature scheme fulfills} strong existential unforgeability
+un-der chosen-message attack (sEUF\emph{−}CMA) \emph{if for all quantum
+polynomial-time algorithms A and for uniformly random H} : \emph{X′→C it
+holds that}
+
+Pr Verify\emph{H}(\emph{pk, m, σ}) \emph{∧}(\emph{m, σ})
+\emph{/∈}\textbf{Sig}\emph{−}q : (\emph{pk, sk}) \emph{←}Gen\emph{,}
+(\emph{m, σ}) \emph{←AH,}\textbf{Sig}(\emph{pk})
+\end{quote}
+
+\emph{is negligible. Here} \textbf{Sig} \emph{is classical oracle which
+upon classical input m returns} Sign\emph{H}(\emph{m, sk})\emph{, and}
+\textbf{Sig}\emph{−}q \emph{is the list of all queries made to}
+\textbf{Sig}\emph{.}
+
+\begin{quote}
+\emph{Analogously, a signature scheme fulfills} existential
+unforgeability under no-message attack (EUF\emph{−}NMA) \emph{if for all
+quantum polynomial-time algorithms A and for uniformly random H} :
+\emph{X′→C it holds that}
+
+Pr Verify\emph{H}(\emph{pk, m, σ}) : (\emph{pk, sk}) \emph{←}Gen\emph{,}
+(\emph{m, σ}) \emph{←AH}(\emph{pk})
+
+\emph{is negligible.}
+
+The unforgeability (against no-message attacks) of a Fiat-Shamir
+signature scheme is shown below to
+\end{quote}
+
+follow from the proof-of-knowledge property of the underlying proof
+system (hence, as we now know, of the
+
+underlying Σ-protocol), under the assumption that the relation is hard,
+i.e. it is infeasible to compute \emph{sk}
+
+\begin{quote}
+from \emph{pk}.
+\end{quote}
+
+\textbf{Theorem 21} \emph{Let} Σ \emph{be} Σ\emph{-protocol for some
+hard relation R, with superpolynomially sized challenge space}
+
+\begin{quote}
+\emph{C and the proof-of-knowledge property according to Definition 14.
+Then, the Fiat-Shamir signature scheme} Sig{[}Σ{]} \emph{fulfills}
+EUF\emph{−}NMA \emph{security.}
+\end{quote}
+
+15In fact, that is how the Fiat-Shamir transform was originally
+conceived in {[}FS87{]}. Only later {[}BG93{]} adapted the
+
+\begin{quote}
+idea to construct a non-interactive zero-knowledge proof system.
+\end{quote}
+
+13
+
+\begin{quote}
+\emph{Proof.} Let \emph{A} be an adversary against EUF\emph{−}NMA,
+issuing at most \emph{q} quantum queries to \emph{H}. We show that
+
+AdvEUF Sig{[}Σ{]}\emph{−}NMA (\emph{A}) := Pr Verify\emph{H}(\emph{pk,
+m, σ}) : (\emph{pk, sk}) \emph{←}Gen\emph{,} (\emph{m, σ})
+\emph{←AH}(\emph{pk})
+
+is negligible.
+
+Recall from Definition 19 of Fiat-Shamir signatures that the Σ-protocol
+Σ\emph{∗}is the Σ-protocol Σ where the prover and verifier ignore the
+message part \emph{m} of the instance \emph{x∥m}. A successful forgery
+(\emph{m, σ}) is such that \emph{VH F S}(\emph{x∥m, σ}) accepts the
+proof \emph{σ}. Therefore,
+
+AdvEUF Sig{[}Σ{]}\emph{−}NMA (\emph{A}) = (\emph{x,w})\emph{←G} E Pr
+\emph{H} \emph{VH F S}(\emph{x∥m, σ}) : (\emph{m, σ})
+\emph{←AH}(\emph{x}) \emph{.} (5)
+
+Note that if Σ is a proof of knowledge, so is Σ\emph{∗}. Our Corollary
+16 assures that if Σ\emph{∗}is a proof of knowledge, then also
+FS{[}Σ\emph{∗}{]} is a proof of knowledge.
+
+For fixed instance \emph{x}, let \emph{X} be the set of instance/message
+strings \emph{x′∥m} where \emph{x′}= \emph{x}. We apply the knowledge
+extractor from Definition 14 to the adaptive FS-attacker
+\emph{AH}(\emph{x}) that has \emph{x} hard-wired and outputs it along
+with a message \emph{m} and the proof/signature \emph{σ}: There exists a
+knowledge extractor \emph{E}, constants \emph{d, e} and a polynomial
+\emph{p} (all independent of \emph{x}) such that
+
+Pr \emph{H} \emph{x′∥m ∈X ∧VH F S}(\emph{x′∥m, σ}) : (\emph{x′∥m, σ})
+\emph{←AH}(\emph{x}) (6) 1\emph{/d}\\
+\emph{≤} Pr \emph{x′∥m ∈X ∧}(\emph{x′, w}) \emph{∈R} : (\emph{x′∥m, w})
+\emph{←EA qep}(\emph{η}) + \emph{µ}(\emph{η})
+
+Finally, taking the expected value of (6) over the choice of the
+instance \emph{x} according to the hard-instance generator \emph{G}, we
+obtain that the left hand side equals AdvEUF Sig{[}Σ{]}\emph{−}NMA
+(\emph{A}). For the right-hand side, we can use the concavity of
+(\emph{·})1\emph{/d}(note that we can assume without loss of generality
+that \emph{d \textgreater{}} 1) and apply Jensen's inequality to obtain
+\end{quote}
+
+1\emph{/d}
+
+\begin{quote}
+\emph{x←G} E Pr \emph{x′∥m ∈X ∧}(\emph{x′, w}) \emph{∈R} : (\emph{x′∥m,
+w}) \emph{←EA qep}(\emph{η}) + \emph{µ}(\emph{η})
+
+1\emph{/d≤} \emph{x←G}Pr \emph{x′∥m ∈X ∧}(\emph{x′, w}) \emph{∈R} :
+(\emph{x′∥m, w}) \emph{←EA qep}(\emph{η}) + \emph{µ}(\emph{η}) \emph{.}
+
+Note that the expected probability is the success probability of the
+extractor to produce a witness \emph{w} matching the instance \emph{x}.
+As long as the relation \emph{R} is hard according to Definition 18,
+this success probability is negligible, proving our claim.
+\end{quote}
+
+\emph{⊔}\\
+If we wish for unforgeability \emph{under chosen-message attack},
+zero-knowledge is required as well. {[}Unr17{]} and {[}KLS18{]} contain
+partial results that formalize this intuition, but they were unable to
+derive the extractability of the non-interactive proof system. Instead,
+they modify the Σ-protocol to have a \emph{lossy mode} {[}AFLT12{]},
+i.e. a special key-generation procedure that produces key pairs whose
+public keys are computationally indistin-guishable from the real ones,
+but under which it is impossible for any (even unbounded) quantum
+adversary to answer correctly.
+
+\begin{quote}
+Our new result above completes these previous analyses, so that we can
+now state precise conditions under which a Σ-protocol gives rise to a
+(strongly) unforgeable Fiat-Shamir signature scheme, without the need
+for lossy keys.
+
+\textbf{Theorem 22} \emph{Let} Σ \emph{be} Σ\emph{-protocol for some
+hard relation R, with superpolynomially sized challenge space C and the
+proof-of-knowledge property according to Definition 14. Assume further
+that} Σ \emph{is ε-perfect (non-abort) honest-verifier zero-knowledge
+(naHVZK), has α bits of min entropy and computationally unique responses
+as defined in {[}KLS18{]}. Then,} Sig{[}Σ{]} \emph{fulfills}
+sEUF\emph{−}CMA \emph{security.}
+\end{quote}
+
+\emph{Proof.} By Theorem 3.3 of {[}KLS18{]}, we can use the naHVZK,
+min-entropy and computationally-unique-response properties of Σ to
+reduce an sEUF\emph{−}CMA adversary to an EUF\emph{−}NMA adversary16.
+The conclusion then follows immediately from our Theorem 21
+above.\emph{⊔}16See also Theorem 25 in {[}Unr17{]} for a different proof
+technique.
+
+14
+
+\textbf{5} \textbf{Extractable} Σ\textbf{-protocols from quantum
+computationally unique responses}
+
+In the last section, we have seen that the proof-of-knowledge property
+of the underlying Σ-protocol is crucial for a Fiat-Shamir signature
+scheme to be unforgeable. In {[}Unr12{]}, Unruh proved that special
+soundness (a witness can be constructed efficiently from two different
+accepting transcripts) and perfect unique responses are sufficient
+conditions for a Σ-protocol to achieve this property in the context of
+quantum adversaries. The perfect-unique-responses property is used to
+show that the final measurement of the Σ-protocol adversary that
+produces the response is nondestructive conditioned on acceptance. This
+property ensures that the extractor can measure the response, and then
+rewind ``as if nothing had happened''.
+
+A natural question is therefore which other property except the arguably
+quite strict condition of perfect unique responses is sufficient to
+imply extractability together with special soundness. In {[}ARU14{]},
+the authors show that computationally unique responses is insufficient
+to replace perfect unique responses. A Σ-protocol has computationally
+unique responses if the verification relation \emph{V} is
+collision-resistant from responses to commitment-challenge pairs in the
+sense that it is computationally hard to find two valid responses for
+the same commitment-challenge pair.
+
+In {[}Unr16{]}, Unruh introduced the notion of collapsingness, a quantum
+generalization of the collision-resistance property for hash functions.
+It is straight-forward to generalize this notion to apply to binary
+relations instead of just functions.
+
+\textbf{Definition 23 (generalized from {[}Unr16{]})} \emph{Let R} :
+\emph{X × Y →\{}0\emph{,} 1\emph{\} be a relation with
+\textbar X\textbar{} and \textbar Y \textbar{} su-perpolynomial in the
+security parameter η, and define the following two games for
+polynomial-time two-stage adversaries A} = (\emph{A}1\emph{,
+A}2)\emph{,}
+
+\begin{quote}
+Game 1 : (\emph{S, X, Y} ) \emph{←A}1\emph{, r ←R}(\emph{X, Y} )\emph{,
+X ←M}(\emph{X})\emph{, Y ←M}(\emph{Y} )\emph{, b ←A}2(\emph{S, X, Y} )
+Game 2 : (\emph{S, X, Y} ) \emph{←A}1\emph{, r ←R}(\emph{X, Y} )\emph{,
+Y ←M}(\emph{Y} )\emph{, b ←A}2(\emph{S, X, Y} )\emph{.}
+\end{quote}
+
+\emph{Here, X and Y are registers of dimension \textbar X\textbar{} and
+\textbar Y \textbar, respectively, M denotes a measurement in the
+computational basis, and applying R to quantum registers is done by
+computing the relation coherently and measuring it. R is called}
+collapsing from \emph{X} to \emph{Y, if an adversary cannot distinguish
+the two experiments if the relation holds, i.e. if for all adversaries A
+it holds that}
+
+\begin{quote}
+\emph{A,} Game 1{[}\emph{r} = \emph{b} = 1{]} \emph{−A,} Game
+2{[}\emph{r} = \emph{b} = 1{]} \emph{≤}negl(\emph{η})\emph{.} (7)
+\end{quote}
+
+Note that this definition is equivalent to Definition 23 in {[}Unr16{]}
+for functions, i.e. if \emph{R}(\emph{x, y}) = 1 if and only if
+\emph{f}(\emph{x}) = \emph{y} for some function \emph{f}.
+
+Via the relation that is computed by the second stage of the verifier,
+the collapsingness property can be naturally defined for Σ-protocols.
+
+\textbf{Definition 24 (Quantum computationally unique responses)}
+\emph{A} Σ\emph{-protocol has} quantum computa-tionally unique
+responses\emph{, if the verification predicate V} (\emph{x, ·, ·, ·}) :
+\emph{Y × C × Z →\{}0\emph{,} 1\emph{\} seen as a relation between Y × C
+and Z is collapsing from Z to Y × C, where Y, C and Z are the
+commitment, challenge and response spaces of the protocol,
+respectively.}
+
+Intuitively, for fixed commitment-challenge pairs, no adversary should
+be able to determine whether a su-perposition over successful responses
+\emph{z} has been measured or not. As in the case of hash functions
+(where collapsingness is a natural stronger quantum requirement than
+collision-resistance), quantum computation-ally unique responses is a
+natural stronger quantum requirement than computationally unique
+responses.
+
+The following is a generalization of Theorem 9 in {[}Unr12{]} where the
+assumption of perfect unique re-sponses is replaced by the above quantum
+computational version. Additionally, we relax the special soundness
+requirement to \emph{t-soundness}, which requires that for any first
+message \emph{a}, for uniformly random chosen chal-can be efficiently
+computed except with negligible probability (over the choices of the
+\emph{ci}). lenges \emph{c}1\emph{, . . . , ct}, and for any responses
+\emph{z}1\emph{, . . . , zt} with \emph{V} (\emph{x, ai, ci, zi}) for
+all \emph{i ∈\{}1\emph{, . . . , t\}}, a witness \emph{w} for \emph{x}
+
+15
+
+\textbf{Theorem 25 (Generalization of Theorem 9 from {[}Unr12{]})}
+\emph{Let Π be a} Σ\emph{-protocol with t-soundness for some constant t
+and with quantum computationally unique responses. Then Π is a
+computational proof of knowledge as in Definition 14.}
+
+The proof follows very much the proof of Theorem 9 in {[}Unr12{]}, up to
+some small extensions; thus, we only give a proof sketch here.
+
+\emph{Proof (sketch).} We consider the following extractor \emph{K}. It
+runs \emph{A} to the point where it outputs \emph{a}. Then, it chooses a
+random challenge \emph{c}1 and sends it to \emph{A}, and obtains a
+response \emph{z}1 by measuring \emph{A}'s corresponding register.
+\emph{K} then rewinds \emph{A} (on the measured state!) and chooses and
+sends to \emph{A} a fresh random challenge \emph{c}2, resulting in a
+response \emph{z}2, etc., up to obtaining response \emph{zt}. If
+\emph{V} (\emph{x, ai, ci, zi}) for all \emph{i ∈\{}1\emph{, . . . ,
+t\}} then \emph{K} can compute \emph{w} except with negligible
+probability by the \emph{t}-soundness property; otherwise, it aborts.
+
+It remains to analyze the probability, denoted by \emph{F} below, that
+\emph{V} (\emph{x, ai, ci, zi}) for all \emph{i}. If the Σ-protocol has
+\emph{perfect} unique responses then measuring the response \emph{z} is
+\emph{equivalent} to measuring whether the response satisfies the
+verification predicate \emph{V} (with respect to \emph{x, a, c}). Lemma
+29 in Appendix B, which generalizes Lemma 7 in {[}Unr12{]}, allows us
+then to control the probability \emph{F} by means of the probability
+\emph{V} that \emph{A} succeeds in convincing the verifier in an
+ordinary run (this holds for an arbitrary but fixed \emph{a}, and on
+average over \emph{a} by means of Jensen's inequality). If the
+Σ-protocol has \emph{quantum computationally} unique responses instead,
+then measuring the response \emph{z} is \emph{computationally
+indistinguishable} from measuring whether the response satisfies the
+verification predicate, and so there can only be a negligible loss in
+the success probability of \emph{K} compared to above. \emph{⊔}
+
+We expect the above theorem to be very useful in practice, for the
+following reason. Usually, Σ-protocols deployed in Fiat-Shamir signature
+schemes have computationally unique responses to ensure strong
+unforge-ability via Theorem 22 or similar reductions. On the other hand,
+only very artificial separations between the notions of collision
+resistance and collapsingness for hash functions are known (e.g. the one
+presented in {[}Zha17{]}). It is therefore plausible that many
+Σ-protocols deployed in strongly unforgeable Fiat-Shamir signature
+schemes have quantum computationally unique responses as well. In the
+next section we take a look at a couple of examples that form the basis
+of some signature schemes submitted to the NIST competition for the
+standardization of post-quantum cryptographic schemes.
+
+\textbf{6} \textbf{Application to NIST submissions}
+
+In the previous sections we gave sufficient conditions for a Fiat-Shamir
+signature scheme to be existentially unforgeable in the QROM. Several
+schemes of the Fiat-Shamir kind have made it into the second round of
+the NIST post-quantum standardization process. In this section we
+outline how our result might be applied to some of these schemes, and
+under which additional assumptions. We leave the problems of applying
+our techniques to the actual (highly optimized) signature schemes and of
+working out the concrete security bounds for future work.
+
+\textbf{6.1 Picnic}
+
+In order to obtain QROM-security, Picnic uses the \emph{Unruh transform}
+{[}Unr15{]} instead of the Fiat-Shamir transformation, incurring a 1.6x
+loss in efficiency (according to {[}CDG+17{]}) compared to Fish, which
+is the same scheme under plain Fiat-Shamir.
+
+The underlying sigma-protocol for these schemes is ZKB++ {[}CDG+17{]},
+an optimized version of ZKBoo {[}GMO16{]}, which uses an arbitrary
+one-way function \emph{φ}, a commitment scheme COM and a multi-party
+computation protocol to prove knowledge of a secret key. Roughly, a
+prover runs the multi-party protocol `in its head' (i.e. simulates the
+three agents from the protocol, see {[}IKOS07{]}) to compute \emph{pk}
+:= \emph{φ}(\emph{sk}). Only a prover who knows the secret key can
+produce the correct view of all three agents, but the public key
+suffices to verify the correctness of two of the views. In the first
+round, the prover uses COM to commit to all three
+
+16
+
+\begin{quote}
+views separately, and sends these commitments to the verifier. The
+verifier replies with a random challenge \emph{i ∈\{}1\emph{,} 2\emph{,}
+3\emph{\}}, to which the prover in turn responds by opening the
+\emph{i}-th and \emph{i}+1-th commitment. ZKBoo does not specify a
+concrete commitment scheme for COM. A natural option is to commit by
+hashing the input together with some random bits.
+
+\textbf{Corollary 26} Sig{[}ZKBoo{]} \emph{is strongly existentially
+unforgeable in the QROM when} COM \emph{is instantiated with a
+collapsing hash function H.}17
+\end{quote}
+
+\emph{Proof.} Since the response of the prover in the third round
+consists only of openings to the commitments
+
+\begin{quote}
+\emph{ci, ci} + 1, i.e. preimages of \emph{ci}and \emph{ci} + 1under
+\emph{H}, and since collapsingness is closed under concurrent
+composition {[}Feh18{]}, the collapsingness of \emph{H} implies that
+ZKBoo has quantum computational unique responses. ZKBoo further has
+3-soundness, and thus the claim follows using Theorems 25 and 22.
+\emph{⊔} ZKB++ improves on ZKBoo by introducing optimizations specific
+to the signature context, which com-plicate the analysis of the overall
+scheme. We therefore leave the adaption of Corollary 26 to ZKB++ and
+Fish for future work.
+
+We also point out that Picnic2 (a later version of Picnic) is not
+\emph{t}-sound because a witness can be computed from 3 responses only
+under certain restrictions on the challenges. However, this can be taken
+care of by a variation of the \emph{t}-soundness property, as proven in
+Lemma 30 in Appendix B.
+
+\textbf{6.2 Lattice-based Fiat-Shamir signature schemes --
+CRYSTALS-Dilithium and qTesla}
+
+In {[}Lyu09{]} and {[}Lyu12{]}, Lyubashevsky developed a Fiat-Shamir
+signature scheme based on (ring) lattice assumptions. In the following,
+we explain the lattice case and mention ring-based lattice terms in
+parentheses. The underlying sigma protocol, which forms the basis of the
+NIST submissions CRYSTALS-Dilithium and qTesla, can be roughly described
+as follows. The instance is given by a key pair ((\emph{A, T})\emph{,
+S}), with \emph{T} = \emph{AS}. Here, \emph{A} and \emph{S} are matrices
+of appropriate dimensions over a finite field (polynomials of
+appropriate degree), and \emph{S} is \emph{small}. For the first message
+to the verifier, the prover selects a random short vector (small
+polynomial) \emph{y}, and sends over \emph{Ay}. The second message, from
+the verifier to the prover, is a random vector (polynomial) of the
+prover, is \emph{z} = \emph{Sc}+\emph{y}, which is short (small) as
+well. The prover actually sends \emph{z} only with a particular \emph{c}
+with entries (coefficients) in \emph{\{−}1\emph{,} 0\emph{,} 1\emph{\}}
+and a small Hamming weight. The third message, i.e. the response
+probability, which is chosen so as to make the distribution of (sent)
+\emph{z} independent of \emph{S}. Otherwise, it aborts and tries again.
+Verification is done by checking whether \emph{z} is indeed short
+(small), and whether \emph{Az−Ay} = \emph{Tc}. Let us denote this
+protocol by LatticeΣ. In the following we restrict our attention to the
+lattice case, but we expect that one can do a similar analysis for the
+ring-based schemes.
+
+The security of the scheme is, in the lattice case, based on the Short
+Integer Solution (SIS) problem, which essentially guarantees that it is
+hard to find an integral solution to a linear system that has a small
+norm. The computationally unique responses property for the simple
+Σ-protocol described above, in fact, follows directly from SIS: If one
+can find a vector \emph{c} and two short vectors \emph{xi}, \emph{i} =
+1\emph{,} 2 such that \emph{Ax}0 = \emph{c} = \emph{Ax}1, then the
+difference \emph{x} = \emph{x}1 \emph{−x}0 is a short solution to the
+linear system \emph{Ax} = 0. Another way to formulate the
+computationally unique responses property for the above Σ-protocol is as
+follows. Let \emph{S ⊂}F\emph{n} given by the matrix \emph{A
+∈}F\emph{m×n q}be the set of short vectors. Let \emph{fA}: \emph{S
+→}F\emph{m} . The Σ-protocol above has computationally unique responses
+if and only \emph{q}be the restriction to \emph{S} of the linear map
+
+if \emph{fA} is collision resistant. As pointed out at the end of
+Section 5, the known examples that separate the collision resistance and
+collapsingness properties are fairly artificial. Hence it is a natural
+to assume that \emph{fA} is collapsing as well.
+
+\textbf{Assumption 27} \emph{For m, n and q polynomial in the security
+parameter η, the function family fA keyed by a uniformly random matrix A
+∈}F\emph{m×n is collapsing.}
+\end{quote}
+
+17We could in principle decide to model \emph{H} as a random oracle as
+well, (since we are already in the QROM anyway), in which case the
+collapsingness of \emph{H} would follow from {[}Unr16{]}. However, we
+formalized security of Σ-protocols (soundness \& PoK) \emph{in the
+standard model}. We could extend these definitions to work in the QROM,
+but then Lemma 12 and 15 would no longer follow. Therefore, we choose to
+simply assume collapsingness of \emph{H}.
+
+17
+
+Under Assumption 27, LatticeΣ has quantum computational unique
+responses, and hence gives rise to an
+
+unforgeable Fiat-Shamir signature scheme.
+
+\textbf{Corollary 28} \emph{Under Assumption 27,} Sig{[}LatticeΣ{]}
+\emph{is strongly existentially unforgeable in the QROM.}
+
+As mentioned at the end of the introduction, in their concurrent and
+independent work {[}LZ19{]}, Lie and
+
+Zhandry show that \emph{fA} satisfies their notion of
+\emph{weak}-collapsingness (assuming hardness of LWE), which
+
+roughly says that there is some non-negligible probability that the
+adversary \emph{does not} notice a measurement.
+
+Weak-collapsingness implies a similarly weakened variant of our property
+`quantum computational responses',
+
+which is still sufficient to let the proof of Theorem 25 go through,
+albeit with a worse but still non-negligible
+
+success probability for the knowledge-extractor.
+
+\textbf{7} \textbf{Acknowledgement}
+
+We thank Tommaso Gagliardoni and Dominique Unruh for comments on early
+basic ideas of our approach,
+
+and Andreas Hülsing, Eike Kiltz and Greg Zaverucha for helpful
+discussions. We thank Thomas Vidick for
+
+helpful remarks on an earlier version of this article.
+
+\begin{quote}
+JD and SF were partly supported by the EU Horizon 2020 Research and
+Innovation Program
+\end{quote}
+
+Grant 780701 (PROMETHEUS). JD, CM, and CS were supported by a NWO VIDI
+grant (Project No.
+
+639.022.519). During finalization of this work JD has been partially
+funded by ERC-ADG project 740972
+
+(ALGSTRONGCRYPTO).
+
+\textbf{References}
+
+ABB+17. Erdem Alkim, Nina Bindel, Johannes Buchmann, Özgür Dagdelen,
+Edward Eaton, Gus Gutoski, Juliane
+
+\begin{quote}
+Krämer, and Filip Pawlega. Revisiting tesla in the quantum random oracle
+model. In \emph{International}
+
+\emph{Workshop on Post-Quantum Cryptography}, pages 143--162. Springer,
+2017.
+\end{quote}
+
+AFLT12. Michel Abdalla, Pierre-Alain Fouque, Vadim Lyubashevsky, and
+Mehdi Tibouchi. Tightly-secure signa-
+
+\begin{quote}
+tures from lossy identification schemes. In David Pointcheval and Thomas
+Johansson, editors, \emph{Advances}
+
+\emph{in Cryptology -- EUROCRYPT 2012}, pages 572--590, Berlin,
+Heidelberg, 2012. Springer.
+\end{quote}
+
+ARU14. A. Ambainis, A. Rosmanis, and D. Unruh. Quantum attacks on
+classical proof systems: The hardness of
+
+\begin{quote}
+quantum rewinding. In \emph{2014 IEEE 55th Annual Symposium on
+Foundations of Computer Science}, pages
+
+474--483, Oct 2014.
+\end{quote}
+
+BDF+11. Dan Boneh, Özgür Dagdelen, Marc Fischlin, Anja Lehmann,
+Christian Schaffner, and Mark Zhandry. Ran-
+
+\begin{quote}
+dom oracles in a quantum world. In Dong Hoon Lee and Xiaoyun Wang,
+editors, \emph{Advances in Cryptology}
+
+\emph{-- ASIACRYPT 2011}, pages 41--69, Berlin, Heidelberg, 2011.
+Springer.
+\end{quote}
+
+BDK+18. J. Bos, L. Ducas, E. Kiltz, T. Lepoint, V. Lyubashevsky, J. M.
+Schanck, P. Schwabe, G. Seiler, and
+
+\begin{quote}
+D. Stehle. CRYSTALS - Kyber: A CCA-secure module-lattice-based KEM. In
+\emph{2018 IEEE European}
+
+\emph{Symposium on Security and Privacy (EuroS P)}, pages 353--367,
+April 2018.
+\end{quote}
+
+BG93. Mihir Bellare and Oded Goldreich. On defining proofs of knowledge.
+In Ernest F. Brickell, editor, \emph{Advances}
+
+\begin{quote}
+\emph{in Cryptology --- CRYPTO' 92}, pages 390--420, Berlin, Heidelberg,
+1993. Springer.
+\end{quote}
+
+BR93. Mihir Bellare and Phillip Rogaway. Random oracles are practical: A
+paradigm for designing efficient
+
+\begin{quote}
+protocols. In \emph{Proceedings of the 1st ACM conference on Computer
+and communications security}, pages
+
+62--73. ACM, 1993.
+\end{quote}
+
+CDG+17. Melissa Chase, David Derler, Steven Goldfeder, Claudio Orlandi,
+Sebastian Ramacher, Christian Rech-
+
+\begin{quote}
+berger, Daniel Slamanig, and Greg Zaverucha. Post-quantum zero-knowledge
+and signatures from
+
+symmetric-key primitives. In \emph{Proceedings of the 2017 ACM SIGSAC
+Conference on Computer and Com-}
+
+\emph{munications Security}, CCS '17, pages 1825--1842, New York, NY,
+USA, 2017. ACM.
+\end{quote}
+
+CGH04. Ran Canetti, Oded Goldreich, and Shai Halevi. The random oracle
+methodology, revisited. \emph{Journal of the}
+
+\begin{quote}
+\emph{ACM}, 51(4):557--594, jul 2004.
+\end{quote}
+
+Dam10. Ivan Damgard. On sigma-protocols, lecture notes, faculty of
+science aarhus university, department of
+
+\begin{quote}
+computer science, 2010.
+\end{quote}
+
+18
+
+DFG13. Özgür Dagdelen, Marc Fischlin, and Tommaso Gagliardoni. The
+fiat--shamir transformation in a quantum world. In Kazue Sako and Palash
+Sarkar, editors, \emph{Advances in Cryptology - ASIACRYPT 2013}, pages
+62--81, Berlin, Heidelberg, 2013. Springer.
+
+DFM20. Jelle Don, Serge Fehr, and Christian Majenz. The
+measure-and-reprogram technique 2.0: Multi-round Fiat-Shamir and more.
+Cryptology ePrint Archive, Report 2020/282, 2020. .
+
+ES15. Edward Eaton and Fang Song. Making existential-unforgeable
+signatures strongly unforgeable in the quan- tum random-oracle model. In
+\emph{10th Conference on the Theory of Quantum Computation,
+Communication} \emph{and Cryptography}, page 147, 2015.
+
+Feh18. Serge Fehr. Classical proofs for the quantum collapsing property
+of classical hash functions. \emph{Theory of} \emph{Cryptography
+Conference - TCC2018, volume 11240 of Lecture Notes in Computer
+Science}, pages 315--338, 2018.
+
+FKMV12. Sebastian Faust, Markulf Kohlweiss, Giorgia Azzurra Marson, and
+Daniele Venturi. On the Non- malleability of the Fiat-Shamir Transform.
+In \emph{Indocrypt 2012}, volume 7668 LNCS, pages 60--79. 2012.
+
+FS87. Amos Fiat and Adi Shamir. How to prove yourself: Practical
+solutions to identification and signature problems. In Andrew M.
+Odlyzko, editor, \emph{Advances in Cryptology --- CRYPTO' 86}, pages
+186--194, Berlin, Heidelberg, 1987. Springer.
+
+GMO16. Irene Giacomelli, Jesper Madsen, and Claudio Orlandi. Zkboo:
+Faster zero-knowledge for boolean circuits.
+
+\begin{quote}
+In \emph{25th USENIX Security Symposium (USENIX Security 16)}, pages
+1069--1083, Austin, TX, 2016. USENIX Association.
+\end{quote}
+
+IKOS07. Yuval Ishai, Eyal Kushilevitz, Rafail Ostrovsky, and Amit Sahai.
+Zero-knowledge from secure multiparty computation. \emph{Proceedings of
+the thirty-ninth annual ACM symposium on Theory of computing - STOC}
+\emph{'07}, page 21, 2007.
+
+KLS18. Eike Kiltz, Vadim Lyubashevsky, and Christian Schaffner. A
+concrete treatment of Fiat-Shamir signatures in the quantum
+random-oracle model. In Jesper Buus Nielsen and Vincent Rijmen, editors,
+\emph{Advances in} \emph{Cryptology -- EUROCRYPT 2018}, pages 552--586,
+Cham, 2018. Springer.
+
+Lyu09. Vadim Lyubashevsky. Fiat-Shamir with aborts: Applications to
+lattice and factoring-based signatures. In Mitsuru Matsui, editor,
+\emph{Advances in Cryptology -- ASIACRYPT 2009}, pages 598--616, Berlin,
+Heidelberg, 2009. Springer.
+
+Lyu12. Vadim Lyubashevsky. Lattice signatures without trapdoors. In
+David Pointcheval and Thomas Johansson, editors, \emph{Advances in
+Cryptology -- EUROCRYPT 2012}, pages 738--755, Berlin, Heidelberg, 2012.
+Springer. LZ19. Qipeng Liu and Mark Zhandry. Revisiting post-quantum
+fiat-shamir. In Alexandra Boldyreva and Daniele Micciancio, editors,
+\emph{Advances in Cryptology -- CRYPTO 2019}, pages 326--355, Cham,
+2019. Springer In- ternational Publishing.
+
+Tsunekazu Saito, Keita Xagawa, and Takashi Yamakawa. Tightly-secure
+key-encapsulation mechanism in SXY18.
+
+\begin{quote}
+the quantum random oracle model. In \emph{Annual International
+Conference on the Theory and Applications of Cryptographic Techniques},
+pages 520--551. Springer, 2018.
+\end{quote}
+
+Unr12. Dominique Unruh. Quantum proofs of knowledge. In David
+Pointcheval and Thomas Johansson, editors, \emph{Advances in Cryptology
+-- EUROCRYPT 2012}, pages 135--152, Berlin, Heidelberg, 2012. Springer.
+
+Unr14. Dominique Unruh. Quantum position verification in the random
+oracle model. In Juan A. Garay and Rosario Gennaro, editors,
+\emph{Advances in Cryptology -- CRYPTO 2014}, pages 1--18, Berlin,
+Heidelberg, 2014. Springer.
+
+Unr15. Dominique Unruh. Non-interactive zero-knowledge proofs in the
+quantum random oracle model. In Elisabeth Oswald and Marc Fischlin,
+editors, \emph{Advances in Cryptology - EUROCRYPT 2015}, pages 755--
+784, Berlin, Heidelberg, 2015. Springer.
+
+Unr16. Dominique Unruh. Computationally binding quantum commitments. In
+Marc Fischlin and Jean-Sébastien Coron, editors, \emph{Advances in
+Cryptology -- EUROCRYPT 2016}, pages 497--527, Berlin, Heidelberg, 2016.
+Springer.
+
+Unr17. Dominique Unruh. Post-quantum security of Fiat-Shamir. In
+Tsuyoshi Takagi and Thomas Peyrin, editors, \emph{Advances in Cryptology
+-- ASIACRYPT 2017}, pages 65--95, Cham, 2017. Springer.
+
+Mark Zhandry. How to construct quantum random functions. In \emph{2012
+IEEE 53rd Annual Symposium on} Zha12.
+
+\begin{quote}
+\emph{Foundations of Computer Science}, pages 679--687. IEEE, oct 2012.
+\end{quote}
+
+Zha15. Mark Zhandry. Secure identity-based encryption in the quantum
+random oracle model. \emph{International} \emph{Journal of Quantum
+Information}, 13(04):1550014, 2015.
+
+Zha17. Mark Zhandry. Quantum lightning never strikes the same state
+twice. , 2017.
+
+Zha18. Zhandry. How to record quantum queries, and applications to
+quantum indifferentiability. Cryptol- ogy ePrint Archive, Report
+2018/276, 2018..
+
+19
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.0500}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.1000} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{A}
+\end{minipage}} &
+\multicolumn{18}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.9000} + 34\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Proof of Lemma 12 and 15}
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{20}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{1.0000} + 38\tabcolsep}@{}}{%
+\emph{Proof (of Lemma 12).} Let \emph{A} be an adaptive Σ-protocol
+adversary, producing \emph{x} and \emph{a} in the first stage, and
+\emph{z} in the second stage. We then consider the following algorithms.
+\emph{Ainit} runs the first stage of \emph{A} (using the same initial
+state), outputting \emph{x} and \emph{a}. Let \emph{\textbar ψx,a⟩}be
+the corresponding internal state at this point. Furthermore, for any
+possible \emph{x} and \emph{a}, \emph{Ax,a} is the following static
+Σ-protocol adversary. Its initial state is
+\emph{\textbar ψx,a⟩\textbar a⟩}and in the first stage it simply outputs
+\emph{a}, and in the second stage, after having received the verifier's
+challenge, it
+
+runs the second stage of \emph{A}. We then see that} \\
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.2000} + 6\tabcolsep}}{%
+Pr} &
+\multicolumn{16}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.8000} + 30\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{x ̸∈L ∧v} = \emph{accept} : (\emph{x, v}) \emph{←⟨A, V⟩}
+\end{quote}
+\end{minipage}} \\
+\multicolumn{7}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.3500} + 12\tabcolsep}}{%
+=} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.1000} + 2\tabcolsep}}{%
+\emph{x◦̸∈L}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.1000} + 2\tabcolsep}}{%
+Pr} &
+\multicolumn{9}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.4500} + 16\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{x} = \emph{x◦∧v} = \emph{accept} : (\emph{x, v}) \emph{←⟨A, V⟩}
+\end{quote}
+\end{minipage}} \\
+\multicolumn{7}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.3500} + 12\tabcolsep}}{%
+=} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.1000} + 2\tabcolsep}}{%
+\emph{x◦̸∈L}} & \emph{a} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.1000} + 2\tabcolsep}}{%
+Pr} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.2000} + 6\tabcolsep}}{%
+\emph{Ainit} = (\emph{x◦, a})} & Pr &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.1000} + 2\tabcolsep}}{%
+\emph{⟨Ax◦,a, V}(\emph{x◦})\emph{⟩}= \emph{accept}} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage} \\
+\multicolumn{20}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{1.0000} + 38\tabcolsep}@{}}{%
+Since Pr
+
+polynomial-time/unbounded) static adversary, the claim
+follows.\emph{⟨Ax◦,a, V}(\emph{x◦})\emph{⟩}= \emph{accept} is bounded by
+a negligible function, given that \emph{Ax,a} is a (quantum
+
+\emph{⊔}
+
+\emph{Proof (of Lemma 15).} Let \emph{A} be an adaptive Σ-protocol
+adversary, producing \emph{x} and \emph{a} in the first stage, and
+
+\emph{z} in the second stage. We construct a black-box knowledge
+extractor \emph{Kad} that works for any such \emph{A}. In a
+
+first step, \emph{KA ad}runs the first stage of \emph{A} using the
+black-box access to \emph{A} (and having access to the initial
+
+state of \emph{A}). Below, we call this first stage of \emph{A} as
+\emph{Ainit}. This produces \emph{x} and \emph{a}, and we write
+\emph{\textbar ψx,a⟩}for the
+
+corresponding internal state. Then, it runs \emph{KAx,a} , where
+\emph{Kna} is the knowledge extractor guaranteed to exist
+
+for static adversaries, and \emph{Ax,a}is the static adversary that
+works as follows. It's initial state is
+\emph{\textbar ψx,a⟩\textbar a⟩}and
+
+in the first stage it simply outputs \emph{a}, and in the second stage
+it runs the second stage of \emph{A} on the state \emph{\textbar ψx,a⟩}.
+
+Note that having obtained \emph{x} and \emph{a} and the state
+\emph{\textbar ψx,a⟩}as first step of \emph{KA ad}, \emph{KAx,a} can
+then be executed with
+
+black box access to (the second stage of) \emph{A}. For any subset
+\emph{X ⊆X}, we now see that} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.1500} + 4\tabcolsep}}{%
+Pr} &
+\multicolumn{17}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.8500} + 32\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{x ∈X ∧}(\emph{x, w}) \emph{∈R} : (\emph{x, w}) \emph{←KA ad}
+\end{quote}
+\end{minipage}} \\
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.2000} + 6\tabcolsep}}{%
+=} & \multirow{2}{*}{\emph{x∈X}} & \multirow{2}{*}{\emph{a}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.1000} + 2\tabcolsep}}{%
+Pr} &
+\multicolumn{5}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.2500} + 8\tabcolsep}}{%
+\emph{Ainit} = (\emph{x, a})} & Pr &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.2000} + 6\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+(\emph{x, w}) \emph{∈R} : \emph{w ←KAx,a}
+\end{quote}
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.1000} + 2\tabcolsep}@{}}{%
+\multirow{3}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{d −κ}(\emph{η})
+\end{quote}
+\end{minipage}}} \\
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.2000} + 6\tabcolsep}}{%
+\multirow{2}{*}{\emph{≥}}} & & &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.1000} + 2\tabcolsep}}{%
+\multirow{2}{*}{Pr}} &
+\multicolumn{5}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.2500} + 8\tabcolsep}}{%
+\multirow{2}{*}{\emph{Ainit} = (\emph{x, a})}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.1000} + 2\tabcolsep}}{%
+1} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.1500} + 4\tabcolsep}}{%
+\multirow{2}{*}{\emph{⟨Ax,a, V}(\emph{x})\emph{⟩}= \emph{accept}}} \\
+& & & & \emph{x∈X} & \emph{a} & & & & & & & &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.1000} + 2\tabcolsep}}{%
+\emph{·p}(\emph{η})\emph{·} P} \\
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.2000} + 6\tabcolsep}}{%
+\multirow{2}{*}{\emph{≥}}} &
+\multicolumn{14}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.7000} + 26\tabcolsep}}{%
+\multirow{3}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+1\\
+\emph{p}(\emph{η}) Pr \emph{Ainit} = (\emph{x, a}) Pr\emph{⟨Ax,a,
+V}(\emph{x})\emph{⟩}= \emph{accept} \emph{x∈X} \emph{a}\\
+1\\
+\emph{p}(\emph{η}) Pr \emph{x ∈X ∧v}=1 : (\emph{x, v}) \emph{←⟨Ax,a,
+V}(\emph{x})\emph{⟩d −κ}(\emph{η}) \emph{,}
+\end{quote}\strut
+\end{minipage}}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.1000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{d}
+\end{quote}
+\end{minipage}} \\
+& & & & & & & & & & & & & & & & & &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.1000} + 2\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{−κ}(\emph{η})
+\end{quote}
+\end{minipage}}} \\
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.2000} + 6\tabcolsep}}{%
+=} \\
+\multicolumn{20}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{1.0000} + 38\tabcolsep}@{}}{%
+where the first inequality is because of the static proof-of-knowledge
+property, and the second is Jensen's} \\
+\multicolumn{18}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.9000} + 34\tabcolsep}}{%
+inequality, noting that we may assume without loss of generality that
+\emph{d ≥}1.} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.1000} + 2\tabcolsep}@{}}{%
+\emph{⊔}} \\
+\textbf{B} &
+\multicolumn{19}{>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{0.9500} + 36\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Generalization of Lemma 7 from {[}Unr12{]}}
+\end{quote}
+\end{minipage}} \\
+\multicolumn{20}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 38\tabcolsep) * \real{1.0000} + 38\tabcolsep}@{}}{%
+The following is a generalization of Lemma 7 from {[}Unr12{]}. It
+relates the success probability of applying a random projection to a
+state vector with the success probability of sequentially applying
+\emph{t} random projections, where ``success probability'' here is in
+terms of the (average) square-norm of the projected state vector. This
+statement gives us the means to relate the probability of a interactive
+prover making the verifier accept with the probability of an extractor
+making the verifier accept \emph{t} times, when rewinding \emph{t −}1
+times and using a freshly random (and independent) challenge each
+time.} \\
+\bottomrule()
+\end{longtable}
+
+20
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}@{}}
+\toprule()
+\multicolumn{8}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.8889} + 14\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Lemma 29} \emph{Let P}1\emph{, . . . , Pn be projections and
+\textbar ψ⟩a state vector, and set}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{∥Pit · · · Pi}1\emph{\textbar ψ⟩∥}2\emph{.}
+\end{quote}
+\end{minipage}} \\
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{V} := 1\\
+\emph{n}
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{i}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{⟨ψ\textbar Pi\textbar ψ⟩}= 1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{i}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{∥Pi\textbar ψ⟩∥}2
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{and}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{F} := 1 \emph{nt}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{i}1\emph{···it}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\emph{Then F ≥V}2\emph{t−}1\emph{.}
+
+The case \emph{t} = 2 was proven in {[}Unr12, Lemma 7{]}. We show here
+how to extend the proof to \emph{t} = 3; the general case works along
+the same lines.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0270}}@{}}
+\toprule()
+\multicolumn{37}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{1.0000} + 72\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{Proof (of the case t} = 3\emph{).} For convenience, set \emph{A}
+:=\uline{1} \emph{n} \emph{iPi} and \emph{\textbar ψijk⟩}:=
+\emph{PkPjPi\textbar ψ⟩}. Then, using convexity of the function \emph{x
+→x}5to argue the first inequality, we get
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{23}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.6216} + 44\tabcolsep}}{%
+\emph{V}5=
+(\emph{⟨ψ\textbar A\textbar ψ⟩})5\emph{≤⟨ψ\textbar A}5\emph{\textbar ψ⟩}=
+1 \emph{n}5} &
+\multicolumn{12}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.3243} + 22\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{⟨ψ\textbar PiPjPkPℓPm\textbar ψ⟩}= 1 \emph{n}5
+
+\emph{ijkℓm}
+\end{quote}
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0541} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{⟨ψijk\textbar ψmℓk⟩ijkℓm}
+\end{quote}
+\end{minipage}} \\
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+= 1\\
+\emph{n}
+\end{quote}\strut
+\end{minipage}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{k}
+\end{quote}
+\end{minipage}}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+1} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0541} + 2\tabcolsep}}{%
+\multirow{2}{*}{\emph{ij}}} &
+\multicolumn{8}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.2162} + 14\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{⟨ψijk\textbar{}}
+\end{quote}
+\end{minipage}}} & 1 & &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0541} + 2\tabcolsep}}{%
+\multirow{2}{*}{\emph{\textbar ψmℓk⟩}}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+= 1 \emph{n}
+\end{quote}
+\end{minipage}}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0541} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{k}
+\end{quote}
+\end{minipage}}} & 1 &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0541} + 2\tabcolsep}}{%
+\multirow{2}{*}{\emph{ij}}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\multirow{2}{*}{\emph{\textbar ψijk⟩}}} & 2 & 1 &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0541} + 2\tabcolsep}}{%
+\multirow{2}{*}{\emph{ijk}}} &
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{∥\textbar ψijk⟩∥}2= \emph{F ,}
+\end{quote}
+\end{minipage}} \\
+& & & &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\emph{n}2} & & & & & & & & & & & \emph{n}2 & \emph{ℓm} & & & & & & & &
+\emph{n}2 & & & & & & & \emph{≤n}3 \\
+\multicolumn{37}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{1.0000} + 72\tabcolsep}@{}}{%
+where the last inequality is Claim 2 in the proof of Lemma 7 in
+{[}Unr12{]}. \emph{⊔}The following is a generalization of Lemma 7 from
+{[}Unr12{]} in a different direction. It gives us control over the
+success probability of the extractor when the challenge consists of two
+parts, and the extractor works by rewinding once with a freshly chosen
+challenge pair, and once more where now one part of the challenge is
+re-used and only the other part is freshly chosen.
+
+\textbf{Lemma 30} \emph{Let Pij (}1 \emph{≤i ≤n,} 1 \emph{≤j ≤m) be
+projections \textbar ψ⟩a state vector, and set}} \\
+\multicolumn{7}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1892} + 12\tabcolsep}}{%
+\multirow{2}{*}{\emph{V} :=}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0541} + 2\tabcolsep}}{%
+1} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1081} + 6\tabcolsep}}{%
+\multirow{2}{*}{\emph{i,j}}} &
+\multicolumn{7}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1892} + 12\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{∥Pi,j\textbar ψ⟩∥}2
+\end{quote}
+\end{minipage}}} & \multirow{2}{*}{\emph{and}} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1081} + 6\tabcolsep}}{%
+\multirow{2}{*}{\emph{F} :=}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+1} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0541} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\emph{i}1\emph{,i}2\\
+\emph{j}1\emph{,j}2\emph{,j}3\strut
+\end{minipage}}} &
+\multicolumn{7}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1892} + 12\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{∥Pi}2\emph{j}3\emph{Pi}2\emph{j}2\emph{Pi}1\emph{j}1\emph{\textbar ψ⟩∥}2\emph{.}
+\end{quote}
+\end{minipage}}} \\
+& & & & & & &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0541} + 2\tabcolsep}}{%
+\emph{nm}} & & & & & & & & & & & & & & & & &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\emph{n}2\emph{m}3} \\
+\multicolumn{37}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{1.0000} + 72\tabcolsep}@{}}{%
+\emph{Then F ≥V}6\emph{.}
+
+\emph{Proof.} We set \emph{\textbar ϕi}1\emph{j}1\emph{⟩}:=
+\emph{Pi}1\emph{j}1\emph{\textbar ψ⟩/⟨ψ\textbar Pi}1\emph{j}1\emph{\textbar ψ⟩}.
+Then} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0541} + 2\tabcolsep}}{%
+\multirow{2}{*}{\emph{F} =}} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1081} + 6\tabcolsep}}{%
+1} &
+\multicolumn{5}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1351} + 8\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\emph{i}1\emph{,i}2\\
+\emph{j}1\emph{,j}2\emph{,j}3\strut
+\end{minipage}}} &
+\multicolumn{26}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.7027} + 50\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{∥Pi}2\emph{j}3\emph{Pi}2\emph{j}2\emph{Pi}1\emph{j}1\emph{\textbar ψ⟩∥}2
+\end{quote}
+\end{minipage}}} \\
+& &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1081} + 6\tabcolsep}}{%
+\emph{n}2\emph{m}3} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0541} + 2\tabcolsep}}{%
+\multirow{2}{*}{=}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+1} &
+\multicolumn{5}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1351} + 8\tabcolsep}}{%
+\multirow{2}{*}{\emph{i}1\emph{,i}2\emph{,j}1}} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1081} + 6\tabcolsep}}{%
+1} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\multirow{2}{*}{\emph{j}2\emph{,j}3}} &
+\multicolumn{20}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.5405} + 38\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{∥Pi}2\emph{j}3\emph{Pi}2\emph{j}2\emph{\textbar ϕi}1\emph{j}1\emph{⟩∥}2\emph{⟨ψ\textbar Pi}1\emph{j}1\emph{\textbar ψ⟩}
+\end{quote}
+\end{minipage}}} \\
+& &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\emph{n}2\emph{m}} & & & & & &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1081} + 6\tabcolsep}}{%
+\emph{m}2} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0541} + 2\tabcolsep}}{%
+\multirow{2}{*}{\emph{≥}}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+1} &
+\multicolumn{7}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1892} + 12\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{i}1\emph{,i}2\emph{,j}1
+\end{quote}
+\end{minipage}}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+1} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0541} + 2\tabcolsep}}{%
+\multirow{2}{*}{\emph{j}2}} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1081} + 6\tabcolsep}}{%
+\multirow{2}{*}{\emph{∥Pi}2\emph{j}2\emph{\textbar ϕi}1\emph{j}1\emph{⟩∥}2}}
+& \multirow{2}{*}{3} &
+\multicolumn{8}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.2162} + 14\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{⟨ψ\textbar Pi}1\emph{j}1\emph{\textbar ψ⟩}
+\end{quote}
+\end{minipage}}} &
+\multicolumn{7}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1892} + 12\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+(Lemma 29)
+\end{quote}
+\end{minipage}}} \\
+& &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\emph{n}2\emph{m}} & & & & & & & &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\emph{m}} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0541} + 2\tabcolsep}}{%
+\multirow{2}{*}{=}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+1} &
+\multicolumn{7}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1892} + 12\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{i}1\emph{,i}2\emph{,j}1
+\end{quote}
+\end{minipage}}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+1} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0541} + 2\tabcolsep}}{%
+\multirow{2}{*}{\emph{j}2}} &
+\multicolumn{12}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.3243} + 22\tabcolsep}}{%
+\multirow{2}{*}{\emph{∥Pi}2\emph{j}2\emph{Pi}1\emph{j}1\emph{\textbar ψ⟩∥}2\emph{/⟨ψ\textbar Pi}1\emph{j}1\emph{\textbar ψ⟩}2\emph{/}3}}
+&
+\multicolumn{8}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.2162} + 14\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+3
+\end{quote}
+\end{minipage}}} \\
+& &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\emph{n}2\emph{m}} & & & & & & & &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\emph{m}} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\multirow{2}{*}{\emph{≥}}} &
+\multicolumn{5}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1351} + 8\tabcolsep}}{%
+1} &
+\multicolumn{8}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.2162} + 14\tabcolsep}}{%
+\multirow{2}{*}{\emph{i}1\emph{,i}2\emph{,j}1\emph{,j}2}} &
+\multicolumn{11}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.2973} + 20\tabcolsep}}{%
+\multirow{2}{*}{\emph{∥Pi}2\emph{j}2\emph{Pi}1\emph{j}1\emph{\textbar ψ⟩∥}2\emph{/⟨ψ\textbar Pi}1\emph{j}1\emph{\textbar ψ⟩}2\emph{/}3}}
+&
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1081} + 6\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+3
+\end{quote}
+\end{minipage}}} &
+\multicolumn{6}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1622} + 10\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+(Jensen's inequality)
+\end{quote}
+\end{minipage}}} \\
+& & &
+\multicolumn{5}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1351} + 8\tabcolsep}}{%
+\emph{n}2\emph{m}2} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\multirow{2}{*}{\emph{≥}}} &
+\multicolumn{5}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1351} + 8\tabcolsep}}{%
+1} &
+\multicolumn{8}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.2162} + 14\tabcolsep}}{%
+\multirow{2}{*}{\emph{i}1\emph{,i}2\emph{,j}1\emph{,j}2}} &
+\multicolumn{5}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1351} + 8\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{∥Pi}2\emph{j}2\emph{Pi}1\emph{j}1\emph{\textbar ψ⟩∥}2
+\end{quote}
+\end{minipage}}} &
+\multicolumn{16}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.4324} + 30\tabcolsep}@{}}{%
+\multirow{2}{*}{3}} \\
+& & &
+\multicolumn{5}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.1351} + 8\tabcolsep}}{%
+\emph{n}2\emph{m}2} \\
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\multirow{2}{*}{\emph{≥}}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+1} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\multirow{2}{*}{\emph{i}1\emph{,j}1}} &
+\multicolumn{9}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.2432} + 16\tabcolsep}}{%
+\multirow{2}{*}{\emph{∥Pi}1\emph{j}1\emph{\textbar ψ⟩∥}2}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+6
+\end{quote}
+\end{minipage}}} &
+\multicolumn{16}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.4324} + 30\tabcolsep}@{}}{%
+\multirow{2}{*}{(Lemma 29)}} \\
+& & &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.0811} + 4\tabcolsep}}{%
+\emph{nm}} \\
+\multicolumn{21}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.5676} + 40\tabcolsep}}{%
+This proves the claim.} &
+\multicolumn{16}{>{\raggedright\arraybackslash}p{(\columnwidth - 72\tabcolsep) * \real{0.4324} + 30\tabcolsep}@{}}{%
+\emph{⊓}} \\
+\bottomrule()
+\end{longtable}
+
+21
+
+\end{document}

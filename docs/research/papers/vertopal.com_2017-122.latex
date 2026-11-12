@@ -1,0 +1,4614 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{longtable,booktabs,array}
+\usepackage{multirow}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage[normalem]{ulem}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\author{}
+\date{}
+
+\begin{document}
+
+\textbf{One-Shot Verifiable Encryption from Lattices}
+
+Vadim Lyubashevsky and Gregory Neven
+
+\begin{quote}
+IBM Research -- Zurich\\
+\emph{\{}vad,nev\emph{\}}@zurich.ibm.com
+
+\textbf{Abstract.} Verifiable encryption allows one to prove properties
+about encrypted data and is an im-portant building block in the design
+of cryptographic protocols, e.g., group signatures, key escrow, fair
+exchange protocols, etc. Existing lattice-based verifiable encryption
+schemes, and even just proofs of knowledge of the encrypted data,
+require parallel composition of proofs to reduce the soundness error,
+resulting in proof sizes that are only truly practical when amortized
+over a large number of ciphertexts.
+
+In this paper, we present a new construction of a verifiable encryption
+scheme, based on the hardness of the Ring-LWE problem in the
+random-oracle model, for short solutions to linear equations over
+polynomial rings. Our scheme is ``one-shot'', in the sense that a single
+instance of the proof already has negligible soundness error, yielding
+compact proofs even for individual ciphertexts. Whereas verifiable
+encryption usually guarantees that decryption can recover a witness for
+the original language, we relax this requirement to decrypt a witness of
+a related but extended language. This relaxation is sufficient for many
+applications and we illustrate this with example usages of our scheme in
+key escrow and verifiably encrypted signatures.
+
+One of the interesting aspects of our construction is that the
+decryption algorithm is probabilistic and uses the proof as input
+(rather than using only the ciphertext). The decryption time for
+honestly-generated ciphertexts only depends on the security parameter,
+while the \emph{expected} running time for decrypting an
+adversarially-generated ciphertext is directly related to the number of
+random-oracle queries of the adversary who created it. This property
+suffices in most practical scenarios, especially in situations where the
+ciphertext proof is part of an interactive protocol, where the decryptor
+is substantially more powerful than the adversary, or where adversaries
+can be otherwise discouraged to submit malformed ciphertexts.
+\end{quote}
+
+\textbf{1} \textbf{Introduction}
+
+Lattice cryptography has matured to the point where the general belief
+is that any primitive that can be constructed from any other assumption
+can also be constructed based on a lattice assumption. The main question
+that remains is how efficient (in a practical, rather than asymptotic,
+sense) one can make the lattice-based constructions. A primitive that
+has been getting a lot of recent attention is a ``proof of plaintext
+knowledge.''\\
+In a proof of plaintext knowledge, a prover who has a message \emph{µ}
+produces a ciphertext \emph{t} = Enc(\emph{µ}) and a zero-knowledge
+proof of knowledge \emph{π} showing that he knows the value of
+Dec(\emph{t}). Proving knowledge of the value of Dec(\emph{t}) is
+usually the same as proving that \emph{t} is a correctly formed
+ciphertext along with proving the knowledge of \emph{µ} that was used to
+construct it.
+
+By itself, a proof of plaintext knowledge is not particularly useful,
+and it is almost always used as a part of a primitive known as a
+verifiable encryption scheme. In such a scheme, there is a relation
+\emph{RL} and a language\\
+\emph{L} = \emph{\{x} : \emph{∃w} s.t. \emph{RL}(\emph{x, w}) =
+1\emph{\}.}
+
+Thus the value \emph{w} is a witness to the fact that \emph{x} is in the
+language \emph{L}. The relation \emph{RL} and the element \emph{x} are
+public, while the prover possesses the secret witness \emph{w}. He then
+produces an encryption \emph{t} = Enc(\emph{w}) as well as a
+zero-knowledge proof of knowledge \emph{π} of the value \emph{w} =
+Dec(\emph{t})
+
+and that \emph{w} satisfies \emph{RL}(\emph{x, w}) = 1. Verifiable
+encryption can therefore also be seen as an extractable non-interactive
+zero-knowledge proof. It is a building block for many primitives, e.g.,
+
+\begin{quote}
+\textbf{--} group signatures {[}CvH91{]}, where a group manager hands
+distinct signing keys to all users, using which they can anonymously
+sign messages. A trusted opener is able to trace back a signature to the
+identity of the signer. A common construction {[}CL06{]} is to let users
+verifiably encrypt their identity under the opener's public key together
+with a proof that they know a signature by the group manager on the same
+identity.
+
+\textbf{--} key escrow protocols {[}YY98,PS00{]}, where users encrypt
+their decryption key under the public key of a trusted escrow authority.
+Using verifiable encryption, communication partners or network providers
+can check that the ciphertext indeed encrypts the user's decryption key,
+and not some bogus data.
+
+\textbf{--} optimistic fair exchange protocols {[}ASW00,BDM98{]}, where
+two parties can fairly exchange secrets by, in a first step, proving
+that they encrypted their respective secrets under the public key of a
+trusted authority, who can later be called upon to recover the secret in
+case one of the parties aborts the protocol early;\\
+\textbf{--} verifiable secret sharing, where one dealer sends verifiably
+encrypted shares of a secret to a set of parties, and proves to an
+external third party that the ciphertexts contain actual shares of the
+secret.
+\end{quote}
+
+\textbf{1.1 Proofs of Plaintext Knowledge from Lattices -- Prior Work}
+
+If one uses a lattice-based encryption scheme based on LWE or Ring-LWE,
+then the encryption of
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+a message \emph{m} satisfies the linear relation \textbf{A}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{r}
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+= \textbf{t} mod \emph{q.} There are several known techniques to
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+\emph{m}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+prove that the ciphertext \textbf{t} is well-formed and one knows the
+message \emph{m}. One technique is adapting Stern's protocol based on
+permutations {[}Ste93{]} to lattice-based schemes {[}LNSW13{]}. This
+approach is unfortunately very impractical due to the fact that each
+round of the protocol has soundness error 2\emph{/}3 (and therefore
+needs to be repeated 219 times to achieve 128-bit security).
+Furthermore, if proving relations where the secret has coefficients of
+size \emph{k}, the size of the proof increases by a factor of log
+\emph{k} {[}LNSW13{]}. This makes schemes using Stern's protocol
+unsuitable for most practical applications.
+
+Another approach is to use the ``Fiat-Shamir with Aborts''
+zero-knowledge proof technique from {[}Lyu09,Lyu12{]} with 0\emph{/}1
+challenges. This also has the problem of having soundness error
+1\emph{/}2 and needing to be repeated 128 times for 128-bit security.
+This approach, however, is more algebraic than Stern's proof of
+knowledge and it was shown to admit several improvements. If one uses a
+Ring-LWE encryption scheme, then it was shown in {[}BCK+14{]} how the
+soundness error can be reduced to 1\emph{/}(2\emph{n}), where \emph{n}
+is the dimension of the ring being used (typically 1024 or 2048). For
+128-bit security, one then only needs to run the protocol around a dozen
+times. A scenario where the Fiat-Shamir with Aborts technique leads to
+truly practical protocols is when one wants to simultaneously do many
+proofs of plaintext knowledge. If one then considers the amortized cost
+of the proof of knowledge, then the number of iterations is only a small
+constant (approaches 2 as the number of instances increases) per proof
+{[}DPSZ12,BDLN16,CD16{]}.
+
+Despite having received considerable attention in the literature, there
+seems to be no satisfac-tory solution for the most natural scenario
+where the prover has a single instance to prove and would like to do it
+in ``one shot''---that is, without repeating a protocol to amplify
+soundness. It is
+
+2
+
+therefore conceivable that lattice-based encryption schemes are not
+compatible with efficient proofs of plaintext knowledge, which would
+make all the applications much less efficient than their number
+theoretic counterparts.
+
+\textbf{1.2 Proofs of Plaintext Knowledge -- Our Results}
+
+In this work, we introduce a very efficient ``one-shot'' protocol for
+proving plaintext knowledge. The caveat is that the running time of the
+decryption algorithm depends on the running time of the prover. More
+precisely, our decryption algorithm is \emph{randomized} in that it
+tries to decrypt ciphertexts that are ``close'' to the one provided by
+the prover. And we show that the \emph{expected} number of decryption
+tries our decryptor needs is within a small factor (essentially 1) of
+the number of \emph{random oracle queries} that the prover makes while
+constructing the proof of knowledge \emph{π}. If \emph{q} is the number
+of queries made by the prover, then Markov's inequality implies that the
+probability that the decryptor will need more than \emph{α·q} decryption
+tries is less than 1\emph{/α}. If the prover is honest, though, then the
+decryptor will succeed from the first try.
+
+While tying the decryption time to the adversary's running time is
+unusual, this should be acceptable in many scenarios. Apart from
+creating out-of-band incentives such as fines to prevent cheating, there
+are also technical ways to limit the power of the adversary. If the
+protocol in which the proof of knowledge is being used is interactive,
+then the verifier can send the prover a fresh salt during every
+interaction that has to be included in the cryptographic hash function
+(modeled as a random oracle) and require that the prover performs the
+proof within a certain small amount of time. Thus the adversary will
+have a limited time-frame during which he can make queries to the random
+oracle (because each new salt in essence creates a new random oracle).
+The decryption algorithm, on the other hand, is almost always off-line
+and is therefore allowed more time. In non-interactive settings, the
+prover can be required to use a salt from a public ``randomness
+beacon''(such as one provided by NIST) at the time the proof was
+created.
+
+In our scheme, the verification algorithm uses one random oracle query
+and the decryption algorithm uses none. Thus another simple way of
+preventing an adversary from using too many random oracle queries during
+encryption would be to artificially make the computational complexity of
+computing the hash function high (e.g. by iterating SHA-256 some number
+of times to produce one output). This has the effect of significantly
+slowing down a cheating prover, while keeping the decryption time
+exactly the same.
+
+We also show that, if one wishes, one can upper-bound the running time
+of the decryptor by making the protocol ``\emph{k}-shot'' rather than
+one shot. In this scenario, the length of the proof of knowledge would
+go up by a factor \emph{k}, but one could bound the decryption
+algorithm's running time to \emph{k ·} 2\emph{λ/k}for \emph{λ}-bit
+security.
+
+\textbf{1.3 Verifiable Encryption Schemes -- Our Results}
+
+We build upon our proof of plaintext knowledge to construct a verifiable
+encryption scheme that is adapted to be used as a building block for
+lattice constructions. The relations that are most common in lattice
+cryptography are those of the form
+
+\begin{quote}
+\textbf{Bm} = \textbf{u} mod \emph{p} (1)
+\end{quote}
+
+where \textbf{B} is a matrix over some ring, \textbf{m} is a vector with
+small coefficients, and \textbf{u} is the product of \textbf{Bm} modulo
+\emph{p}. For example, in (Ring)-LWE encryption \textbf{B}\emph{,}
+\textbf{u} is the public key and \textbf{m} is the secret
+
+3
+
+\begin{quote}
+key. In full domain hash signatures, \textbf{B} is the public key,
+\textbf{m} is the signature, and \textbf{u} = H(\emph{µ}) is derived
+from the message \emph{µ}. Giving a verifiable encryption scheme for
+such relations is a main building block for many of the protocols listed
+in the introduction.
+
+While verifiable encryption would normally guarantee that decrypting a
+valid ciphertext yields a witness satisfying (1), our construction
+relaxes this guarantee to only yield a witness (\textbf{m}\emph{,}c)
+with small coefficients satisfying\\
+\textbf{Bm} = c\textbf{u} mod \emph{p.} (2)
+
+This relaxation actually turns out to be sufficient for many
+applications of verifiable encryption. Lattice schemes can often be
+slightly augmented to allow for relations of the form 2 to be
+``useful''whenever those of the form (1) are. We will see this in the
+two examples provided in Section 6.
+
+Notice also how it appears as if the decryption and the proof of
+knowledge are disjoint. Indeed, the proof of knowledge \emph{π} may
+prove the existence of some witness (\textbf{m}\emph{,}c), whereas the
+decryption algorithm may obtain a completely different witness
+(\textbf{m}\emph{′,}c\emph{′}). But in addition to still being
+sufficient for many applications, there is also a connection between the
+two tuples that is actually crucial to our construction -- we have
+that\\
+\textbf{m}\emph{/}c =\textbf{m}\emph{′/}c\emph{′}mod \emph{p.}
+
+While this property is not needed in many applications, the presence of
+this relationship may be useful when constructing group signatures or
+other primitives where it is important that the decryption recovers some
+specific attribute of the prover rather than just a witness to a
+relation.
+
+\textbf{1.4 Paper Organization}
+
+We present the Ring-LWE encryption scheme and the non-interactive
+``Fiat-Shamir with Aborts''zero-knowledge proof protocol in Sections 2.5
+and 2.6. Slight variations of these two primitives are used throughout
+our constructions.
+
+We then present the definitions of our relaxed version of verifiable
+encryption in Section 3.1, and describe all the elements of the scheme
+in Section 3.2. In Section 7, we give some example instantiations for
+the proofs of plaintext knowledge and verifiable encryption schemes. The
+proof of plaintext knowledge scheme requires 9KB for the ciphertext and
+9KB for the proof. This is quite efficient since this ciphertext is only
+around 4 times larger than a regular Ring-LWE ciphertext.
+
+The efficiency of the verifiable encryption scheme is mostly affected by
+the size of the modulus \emph{p} and the witness \textbf{m} in the
+relation. The larger these values, the larger the proofs and ciphertexts
+will be. The sample instantiations in Section 7 are meant to support the
+two sample applications in Section 6, where we describe how our relaxed
+verifiable encryption scheme can be used to build key escrow schemes and
+verifiably encrypted signatures. In Sections 4 and 5 we describe two
+variants of our schemes, the former trading longer ciphertexts for
+bounded decryption time, the latter adding simulatability under
+chosen-ciphertext to the scheme.1
+
+\textbf{Acknowledgements.} We would like to thank the anonymous
+reviewers for their detailed reviews and helpful feedback. This work was
+supported by the SNSF ERC Transfer Grant CRETP2-166734-- FELICITY and by
+the European Commission's PERCY grant (agreement \#321310). We also
+thank Cecilia Boschini for finding an error in a prior version of our
+CCA construction.
+
+1 Unlike Camenisch and Shoup {[}CS03{]}, we cannot use standard
+indistinguishability security notions, because our decryption algorithm
+needs the proof to be included in the ciphertext.
+\end{quote}
+
+4
+
+\begin{quote}
+\textbf{2} \textbf{Preliminaries}
+
+\$\\
+For a set \emph{S}, we write \emph{a} \$\emph{←S} to mean that \emph{a}
+is chosen uniformly at random from \emph{S}. If \emph{D} is a
+distribution, then \emph{a←D} signifies that \emph{a} is randomly chosen
+according to the distribution \emph{D}. The assignment operator \emph{a
+←b} signifies that \emph{a} gets assigned the value \emph{b}. We will
+also sometimes write
+
+column vectors of the form\emph{. . . ak a}1as {[} \emph{a}1 ;
+\emph{. . .} ; \emph{ak} {]}\emph{.}
+
+\textbf{2.1 The ring} Z\textbf{{[}x{]}\emph{/}(x\emph{n}+ 1)\emph{.}}
+
+Consider the ring \emph{R} = Z{[}x{]}\emph{/}(x\emph{n}+ 1) and
+\emph{Rq} = Z\emph{q}{[}x{]}\emph{/}(x\emph{n}+ 1) where \emph{n} is a
+power of 2 integer and \emph{q} is some prime. The elements of the
+latter ring are polynomials of degree at most \emph{n −}1 with
+coefficients between \emph{−}(\emph{q −}1)\emph{/}2 and (\emph{q
+−}1)\emph{/}2 (for the ring \emph{R}, there is no restriction on the
+sizes of coefficients). All definitions that follow apply both to
+\emph{R} and \emph{Rq}. We will denote elements of Z and of \emph{R} by
+lower-case letters, elements of vectors in \emph{Rk}by bold lower-case
+letters, and of matrices in
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.0909}}@{}}
+\toprule()
+\multicolumn{11}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{1.0000} + 20\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{Rk×l}by bold upper-case letters.
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{9}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.8182} + 16\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+We will define the \emph{ℓ}1, \emph{ℓ}2, and \emph{ℓ∞}lengths of an
+element a =
+\end{quote}
+\end{minipage}}} & \emph{n−}1 &
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{ai}x\emph{i∈R} as
+\end{quote}
+\end{minipage}} \\
+& & & & & & & & & \emph{i}=0 \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.1818} + 2\tabcolsep}}{%
+\multirow{3}{*}{\emph{∥}a\emph{∥}1 =}} & & & & & & &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.2727} + 4\tabcolsep}@{}}{%
+\multirow{3}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{∥}a\emph{∥∞}= max \emph{i}(\emph{\textbar ai\textbar{}})
+\end{quote}
+\end{minipage}}} \\
+& & \emph{n−}1 & \multirow{2}{*}{\emph{\textbar ai\textbar,}} &
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{∥}a\emph{∥}=
+\end{quote}
+\end{minipage}} & \emph{n−}1 & \multirow{2}{*}{\emph{a}2 \emph{i}} &
+\multirow{2}{*}{and} \\
+& & \emph{i}=0 & & & \emph{i}=0 \\
+\multicolumn{11}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{1.0000} + 20\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+respectively.2For \emph{k}-dimensional vectors \textbf{a} = {[} a1
+\emph{\textbar{} . . . \textbar{}} a\emph{k} {]} \emph{∈Rk}, we write
+\emph{∥}\textbf{a}\emph{∥}1 = \emph{∥}a1\emph{∥}1+\emph{. .
+.}+\emph{∥}a\emph{k∥}1,\emph{∥}\textbf{a}\emph{∥}= \emph{∥}a1\emph{∥}2+
+\emph{. . .} + \emph{∥}a\emph{k∥}2and \emph{∥}\textbf{a}\emph{∥∞}=
+max\emph{i ∥}a\emph{i∥∞}. We will denote by \emph{Si} (respectively
+\emph{Sk i}), the
+
+set of elements of \emph{R} (resp. of \emph{Rk}) whose \emph{ℓ∞}length
+is at most \emph{i}.
+
+It is not hard to check that for any two polynomials a\emph{,} b
+\emph{∈R}, we have \emph{∥}ab\emph{∥∞≤∥}a\emph{∥}1 \emph{·
+∥}b\emph{∥∞}and \emph{∥}ab\emph{∥∞≤∥}a\emph{∥· ∥}b\emph{∥}. Similarly
+for \textbf{a}\emph{,} \textbf{b} \emph{∈Rk}, we have the same
+inequalities on the \emph{ℓ∞}norms of
+
+their inner products: that is, \emph{∥}\textbf{a} \emph{·}
+\textbf{b}\emph{∥∞≤∥}\textbf{a}\emph{∥}1 \emph{·
+∥}\textbf{b}\emph{∥∞}and \emph{∥}\textbf{a} \emph{·}
+\textbf{b}\emph{∥∞≤∥}\textbf{a}\emph{∥· ∥}\textbf{b}\emph{∥}.
+\end{quote}
+\end{minipage}} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{2.2}
+\end{quote}
+\end{minipage} &
+\multicolumn{10}{>{\raggedright\arraybackslash}p{(\columnwidth - 20\tabcolsep) * \real{0.9091} + 18\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Special Properties of}
+Z\textbf{\emph{q}{[}x{]}\emph{/}(x\emph{n}+ 1)}
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+The algebraic properties of the ring \emph{Rq} =
+\emph{Zq}{[}x{]}\emph{/}(x\emph{n}+ 1), where \emph{n} is a power of 2,
+depend on the prime \emph{q}. For efficiency, one often takes \emph{q} =
+1 mod (2\emph{n}), which results in the polynomial x\emph{n}+ 1
+splitting into \emph{n} linear factors modulo \emph{q}. Operations
+within the ring can then be performed extremely efficiently using the
+number theory transform. On the other hand, one sometimes wants the ring
+to be `\,'almost a field''. In particular, it is sometimes desirable for
+the ring to have many invertible elements. While there do not exist
+\emph{q} that will make \emph{Rq} a field, using \emph{q} = 3 mod 8 (as
+first suggested in {[}SSTX09{]}) has the effect that x\emph{n}+ 1
+factors into two irreducible polynomials of degree \emph{n/}2 and so the
+ring \emph{Rq} contains \emph{qn−}2\emph{qn/}2+ 1 invertible elements.
+By the Chinese Remainder theorem, it is also easy to see that all
+elements of degree less than \emph{n/}2 are invertible.
+
+We have not seen this used in previous works, but it turns out that
+setting \emph{q} = 5 mod 8 may be even more convenient. Modulo such a
+\emph{q}, the polynomial x\emph{n}+ 1 also factors into two irreducible
+
+2 We point out that since Z\emph{q} is a finite group, these do not
+correspond exactly to norms when working in \emph{Rq} because we do not
+have \emph{∥α ·} a\emph{∥}= \emph{α · ∥}a\emph{∥}. The other two
+properties of norms (i.e. that the norm of 0 is 0 and the triangle
+inequality) do hold.
+\end{quote}
+
+5
+
+polynomials of degree \emph{n/}2. And in addition to all elements of
+degree less than \emph{n/}2 being invertible, one can also show that all
+elements (of degree up to \emph{n}) with small coefficients are
+invertible as well. We present the proof of this statement in Lemma 2.2.
+To the best of our knowledge, this lemma was first proven in an
+unpublished manuscript of Lyubashevsky and Xagawa.
+
+\textbf{Lemma 2.1 ({[}LN86{]}, special case of Theorem 3.35, page 88).}
+\emph{Let q} = 5(mod 8) \emph{be prime and r be an integer such that
+r}2= \emph{−}1(mod \emph{q})\emph{. Then for all positive integers κ,
+the polynomials} x2\emph{κ−r and} x2\emph{κ}+ \emph{r are irreducible
+over} Z\emph{q}{[}x{]}\emph{. And in particular, the complete
+factorization into irreducibles over} Z\emph{q}{[}x{]} \emph{of the
+polynomial} x2\emph{κ}+1+ 1 \emph{is} x2\emph{κ}+1+ 1 =
+(x2\emph{κ−r})(x2\emph{κ}+ \emph{r}) mod \emph{q.} \textbf{Lemma 2.2.}
+\emph{Let Rq} = Z\emph{q}{[}x{]}\emph{/}(\emph{xn}+ 1) \emph{where n
+\textgreater{}} 1 \emph{is a power of} 2 \emph{and q is a prime
+congruent to} 5(mod 8)\emph{. This ring has exactly}
+2\emph{qn/}2\emph{−}1 \emph{elements without an inverse. Moreover, every
+non-zero polynomial} a \emph{in Rq with ∥}a\emph{∥∞\textless{}}
+\emph{q/}2 \emph{has an inverse.}
+
+\emph{Proof.} In all that follows, the reduction modulo \emph{q} will be
+implicit. By Lemma 2.1, x\emph{n}+ 1 =
+(x\emph{n/}2\emph{−r})(x\emph{n/}2+\emph{r}) where \emph{r}2= \emph{−}1
+and x\emph{n/}2\emph{±r} are irreducible. Any element a \emph{∈Rq} can
+be written as a = a0 + x\emph{n/}2a1\emph{,} where a0\emph{,} a1 are
+polynomials in Z{[}x{]} of degree less than \emph{n/}2. Then the Chinese
+remainder decomposition of a is
+
+\emph{CRT}(a) = (a mod (x\emph{n/}2\emph{−r})\emph{,} a mod
+(x\emph{n/}2+ \emph{r})) = (a0 + \emph{r}a1\emph{,} a0
+\emph{−r}a1)\emph{.}
+
+If a is not invertible, it means that either a0 + \emph{r}a1 = 0 or a0
+\emph{−r}a1 = 0. If a1 = 0, then a0 = 0 and a is the zero polynomial. If
+a1 \emph{̸}= 0, then some coefficient of a0, say \emph{α}0, must be
+equal to \emph{±rα}1, where \emph{α}1 is a non-zero coefficient of a1.
+Therefore we have \emph{α}2\emph{α}2 0+ \emph{α}2 1= 0. But since we
+assumed that \emph{\textbar α}0\emph{\textbar,
+\textbar α}1\emph{\textbar{} \textless{}} \emph{q/}2, this is not
+possible, and thus proves 0= (\emph{±rα}1)2 = \emph{−α}2 1. In other
+words,
+
+the second part of the lemma by contradiction. The first part of the
+lemma follows from the fact that CRT is a bijection and all the elements
+without an inverse must be 0 modulo at least one of x\emph{n/}2\emph{±
+r}. \emph{⊔}
+
+\textbf{2.3 Lattices and the Discrete Gaussian Distribution}
+
+A full-rank integer lattice \emph{Λ} of dimension \emph{n} is an
+additive subgroup of Z\emph{n}that is generated by some basis \textbf{B}
+= {[}\textbf{b}1 \emph{\textbar{} . . . \textbar{}}
+\textbf{b}\emph{n}{]} \emph{∈}Z\emph{n×n}of linearly-independent
+vectors. If a basis \textbf{B} is a generator for a lattice \emph{Λ}, we
+will write \emph{L}(\textbf{B}) = \emph{Λ}.
+
+\begin{quote}
+For a matrix \textbf{A} \emph{∈}Z\emph{n×m}, we define
+
+\emph{L⊥}(\textbf{A}) = \emph{\{}\textbf{y} \emph{∈}Z\emph{m}:
+\textbf{Ay} = 0 mod \emph{q\}.} (3)
+\end{quote}
+
+It's easy to see that \emph{L⊥}(\textbf{A}) is a full-rank lattice of
+dimension \emph{m}.
+
+For a full-rank integer lattice \emph{Λ}, we define the discrete
+Gaussian distribution \emph{DΛ,}\textbf{c}\emph{,σ}(\textbf{v})
+=\emph{\sout{−∥}}\textbf{v}\emph{\sout{−}}\textbf{c}\emph{\sout{∥}}2
+\emph{\sout{−∥}}\textbf{w}\emph{\sout{−}}\textbf{c}\emph{\sout{∥}}2\\
+\emph{e} 2\emph{σ}\sout{2} \emph{e} 2\emph{σ}\sout{2} for any \textbf{v}
+\emph{∈Λ}, and 0 on all other points in space.
+
+\begin{quote}
+For the special case of \emph{Λ} = Z\emph{m}, we know that
+\textbf{w}\emph{∈Λ}
+
+\textbf{s}\$\emph{←D}Z\emph{m,}0\emph{,σ} Pr
+{[}\emph{∥}s\emph{∥∞\textgreater{} tσ}{]} \emph{\textless{}} 2\emph{m ·
+e−t}2\emph{/}2\emph{,}
+\end{quote}
+
+which implies that for \emph{t} = 6, the probability that any
+coefficient of \textbf{s} is greater than 6\emph{σ} is less than \emph{m
+·} 2\emph{−}25.
+
+6
+
+\textbf{2.4 Polynomial Lattices and Sampling over the ring R}
+
+In this paper, rather than working over the ring Z\emph{q} (with the
+usual addition and multiplication
+
+operation modulo \emph{q}), we will be working over the ring \emph{R} =
+Z\emph{q}{[}x{]}\emph{/}(x\emph{n}+ 1) with the usual addition
+
+and multiplication operations modulo \emph{q} and \emph{xn}+ 1.
+Analogously to (3), for a vector \textbf{A} \emph{∈R}1\emph{×m}, a
+lattice \emph{L⊥}(\textbf{A}) can be defined as
+
+\emph{L⊥}(\textbf{A}) = \emph{\{}y \emph{∈}(Z{[}x{]}\emph{/}(x\emph{n}+
+1))\emph{m}: \textbf{A}y = 0 mod \emph{q\}.}
+
+Note that while it is an \emph{m}-dimensional lattice over
+Z{[}x{]}\emph{/}(x\emph{n}+ 1), it is really an \emph{nm}-dimensional
+
+lattice over Z.
+
+\begin{quote}
+If we want to generate a discrete Gaussian sample over
+Z{[}x{]}\emph{/}(x\emph{n}+ 1), we can simply generate
+\end{quote}
+
+it over Z\emph{n}and then map into Z{[}x{]}\emph{/}(x\emph{n}+ 1) using
+the obvious embedding of coordinates into
+
+\$\\
+coefficients of the polynomials. We will slightly abuse notation and
+write y\emph{←DR,}0\emph{,σ} to mean that y is generated according to
+\emph{D}Z\emph{n,}0\emph{,σ} and then interpreted as an element of
+\emph{R}. Similarly, we write
+
+\$\\
+(y1\emph{, . . . ,} y\emph{l})\emph{←DRl,}0\emph{,σ} to mean that z is
+generated according to \emph{D}Z\emph{ln,}0\emph{,σ} and then gets
+interpreted as \emph{l} polynomials y\emph{i}.
+
+\textbf{2.5 Ring-LWE Encryption Scheme}
+
+We recall the Ring-LWE encryption scheme from {[}LPR13{]}. For
+simplicity, we take the distribution
+
+of the secret keys and the randomness to be uniformly-random elements
+with \emph{ℓ∞}norm 1. The secret \$ \$\\
+keys are chosen as s1\emph{,} s2\emph{←S}1 and the public keys are
+a\emph{←Rq} and t \emph{←}as1 + s2. There is also a public parameter
+\emph{p \textgreater{}} 2, which is a positive integer. To encrypt a
+message m \emph{∈Rp}, the encryptor chooses r\emph{,} e\emph{,}
+e\emph{′}\\
+\emph{←S}1 and outputs (v\emph{,} w) where v \emph{←p}(ar+e) and w
+\emph{←p}(tr+e\emph{′})+m. The decryption procedure computes
+
+\begin{quote}
+w \emph{−}vs1 mod \emph{q} mod \emph{p} = \emph{p}(rs2 + e\emph{′−}es1)
++ m mod \emph{p} = m\emph{,} (4)
+
+where the last equality holds in the case that \emph{∥p}(rs2 +
+e\emph{′−}es1) + m\emph{∥∞\textless{} q/}2.
+
+From the above equations, we see that the encryption of a plaintext m
+under public keys a\emph{,} t is
+\end{quote}
+
+a ciphertext v\emph{,} w satisfying the equation
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+v
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{p}a \emph{\textbar{} p \textbar{}} 0 \emph{\textbar{}} 0 \emph{p}t
+\emph{\textbar{}} 0 \emph{\textbar{} p \textbar{}} 1
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+m e\emph{′} emod \emph{q,}\\
+r
+\end{quote}\strut
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+(5)
+\end{minipage}} \\
+\begin{minipage}[b]{\linewidth}\raggedright
+w
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Extending this, the encryption of \emph{k} messages m1\emph{, . . . ,}
+m\emph{k} under the same public key a\emph{,} t satisfies
+\end{quote}
+
+the following relation:
+
+7
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0476}}@{}}
+\toprule()
+\multicolumn{11}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.5238} + 20\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+4\emph{k}
+\end{minipage}} &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+1
+\end{minipage}} &
+\multirow{6}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+1
+\end{minipage}} &
+\multirow{8}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+
+\end{minipage}} &
+\multirow{6}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+m\emph{k} m1 \emph{. . .}
+
+\emph{. . .}
+
+\emph{. . .}
+
+\begin{quote}
+\emph{. . .} e\emph{k}
+
+e\emph{′}\\
+e1
+
+e\emph{′}\\
+r\emph{k}\\
+r1
+
+\emph{k}\\
+1
+\end{quote}\strut
+\end{minipage}} &
+\multirow{6}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+
+\end{minipage}} &
+\multirow{8}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage}} &
+\multirow{8}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+w\emph{k . . .}
+
+\emph{. . .}
+
+w1
+
+\begin{quote}
+v\emph{k}\\
+v1
+\end{quote}\strut
+\end{minipage}} &
+\multirow{8}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+
+\end{minipage}} &
+\multirow{8}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+mod \emph{q,}
+\end{quote}
+\end{minipage}} &
+\multirow{6}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+(6)
+\end{minipage}} \\
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+2\emph{k}
+\end{minipage}} &
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+
+
+
+\end{minipage}} &
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+pa
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+. . .
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+pa
+\end{minipage} &
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+p
+\end{minipage}} &
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+. . .
+\end{minipage}} &
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+p
+\end{minipage}} &
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+p
+\end{minipage}} &
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+. . .
+\end{minipage}} \\
+& & & \multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+pt
+\end{minipage}} &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+. . .
+\end{minipage}} &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+pt
+\end{minipage}} \\
+& & & & & & & & & & & \begin{minipage}[b]{\linewidth}\raggedright
+. . .
+\end{minipage} \\
+& & & & & & & & & & &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+p
+\end{quote}
+\end{minipage}} \\
+\multicolumn{11}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.5238} + 20\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+which we will write in abbreviated form as
+\end{quote}
+\end{minipage}} \\
+\multicolumn{11}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.5238} + 20\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{p}a\textbf{I}\emph{k p}\textbf{I}\emph{k} 0\emph{k×k} 0\emph{k×k}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{m} \textbf{e}\emph{′} \textbf{e}= \textbf{r}
+\end{quote}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{v}
+\end{minipage} & &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.0952} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+mod \emph{q,}
+\end{minipage}}} & & & & &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+(7)
+\end{minipage}} \\
+\multicolumn{10}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 40\tabcolsep) * \real{0.4762} + 18\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{p}t\textbf{I}\emph{k} 0\emph{k×kp}\textbf{I}\emph{k}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{I}\emph{k}
+\end{minipage} & & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{w}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+where \textbf{I}\emph{k} corresponds to an identity matrix of dimension
+\emph{k} and 0\emph{ℓ×k}corresponds to an \emph{ℓ×k} matrix of all
+zeroes. The decryption procedure is then simply the vector analogy of
+(4), i.e.
+\end{quote}
+
+\textbf{m} = \textbf{w} \emph{−}\textbf{v}s1 mod \emph{q} mod \emph{p.}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{2.6}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{``Fiat-Shamir with Aborts'' Proofs of Knowledge of Linear
+Relations}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\textbf{Algorithm 1} ``Fiat-Shamir with Aborts'' zero-knowledge proof of
+knowledge
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Input:}A matrix \textbf{A} \emph{∈Rℓ×k}, vector \textbf{s}
+\emph{∈S ⊂Rk}, a vector \textbf{t} \emph{∈Rℓ}, and a vector \textbf{q}
+\emph{∈}Z\emph{ℓ}such that \textbf{As} = \textbf{t} mod \textbf{q}.
+Challenge domain \emph{C ⊂R}. Standard deviation \emph{σ ∈}R+such that
+\emph{σ ≥}11\emph{·}max\textbf{s}\emph{∈S,}c\emph{∈C
+∥}\textbf{s}c\emph{∥}. Cryptographic hash function H :
+\emph{\{}0\emph{,} 1\emph{\}∗→C}.
+
+\textbf{Output: z} \emph{∈Rk}such that \textbf{z} \emph{∼DRk,}0\emph{,σ}
+and c \emph{∈C} such that c = H(\textbf{A}\emph{,} \textbf{t}\emph{,}
+\textbf{Az}\emph{−}\textbf{t}c mod \textbf{q}).
+
+\$
+
+1: \textbf{y}\emph{←DRk,}0\emph{,σ}
+
+2: c \emph{←}H(\textbf{A}\emph{,} \textbf{t}\emph{,} \textbf{Ay} mod
+\textbf{q})
+
+3: \textbf{z} \emph{←}\textbf{s}c + \textbf{y}
+\emph{DRk,}0\emph{,σ}(\textbf{z})
+
+4: with probability 3\emph{·DRk,}\textbf{s}c\emph{,σ}(\textbf{z}),
+\textbf{goto} 1
+
+5: \textbf{if}\emph{∥}\textbf{z}\emph{∥∞\textgreater{}} 6\emph{σ},
+\textbf{goto} 1
+
+6: output (c\emph{,} \textbf{z})
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+In {[}Lyu09,Lyu12{]}, Lyubashevsky introduced a technique for
+constructing practical digital sig-
+
+natures (in the random oracle model) based on the hardness of lattice
+problems. At the heart of the construction is a zero-knowledge proof of
+knowledge that, given an \textbf{s} \emph{∈Rk}satisfying the relation
+
+\textbf{As} = \textbf{t} mod \emph{q,} (8)
+\end{quote}
+
+8
+
+\begin{quote}
+\textbf{Algorithm 2} ``Fiat-Shamir with Aborts'' Verification
+Algorithm\\
+\textbf{Input:} A matrix \textbf{A} \emph{∈Rℓ×k}, a vector \textbf{t}
+\emph{∈Rℓ}, a vector \textbf{q} \emph{∈}Z\emph{ℓ}, \emph{σ ∈}R+. A tuple
+(c\emph{,} \textbf{z}) \emph{∈C × Rk}. Cryptographic hash function H :
+\emph{\{}0\emph{,} 1\emph{\}∗→C}.
+
+\textbf{Output:} Bits 0 or 1 corresponding to Reject/Accept.
+
+1: \textbf{if} \emph{∥}\textbf{z}\emph{∥∞\textgreater{}} 6\emph{σ},
+\textbf{return} 0\\
+2: \textbf{if} c \emph{̸}= H(\textbf{A}\emph{,} \textbf{t}\emph{,}
+\textbf{Az} \emph{−}\textbf{t}c mod \textbf{q}), \textbf{return} 0\\
+3: \textbf{return} 1
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+proves the knowledge of low-norm ¯\textbf{s} and ¯c that satisfy
+\end{quote}
+
+\textbf{A}¯\textbf{s} = ¯c\textbf{t} mod \emph{q.}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+The idea in {[}Lyu09,Lyu12{]} was to construct a \emph{Σ}-protocol with
+the main twist being that the prover does not always output the result.
+In particular, the protocols use rejection sampling to tailor the
+distribution so that it does not depend on the secret \textbf{s}. This
+rejection sampling can be done by making the resulting distribution
+uniform in a box (as in {[}Lyu09{]}), or the more efficient approach in
+{[}Lyu12{]} of making it a discrete Gaussian. The interactive protocol
+is then converted to a non-interactive one in the random-oracle model
+{[}BR93{]} using the Fiat-Shamir technique {[}FS86{]}. This combined
+technique is sometimes referred to as ``Fiat-Shamir with Aborts''. While
+the focus of the earlier works was on signature schemes
+{[}Lyu09,Lyu12{]}, here we formalize the approach as a NIZK proof system
+for ``relaxed'' relations, i.e., where extraction yields a witness from
+a different language than is used to produce the proof.
+
+\emph{Relaxed NIZK proof systems.} We adapt the definition of
+non-interactive zero-knowledge (NIZK) proof systems in the random-oracle
+model of Faust et al. {[}FKMV12{]} to a relaxed setting, where the
+extracted witness could come from a different language. A \emph{relaxed
+NIZK proof system} for languages \emph{L,}¯\emph{L} is a couple of
+algorithms (PH\emph{,} VH) where the prover algorithm PH, on input a
+language member \emph{x} and witness \emph{w} such that (\emph{x, w})
+\emph{∈RL}, returns a proof \emph{π}, and where the verification
+algorithm VH, on input \emph{x} and \emph{π}, outputs 0 or 1 indicating
+that the proof is invalid or valid, respectively. Let S be \$\\
+a NIZK simulator modeled as a stateful algorithm that operates in two
+modes: (\emph{h, st′})\emph{←}S(1\emph{, st, q}) returns the simulated
+output \emph{h}1 to a random-oracle query H(\emph{q}) together with an
+updated state \$\\
+\emph{st′}, while (\emph{π, st′})\emph{←}S(2\emph{, st, x}) returns a
+simulated proof for \emph{x}. The correctness and zero-knowledge
+properties below are identitical to those of standard (i.e.,
+non-relaxed) NIZK proof systems. The simulation soundness property has
+been relaxed to allow \emph{x∗}to be in the extended language ¯instead
+of \emph{L}.
+
+\textbf{Correctness.} Correctness requires that VH(\emph{x,} PH(\emph{x,
+w})) = 1 with probability one for all (\emph{x, w}) \emph{∈} \emph{RL}.
+
+\textbf{Unbounded non-interactive zero-knowledge.} There exists a PPT
+simulator S such that for all PPT adversaries \emph{A}, the advantage
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 12\tabcolsep) * \real{0.1429}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Pr
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{b′}= \emph{b} :
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+if \emph{b} = 0 then \emph{b′}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+\emph{b←\{}0\emph{,} 1\emph{\},}\\
+\emph{←}AH(\emph{·})\emph{,}PH(\emph{·,·})(1\emph{λ}) else \emph{b′}
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{←}AS1(\emph{·})\emph{,}S2(\emph{·,·})(1\emph{λ})
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{−}1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{,}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+is negligible. Here, S1(\emph{q}) returns the first item of (\emph{h,
+st′})
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+first item of (\emph{π, st′})
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+\emph{←}S(2\emph{, st, x}) if (\emph{x, w}) \emph{∈RL}.
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+9
+
+\begin{quote}
+\$\\
+\emph{←}S(1\emph{, st, q}) and S2(\emph{x, w}) returns the
+
+\textbf{Unbounded simulation soundness.} There exists a PPT simulator S
+such that for all PPT adversaries \emph{A} the advantage
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Pr
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+VS1(\emph{x∗, π∗}) = 1 \emph{∧}\\
+\emph{x∗̸∈}¯\emph{L ∧}(\emph{x∗, π∗}) \emph{̸∈Q}: (\emph{x∗, π∗})
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{←}AS1(\emph{·})\emph{,}S2(\emph{·})(1\emph{λ})
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{,}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\$\\
+is negligible, where S1(\emph{q}) is as above, S2(\emph{x}) returns the
+first item of (\emph{π, st′})\emph{←}S(2\emph{, st, x}), and \emph{Q} is
+the set of pairs (\emph{xi, πi}) of queries to and corresponding
+responses from the S1 oracle.
+
+Section 2.6 describes a relaxed NIZK proof system for the languages
+\emph{L} and ¯\emph{L} of the verifiable encryption scheme in Section
+3.1. Faust et al. {[}FKMV12{]} showed that for the Fiat-Shamir
+transfor-mation of a \emph{Σ}-protocol, the unbounded non-interactive
+zero-knowledge property follows from the honest-verifier zero-knowledge
+(HVZK) property of the underlying \emph{Σ}-protocol, which we proved in
+Section 2.6. Faust et al. also showed that the unbounded simulation
+soundness property holds for NIZK proof systems if the underlying
+\emph{Σ}-protocol is HVZK and has quasi-unique responses. An easy
+adaptation of their proof shows that it also holds for relaxed NIZK
+proof systems. We showed in Section 2.6 that the underlying
+\emph{Σ}-protocol indeed has quasi-unique responses, so the relaxed NIZK
+proof system is unbounded simulation-sound.
+
+A variation of the signing protocol from {[}Lyu12{]} is given in
+Algorithm 1. It was shown in that work that the output \textbf{z} is
+distributed according to \emph{DRk,}0\emph{,σ}. In particular, the
+rejection sampling stem on line 4 has the effect that the distribution
+of \textbf{z} is independent of the secret vector \textbf{s} (and the
+challenge c). This algorithm is therefore honest-verifier zero knowledge
+since a simulator can \$ \$\\
+simply output \textbf{z}\emph{←DRk,}0\emph{,σ, c}\\
+\emph{←C} and program c = H(\textbf{A}\emph{,} \textbf{t}\emph{,}
+\textbf{Az} \emph{−}\textbf{t}c mod \textbf{q}).3We also make the
+observation that one does not need to use the same modulus \emph{q} for
+every row of the relation in (8). One can instead use a different
+modulus for each row, and we represent this in the protocol by a vector
+\textbf{q} -- having different moduli is crucial to the application in
+this paper.
+
+We also need simulation soundness {[}Sah99{]}, meaning that an adversary
+cannot create proofs of incorrect statements, even after seeing
+simulated proofs of incorrect statements. Faust et al. {[}FKMV12{]}
+showed that Fiat-Shamir proofs are simulation-sound if the underlying
+three-move protocol is honest-verifier zero-knowledge and has
+``quasi-unique responses'', meaning that an adversary can-not create two
+accepting transcripts that are different only in the response value. For
+our proof system, this translates into finding \textbf{z} \emph{̸}=
+\textbf{z}\emph{′}such that \textbf{Az} = \textbf{Az}\emph{′}mod
+\emph{q} be hard. Finding such \textbf{z}\emph{,}
+\textbf{z}\emph{′}would imply that \textbf{A}(\textbf{z}
+\emph{−}\textbf{z}\emph{′}) = 0 mod \emph{q} where \textbf{A} is the
+matrix in Equation 7. Thus, there is either a non-zero tuple (y1\emph{,}
+y2) \emph{∈Rq} with \emph{l∞}norm less than 12\emph{σ} such that ay1 +
+\emph{p}y2 = 0 mod \emph{q} or \emph{p}y1 +y2 = 0 mod \emph{q}. In our
+applications \emph{p \textgreater{}} 12\emph{σ} and
+12\emph{σp}+12\emph{σ \textless{} q}, which implies that the second
+equality is not possible. Also, for most of the parameter sets (see the
+table in Section 7), (24\emph{σ})2\emph{\textless{} q}, and therefore a
+standard probabilistic argument can be used to show that for all
+y1\emph{,} y2 of \emph{ℓ∞}norm less than 12\emph{σ},
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Pr\\
+a\$\emph{←Rq}
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+{[}ay1 + \emph{p}y2 = 0 mod \emph{q}{]} = 2\emph{−Ω}(\emph{n})\emph{.}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Thus for almost all a, there will not be a short solution (y1\emph{,}
+y2) that satisfies ay1 + \emph{p}y2 = 0.
+
+If (24\emph{σ})2\emph{\textgreater{} q}, then the probabilistic argument
+no longer applies, but then finding such (y1\emph{,} y2) gives a
+solution to Ring-SIS {[}LM06{]} problem for a random a, which is a
+computationally hard problem when the norm of y\emph{i} is small-enough
+with relation to \emph{q} (which it is in all applications).
+
+3 Because the entropy of \textbf{z} is high, there is a very low
+probability that the value for H(\textbf{A}\emph{,} \textbf{t}\emph{,}
+\textbf{Az} \emph{−}\textbf{t}c mod \textbf{q}) was previously assigned.
+\end{quote}
+
+10
+
+\textbf{3} \textbf{One-Shot Verifiable Encryption for Linear Relations
+from Ring-LWE}
+
+We follow Camenisch and Shoup {[}CS03{]} in defining verifiable
+encryption as encrypting a witness for a member of a language. The class
+of languages that we'll be looking at will be the linear relations of
+short vectors in a ring. While Camenisch and Shoup defined soundness by
+requiring that decryption of a valid ciphertext always recovers a valid
+witness, we will only achieve a relaxed property that recovers a witness
+for a related ``extended'' language that includes the original language.
+As we will see in Section 6, however, this weaker property suffices for
+many practical applications of verifiable encryption.
+
+\textbf{3.1 Definition of Relaxed Verifiable Encryption}
+
+We relax Camenisch and Shoup's {[}CS03{]} definitions for verifiable
+encryption in two ways. First, as mentioned above, and analogous to
+relaxed knowledge extraction for proofs of knowledge {[}CKY09{]}, the
+encryption algorithm encrypts a witness \emph{w} for a member \emph{x}
+of a language \emph{L}, but soundness only guarantees that decryption of
+a valid ciphertext returns a witness ¯\emph{w} of an extented language
+\emph{L} instead of \emph{L}. Second, rather than looking at verifiable
+encryption as a combination of a standard¯
+
+public-key encryption scheme with an associated proof system, we
+consider encryption and proof as a single algorithm, producing a
+verifiable ciphertext that includes the proof. This generalization
+allows for more efficient schemes, in particular our construction that
+speeds up decryption using information from the proof.
+
+Let \emph{L ⊆\{}0\emph{,} 1\emph{\}∗}be a language with witness relation
+\emph{RL}, i.e., \emph{x ∈L} iff there exists a witness \emph{w} such
+that (\emph{x, w}) \emph{∈RL}. Let ¯\emph{L} with witness relation
+\emph{R}¯\emph{L}be an extension of \emph{L}, meaning that \emph{L
+⊆}¯and \emph{RL ⊆R}¯\emph{L} with relation \emph{L}. For our language of
+linear relations over short vectors, we will consider the language
+
+\begin{quote}
+\emph{RL} = \emph{\{}((\textbf{B}\emph{,} \textbf{u})\emph{,}
+(\textbf{m}\emph{,} 1)) \emph{∈}(\emph{Rℓ×k}
+
+\emph{× Rℓp}) \emph{×} (\emph{Rk p× Rp}) : \textbf{Bm} = \textbf{u} mod
+\emph{p ∧}\textbf{m} \emph{∈Skγ\}}
+\end{quote}
+
+and the extended language ¯\emph{L} with relation
+
+\begin{quote}
+\emph{R}¯\emph{L}= \emph{\{}((\textbf{B}\emph{,} \textbf{u})\emph{,} (
+¯\textbf{m}\emph{,}¯c)) \emph{∈}(\emph{Rℓ×k× Rℓp}) \emph{×} (\emph{Rk p×
+Rp}) :
+\end{quote}
+
+\textbf{B} ¯\textbf{m} = ¯c\textbf{u} mod \emph{p
+∧∥}\textbf{¯m}\emph{∥∞\textless{}} 12\emph{σ ∧}¯c \emph{∈}¯\emph{C\} ,}
+
+where ¯
+
+described in Algorithm 3. \emph{C} = \emph{\{}c \emph{−}c\emph{′}:
+c\emph{,} c\emph{′∈C\}} for \emph{C} = \emph{\{}c \emph{∈R} :
+\emph{∥}c\emph{∥∞}= 1\emph{, ∥}c\emph{∥}1 \emph{≤}36\emph{\}} and other
+parameters are
+
+\begin{quote}
+A \emph{relaxed verifiable encryption scheme} for languages
+\emph{L,}¯\emph{L} is a tuple of algorithms (Kg\emph{,} Enc\emph{,}
+V\emph{,}
+\end{quote}
+
+Dec) where the key generation algorithm Kg(1\emph{λ}) returns a public
+and secret key (\emph{pk, sk}); the
+
+encryption algorithm Enc(\emph{pk, x, w}) returns a verifiable
+ciphertext \emph{t} that encrypts the witness \emph{w} of
+
+language member \emph{x ∈L}; the verification algorithm V(\emph{pk, x,
+t}) returns 1 or 0 indicating whether
+
+\emph{t} encrypts a witness for \emph{x}; the decryption algorithm
+Dec(\emph{sk, x, t}) returns a witness ¯\emph{w} or a failure
+
+symbol \emph{⊥}. We will focus on the case where the ciphertext \emph{t}
+includes a Fiat-Shamir proof of a
+
+\emph{Σ}-protocol, where the proof \emph{π} = (\emph{cmt, c, rsp})
+consists of a commitment \emph{cmt}, a challenge \emph{c} =
+
+H(\emph{pk, x, t, cmt, . . .}) generated through a random oracle H, and
+a response \emph{rsp}. We require that the
+
+algorithms satisfy the following adapted properties from {[}CS03{]}:
+
+\textbf{Correctness.} Correctness requires that Dec(\emph{sk, x,}
+Enc(\emph{pk, x, w})) = \emph{w} with probability one for all
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+(\emph{x, w}) \emph{∈RL} and all key pairs (\emph{pk, sk})
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+\emph{←}Kg(1\emph{λ}).
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+11
+
+\textbf{Completeness.} For all (\emph{x, w}) \emph{∈RL} and all key
+pairs (\emph{pk, sk}) 1 with probability one.
+
+\begin{quote}
+\$\\
+\emph{←}Kg(1\emph{λ}), V(\emph{pk, x,} Enc(\emph{pk, x, w})) =
+\end{quote}
+
+\textbf{Soundness.} Soundness requires that a ciphertext with a valid
+proof for \emph{x ∈L} can with overwhel-
+
+\begin{quote}
+ming probability be decrypted to a valid witness ¯\emph{w} such that
+(\emph{x,} ¯\emph{w}) \emph{∈R}¯\emph{L}, i.e., the following
+
+probability is negligible:
+
+\$ \$
+
+Pr \emph{b} = 1 \emph{∧}(\emph{x,} ¯\emph{w}) \emph{̸∈R}¯\emph{L}:
+(\emph{pk, sk})
+
+\emph{b ←}V(\emph{pk, x, t})\emph{,} ¯\\
+\emph{←}Kg(1\emph{λ})\emph{,} (\emph{x, t})
+
+\emph{←}Dec(\emph{sk, x, t})\\
+\$\emph{←}A(\emph{pk, sk})\emph{, .}
+\end{quote}
+
+\textbf{Simulatability.} There exists a simulator Sim such that no
+adversary A can distinguish real from
+
+\begin{quote}
+simulated ciphertexts, i.e., the following advantage of A is negligible:
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{3.2}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+Pr
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$ \$ \$
+
+\emph{b′}= \emph{b} :\emph{b←\{}0\emph{,} 1\emph{\},} (\emph{pk, sk}) \$
+\emph{←}Kg(1\emph{λ})\emph{,} (\emph{st, x, w})
+\$\emph{←}A(\emph{pk})\emph{,}
+
+\emph{t}0\emph{←}Enc(\emph{pk, x, w})\emph{, t}1\emph{←}Sim(\emph{pk,
+x})\emph{, b′←}A(\emph{st, tb})
+\end{quote}
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{−}1
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage}} \\
+&
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.4000} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Construction}
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Given a linear relation
+
+\begin{quote}
+\textbf{Bm} = \textbf{u} mod \emph{p,} (9)
+\end{quote}
+
+for a matrix \textbf{B} \emph{\uline{∈}Rℓ×k} , our goal is to produce a
+ciphertext and a proof that the decryption of this
+
+ciphertext is (\textbf{m}\emph{,}c) that satisfies the relation
+
+\begin{quote}
+\textbf{Bm} = \textbf{u}c mod \emph{p.} (10)
+\end{quote}
+
+\emph{Key generation.} Key pairs are generated as for the Ring-LWE
+encryption scheme from Section 2.5,
+
+\begin{quote}
+\$ \$
+\end{quote}
+
+i.e., by choosing s1\emph{,} s2 \emph{←S}1 and computing a\emph{←R} and
+t \emph{←}as1 + s2. The public key is \emph{pk} =
+
+(a\emph{,} t\emph{, p, q}), where \emph{p} is the same value as the
+modulus that we are proving our linear relation over.
+
+The secret key is \emph{sk} = s1.
+
+\emph{Encryption and verification.} The prover encrypts a witness
+\emph{w} = \textbf{m} for language member \emph{x} = (\textbf{B}\emph{,}
+\textbf{u})
+
+\$
+
+satisfying (9) with randomness (\textbf{r}\emph{,} \textbf{e}\emph{,}
+\textbf{e}\emph{′})\emph{←S}3\emph{k} as in (7). The prover then
+concatenates this with
+
+(9) to form the relation below:
+
+\begin{quote}
+As discussed, there is no practical proof of knowledge for the above
+relation, and so the prover \emph{p}a\textbf{I}\emph{k
+p}\textbf{I}\emph{k} 0\emph{k×k}0\emph{k×k}
+
+0\emph{ℓ×k}0\emph{ℓ×k}0\emph{ℓ×k}\\
+\emph{p}t\textbf{I}\emph{k} 0\emph{k×kp}\textbf{I}\emph{k}
+\textbf{I}\emph{k}
+
+\textbf{B} \textbf{m} \textbf{e}\emph{′} \textbf{e}= 
+\textbf{w}
+
+\textbf{u v} mod\emph{p}\\
+mod\emph{q}
+
+mod\emph{q} (11)\\
+\textbf{r}
+\end{quote}
+
+instead uses the ''Fiat-Shamir with Aborts'' approach from Section 2.6
+to construct a proof of
+
+knowledge \emph{π} of
+low-weight\textbf{r}\emph{,}\textbf{e}\emph{,}\textbf{e}\emph{′,}\textbf{m}\emph{,}
+and c that satisfy
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+This procedure and the corresponding verification is presented in
+Algorithms 3 and 4.  \emph{p}a\textbf{I}\emph{k p}\textbf{I}\emph{k}
+0\emph{k×k}0\emph{k×k}
+
+0\emph{ℓ×k}0\emph{ℓ×k}0\emph{ℓ×k}\\
+\emph{p}t\textbf{I}\emph{k} 0\emph{k×kp}\textbf{I}\emph{k}
+\textbf{I}\emph{k}
+
+\textbf{B}  \textbf{m} \textbf{e}\emph{′} \textbf{e}= c 
+\textbf{w} \textbf{v}
+
+\textbf{u}mod\emph{p}\\
+mod\emph{q}
+
+mod\emph{q}\\
+\textbf{r}
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+(12)
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+12
+
+\begin{quote}
+\textbf{Algorithm 3} One-Shot Verifiable encryption Enc(\emph{pk, x, w})
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\multicolumn{5}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{1.0000} + 8\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Input}: Public key \emph{pk} = (a\emph{,} t\emph{, p, q}),
+language member \emph{x} = (\textbf{B}\emph{,} \textbf{u}), witness
+\emph{w} = \textbf{m} \emph{∈Skγ}. Challenge domain
+
+\emph{C} = \emph{\{}c \emph{∈R} : \emph{∥}c\emph{∥\sout{∞}}= 1\emph{,
+∥}c\emph{∥}1 \emph{≤}36\emph{\}}. Cryptographic hash function H :
+\emph{\{}0\emph{,} 1\emph{\}∗→C}. Standard deviation
+
+\begin{quote}
+\emph{σ} = 11 \emph{·} max c\emph{∈C∥}c\emph{∥}1 \emph{·} \emph{kn}(3 +
+\emph{γ}).
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\$
+
+1: \textbf{r}\emph{,} \textbf{e}\emph{,} \textbf{e}\emph{′←Sk}
+\textbf{r}
+
+2:
+
+\textbf{w}\\
+\textbf{v}
+
+\emph{←}
+
+\textbf{yr}\\
+\emph{p}a\textbf{I}\emph{k p}\textbf{I}\emph{k} 0\emph{k×k} 0\emph{k×k}
+
+\emph{p}t\textbf{I}\emph{k} 0\emph{k×kp}\textbf{I}\emph{k}
+\textbf{I}\emph{k} \textbf{m} \textbf{e}\emph{′} \textbf{e}
+mod\emph{q}
+\end{quote}
+
+mod\emph{q}
+
+\begin{quote}
+3: \textbf{y} \emph{←}\textbf{ym
+ye}\emph{′}\textbf{ye}\emph{←DR}4\emph{k,}0\emph{,σ}\$
+
+4: c \emph{←}H0\emph{ℓ×k}0\emph{ℓ×k}0\emph{ℓ×k
+p}a\textbf{I}\emph{k p}\textbf{I}\emph{k} 0\emph{k×k}0\emph{k×k}
+
+\emph{p}t\textbf{I}\emph{k} 0\emph{k×kp}\textbf{I}\emph{k}
+\textbf{I}\emph{k}
+
+\textbf{B} \emph{,} \textbf{w}\\
+\textbf{v}
+\end{quote}
+
+\textbf{u}\emph{,}0\emph{ℓ×k}0\emph{ℓ×k}0\emph{ℓ×k
+p}a\textbf{I}\emph{k p}\textbf{I}\emph{k} 0\emph{k×k}0\emph{k×k}
+
+\begin{quote}
+\emph{p}t\textbf{I}\emph{k} 0\emph{k×kp}\textbf{I}\emph{k}
+\textbf{I}\emph{k}
+\end{quote}
+
+\textbf{B}
+
+\begin{quote}
+5: \textbf{s} \emph{←}
+
+6: \textbf{z} \emph{←}\textbf{s} + \textbf{y}\textbf{m
+e}\emph{′}\textbf{e}c
+\end{quote}
+
+\emph{DR}4\emph{k,}0\emph{,σ}(\textbf{z})
+
+\begin{quote}
+7: with probability
+3\emph{·DR}4\emph{k,}\textbf{s}\emph{,σ}(\textbf{z}), continue, else
+goto 3
+\end{quote}\strut
+\end{minipage} &  & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{ym ye}\emph{′}\textbf{ye yr}
+\end{quote}
+\end{minipage} &  & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+mod\emph{p}\\
+mod\emph{q}
+
+mod\emph{q}
+\end{quote}\strut
+\end{minipage} \\
+\multicolumn{5}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{1.0000} + 8\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+8: \textbf{if} \emph{∥}\textbf{z}\emph{∥∞\textgreater{}} 6 \emph{· σ},
+goto 3\\
+9: \textbf{return} \emph{t} = (\textbf{v}\emph{,} \textbf{w}\emph{,}
+c\emph{,} \textbf{z})\strut
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\textbf{Algorithm 4} One-Shot Verification V(\emph{pk, x, t})
+
+\textbf{Input}: Public key \emph{pk} = (a\emph{,} t\emph{, p, q}),
+language member \emph{x} = (\textbf{B}\emph{,} \textbf{u}), ciphertext
+\emph{t} = (\textbf{v}\emph{,} \textbf{w}\emph{,} c\emph{,} \textbf{z}).
+Cryptographic hash function H, positive real \emph{σ} as in Algorithm 3.
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1: \textbf{if} \emph{∥}\textbf{z}\emph{∥∞\textgreater{}} 6 \emph{· σ} ,
+\textbf{return} 0
+
+2: \textbf{if} c \emph{̸}= H
+
+3: \textbf{return} 10\emph{ℓ×k}0\emph{ℓ×k}0\emph{ℓ×k
+p}a\textbf{I}\emph{k p}\textbf{I}\emph{k} 0\emph{k×k}0\emph{k×k}
+
+\emph{p}t\textbf{I}\emph{k} 0\emph{k×kp}\textbf{I}\emph{k}
+\textbf{I}\emph{k}
+\end{quote}
+
+\textbf{B}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{,}\textbf{w}
+
+\begin{quote}
+\textbf{u}\\
+\textbf{v}
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{,}0\emph{ℓ×k}0\emph{ℓ×k}0\emph{ℓ×k p}a\textbf{I}\emph{k
+p}\textbf{I}\emph{k} 0\emph{k×k}0\emph{k×k}
+
+\begin{quote}
+\emph{p}t\textbf{I}\emph{k} 0\emph{k×kp}\textbf{I}\emph{k}
+\textbf{I}\emph{k}
+\end{quote}
+
+\textbf{B}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{z} \emph{−}c\textbf{w}
+
+\begin{quote}
+\textbf{u}\\
+\textbf{v}
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+mod\emph{p} mod\emph{q}, \textbf{return} 0\\
+mod\emph{q}
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\emph{Decryption.} The main result of our work is showing that, when
+given the ciphertext \emph{t} = (\textbf{v}\emph{,} \textbf{w}\emph{,}
+c\emph{,} \textbf{z}), the decryptor can recover some
+(\textbf{m}\emph{,}c) that satisfies (10). Because the proof of
+knowledge (c\emph{,} \textbf{z}) does
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+not imply that
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{v}
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+is a valid Ring-LWE ciphertext, we cannot simply use the Ring-LWE
+decryption
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{w}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+algorithm from (4).
+
+Instead, the intuition is to guess a value for c and then attempt to
+decrypt the ciphertext
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+c
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{v}
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+mod \emph{q} in hopes of recovering\textbf{m}. The problem with this
+straightforward approach is that the
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{w}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+decryption algorithm will always return something, and so one needs a
+way to decide whether this decryption is something valid or just
+garbage. In Lemma 3.1, we show that if the parameters of the Ring-LWE
+encryption scheme are set in a particular way, then the decryptor can
+test whether
+\end{quote}
+
+13
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+a particular ciphertext c
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{v}
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+mod \emph{q} is ``valid'', and for any c and c\emph{′}that lead to valid
+ciphertexts
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{w}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+decrypting to\textbf{m} and\textbf{m}\emph{′}, respectively, we have the
+equality
+
+\textbf{m}\emph{/}c =\textbf{m}\emph{′/}c\emph{′}mod \emph{p} (13)
+
+The implication of the above equation is that once the decryptor
+decrypts some pair (\textbf{m}\emph{′,}c\emph{′}), it is a valid
+solution to (10). This is because the proof of knowledge \emph{π} proves
+knowledge of some (\textbf{m}\emph{,}c) that satisfies \textbf{Bm} =
+c\textbf{u} mod \emph{p}, or equivalently \textbf{B}m\emph{/}c =
+\textbf{u} mod \emph{p}. Equation (13) then implies that\\
+\textbf{Bm}\emph{′}= c\emph{′}\textbf{u} mod \emph{p.}
+
+The second issue is how to find a valid c. In particular, if we would
+like the proof of knowledge to be ``one-shot'', then the challenge space
+should be exponentially large, and so it is impractical to simply try
+all the possible c (of which there are actually even more than in the
+challenge space). We show in Lemma 3.2, however, that the decryptor can
+try random c (there is some relation between\emph{π} and which ¯c should
+be tried), and then the \emph{expected} number of tries is essentially
+the number of random oracle queries that the prover makes when
+constructing \emph{π}, where the probability is taken over the
+randomness of the random oracle (modeled as a random function) and the
+coins of the decryptor. Algorithm 5 is the decryption algorithm that
+guesses a random c\emph{′}from \emph{C}, constructs \textbf{v}\\
+c = c\emph{−}c\emph{′}, where c is part of the proof \emph{π}, and then
+checks whether c \textbf{w} mod \emph{q} is a valid ciphertext
+
+(actually \emph{k} valid ciphertexts because the plaintext \textbf{m} is
+encrypted as \emph{k} independent plaintexts). If it is, then it
+decrypts it, and otherwise it guesses a new random c\emph{′}.
+
+\textbf{Algorithm 5} One-Shot Decryption Dec(\emph{sk, x, t})
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Input}: Secret key \emph{sk} = s1, language member \emph{x} =
+(\textbf{B}\emph{,} \textbf{u}), ciphertext \emph{t} =
+(\textbf{v}\emph{,} \textbf{w}\emph{,} c\emph{,} \textbf{z})\emph{,}
+constant \emph{C} = max \emph{c,c′∈C∥c −}
+
+\begin{quote}
+\emph{c′∥}1
+
+1: \textbf{if} V(\emph{pk, x, t}) = 1 \textbf{then}
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+2: & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{loop}
+\end{quote}
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+3:\\
+4:\\
+5:\\
+6:\\
+7:
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+c\emph{′←C}\\
+c \emph{←}c \emph{−}c\emph{′}\\
+\uline{\textbf{m}\emph{←}}(\textbf{w} \emph{−}\textbf{v}s1)c mod
+\emph{q}\\
+\textbf{if} \emph{∥}\textbf{\uline{m}}\emph{∥∞≤q/}2\emph{C} and
+\emph{∥}\textbf{m} mod \emph{p∥∞\textless{}} 12\emph{σ} \textbf{then}\\
+\textbf{return} (\textbf{m} mod \emph{p,}¯c)
+\end{quote}\strut
+\end{minipage} \\
+8: & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{end if}
+\end{quote}
+\end{minipage} \\
+9: & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{end loop}
+\end{quote}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+10: \textbf{end if}
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+If the prover is honest, then of course
+\end{quote}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{v}
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+will already be a valid ciphertext, and then it's not
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{w}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+hard to see that any c will result in a valid decryption (or the
+decryptor can try c = 1 first). On the other hand, what Lemma 3.2
+roughly implies is that if the prover can only query the random oracle a
+few times, then the decryptor will also expect to recover a solution to
+(10) within a few queries.
+
+In Section 4, we propose a modification to our protocol that still
+retains the relation between the number of random-oracle queries the
+prover makes and the expected number of decryption
+\end{quote}
+
+14
+
+tries that the decryptor needs, but also puts an upper-bound on the
+decryption time. The idea is to reduce the space of challenges in the
+zero-knowledge proof from, say, 2128down to 232and then doing the proof
+in parallel 4 times. This increases the proof size by a factor of 4, but
+upperbounds the number of decryptions tries to 4 \emph{·} 232. One can
+of course adjust the trade-off between the decryption-time upper bound
+and the size of the proof to suit the particular scenario. This is the
+main advantage of this parallelized protocol over the earlier idea in
+{[}BCK+14{]}. In the latter scheme, the size of the challenge space
+could not be varied -- if one were working over the ring
+Z{[}x{]}\emph{/}(x\emph{n}+1), then the challenge space was exactly
+2\emph{n} + 1.
+
+\textbf{3.3 Interlude: Proofs of Plaintext Knowledge}
+
+One can see proofs of plaintext knowledge as a verifiable encryption
+scheme without a relation, or where the relation is trivially satisfied.
+In our case, one could consider the scheme from the previous section
+with \textbf{B} and \textbf{u} being 0, or simply the row(s) containing
+\textbf{B} and \textbf{u} not being present in relation (11).
+
+The soundness requirement that a valid ciphertext must decrypt to a
+valid witness obviously makes no sense if the relation is trivial.
+Instead, soundness for a proof of plaintext knowledge requires that
+decryption returns the same value as can be extracted from the proof of
+knowledge. Our randomized decryption algorithm as described in Algorithm
+5 does not satisfy such a requirement, as it potentially returns a
+different pair (\textbf{m}\emph{,}c) at each execution. However, because
+of the property that\textbf{m}\emph{/}c =\textbf{m}\emph{′/}c\emph{′}mod
+\emph{p} for any (\textbf{m}\emph{,}c)\emph{,}
+(\textbf{m}\emph{′,}c\emph{′}) returned by the decryption algorithm, we
+can make the decryption deterministic by letting it
+return\textbf{m}\emph{/}c mod \emph{p}. Because this unique value can
+also be extracted from the proof, this turns our verifiable encryption
+scheme into a proof of plaintext knowledge.
+
+\textbf{3.4 Correctness and Security}
+
+\emph{Soundness.} We first show the soundness property of our relaxed
+verifiable encryption scheme by showing that decryption of a valid
+ciphertext, if it finishes, yields a witness from \emph{R}¯\emph{L}. In
+Section 3.5, we prove that the expected running time of the decryption
+algorithm is proportional to the number of random-oracle queries made by
+the adversary who created the ciphertext.
+
+If an adversary \emph{A} who is trying to break the soundness of the
+scheme outputs a ciphertext \emph{t} = (\textbf{v}\emph{,}
+\textbf{w}\emph{,} c\emph{,} \textbf{z}) that is valid for \emph{x} =
+(\textbf{B}\emph{,} \textbf{u}), then by the verification procedure
+described in Algorithm 4 we have that \emph{∥}\textbf{z}\emph{∥∞≤}6
+\emph{· σ} and
+
+\begin{quote}
+c = H\textbf{B}\emph{′,} \textbf{w} \textbf{u} \emph{,}
+\textbf{B}\emph{′}\textbf{z} \emph{−}c \textbf{w} \textbf{u}
+mod\emph{p} mod\emph{q} (14) \textbf{v} \textbf{v} mod\emph{q}
+
+where
+\end{quote}
+
+\textbf{B}\emph{′}=\emph{p}a\textbf{I}\emph{k p}\textbf{I}\emph{k}
+0\emph{k×k}0\emph{k×k}
+
+\begin{quote}
+0\emph{ℓ×k}0\emph{ℓ×k}0\emph{ℓ×k p}t\textbf{I}\emph{k}
+0\emph{k×kp}\textbf{I}\emph{k} \textbf{I}\emph{k} \textbf{B} \emph{.}
+(15)
+\end{quote}
+
+Let \textbf{A} denote the first argument of the above random-oracle
+query and \textbf{y} the last, i.e., the above equation can be rewritten
+as c = H(\textbf{A}\emph{,} {[} \textbf{v} ; \textbf{w} ; \textbf{u}
+{]}\emph{,} \textbf{y}).
+
+15
+
+With overwhelming probability, there exists a second challenge
+c\emph{′∈C \textbackslash{} \{}c\emph{\}} for which there exists a
+vector \textbf{z}\emph{′}with \emph{∥}\textbf{z}\emph{′∥∞≤}6 \emph{· σ}
+and \textbf{y} = \textbf{Az}\emph{′−}c\emph{′}{[} \textbf{v} ;
+\textbf{w} ; \textbf{u} {]}. Indeed, if c were the only such challenge,
+then at the moment of making the above random-oracle query, A would have
+had
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\multicolumn{6}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{1.0000} + 10\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+probability 1\emph{/\textbar C\textbar{}} of hitting the only challenge
+c for which a valid proof exists. The probability that
+
+A outputs a proof for which only one such challenge c exists is
+therefore at most \emph{q}H\emph{/\textbar C\textbar{}}.
+
+So with overwhelming probability such c\emph{′,} \textbf{z}\emph{′}does
+exist, and we have that \textbf{y} = \textbf{Az}\emph{−}c{[} \textbf{v}
+; \textbf{w} ; \textbf{u} {]} = \textbf{Az}\emph{′−}c\emph{′}{[}
+\textbf{v} ; \textbf{w} ; \textbf{u} {]} with
+\emph{∥}\textbf{z}\emph{∥∞≤}6 \emph{· σ} and
+\emph{∥}\textbf{z}\emph{′∥∞≤}6 \emph{· σ}. Hence, letting ¯\textbf{z} =
+\textbf{z}\emph{′−}\textbf{z} = {[} ¯\textbf{r} ; ¯\textbf{e} ;
+¯\textbf{e}\emph{′}; ¯\textbf{m} {]}, we have that \textbf{A¯z} = ¯c{[}
+\textbf{v} ; \textbf{w} ; \textbf{u} {]} with
+\emph{∥}\textbf{¯z}\emph{∥∞≤}12 \emph{· σ}. c = c \emph{−}c\emph{′}and
+
+\begin{quote}
+By choosing the scheme parameters appropriately -- i.e. making sure that
+\emph{∥}\textbf{z}\emph{∥∞≤}6\emph{σ} always
+\end{quote}
+
+implies that (16) is satisfied -- we can use the following crucial lemma
+that shows that for any
+
+( \textbf{¯m}\emph{′,}¯c\emph{′}) returned by the decryption algorithm,
+we have that \textbf{¯m}\emph{′/}¯c\emph{′}= \textbf{¯m}\emph{/}¯c, and,
+because \textbf{B ¯m} = ¯c\textbf{u},
+
+that \textbf{B ¯m}\emph{′}= ¯c\emph{′}\textbf{u}.
+
+\textbf{Lemma 3.1.} \emph{Let} (a\emph{,} t\emph{, p, q}) \emph{and}
+(s1\emph{,} s2) \emph{be generated keys as in Section 3.2. If for given}
+v\emph{,} w \emph{∈Rq there exist}r\emph{,}e\emph{,}e\emph{′,}m\emph{,}c
+\emph{such that}
+\end{minipage}} \\
+\midrule()
+\endhead
+\multirow{2}{*}{\emph{and}} &
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{p}a \emph{\textbar{} p \textbar{}} 0 \emph{\textbar{}} 0\\
+\emph{p}t \emph{\textbar{}} 0 \emph{\textbar{} p \textbar{}} 1
+\end{quote}\strut
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+m e\emph{′} e= c r
+\end{quote}
+\end{minipage}} & v &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.3333} + 2\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+mod \emph{q}
+\end{quote}
+\end{minipage}}} \\
+& & & w \\
+\emph{where C} = ma\uline{x} &
+\multicolumn{4}{>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.6667} + 6\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{∥p}(rs2 + e\emph{′−}es1) + m\emph{∥∞\textless{}
+q/}2\emph{C∥}c\emph{∥}1 = max c\emph{,}c\emph{′∈C∥}c
+\emph{−}c\emph{′∥}1\emph{, then}
+\end{quote}
+\end{minipage}}} & \multirow{2}{*}{(16)} \\
+c\emph{∈C} \\
+\multicolumn{6}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{1.0000} + 10\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{1. ∥}(w \emph{−}vs1)c mod \emph{q∥∞\textless{} q/}2\emph{C}\\
+\emph{2. For any}c\emph{′∈C for which ∥}(w \emph{−}vs1)c\emph{′}mod
+\emph{q∥∞\textless{} q/}2\emph{C,}
+\end{quote}\strut
+\end{minipage}} \\
+\multicolumn{5}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.8333} + 8\tabcolsep}}{%
+(w \emph{−}vs1)c\emph{′}mod \emph{q/}c\emph{′}mod \emph{p} = m\emph{/}c
+mod \emph{p.}} & \emph{⊔} \\
+\bottomrule()
+\end{longtable}
+
+\emph{Proof.} To prove the first part, we note that by the definition of
+Ring-LWE decryption,
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+(w \emph{−}vs1)c mod \emph{q} = \emph{p}(rs2 + e\emph{′−}es1) +
+m\emph{,} \emph{q}\\
+which has \emph{ℓ∞}length less than 2\emph{C}by the hypothesis of the
+lemma.
+
+\begin{quote}
+To prove the second part, we first note that
+
+(w \emph{−}vs1)cc\emph{′}mod \emph{q} mod \emph{p} = (\emph{p}(rs2 +
+e\emph{′−}es1) + m)c\emph{′}mod \emph{q} mod \emph{p} = mc\emph{′}mod
+\emph{p.}
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+(17)
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Then we can write
+
+\begin{quote}
+((w \emph{−}vs1)c\emph{′}mod \emph{q}) \emph{/}c\emph{′}mod \emph{p} =
+((w \emph{−}vs1)c\emph{′}mod \emph{q}) \emph{·}c\emph{/}(cc\emph{′}) mod
+\emph{p} = ((w \emph{−}vs1)cc\emph{′}mod \emph{q})\emph{/}(cc\emph{′})
+mod \emph{p} = \uline{mc}\emph{′/}(cc\emph{′}) mod \emph{p} = m\emph{/}c
+mod \emph{p}
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{q} The first equality is an identity, the second equality holds
+since \emph{∥}(w \emph{−}vs1)c\emph{′}mod \emph{q∥∞\textless{}}
+2\emph{C}and
+
+therefore multiplication by c does not cause a reduction modulo
+\emph{q}. The third equality follows from
+\end{minipage}} \\
+\midrule()
+\endhead
+(17). & \emph{⊔} \\
+\bottomrule()
+\end{longtable}
+
+16
+
+By checking that \emph{∥}(w \emph{−}vs1)c mod \emph{q∥∞\textless{}
+q/}2\emph{C} in line 6 of the Dec algorithm, we ensure that the
+condition of the second part of Lemma 3.1 is satisfied for decryption.
+This, together with the check that \emph{∥}\textbf{m} mod
+\emph{p∥∞\textless{}} 12\emph{σ}, implies that the value (
+¯\textbf{m}\emph{′}(\textbf{w} \emph{−}\textbf{v}s1)c\emph{′}mod
+\emph{q} mod \emph{p,}c\emph{′}) is indeed a witness for
+(\textbf{B}\emph{,} \textbf{u}) \emph{∈}¯\emph{L}. This proves the
+soundness of our scheme.
+
+\emph{Correctness.} Correctness is straightforward because a valid
+encryption (see (5)) satisfies the pre-conditions of Lemma 3.1 with {[}
+¯\textbf{r} ; ¯\textbf{e} ; ¯\textbf{e}\emph{′}; ¯\textbf{m} {]} = {[}
+\textbf{r} ; \textbf{e} ; \textbf{e}\emph{′}; \textbf{m} {]} and ¯c = 1;
+and it's clear that\emph{∥p}(\textbf{r}s2 +
+\textbf{e}\emph{′−}\textbf{e}s1) + \textbf{m}\emph{∥∞≤∥p}(¯\textbf{r}s2
++ ¯\textbf{e}\emph{′−}¯\textbf{e}s1) + ¯\textbf{m}\emph{∥∞}.
+
+\emph{Completeness.} Completeness follows from the completeness of the
+proof system of Section 2.6.
+
+\emph{Simulatability.} The simulator Sim creates a Ring-LWE encryption
+{[} \textbf{v} ; \textbf{w} {]} of \textbf{m} = 1 using the scheme of
+Section 2.5 and runs the zero-knowledge simulator for the proof system
+of Section 2.6 to create a valid-looking proof (c\emph{,} \textbf{z})
+for (\textbf{B}\emph{,} \textbf{u}). The indistinguishability from the
+real proof follows from the IND-CPA security of Ring-LWE encryption and
+the zero-knowledge property of the proof system.
+
+\textbf{3.5 Decryption Running Time}
+
+Even though the running time of the decryption algorithm is unbounded in
+principle, we show that its \emph{expected} running time is proportional
+to the number of times that the adversary queries the random oracle.
+More precisely, we show that if an adversary uses \emph{q}H
+random-oracle queries to construct a ciphertext, then the probability
+that the decryption algorithm requires more than \emph{α·q}H iterations
+is less than 1\emph{/α}.
+
+We prove the above information-theoretic statement for any adversary
+\emph{A}, and we can therefore limit the analysis to deterministic
+adversaries, since the coins that maximize the adversary's success can
+always be hardwired into its code.
+
+\textbf{Lemma 3.2.} \emph{For a given key pair} (\emph{pk, sk})
+\emph{∈}Kg(1\emph{λ})\emph{, consider the following experiment with an
+adversary A:}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+(\emph{x, t})\emph{←A}H(\emph{pk})\\
+\emph{If} V(\emph{pk, x, t}) = 1 \emph{then} ¯
+\end{quote}\strut
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+\emph{←}Dec(\emph{sk, x, t}) \emph{.}
+\end{quote}\strut
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{D}
+\end{minipage}} \\
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{Let}
+\end{minipage} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{H be the random coins of the function} H \emph{(when it is modeled
+as a random function) and}
+\end{minipage}} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\emph{be the random coins of the Decryption algorithm} Dec\emph{. Let T
+be the number of loop iterations in the execution of} Dec \emph{(see
+Algorithm 5 lines 2--9) until it produces its output} ¯\emph{w. Then
+there is an event G, such that for all algorithms A that make at most
+q}H \emph{−}1 \emph{queries to} H\emph{, all key pairs} (\emph{pk,
+sk})\emph{, and any positive integer f, it holds that}
+
+\begin{quote}
+\emph{1.} Exp \emph{H, D}{[} \emph{T \textbar{} G} {]} \emph{≤} 1 +1
+\emph{f} \emph{· q}H\emph{.}
+\end{quote}
+
+\emph{D}{[}\emph{¬G}{]} \emph{≤q}H \emph{· f/\textbar C\textbar{} 2.} Pr
+\emph{H,}\\
+\emph{By Markov's inequality and optimization over f, this implies that
+for any positive α,}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} \\
+\midrule()
+\endhead
+Pr & \multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+{[} \emph{T ≥α · q}H{]} \emph{≤}1\emph{α}+ 2 \emph{·}
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{α · \textbar C\textbar{}}+ \emph{q}H \emph{\textbar C\textbar.}
+\end{quote}
+\end{minipage}} \\
+\emph{H, D} \\
+\bottomrule()
+\end{longtable}
+
+17
+
+\emph{Proof.} For a given public key \emph{pk}, language member \emph{x}
+= (\textbf{B}\emph{,} \textbf{u}) \emph{∈}¯\emph{L}, and valid
+ciphertext \emph{t} =
+
+(\textbf{v}\emph{,} \textbf{w}\emph{,} c\emph{,} \textbf{z}), let
+\textbf{A} and \textbf{y} be the matrix and vector in the verification
+algorithm (Algorithm 4) so
+
+that \emph{c} = H(\textbf{A}\emph{,} {[} \textbf{v} ; \textbf{w} ;
+\textbf{u} {]}\emph{,} \textbf{y}) and \textbf{y} = \textbf{Az}
+\emph{−}c{[} \textbf{v} ; \textbf{w} ; \textbf{u} {]}. Let \emph{Gt} be
+the set of ``good'' challenges c\emph{′}for which a valid zero-knowledge
+proof response \textbf{z}\emph{′}exists, i.e.,
+
+\emph{Gt} = \emph{\{}c\emph{′∈C} : \emph{∃}\textbf{z}\emph{′}:
+\textbf{y} = \textbf{Az}\emph{′−}c\emph{′}{[} \textbf{v} ; \textbf{w} ;
+\textbf{u} {]} \emph{∧∥}\textbf{z}\emph{′∥∞≤}6\emph{σ\} .}
+
+\begin{quote}
+Let \emph{G} be the ``good'' event that the adversary \emph{A} produces
+a ciphertext \emph{t} (for the decryption
+\end{quote}
+
+algorithm) with \emph{\textbar Gt\textbar{} \textgreater{} f}. Let
+\emph{D} denote the coins of the decryption algorithm Dec and let
+\emph{H} denote
+
+the coins determining the random oracle H. For any ciphertext \emph{t},
+the probability over \emph{D} that one
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+particular iteration of Dec decrypts successfully is at least the
+probability that the \emph{c′}in Line 3 of Algorithm 5 is in \emph{Gt
+\textbackslash{} \{c\}}. This is due to the fact that if
+\emph{∥}\textbf{z}\emph{′∥≤}6\emph{σ} and the scheme parameters are
+chosen appropriately (see the discussion above Lemma 3.1), then both
+conditions of Line 6 will be
+
+satisfied. Therefore the probability that Dec decrypts successfully in
+one iteration is at
+least\emph{\sout{\textbar G}\uline{t}\sout{\textbar−}}1
+\emph{\textbar C\textbar.} We therefore have that the expected number of
+iterations for a ciphertext \emph{t} is
+\end{minipage}} \\
+\midrule()
+\endhead
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+Exp \emph{D} {[} \emph{T \textbar{} A}Houtputs \emph{t} {]} \emph{≤}
+\end{quote}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\emph{\textbar C\textbar{}}\\
+\emph{\textbar Gt\textbar{} −}1\strut
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+and therefore, conditioned on the event \emph{G}, that
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Exp \emph{D} {[} \emph{T \textbar{} A}Houtputs \emph{t ∧G} {]}
+\emph{≤\textbar C\textbar{}}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+(18)
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Below, when we say that ``\emph{A}Houtputs \emph{ti}'', we mean that
+\emph{A}Houtputs a language member
+\end{quote}
+
+\emph{x} = (\textbf{B}\emph{,} \textbf{u}) and a ciphertext \emph{t} =
+(\textbf{v}\emph{,} \textbf{w}\emph{,} c\emph{,} \textbf{z}) such that
+\emph{A}'s \emph{i}-th random-oracle query is
+
+c = H\textbf{B}\emph{′,}\textbf{w}
+
+\textbf{u}\emph{,} \textbf{B}\emph{′}\textbf{z} \emph{−}c\textbf{w}
+
+\begin{quote}
+\textbf{u} mod\emph{p} mod\emph{q}\emph{,}\\
+\textbf{v} \textbf{v} mod\emph{q}
+\end{quote}
+
+where \textbf{B}\emph{′}is the matrix defined in (15). Also, for any
+adversary making at most \emph{q}H \emph{−}1 queries, there exists an
+adversary making at most \emph{q}H queries that include the above query;
+we consider the latter
+
+adversary \emph{A} in the rest of the analysis.
+
+\begin{quote}
+Because we are conditioning on the event \emph{G}, we can assume without
+loss of generality that \emph{A}
+\end{quote}
+
+only makes random-oracle queries for ciphertexts \emph{ti} with
+\emph{\textbar Gti\textbar{} \textgreater{} f}. (It is easy to see that
+for any \emph{A}
+
+that does not obey these rules, there exists an adversary
+\emph{A′}producing the same output that does.)
+
+We now have that
+
+\emph{q}H
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Exp \emph{H, D} {[} \emph{T \textbar{} G} {]} =
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{i}=1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Pr \emph{H} {[}\emph{A}Houtputs \emph{ti \textbar{} G} {]} \emph{·} Exp
+\emph{D} {[} \emph{T \textbar{} A}Houtputs \emph{ti ∧G} {]}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+(19)
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+18
+
+\begin{quote}
+The above is true because
+
+\emph{q}H
+
+\emph{i}=1 Pr \emph{H} {[}\emph{A}Houtputs \emph{ti \textbar{} G} {]}
+\emph{·} Exp \emph{D} {[} \emph{T \textbar{} A}Houtputs \emph{ti ∧G} {]}
+
+\emph{q}H
+
+=
+
+\emph{i}=1 Pr \emph{H} {[}\emph{A}Houtputs \emph{ti \textbar{} G} {]}
+\emph{·j∈}Z+ Pr \emph{D} {[} \emph{T} = \emph{j \textbar{} A}Houtputs
+\emph{ti ∧G} {]} \emph{· j}
+\end{quote}
+
+\emph{q}H
+
+\begin{quote}
+=
+
+\emph{j∈}Z+ \emph{j ·i}=1 \emph{H,} Pr \emph{D} {[} \emph{T} = \emph{j
+∧A}Houtputs \emph{ti \textbar{} G} {]}
+
+= \emph{j ·} Pr \emph{D, H} {[} \emph{T} = \emph{j \textbar{} G} {]}\\
+\emph{j∈}Z+\\
+= Exp
+
+\emph{H, D} {[} \emph{T \textbar{} G} {]}
+\end{quote}
+
+For each random-oracle query that \emph{A} makes for a ciphertext
+\emph{ti} (all the ciphertexts need not be distinct), the probability
+that \emph{A} can output \emph{ti} (over the randomness \emph{H}) is at
+most the probability
+
+that the output of the random-oracle query is in \emph{Gti}, because
+otherwise no valid response \textbf{z} exists. Thus each \emph{ti} has
+the probability of being output at most
+\emph{\textbar Gti\textbar/\textbar C\textbar{}}, regardless of the
+strategy of the adversary. Plugging this and (18) into (19), we obtain
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Exp {[} \emph{T G} {]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{q}H
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{\textbar Gti\textbar{}}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{\textbar C\textbar{} q}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+max
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{\textbar Gti\textbar{}}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{q}H \emph{·} (\emph{f} + 1)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+(20)
+\end{minipage} \\
+\midrule()
+\endhead
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{H, D \textbar{} ≤}
+\end{quote}
+\end{minipage} & \emph{i}=1 & \emph{\textbar C\textbar{} ·} &
+\emph{\textbar Gti\textbar{} −}1\emph{≤q}H \emph{·} &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{i}=1\emph{,...,q}H
+\end{quote}
+\end{minipage} & \emph{\textbar Gti\textbar{} −}1 &
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\emph{≤}
+\end{quote}
+\end{minipage} & & \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+By applying Markov's inequality, we have that for any positive \emph{β},
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.1000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Pr
+\end{minipage} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.2000} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+{[}\emph{T ≥β}{]} = Pr \emph{H, D}
+\end{minipage}}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.2000} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+{[}\emph{T ≥β \textbar{} G} {]} \emph{·} Pr \emph{H, D}
+\end{minipage}}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.2000} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+{[}\emph{G}{]} + Pr
+\end{minipage}} &
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+{[}\emph{T ≥β \textbar{} ¬G}{]} \emph{·} Pr \emph{H, D}
+\end{minipage}} &
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+{[}\emph{¬G}{]}
+\end{quote}
+\end{minipage}} &
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+(21)
+\end{minipage}} \\
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{H, D}
+\end{minipage}} & & & & &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.2000} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{H, D}
+\end{minipage}} \\
+& \multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{≤}
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.2000} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+Exp \emph{H, D}{[}\emph{T \textbar{} G} {]}
+
+\emph{β}
+\end{minipage}}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.2000} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
++ Pr
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+{[}\emph{¬G}{]}
+\end{quote}
+\end{minipage}} \\
+& & & &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 18\tabcolsep) * \real{0.2000} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{H, D}
+\end{minipage}} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+It is furthermore easy to see that
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Pr
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+{[}\emph{¬G}{]} = 1 \emph{−}Pr \emph{H} {[}\emph{G}{]} \emph{≤}1
+\emph{−}
+\end{quote}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{\textbar C\textbar{} −f \textbar C\textbar{}}
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{q}H
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{≤q}H\emph{f \textbar C\textbar.}
+\end{quote}
+\end{minipage}} \\
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{H, D}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Plugging this and (20) into (21) and letting \emph{β} = \emph{α · q}H
+yields
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.1250}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.2500} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+Pr
+\end{minipage}} &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.3750} + 4\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+{[} \emph{T ≥α · q}H{]} \emph{≤}1\emph{α·}
+\end{minipage}}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+1 + 1 \emph{f}
+\end{quote}
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.2500} + 2\tabcolsep}@{}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
++\emph{q}H\emph{f}\\
+\emph{\textbar C\textbar.}
+\end{quote}\strut
+\end{minipage}}} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.2500} + 2\tabcolsep}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{H, D}
+\end{minipage}} \\
+\midrule()
+\endhead
+\multicolumn{3}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.3750} + 4\tabcolsep}}{%
+\multirow{2}{*}{To minimize this expression, we set \emph{f} =}} & &
+\multicolumn{3}{>{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.3750} + 4\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+, which gives us the claim in the Lemma.
+\end{quote}
+\end{minipage}}} & \multirow{2}{*}{\emph{⊔}} \\
+& & & \emph{αq}H \emph{\textbar C\textbar{}} \\
+\textbf{4} &
+\multicolumn{7}{>{\raggedright\arraybackslash}p{(\columnwidth - 14\tabcolsep) * \real{0.8750} + 12\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Multi-shot Verifiable Encryption -- Construction with a Bounded
+Decryption}
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\textbf{Time}
+\end{quote}
+
+If one would like to put a limit on how much computational time
+decryption takes in the worst case,
+
+then the idea is to reduce the size of the challenge space and repeat
+the proof-of-knowledge protocol
+
+19
+
+\begin{quote}
+from Algorithm 3 in parallel \emph{α} times using the standard approach.
+This protocol is described in Algorithm 6. The verification procedure
+simply checks if all the \emph{α} copies are verified correctly.
+
+One can show that with probability approximately 1
+\emph{−\textbar C\textbar−α}, there will be at least one c for
+\textbf{v}\\
+which c is a valid ciphertext satisfying Lemma 3.1, and so one simply
+needs to find it (and \textbf{w}
+
+\textbf{v}\\
+check its validity) analogously to the way c was found in Algorithm 5.
+The main difference \textbf{w}\\
+is that the challenge space is no longer exponentially large, and so one
+can search through all the c = c(\emph{i})\emph{−}c\emph{′}in time
+\emph{α · \textbar C\textbar{}}. This procedure is described in
+Algorithm 8. If one wants to also maintain the relationship between the
+number of random oracle queries of the prover to the number of
+decryption tries, one could ``dovetail'' between Algorithm 8 which
+systematically goes through all c\emph{′∈C} with one that randomly
+guesses them at random.
+
+The trade-off between having the decryption running time be
+upper-bounded by \emph{α · \textbar C\textbar{}} is that the proof of
+knowledge is now approximately \emph{α} times larger.
+
+\textbf{Algorithm 6} \emph{α}-shot Verifiable encryption Enc(\emph{pk,
+x, w})
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Input}: Public key \emph{pk} = (a\emph{,} t\emph{, p, q}),
+language member \emph{x} = (\textbf{B}\emph{,} \textbf{u}), witness
+\emph{w} = \textbf{m} \emph{∈Skγ}. Challenge domain \emph{C}.
+
+\begin{quote}
+Cryptographic hash function H : \emph{\{}0\emph{,} 1\emph{\}∗→Cα}.
+Standard deviation \emph{σ} = 11 \emph{·} max c\emph{∈C∥}c\emph{∥}1
+\emph{·} \emph{αkn}(3 + \emph{γ})
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\$
+
+1: \textbf{r}\emph{,} \textbf{e}\emph{,} \textbf{e}\emph{′←Sk}
+\textbf{r}
+
+2:
+
+3: \textbf{for} \emph{i} = 1 \textbf{to} \emph{α} \textbf{do}\\
+\textbf{w}\\
+\textbf{v}
+
+\emph{←}\\
+\emph{p}a\textbf{I}\emph{k p}\textbf{I}\emph{k} 0\emph{k×k} 0\emph{k×k}
+
+t\textbf{I} 0\emph{k×kp}\textbf{I}\emph{k} \textbf{I}\emph{k}
+\textbf{m} \textbf{e}\emph{′} \textbf{e} mod\emph{q}
+\end{quote}
+
+mod\emph{q}
+
+\begin{quote}
+4: \textbf{y}(\emph{i})\emph{←}\textbf{ym}
+\textbf{ye}\emph{′}(\emph{i}) \textbf{ye}
+\end{quote}
+
+(\emph{i})
+
+(\emph{i})\emph{←DR}4\emph{k,}0\emph{,σ}\$
+
+\textbf{yr}
+
+\begin{quote}
+(\emph{i})\\
+(\emph{i})
+
+\textbf{yr}
+
+5:
+
+6: \textbf{end for}\\
+\textbf{f}(\emph{i})\emph{←}0\emph{ℓ×k}0\emph{ℓ×k}0\emph{ℓ×k}
+\emph{p}a\textbf{I}\emph{k p}\textbf{I}\emph{k} 0\emph{k×k}0\emph{k×k}
+
+t\textbf{I}\emph{k} 0\emph{k×kp}\textbf{I}\emph{k} \textbf{I}\emph{k}
+
+\textbf{B} \textbf{ym} \textbf{ye}\emph{′}(\emph{i}) \textbf{ye}
+\end{quote}
+
+(\emph{i})
+
+(\emph{i})mod\emph{p} mod\emph{q}
+
+mod\emph{q}
+
+\begin{quote}
+7: (c(1)\emph{, . . . ,} c(\emph{α})) \emph{←}H
+
+8: \textbf{for} \emph{i} = 1 \textbf{to} \emph{ℓ}\textbf{do}
+0\emph{ℓ×k}0\emph{ℓ×k}0\emph{ℓ×k} \emph{p}a\textbf{I}\emph{k
+p}\textbf{I}\emph{k} 0\emph{k×k}0\emph{k×k}
+
+t\textbf{I}\emph{k} 0\emph{k×kp}\textbf{I}\emph{k} \textbf{I}\emph{k}
+
+\textbf{B} \emph{,} \textbf{w}
+
+\textbf{u}\\
+\textbf{v}
+\end{quote}
+
+\emph{,} \textbf{f}(1)\emph{, . . . ,} \textbf{f}(\emph{α})
+
+\begin{quote}
+10:\\
+9: \textbf{s}(\emph{i})\emph{←}
+
+\textbf{z}(\emph{i})\emph{←}\textbf{s}(\emph{i})+ \textbf{y}(\emph{i})
+\textbf{m} \textbf{e}\emph{′} \textbf{e}c(\emph{i})\\
+\textbf{r}
+
+11: \textbf{end for}
+
+12: \textbf{s} \emph{←}\textbf{s}(\emph{α}) \emph{. . .}, \textbf{z}
+\emph{←}\emph{DR}4\emph{kα,}0\emph{,σ}(\textbf{z})
+\textbf{z}(\emph{α}) \emph{. . .}\\
+\textbf{s}(1) \textbf{z}(1)
+
+13: with probability
+3\emph{·DR}4\emph{kα,}\textbf{s}\emph{,σ}(\textbf{z}), continue, else
+goto 3
+\end{quote}\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+
+\end{quote}
+\end{minipage} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+14: \textbf{if} \emph{∥}\textbf{z}\emph{∥∞\textgreater{}} 6 \emph{· σ},
+goto 3 15: \textbf{return} \emph{t} = (\textbf{v}\emph{,}
+\textbf{w}\emph{,} c(1)\emph{, . . . ,} c(\emph{α})\emph{,}
+\textbf{z}(1)\emph{, . . . ,} \textbf{z}(\emph{α}))
+\end{quote}
+\end{minipage}} \\
+\bottomrule()
+\end{longtable}
+
+20
+
+\begin{quote}
+\textbf{Algorithm 7} \emph{α}-shot Verification V(\emph{pk, x, t})
+\end{quote}
+
+\textbf{Input}: Public key \emph{pk} = (a\emph{,} t\emph{, p, q}),
+language member \emph{x} = (\textbf{B}\emph{,} \textbf{u}), ciphertext
+\emph{t} = (\textbf{v}\emph{,} \textbf{w}\emph{,} c(1)\emph{, . . . ,}
+c(\emph{α})\emph{,} \textbf{z}(1)\emph{, . . . ,} \textbf{z}(\emph{α})).
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\multicolumn{4}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{1.0000} + 6\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Cryptographic hash function H : \emph{\{}0\emph{,} 1\emph{\}∗→Cα}.
+Positive real \emph{σ} as in Algorithm 6.
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\multirow{4}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+1: \textbf{z} \emph{←}
+
+2: \textbf{if} \emph{∥}\textbf{z}\emph{∥∞\textgreater{}} 6 \emph{· σ},
+\textbf{return} 0\textbf{z}(\emph{α}) \emph{. . .}\\
+\textbf{z}(1)
+
+3: \textbf{for} \emph{i} = 1 \textbf{to} \emph{α} \textbf{do}
+
+4:
+
+5: \textbf{end for
+f}(\emph{i})\emph{←}0\emph{ℓ×k}0\emph{ℓ×k}0\emph{ℓ×k
+p}a\textbf{I}\emph{k p}\textbf{I}\emph{k} 0\emph{k×k}0\emph{k×k}
+
+t\textbf{I}\emph{k} 0\emph{k×kp}\textbf{I}\emph{k} \textbf{I}\emph{k}
+
+\textbf{B}\textbf{z}(\emph{i})\emph{−}c(\emph{i}) \textbf{w}
+
+\textbf{u}\\
+\textbf{v}
+\end{quote}
+
+
+
+\begin{quote}
+6: \textbf{if} (c(1)\emph{, . . . ,} c(\emph{α})) \emph{̸}= H
+
+7: \textbf{return} 10\emph{ℓ×k}0\emph{ℓ×k}0\emph{ℓ×k}
+\emph{p}a\textbf{I}\emph{k p}\textbf{I}\emph{k} 0\emph{k×k}0\emph{k×k}
+
+\emph{p}t\textbf{I}\emph{k} 0\emph{k×kp}\textbf{I}\emph{k}
+\textbf{I}\emph{k}
+
+\textbf{B} \emph{,}
+\end{quote}\strut
+\end{minipage}} &
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+mod\emph{q}
+\end{quote}
+\end{minipage}} &
+\multirow{4}{*}{\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+, \textbf{return} 0
+\end{quote}
+\end{minipage}} \\
+&
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+mod\emph{q}
+\end{quote}
+\end{minipage}} \\
+&
+\multicolumn{2}{>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}}{%
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+mod\emph{p}
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[t]{\linewidth}\raggedright
+\textbf{w}
+
+\begin{quote}
+\textbf{u}\\
+\textbf{v}
+\end{quote}\strut
+\end{minipage} & \emph{,} \textbf{f}(1)\emph{, . . . ,}
+\textbf{f}(\emph{α}) \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+\textbf{Algorithm 8} \emph{α}-shot Decryption Dec(\emph{sk, x, t})
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 26\tabcolsep) * \real{0.0714}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Input}:
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Secret
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+key
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{sk}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+s1,
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+language
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+member
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{x}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+(\textbf{B}\emph{,} \textbf{u}),
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+ciphertext
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{t}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+(\textbf{v}\emph{,} \textbf{w}\emph{,} c(1)\emph{, . . . ,}
+c(\emph{α})\emph{,} \textbf{z}(1)\emph{, . . . ,}
+\textbf{z}(\emph{α})).\\
+1: \textbf{if} V(\emph{pk, t, π}) = 1 \textbf{then}
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+2:\\
+3:\\
+4:\\
+5:\\
+6:\\
+7:\\
+8:\\
+9:\\
+10: 11:\strut
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{for} \emph{i} = 1 \textbf{to} \emph{α} \textbf{do}
+
+\textbf{for all} c\emph{′∈C} \textbf{do}\\
+\emph{c ←c}(\emph{i})\emph{−c′}\\
+\uline{\textbf{m}\emph{←}}(\textbf{w} \emph{−}\textbf{v}s1)c mod
+\emph{q}\\
+\textbf{if}\uline{\emph{∥}\textbf{m}}\emph{∥∞\textless{} q/}2\emph{C}
+\textbf{then}\\
+\textbf{\uline{m}} \emph{←}\textbf{m} mod \emph{p}\\
+\textbf{return} (\textbf{m}\emph{,}c)
+
+\textbf{end if}
+
+\textbf{end for}
+
+\textbf{end for}
+\end{quote}\strut
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+12: \textbf{end if}
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{5}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Chosen-Ciphertext Security}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Many applications require a verifiable ciphertext to hide the encrypted
+witness, even when the adversary has access to decryptions of other
+ciphertexts. As a natural analog of indistinguishability under
+chosen-ciphertext attack (IND-CCA) for standard public-key encryption
+schemes, we define chosen-ciphertext simulatability and describe a
+construction that satisfies it.
+
+Our construction essentially follows the Naor-Yung paradigm {[}NY90{]}
+where the sender encrypts the message twice under different public keys
+and adds a non-interactive zero-knowledge (NIZK) proof that both
+ciphertexts encrypt the same message. Naor and Yung only proved their
+appro-ach secure under non-adaptive chosen-ciphertext (CCA1), but Sahai
+{[}Sah99{]} later showed that if the NIZK proof is simulation-sound,
+then the resulting encryption scheme is secure against adap-tive
+chosen-ciphertext (CCA2) attacks. Faust et al. {[}FKMV12{]} showed that
+Fiat-Shamir proofs
+\end{quote}
+
+21
+
+are simulation-sound in the random-oracle model if the underlying proof
+system has quasi-unique
+
+responses.
+
+\begin{quote}
+Furthermore, because the verifiable encryption scheme for a CPA-secure
+encryption scheme
+\end{quote}
+
+already includes a NIZK, this conversion from CPA to CCA2 security is
+not too expensive, increasing
+
+the size of the proof and ciphertext by factors less than 2 (see (22)).
+
+\emph{Chosen-ciphertext simulatability.} We say that a relaxed
+verifiable encryption scheme (Kg\emph{,} Enc\emph{,} V\emph{,}
+
+Dec) is chosen-ciphertext simulatable when there exists a simulator Sim
+such that the following
+
+advantage is negligible for all PPT adversaries A:
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Pr
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{b′}= \emph{b} :
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{t}0
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$ \$ \$
+
+\$ \emph{b←\{}0\emph{,} 1\emph{\},} (\emph{pk,
+sk})\emph{←}Kg(1\emph{λ})\emph{,} (\emph{st, x,
+w})\emph{←}A(\emph{pk})\emph{,}
+\end{quote}
+
+\emph{←}Enc(\emph{pk, x, w})\emph{, t}1\emph{←}Sim(\emph{pk, x})\emph{,
+b′←}ADec(\emph{sk,·,·})(\emph{st, tb})
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{−}1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{,}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+where A is not allowed to query its Dec oracle on the challenge
+ciphertext \emph{tb}. In the random-oracle
+
+model, Sim can additionally program the random oracle.
+
+\$
+
+\emph{Construction.} The receiver generates a Ring-LWE key pair by
+choosing the secrets s1\emph{,} s\emph{′}1\emph{,} s2\emph{,}
+s\emph{′}2\emph{←S}1
+
+and a
+
+where \emph{p} is modulus for proving the linear relation. The secret
+key is \emph{sk} = s1.\emph{←R}, and computing t1 \emph{←}as1 + s2 and
+t1 \emph{←}as\emph{′}1+ s\emph{′}2. The public key is \emph{pk} =
+(a\emph{,} t1\emph{,} t2\emph{, p, q}),
+
+\begin{quote}
+The sender encrypts a witness \emph{w} = \textbf{m} for language member
+\emph{x} = (\textbf{B}\emph{,} \textbf{u}) by choosing randomness
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.1111}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+(\textbf{r}1\emph{,} \textbf{e}1\emph{,} \textbf{e}\emph{′}1\emph{,}
+\textbf{r}2\emph{,} \textbf{e}2\emph{,} \textbf{e}\emph{′}2)
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\$\\
+\emph{←S}6\emph{k} 1, computing
+\end{quote}\strut
+\end{minipage} &
+\multirow{5}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+
+\end{minipage}} &
+\multirow{5}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{e}1
+\end{quote}
+
+\textbf{e}\emph{′}
+
+\textbf{e}2
+
+\textbf{e}\emph{′}
+
+\begin{quote}
+\textbf{m}\\
+\textbf{r}2
+\end{quote}
+
+1
+
+\begin{quote}
+2 \textbf{r}1
+\end{quote}\strut
+\end{minipage}} &
+\multirow{5}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+=
+\end{minipage}} &
+\multirow{5}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{w}1
+
+\begin{quote}
+\textbf{w}2 \textbf{v}2\\
+\textbf{v}1
+\end{quote}\strut
+\end{minipage}} &
+\multirow{5}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+mod\emph{q}
+\end{quote}
+\end{minipage}} &
+\multirow{5}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+(22)
+\end{minipage}} \\
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 16\tabcolsep) * \real{0.2222} + 2\tabcolsep}}{%
+\multirow{4}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\emph{p}t1\textbf{I}\emph{k} 0\emph{k×kp}\textbf{I}\emph{k}
+0\emph{k×k}0\emph{k×k}0\emph{k×k}
+0\emph{k×k}0\emph{k×k}0\emph{k×kp}a\textbf{I}\emph{k
+p}\textbf{I}\emph{k} 0\emph{k×k}0\emph{k×k}
+0\emph{k×k}0\emph{k×k}0\emph{k×kp}t2\textbf{I}\emph{k}
+0\emph{k×kp}\textbf{I}\emph{k p}a\textbf{I}\emph{k p}\textbf{I}\emph{k}
+0\emph{k×k}0\emph{k×k}0\emph{k×k}0\emph{k×k}0\emph{k×k}
+
+\textbf{I}\emph{k}
+
+\textbf{I}\emph{k}
+\end{minipage}}} \\
+& & & & & & & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+mod\emph{q}
+\end{quote}
+\end{minipage} \\
+& & & & & & & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+mod\emph{q}
+\end{quote}
+\end{minipage} \\
+& & & & & & & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+mod\emph{q}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+and concatenating a proof (c\emph{,} \textbf{z}) using the relaxed NIZK
+proof system of Section 2.6 for the language
+
+element:
+
+\begin{quote}
+\emph{p}t1\textbf{I}\emph{k} 0\emph{k×kp}\textbf{I}\emph{k}
+0\emph{k×k}0\emph{k×k}0\emph{k×k}
+
+0\emph{k×k}0\emph{k×k}0\emph{k×kp}a\textbf{I}\emph{k
+p}\textbf{I}\emph{k} 0\emph{k×k}0\emph{k×k}
+
+0\emph{k×k}0\emph{k×k}0\emph{k×kp}t2\textbf{I}\emph{k}
+0\emph{k×kp}\textbf{I}\emph{k}\\
+\emph{p}a\textbf{I}\emph{k p}\textbf{I}\emph{k}
+0\emph{k×k}0\emph{k×k}0\emph{k×k}0\emph{k×k}0\emph{k×k}
+
+0\emph{ℓ×k}0\emph{ℓ×k}0\emph{ℓ×k}0\emph{ℓ×k}0\emph{ℓ×k}0\emph{ℓ×k}\\
+\textbf{I}\emph{k}
+\end{quote}
+
+\textbf{I}\emph{k}
+
+\begin{quote}
+\textbf{B}   \textbf{e}1
+\end{quote}
+
+\textbf{e}\emph{′}
+
+\textbf{e}2
+
+\textbf{e}\emph{′}
+
+\begin{quote}
+\textbf{m}\\
+\textbf{r}2
+\end{quote}
+
+1
+
+2=\textbf{w}1
+
+\begin{quote}
+\textbf{w}2\\
+\textbf{v}1
+\end{quote}
+
+\textbf{v}2
+
+\textbf{u}mod\emph{p} mod\emph{q}
+
+mod\emph{q}
+
+mod\emph{q}
+
+\begin{quote}
+\emph{.} (23)\\
+\textbf{r}1
+
+Verification of a ciphertext (\textbf{v}1\emph{,} \textbf{w}1\emph{,}
+\textbf{v}2\emph{,} \textbf{w}2\emph{,} c\emph{,} \textbf{z}) is done by
+verifying the zero-knowledge proof
+\end{quote}
+
+(c\emph{,} \textbf{z}) for the language element (23).
+
+\begin{quote}
+Decryption works by first applying the CPA decryption algorithm
+(Algorithm 5) to (\textbf{v}1\emph{,} \textbf{w}1)
+\end{quote}
+
+(and the part of \textbf{z} that affects it). We can't directly use its
+output (\textbf{m}\emph{, c}), however, because that
+
+may leak whether the ciphertext was decrypted through
+(\textbf{v}1\emph{,} \textbf{w}1) or through (\textbf{v}2\emph{,}
+\textbf{w}2), which is
+
+problematic when the security proof decrypts using the latter. While the
+pair (\textbf{m}\emph{, c}) that would be
+
+recovered from both ciphertexts could be different, the NIZK proof
+guarantees that\textbf{m}\emph{/c} mod \emph{p}
+
+22
+
+\begin{quote}
+\textbf{Algorithm 9} CCA decryption Deccca(\emph{sk, x, t})
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 2\tabcolsep) * \real{1.0000} + 2\tabcolsep}@{}}{%
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{Input}: Secret key \emph{sk} = s1, language member \emph{x} =
+(\textbf{B}\emph{,} \textbf{u}) \emph{∈}¯\emph{L}, ciphertext \emph{t} =
+(\textbf{v}1\emph{,} \textbf{w}1\emph{,} \textbf{v}2\emph{,}
+\textbf{w}2\emph{,} c\emph{,} \textbf{z})\emph{,} constant \emph{C} =
+
+\begin{quote}
+\emph{c,c′∈C∥c −c′∥}1
+
+1: \textbf{if} V(\emph{pk, x, t}) = 0 \textbf{then}
+
+2: \textbf{return} \emph{⊥}
+
+3: \textbf{else}
+\end{quote}
+\end{minipage}} \\
+\midrule()
+\endhead
+\begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+4: 5: 6:
+\end{quote}
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{z}\emph{′←}{[} \textbf{z}1 ; \emph{. . .} ; \textbf{z}3\emph{k}
+; \textbf{z}6\emph{k}+1 ; \emph{. . .} ;
+\textbf{z}6\emph{k}+\emph{ℓ}{]}\\
+(\textbf{m}\emph{,}c)\emph{←}Dec(\emph{sk, x,} (\textbf{v}1\emph{,}
+\textbf{w}1\emph{,} c\emph{,} \textbf{z}\emph{′})) as per Algorithm 5\\
+\textbf{loop}
+\end{quote}\strut
+\end{minipage} \\
+\begin{minipage}[t]{\linewidth}\raggedright
+7:\\
+8:\\
+9:\\
+10: 11:\strut
+\end{minipage} & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\$
+
+c\emph{′←C}\\
+c\emph{′←}c \emph{−}c\emph{′}\\
+\textbf{m}\emph{′\uline{←}}\uline{c}\emph{′·} \textbf{m}\emph{/}c mod
+\emph{p}\\
+\textbf{if} \emph{∥}\textbf{\uline{m}}\emph{′∥∞\textless{}} 12\emph{σ}
+\textbf{then return} (\textbf{m}\emph{′,}c\emph{′})
+\end{quote}\strut
+\end{minipage} \\
+12: & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{end if}
+\end{quote}
+\end{minipage} \\
+13: & \begin{minipage}[t]{\linewidth}\raggedright
+\begin{quote}
+\textbf{end loop}
+\end{quote}
+\end{minipage} \\
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+14: \textbf{end if}
+\end{quote}
+
+is the same for both. The decryption algorithm therefore guesses another
+\emph{c′∈C} and computes
+\textbf{m}\emph{′}=\emph{c′·}\textbf{m}\emph{/c} mod \emph{p}
+until\textbf{m}\emph{′}is short, where\emph{c′}= \emph{c−c′}, and
+returns the pair (\textbf{m}\emph{′, c′}). The algorithm
+
+is described in detail in Algorithm 9. The following lemma shows that
+its expected running time is
+
+at most twice the running time of the CPA decryption algorithm, which we
+bounded in Lemma 3.2.
+
+\textbf{Lemma 5.1.} \emph{For a given key pair} (\emph{pk, sk})
+\emph{∈}Kg(1\emph{λ})\emph{, consider the following experiment with an}
+
+\begin{quote}
+\emph{adversary A:} \$
+
+(\emph{x, t})\emph{←A}H(\emph{pk}) \$
+
+\emph{If} V(\emph{pk, x, t}) = 1 \emph{then} ¯\emph{←}Dec(\emph{sk, x,
+t}) \emph{.}
+\end{quote}
+
+\emph{Let H be the random coins of the function} H \emph{(when it is
+modeled as a random function) and D}
+
+\emph{be the random coins of the decryption algorithm} Deccca\emph{. Let
+T}cca \emph{be the number of iterations of the}
+
+\emph{loop in Lines 6--13 of} Deccca \emph{(Algorithm 9), and let T}cpa
+\emph{be the number of iterations of the loop in}
+
+\begin{quote}
+\emph{Lines 2--9 of} Dec \emph{(Algorithm 5) when it is called in Line 5
+of} Deccca\emph{. Then we have that}
+\end{quote}
+
+Exp
+
+\emph{H, D} {[} \emph{T}cca {]} \emph{≤}Exp \emph{H, D} {[} \emph{T}cpa
+{]} \emph{.}
+
+\$
+
+\emph{Proof.} Recall that the Dec algorithm (Algorithm 5) makes repeated
+guesses c\emph{′←C} until it finds a pair (\textbf{m} mod \emph{p,}c),
+where c = c \emph{−}c\emph{′}, such that
+\emph{∥}\textbf{m}\emph{∥∞≤q/}2\emph{C} and \emph{∥}\textbf{m} mod
+\emph{p∥∞\textless{}} 12\emph{σ}. In Lemma 3.2, we proved a bound for
+the expected number of guesses c\emph{′}until Dec finds such a pair.
+
+\begin{quote}
+Suppose we would run Dec again on the same inputs. It would take the
+same expected number of
+
+guesses c\emph{′←\uline{C}} to come up with a second pair
+(\textbf{m}\emph{′}mod \emph{p,}c\emph{′}), where c\emph{′}=
+c\emph{−}c\emph{′}, such
+that\emph{\uline{∥}}\textbf{m}\emph{′∥∞≤q/}2\emph{C} and
+\emph{∥}\textbf{\uline{m}}\emph{′}mod \emph{p∥\uline{∞}\textless{}}
+12\emph{σ}. By Lemma 3.1, we moreover know that\textbf{m}\emph{/}c
+=\textbf{m}\emph{′/}\uline{c}\emph{′}mod \emph{p}, meaning
+that\textbf{m}\emph{′}= c\emph{′·}\textbf{\uline{m}}\emph{/}c mod
+\emph{p}.
+
+By inspecting the code of Algorithm 9, one can see that the Deccca
+algorithm essentially com-
+\end{quote}
+
+putes the value\textbf{m}\emph{′}mod \emph{p} directly by guessing
+c\emph{′}(by choosing random \emph{c′}) and multiplying by
+
+\textbf{m}\emph{/}c mod \emph{p}. The acceptance of
+the\textbf{m}\emph{′}mod \emph{p} is only subject to the restriction
+that its norm is less
+
+than 12\emph{σ}; the other condition from Line 6 of Dec is not imposed.
+The expected number of guesses
+
+for c\emph{′}that Deccca has to try before being successful is therefore
+at most the expected number of
+
+\begin{quote}
+guesses that Dec would have made, which proves the lemma. \emph{⊔}
+\end{quote}
+
+23
+
+\emph{Security.} Correctness, completeness, and soundness all hold under
+the same assumptions as the
+
+CPA-secure scheme in Section 3.4. The following theorem states the
+chosen-ciphertext simulatability
+
+of the scheme.
+
+\textbf{Theorem 5.2.} \emph{If the Ring-LWE encryption scheme is IND-CPA
+secure and the relaxed NIZK}
+
+\emph{proof system is unbounded non-interactive zero-knowledge and
+unbounded simulation-sound, then}
+
+\emph{the above construction is chosen-ciphertext simulatable.}
+
+\emph{Proof.} We prove the theorem by, given a PPT adversary \emph{A}
+that breaks the chosen-ciphertext
+
+simulatability of the above construction with advantage \emph{ϵ},
+constructing PPT adversaries \emph{B}ZK with
+
+advantage \emph{ϵ}ZK in breaking the unbounded non-interactive
+zero-knowledge property of the relaxed
+
+NIZK proof system of Section 2.6, \emph{B}S with advantage \emph{ϵ}S in
+breaking the unbounded simulation
+
+soundness of the same proof system, and \emph{B}LWE with advantage
+\emph{ϵ}LWE in breaking the IND-CPA
+
+security of the Ring-LWE encryption scheme of Section 2.5 such that
+
+\begin{quote}
+\emph{ϵ ≤ϵ}ZK + \emph{ϵ}S + 2 \emph{· ϵ}LWE \emph{.} (24)
+
+To prove the chosen-ciphertext simulatability property, consider the
+ciphertext simulator Sim
+\end{quote}
+
+that, on input \emph{pk} = (a\emph{,} t1\emph{,} t2) and language member
+(\textbf{B}\emph{,} \textbf{u}), computes (\textbf{v}1\emph{,}
+\textbf{w}1) as a Ring-LWE
+
+encryption of 1\emph{k}under (a\emph{,} t1), computes
+(\textbf{v}2\emph{,} \textbf{w}2) as a Ring-LWE encryption of
+1\emph{k}under (a\emph{,} t2),
+
+and uses the zero-knowledge simulator S of the relaxed NIZK proof system
+to construct a proof
+
+\begin{quote}
+\$
+\end{quote}
+
+(c\emph{,} \textbf{z})\emph{←}S2((\textbf{A}\emph{,} {[} \textbf{v}1 ;
+\textbf{w}1 ; \textbf{v}2 ; \textbf{w}2 ; \textbf{u} {]})), where
+\textbf{A} is the matrix on the left-hand side of
+
+Equation (23). The ciphertext simulator Sim outputs (\textbf{v}1\emph{,}
+\textbf{w}1\emph{,} \textbf{v}2\emph{,} \textbf{w}2\emph{,} c\emph{,}
+\textbf{z}) as challenge ciphertext,
+
+and responds to \emph{A}'s random-oracle queries using the NIZK
+simulator S1. Let \textbf{Exp}ccas-\emph{b}
+
+\begin{quote}
+\emph{A} (1\emph{k}) be the experiment that runs \emph{A} in the CCA
+soundness game with bit \emph{b} and
+\end{quote}
+
+returns \emph{A}'s guess \emph{b′}. The CCA soundness advantage of
+\emph{A} is
+
+\begin{quote}
+\emph{ϵ} = Pr \emph{b′}= \emph{b} : \emph{b←\{}0\emph{,} 1\emph{\} ,
+b′←}\textbf{Exp}ccas-\emph{b} (1\emph{λ}) \emph{−}1
+
+= 1 2\emph{·} Pr \emph{b′}= 0 : \emph{b′←}\textbf{Exp}ccas-0 (1\emph{λ})
++ Pr \emph{b′}= 1 : \emph{b′←}\textbf{Exp}ccas-1 (1\emph{λ}) \emph{−}1
+
+= 1 2\emph{·} Pr \emph{b′}= 0 : \emph{b′←}\textbf{Exp}ccas-0 (1\emph{λ})
+\emph{−}Pr \emph{b′}= 0 : \emph{b′←}\textbf{Exp}ccas-1 (1\emph{λ})
+\emph{.} (25)
+
+We prove that ciphertexts simulated by Sim are indistinguishable from
+real ciphertexts by
+\end{quote}
+
+considering a sequence of games played with the adversary \emph{A}. Game
+0 is the original CCA soundness
+
+game with \emph{b} = 0, i.e., where \emph{A} is given a real ciphertext,
+while Game 5 is the original CCA soundness
+
+game for \emph{b} = 1, i.e., with a simulated ciphertext. In the
+following, let Pr{[}\textbf{Game-}\emph{i}{]} denote the
+
+probability of the event that \emph{A} outputs \emph{b′}= 0 when
+executed in the enviornment of \textbf{Game-}\emph{i}.
+
+\textbf{Game 0:} This is \textbf{Exp}ccas-0 (1\emph{λ}), i.e., the
+normal chosen-ciphertext simulatability game with \emph{b} =
+
+\begin{quote}
+\emph{A}
+
+0, where the adversary is always given the real ciphertext \emph{t}0 as
+challenge ciphertext \emph{t∗}. The
+
+probability that \emph{A} outputs \emph{b′}= 0 is in this case obviously
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 10\tabcolsep) * \real{0.1667}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Pr {[}\textbf{Game-0}{]} = Pr
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{b′}= 0 : \emph{b′}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{←}\textbf{Exp}ccas-0
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+(1\emph{λ})
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+(26)
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\textbf{Game 1:} In this game, the challenger uses the simulator S of
+the relaxed NIZK proof system to
+
+\begin{quote}
+generate the zero-knowledge proof (c\emph{,} \textbf{z}) in the
+challenge ciphertext \emph{t∗}and to respond to \emph{A}'s
+\end{quote}
+
+24
+
+\$
+
+\begin{quote}
+random-oracle queries, i.e., (c\emph{,}
+\textbf{z})\emph{←}S2((\textbf{A}\emph{,} {[} \textbf{v}1 ; \textbf{w}1
+; \textbf{v}2 ; \textbf{w}2 ; \textbf{u} {]})), where \textbf{A} is the
+matrix
+
+on the left-hand side of Equation (23), and
+H(\emph{q})\emph{←}S2(\emph{q}).
+
+If there exists an adversary \emph{A} such that Pr {[}\textbf{Game-0}{]}
+\emph{−}Pr {[}\textbf{Game-1}{]} is non-negligible, then
+
+there exists an adversary \emph{B} that breaks the unbounded
+non-interactive zero-knowledge property
+
+of the relaxed NIZK proof system. Namely, \emph{B} runs the code of Game
+0 with \emph{A}, but uses its prover oracle (which could be the real
+prover PHor the simulated prover S2) to generate the components
+
+(c\emph{,} \textbf{z}) for the challenge ciphertext. It answers
+\emph{A}'s random-oracle queries by forwarding responses from its own
+random oracle (which could be a true random oracle or S1). When \emph{A}
+outputs \emph{b′}, \emph{B} also outputs \emph{b′}. It is clear that if
+\emph{B} is facing a real prover, then \emph{A}'s view is identical to
+Game 0,
+
+while if \emph{B} is facing the zero-knowledge simulator, \emph{A}'s
+view is that of Game 1. Algorithm \emph{B}'s
+
+advantage in breaking the zero-knowledge property is therefore
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{ϵ}1 = 1 2\emph{·}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Pr {[}\textbf{Game-0}{]} \emph{−}Pr {[}\textbf{Game-1}{]}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+(27)
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\textbf{Game 2:} This game chooses the components \textbf{v}2\emph{,}
+\textbf{w}2 in \emph{t∗}as random Ring-LWE encryptions of 1\emph{k}
+
+\begin{quote}
+under public key (a\emph{,} t2), instead of being computed as in (22).
+Note that this doesn't change
+
+the way the zero-knowledge proof (c\emph{,} \textbf{z}) is computed, as
+it was already computed through S2
+
+since Game 1. This game is indistinguishable from Game 1 under the
+IND-CPA security of
+
+the Ring-LWE encryption scheme in Section 2.5. Namely, given an
+adversary \emph{A} such that
+
+Pr {[}\textbf{Game-1}{]} \emph{−}Pr {[}\textbf{Game-2}{]} is
+non-negligible, consider the following IND-CPA adversary \emph{B}2.
+
+On input public key (a\emph{,} t2), \emph{B}2 chooses s1\emph{,}
+s2\emph{←S}1, computes t1 \emph{←}as1 + s2, and runs \emph{A} on public
+key (a\emph{,} t1\emph{,} t2). When \emph{A} submits the language member
+\emph{x} and witness \emph{w} to be encrypted, \emph{B}2 submits
+\emph{x} and 1\emph{k}as its two challenge messages to obtain a
+challenge ciphertext (\textbf{v}2\emph{,} \textbf{w}2).
+
+It computes (\textbf{v}1\emph{,} \textbf{w}1) as an encryption of
+\emph{w} under public key (a\emph{,} t1), uses the zero-knowledge
+
+simulator S2 to generate a proof (c\emph{,} \textbf{z}), and hands
+(\textbf{v}1\emph{,} \textbf{w}1\emph{,} \textbf{v}2\emph{,}
+\textbf{w}2\emph{,} c\emph{,} \textbf{z}) as challenge ciphertext
+
+to \emph{A}.
+
+It is clear that if \emph{B}2's challenge ciphertext is an encryption of
+\emph{w}, then \emph{B}2 provides \emph{A} with a perfect simulation of
+Game 1, while if it is an encryption of 1\emph{k}, it provides a perfect
+simulation
+
+of Game 2. The advantage of \emph{B}2 in breaking the IND-CPA security
+of the Ring-LWE encryption
+
+scheme is therefore
+
+\emph{ϵ}2 = 1 2\emph{·}Pr {[}\textbf{Game-1}{]} \emph{−}Pr
+{[}\textbf{Game-2}{]} (28)
+\end{quote}
+
+\textbf{Game 3:} Rather than performing decryption using the secret key
+s1 underlying t1 = as1 + s2,
+
+\begin{quote}
+this game answers decryption queries using s\emph{′}1underlying t2 =
+as\emph{′}1+ s\emph{′}2. The only way for
+
+\emph{A} to distinguish these two games from one another would be by
+submitting a ciphertext
+
+(\textbf{v}1\emph{,} \textbf{w}1\emph{,} \textbf{v}2\emph{,}
+\textbf{w}2\emph{,} c\emph{,} \textbf{z}) where the decryption
+(\textbf{m}2\emph{,}c2) based on (\textbf{v}2\emph{,} \textbf{w}2) is
+distributed differently
+
+from the decryption (\textbf{m}1\emph{,}c1) based on
+(\textbf{v}1\emph{,} \textbf{w}1).
+
+Let (\textbf{m}1\emph{, c}1) and (\textbf{m}2\emph{, c}2) be the
+respective outputs of Dec on Line 5 of Algorithm 9 when de-
+
+crypting using the secret key underlying t1 and t2, respectively. We
+first show that if\textbf{m}1\emph{/c}1 =
+
+\textbf{m}2\emph{/c}2 mod \emph{p}, then the final outputs
+(\textbf{m}\emph{′}1\emph{, c′}1) and (\textbf{m}\emph{′}2\emph{, c′}2)
+of Deccca under both keys are iden-
+
+tically distributed. Namely, Deccca works by first calling the Dec
+algorithm to return (\textbf{m}\emph{i, ci})
+
+and then choosing random values
+c\emph{′}until\textbf{m}\emph{′i}=\emph{c′i\uline{·}}\textbf{m}\emph{i/ci}
+mod \emph{p} satisfies a norm bound, where \emph{ci} = c
+\emph{−}c\emph{′}and c is taken from the ciphertext.
+If\textbf{\uline{m}}1\emph{/c}1 =\textbf{m}2\emph{/c}2 mod \emph{p},
+then this procedure is
+
+clearly identical for both decryption keys, so that the outputs are
+identically distributed.
+
+Next, we show that the unbounded simulation soundness of the relaxed
+NIZK proof system
+
+guarantees that\textbf{m}1\emph{/c}1 \emph{̸}=\textbf{m}2\emph{/c}2 mod
+\emph{p}. Namely, the simulation soundness of the relaxed NIZK
+\end{quote}
+
+25
+
+\begin{quote}
+proof for Equation 23) guarantees that there exist
+(\textbf{r}1\emph{,}\textbf{e}1\emph{,}\textbf{e}\emph{′}1\emph{,}\textbf{r}2\emph{,}\textbf{e}2\emph{,}\textbf{e}\emph{′}2\emph{,}\textbf{m}\emph{,}c)
+such that
+\end{quote}
+
+\emph{p}a\textbf{r}1 + \emph{p}\textbf{e}1 = c\textbf{v}1 mod \emph{q}
+
+\emph{p}t1\textbf{r}1 + \emph{p}\textbf{e}\emph{′}1+\textbf{m} =
+c\textbf{w}1mod \emph{q}
+
+\emph{p}a\textbf{r}2 + \emph{p}\textbf{e}2 = c\textbf{v}2 mod \emph{q}
+
+\emph{p}t2\textbf{r}2 + \emph{p}\textbf{e}\emph{′}2+\textbf{m} =
+c\textbf{w}2mod \emph{q}
+
+\begin{quote}
+By the correctness of Ring-LWE encryption, we therefore know that
+(\textbf{m}\emph{,}c) is a possible output
+
+of the Dec algorithm when applied to (\textbf{v}1\emph{,} \textbf{w}1)
+using s1, as well as of Dec when applied to
+
+(\textbf{v}2\emph{,} \textbf{w}2) using s2. Moreover, by Lemma 3.1, we
+know that\textbf{m}1\emph{/c}1 =\textbf{m}\emph{/c} mod \emph{p} for any
+output
+\end{quote}
+
+\$
+
+\begin{quote}
+(\textbf{m}1\emph{,}c1)
+
+Dec(s\emph{′}1\emph{,} (\textbf{v}2\emph{,} \textbf{w}2\emph{,}
+c\emph{,} \textbf{z}\emph{′}). It therefore follows
+that\textbf{m}1\emph{/c}1 =\textbf{m}2\emph{/c}2 mod \emph{p}. We
+therefore have that\emph{←}Dec(s1\emph{,} (\textbf{v}1\emph{,}
+\textbf{w}1\emph{,} c\emph{,} \textbf{z}\emph{′}), as well as that
+\textbf{m}2\emph{/c}2 = \textbf{m}\emph{/c} mod \emph{p} for any output
+(\textbf{m}2\emph{,} c2)\emph{←}
+
+any adversary distinguishing \textbf{Game-2} from \textbf{Game-3} can be
+turned into an adversary on the
+
+unbounded simulation soundness of the NIZK proof system with advantage
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{ϵ}3 =
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Pr {[}\textbf{Game-2}{]} \emph{−}Pr {[}\textbf{Game-3}{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\emph{.}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+(29)
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+Lemma 3.2 can be slightly modified to bound the decryption time for
+(\textbf{v}2\emph{,} \textbf{w}2) based on the
+
+number of random-oracle queries made by the adversary.
+\end{quote}
+
+\textbf{Game 4:} This game also chooses the components
+\textbf{v}1\emph{,} \textbf{w}1 in the challenge ciphertext as random
+
+\begin{quote}
+encryptions under (a\emph{,} t1) of 1\emph{k}instead of \emph{w}.
+Similarly to Game 2, any adversary \emph{A} that returns 0 with
+non-negligible difference in Games 3 and 4 yields an IND-CPA adversary
+\emph{B}4 with non-negligible advantage
+
+\emph{ϵ}4 = 1 2\emph{·}Pr {[}\textbf{Game-3}{]} \emph{−}Pr
+{[}\textbf{Game-4}{]} (30)
+
+It is worth mentioning that the reduction from the IND-CPA security of
+Ring-LWE can only
+
+go through because \emph{B}4 answers decryption queries using the
+trapdoor s\emph{′}1for t2, not s1 for t1.
+\end{quote}
+
+\textbf{Game 5:} Finally, this game reverts the change of Game 3, i.e.,
+it answers decryption queries using
+
+\begin{quote}
+the secret key s1 underlying t1, rather than s\emph{′}1underlying t2. By
+a similar reduction as in
+
+Game 5, we have that any \emph{A} with a non-negligible difference of
+outputting zero in Games 4 and 5 can be used to build an adversary
+\emph{B}5 with an advantage in breaking the unbounded
+simulation-soundness of the NIZK proof system of
+\end{quote}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\emph{ϵ}5 =
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Pr {[}\textbf{Game-4}{]} \emph{−}Pr {[}\textbf{Game-5}{]}
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+(31)
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Game 5 provides an environment to \emph{A} that is identical to the CCA
+soundness experiment in the case that \emph{b} = 1, i.e., where the
+challenge ciphertext is generated by the ciphertext simulator
+
+Sim described earlier, i.e.,
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 8\tabcolsep) * \real{0.2000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Pr {[}\textbf{Game-5}{]} = Pr
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{b′}= 0 : \emph{b′}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\emph{←}\textbf{Exp}ccas-1
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+(1\emph{λ})
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+(32)
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+Consider the adversary \emph{B}LWE that runs either \emph{B}2 or
+\emph{B}4, each with probability 1\emph{/}2, and the adversary \emph{B}S
+that runs either \emph{B}3 or \emph{B}5 with probability 1\emph{/}2.
+Then \emph{B}ZK and \emph{B}S have advantage\emph{ϵ}ZK = (\emph{ϵ}2
++\emph{ϵ}4)\emph{/}2 and \emph{ϵ}S = (\emph{ϵ}3 +\emph{ϵ}5)\emph{/}2 in
+breaking the zero-knowledge and the simulation-soundness
+
+property of the NIZK proof system, respectively. By substituting
+Equations (26) and (32) in Equa-
+
+tion (25), adding Equations (27--31), and using the fact that
+\emph{\textbar a} + \emph{b\textbar{} ≤\textbar a\textbar{}} +
+\emph{\textbar b\textbar{}}, we obtain Equa-tion (24).
+
+26
+
+\textbf{6} \textbf{Applications}
+
+\textbf{6.1 Key Escrow for Ring-LWE Encryption}
+
+A verifiable escrow scheme for decryption keys {[}YY98,PS00{]} allows a
+key owner to encrypt his private decryption key under the public key of
+a trusted authority so that anyone can check that the ciphertext is
+indeed an encryption of the private key corresponding to the owner's
+public key, but only the trusted authority can actually recover the
+private key. Intuitively, the owner is giving a proof that all messages
+sent to his public key can also be decrypted by the trusted third party.
+Note that a key escrow scheme cannot prevent parties from communicating
+securely, because even when forced to use escrowed keys, the parties can
+choose to double-encrypt messages under a non-escrowed key, or apply
+steganography to hide the fact that they are communicating altogether.
+The goal, therefore, is rather to prevent ``dishonest'' usage of
+public-key infrastructures, e.g., by using it to certify non-escrowed
+keys.
+
+We show how our verifiable encryption scheme can be used to verifiably
+escrow Ring-LWE decryption keys. While, due to our relaxation of
+verifiable encryption, we cannot guarantee that the trusted authority
+recovers the actual decryption key, we show that whatever he recovers
+suffices to decrypt messages encrypted under the corresponding public
+key.
+
+Let the authority have a Ring-LWE public key t = as1 + s2 mod \emph{q}
+as described in Section 2.5. Users also have Ring-LWE encryption keys,
+but in \emph{Rp} instead of \emph{Rq}. Meaning, a secret key is a \$
+\$\\
+pair (m1\emph{,} m2) prime \emph{p′\textless{} p}. Encryption and
+decryption work as in regular Ring-LWE, i.e., the sender
+chooses\emph{←S}2 1, while the public key is u = bm1 + m2 mod \emph{p}
+for b\emph{←Rp} together with a
+
+\$\\
+r\emph{,} e\emph{,} e\emph{′←S}1 and computes v = \emph{p′}(br + e) mod
+\emph{p}\\
+(33) w = \emph{p′}(ur + e\emph{′}) + \emph{µ} mod \emph{p .}
+
+To decrypt, the receiver computes \emph{µ ←}w \emph{−}vs1 mod \emph{p}
+mod \emph{p′}.
+
+To escrow his decryption key, the key owner creates a verifiable
+encryption of his secret key \textbf{m} = {[} m1 ; m2 {]} using our
+scheme from Section 3.2 under the authority's public t with a proof that
+\textbf{m} is a witness for the relation
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+{[} b 1 {]}
+\end{minipage}} & \begin{minipage}[b]{\linewidth}\raggedright
+m1
+\end{minipage} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+= u
+\end{minipage}} &
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+mod \emph{p .}
+\end{quote}
+\end{minipage}} \\
+& \begin{minipage}[b]{\linewidth}\raggedright
+m2
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+The soundness property of our relaxed verifiable encryption scheme
+guarantees that the autho-rity can decrypt a witness (
+¯\textbf{m}\emph{,}¯c) such that
+
+\begin{quote}
+b ¯m1 + ¯m2 = ¯cu mod \emph{p .}
+\end{quote}
+
+The authority can decrypt an honestly generated ciphertext of the form
+(33) by computing
+
+\begin{quote}
+cw \emph{−}v ¯m1 mod \emph{p} = ¯c\emph{p′}(ur + e\emph{′}) + ¯c\emph{µ
+−p′}(br + e) ¯m1 mod \emph{p}\\
+= \emph{p′}((b ¯m1 + ¯m2)r + ¯ce\emph{′}) + ¯c\emph{µ −p′}(b ¯m1r + e
+¯m1) mod \emph{p} = \emph{p′}( ¯m2r + ¯ce\emph{′−}e ¯m1) + ¯c\emph{µ}mod
+\emph{p}
+\end{quote}
+
+from which \emph{µ} can be recovered by reducing modulo \emph{p′}and
+then dividing by ¯c modulo \emph{p′}(note that it is important that
+\emph{p′}is chosen such that all differences of challenges in the
+challenge space are invertible), as long as the parameters are chosen
+such that \emph{∥p′}( ¯m2r + ¯ce\emph{′−}e ¯m1) + ¯c\emph{µ∥∞\textless{}
+p/}2.
+
+27
+
+\textbf{6.2 Verifiably Encrypted Signatures}
+
+Suppose two parties want to engage in a contract together and exchange
+signatures on the agreed contract. Neither of the parties wants to be
+the first to send his signature, however, fearing that the other party
+may not reciprocate and hold the first party liable to the conditions in
+the contract, without being held liable himself. Fair signature exchange
+protocols {[}ASW00,BDM98{]} ensure that no party can obtain a
+significant advantage over the other party by aborting the protocol
+early.
+
+Verifiably encrypted signatures {[}ASW00,BDM98,BGLS03{]} are an
+important tool to build op-timistic fair exchange protocols. The first
+party initially sends his signature encrypted under the key of a trusted
+adjudicator such that the other party can verify that the ciphertext
+indeed con-tains a valid signature on the agreed contract, but cannot
+recover the signature itself. The second party responds by sending his
+signature, after which the first party also sends over his signature. In
+case the first party refuses to send his signature in the last step, the
+second party can contact the adjudicator to have the encrypted signature
+from the first decrypted.
+
+We show how our relaxed verifiable encryption scheme can be used to
+build verifiably encryp-ted signatures for the ring-based variant of
+Gentry-Peikert-Vaikuntanathan (Ring-GPV) signature scheme {[}GPV08{]}
+based on the hardness of the Ring-SIS or NTRU problems {[}SS11,DLP14{]}.
+Here, the signer's public key is a polynomial b \emph{∈Rp}, while the
+secret key is a trapdoor allowing to find, for a given u \emph{∈Rp},
+short polynomials m1\emph{,} m2 such that bm1 + m2 = u. A signature on a
+mes-sage \emph{µ} in the usual scheme is a short vector (m1\emph{,} m2)
+such that bm1 + m2 = H(\emph{µ}) mod \emph{p}, where H :
+\emph{\{}0\emph{,} 1\emph{\}∗→Rp} is a random oracle. It is easy to
+show, however, that the scheme remains secure if one relaxes the
+verification algorithm to accept any tuple of short polynomials
+(m1\emph{,} m2\emph{,} c) such that bm1 + m2 = cH(\emph{µ}) mod
+\emph{p}.
+
+In the usual security proof, when the adversary produces a forgery,
+bm1+m2 = H(\emph{µ}) mod \emph{p}, the 2= H(\emph{µ}) mod \emph{p}, and
+thus obtains a solution simulator already possesses another equality
+bm\emph{′}1+ m\emph{′}\\
+1) + to Ring-SIS as b(m1 \emph{−}m\emph{′}a forgery bm1 + m2 =
+cH(\emph{µ}) mod \emph{p}, then the simulator can obtain the equation
+b(cm1 \emph{−}m\emph{′}(cm2 \emph{−}m\emph{′}For this modified signature
+scheme that we build a verifiably encrypted signature scheme using 2) =
+0 mod \emph{p}, which is still a (slightly longer) solution to Ring-SIS.
+1) + (m2 \emph{−}m\emph{′}2) = 0 mod \emph{p}. If, on the other hand,
+the adversary produces
+
+our CCA-secure relaxed verifiable encryption scheme from Section 5.
+Namely, to encrypt an honest signature (m1\emph{,} m2\emph{,} 1) under
+the adjudicator's public key, one encrypts the witness \textbf{m} = {[}
+m1 ; m2 {]} with the encryption scheme from Section 5 while proving that
+{[} b 1 {]} \textbf{m} = H(\emph{µ}) mod \emph{p}. When the adjudicator
+decrypts the signature, it recovers ( ¯\textbf{m}\emph{,}¯c) such that
+{[} b 1 {]} ¯\textbf{m} = ¯cH(\emph{µ}) mod \emph{p}, which is also a
+valid signature on \emph{µ}. Unforgeability follows from the
+unforgeability of the relaxed Ring-GPV scheme, while the security
+against extraction follows from the security of Ring-LWE encryption.
+
+\textbf{6.3 Other Applications}
+
+One of the most prominent applications of verifiable encryption is in
+group signatures {[}CvH91{]}, where group members can sign anonymously
+in name of the entire group, but their anonymity can be lifted by a
+dedicated opening authority. A common construction paradigm
+{[}CL06,BCK+14{]} is to let a user's signing key consist of a signature
+by the group manager on the user's identity. To sign a message, the user
+encrypts his identity under the public key of the opener and creates a
+NIZK proof of knowledge of a valid signature for the encrypted identity.
+To recover the identity of the signer, the opener simply decrypts the
+ciphertext included in the signature.
+
+28
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+I
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+II
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+III
+\end{minipage} \\
+\midrule()
+\endhead
+\emph{n} & 1024 & 2048 & 2048 \\
+\emph{k} & 1 & 2 & 2 \\
+\emph{p} & 13 & 215 & 230 \\
+\emph{∥}\textbf{m}\emph{∥∞} & 1 & 1 & 218 \\
+\emph{σ} & 25344 & 50688 & \emph{≈}223\emph{.}6 \\
+\emph{q} & \emph{≈}234 & \emph{≈}247 & \emph{≈}270 \\
+gamma factor & \emph{≈}1\emph{.}0046 & \emph{≈}1\emph{.}0033 &
+\emph{≈}1\emph{.}0052 \\
+proof size & 9 KB & 38 KB & 54 KB \\
+ciphertext size & 9 KB & 48 KB & 71 KB \\
+\bottomrule()
+\end{longtable}
+
+\textbf{Table 1.} Sample Parameter Sets for the Verifiable Encryption
+Scheme
+
+Our verifiable encryption scheme could be very useful to group
+signatures in principle, what is missing is a \emph{practical} signature
+scheme where the message \textbf{m} and the signature \textbf{s} are
+short vectors
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\multicolumn{2}{@{}>{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.5000} + 2\tabcolsep}}{%
+\multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+for which the verification equation can be expressed as a linear
+relation \textbf{B}
+\end{minipage}}} & \begin{minipage}[b]{\linewidth}\raggedright
+\textbf{m}
+\end{minipage} &
+\multirow{3}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+= \textbf{u}.
+\end{quote}
+\end{minipage}} \\
+& & \multirow{2}{*}{\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{s}
+\end{minipage}} \\
+\begin{minipage}[b]{\linewidth}\raggedright
+\textbf{7}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+\textbf{Concrete Parameters}
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+In this section we give some sample concrete instantiations of proofs of
+plaintext knowledge and verifiable encryption schemes (see Table 7). We
+express the security of each scheme in terms of the``gamma factor'' from
+{[}GN08{]}. Values of 1\emph{.}01 can be broken today, 1\emph{.}007 seem
+to be fairly secure (conjectured at least 80-bits), and those less than
+1\emph{.}005 are believed to require more than 2128time even for quantum
+computers. There have been some other attacks considered (e.g. in
+{[}ADPS16{]}), but those require as much memory as time, and are at this
+point not as useful in practice as variations of lattice-reduction
+attacks based on LLL (e.g. {[}CN11{]}). It is of course possible that
+attacks that are currently impractical can be made more practical, and
+at that point the concrete parameters (for all lattice-based schemes)
+would have to be adjusted. But the ratio between parameter sizes for
+verifiable encryption and regular encryption (and zero-knowledge
+authentication) should remain the same. One caveat would be if the
+algorithms for ``overstretched'' NTRU would become applicable
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 0\tabcolsep) * \real{1.0000}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+to Ring-LWE. It was recently shown that when the modulus in NTRU is
+larger than the secrets by a sub-exponential (i.e.
+2\emph{O}(\emph{√d})\emph{,} where \emph{d} is the lattice dimension)
+factor, then the NTRU problem
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+becomes easy {[}ABD16,CJL16,KF16{]}. This is in contrast to LWE and
+Ring-LWE, for which efficient algorithms are only known in the case that
+the modulus is 2\emph{ω}(\emph{d})). If these attacks are transferred to
+the Ring-LWE setting, then this would have implications toward all
+constructions (e.g. those in this paper, most FHE schemes based on
+Ring-LWE, etc.) in which the secrets are significantly smaller than the
+modulus.
+
+Our schemes are instantiated from the Ring-LWE cryptosystem where we
+take the secret and error parameters to be from the set
+\emph{\{−}1\emph{,} 0\emph{,} 1\emph{\}}. While the worst-case to
+average-case hardness of Ring-LWE (and LWE) was only proven with larger
+parameters {[}Reg09,LPR13{]}, there haven't been any weaknesses found
+when constructing public-key encryption schemes with smaller errors. In
+particular, the part of the NTRU cryptosystem {[}HPS98{]} that is based
+on the Ring-LWE assumption has never been attacked due to having secret
+and error vectors having coefficients from the set \emph{\{−}1\emph{,}
+0\emph{,} 1\emph{\}}. The most practical attacks is still to rewrite the
+Ring-LWE instance as a lattice problem and apply lattice reduction.
+
+29
+
+For all the parameter sets, we analyze the hardness of recovering the
+vector {[}\textbf{r}; \textbf{e}; \textbf{e}\emph{′}; \textbf{m}{]} in
+(11). In column I, we give parameters for a proof of plaintext knowledge
+where there is no message \textbf{m}. The exact parameters for
+verifiable encryption will of course depend on the parameters of the
+relation in (9). In columns II and III, we give the parameters that are
+large enough to instantiate the two example cases in Section 6. All the
+parameters are as defined in Algorithm 3 with the value of \emph{q} is
+taken so as to satisfy (16) in the statement of Lemma 3.1 which is
+required for the decryption algorithm to function correctly. We point
+out that in the application to key escrow, there is also an encryption
+in the key escrow itself. But because that encryption works over modulus
+\emph{p}, which is smaller than \emph{q}, the hardness of breaking it is
+at least as hard as breaking the verifiable encryption scheme.
+
+\textbf{References}
+
+{[}ABD16{]} Martin R. Albrecht, Shi Bai, and L´eo Ducas. A subfield
+lattice attack on overstretched NTRU assumptions - cryptanalysis of some
+FHE and graded encoding schemes. In \emph{CRYPTO}, pages 153--178, 2016.
+
+{[}ADPS16{]} Erdem Alkim, L´eo Ducas, Thomas P¨oppelmann, and Peter
+Schwabe. Post-quantum key exchange - A new hope. In \emph{USENIX}, pages
+327--343, 2016.
+
+{[}ASW00{]} N. Asokan, Victor Shoup, and Michael Waidner. Optimistic
+fair exchange of digital signatures. \emph{IEEE} \emph{Journal on
+Selected Areas in Communications}, 18(4):593--610, 2000.
+
+{[}BCK+14{]} Fabrice Benhamouda, Jan Camenisch, Stephan Krenn, Vadim
+Lyubashevsky, and Gregory Neven. Better zero-knowledge proofs for
+lattice encryption and their application to group signatures. In
+\emph{ASIACRYPT}, pages 551--572, 2014.
+
+{[}BDLN16{]} Carsten Baum, Ivan Damg˚ard, Kasper Green Larsen, and
+Michael Nielsen. How to prove knowledge of small secrets. In
+\emph{CRYPTO}, pages 478--498, 2016.
+
+{[}BDM98{]} Feng Bao, Robert H. Deng, and Wenbo Mao. Efficient and
+practical fair exchange protocols with off-line TTP. In \emph{IEEE
+Symposium on Security and Privacy}, pages 77--85, 1998.
+
+{[}BGLS03{]} Dan Boneh, Craig Gentry, Ben Lynn, and Hovav Shacham.
+Aggregate and verifiably encrypted signatures from bilinear maps. In
+\emph{EUROCRYPT}, pages 416--432, 2003.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+{[}BR93{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Mihir Bellare and Phillip Rogaway.
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Random oracles are practical: A paradigm for designing efficient
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+protocols. In \emph{CCS '93}, pages 62--73, 1993.
+\end{quote}
+
+{[}CD16{]} Ronald Cramer and Ivan Damg˚ard. Amortized complexity of
+zero-knowledge proofs revisited: Achieving linear soundness slack.
+\emph{IACR Cryptology ePrint Archive}, 2016:681, 2016.
+
+{[}CJL16{]} Jung Hee Cheon, Jinhyuck Jeong, and Changmin Lee. An
+algorithm for NTRU problems and cryptanalysis of the GGH multilinear map
+without an encoding of zero. \emph{IACR Cryptology ePrint Archive},
+2016:139, 2016.
+
+{[}CKY09{]} Jan Camenisch, Aggelos Kiayias, and Moti Yung. On the
+portability of generalized Schnorr proofs. In \emph{EUROCRYPT}, pages
+425--442, 2009.
+
+{[}CL06{]} Melissa Chase and Anna Lysyanskaya. On signatures of
+knowledge. In \emph{CRYPTO}, pages 78--96, 2006. {[}CN11{]} Yuanmi Chen
+and Phong Q. Nguyen. Bkz 2.0: Better lattice security estimates. In
+\emph{ASIACRYPT}, pages 1--20, 2011.
+
+{[}CS03{]} Jan Camenisch and Victor Shoup. Practical verifiable
+encryption and decryption of discrete logarithms.
+
+\begin{quote}
+In Dan Boneh, editor, \emph{CRYPTO}, volume 2729 of \emph{Lecture Notes
+in Computer Science}, pages 126--144. Springer, 2003.
+\end{quote}
+
+{[}CvH91{]} David Chaum and Eug` ene van Heyst. Group signatures. In
+Donald W. Davies, editor, \emph{EUROCRYPT}, volume 547 of \emph{Lecture
+Notes in Computer Science}, pages 257--265. Springer, 1991.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+{[}DLP14{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+L´eo Ducas, Vadim Lyubashevsky, and Thomas Prest.
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Efficient identity-based encryption over NTRU
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+lattices. In \emph{ASIACRYPT}, pages 22--41, 2014.
+\end{quote}
+
+{[}DPSZ12{]} Ivan Damg˚ard, Valerio Pastro, Nigel P. Smart, and Sarah
+Zakarias. Multiparty computation from somew- hat homomorphic encryption.
+In \emph{CRYPTO}, pages 643--662, 2012.
+
+{[}FKMV12{]} Sebastian Faust, Markulf Kohlweiss, Giorgia Azzurra Marson,
+and Daniele Venturi. On the non- malleability of the fiat-shamir
+transform. In \emph{INDOCRYPT}, pages 60--79, 2012.
+
+{[}FS86{]} Amos Fiat and Adi Shamir. How to prove yourself: Practical
+solutions to identification and signature problems. In \emph{CRYPTO},
+pages 186--194, 1986.
+
+30
+
+{[}GN08{]} Nicolas Gama and Phong Q. Nguyen. Predicting lattice
+reduction. In \emph{EUROCRYPT}, pages 31--51, 2008. {[}GPV08{]} Craig
+Gentry, Chris Peikert, and Vinod Vaikuntanathan. Trapdoors for hard
+lattices and new crypto- graphic constructions. In \emph{STOC}, pages
+197--206, 2008.
+
+{[}HPS98{]} Jeffrey Hoffstein, Jill Pipher, and Joseph H. Silverman.
+NTRU: A ring-based public key cryptosystem. In \emph{ANTS}, pages
+267--288, 1998.
+
+{[}KF16{]} Paul Kirchner and Pierre-Alain Fouque. Comparison between
+subfield and straightforward attacks on NTRU. \emph{IACR Cryptology
+ePrint Archive}, 2016:717, 2016.
+
+{[}LM06{]} Vadim Lyubashevsky and Daniele Micciancio. Generalized
+compact knapsacks are collision resistant. In \emph{ICALP (2)}, pages
+144--155, 2006.
+
+{[}LN86{]} Rudolph Lidl and Harald Niederreiter. \emph{Introduction to
+Finite Fields and their Applications}. Cambridge University Press, 1986.
+
+{[}LNSW13{]} San Ling, Khoa Nguyen, Damien Stehl´e, and Huaxiong Wang.
+Improved zero-knowledge proofs of know- ledge for the ISIS problem, and
+applications. In \emph{PKC}, pages 107--124, 2013.
+
+{[}LPR13{]} Vadim Lyubashevsky, Chris Peikert, and Oded Regev. On ideal
+lattices and learning with errors over rings. \emph{J. ACM}, 60(6):43,
+2013. Preliminary version appeared in EUROCRYPT 2010.
+
+Vadim Lyubashevsky. Fiat-Shamir with aborts: Applications to lattice and
+factoring-based signatures. In {[}Lyu09{]}\\
+\emph{ASIACRYPT}, pages 598--616, 2009.
+
+{[}Lyu12{]} Vadim Lyubashevsky. Lattice signatures without trapdoors. In
+\emph{EUROCRYPT}, pages 738--755, 2012. {[}NY90{]} Moni Naor and Moti
+Yung. Public-key cryptosystems provably secure against chosen ciphertext
+attacks. In \emph{STOC}, pages 427--437, 1990.
+
+Guillaume Poupard and Jacques Stern. Fair encryption of RSA keys. In
+\emph{EUROCRYPT}, pages 172--189, {[}PS00{]}\\
+2000.
+
+{[}Reg09{]} Oded Regev. On lattices, learning with errors, random linear
+codes, and cryptography. \emph{J. ACM}, 56(6), 2009.
+
+{[}Sah99{]} Amit Sahai. Non-malleable non-interactive zero knowledge and
+adaptive chosen-ciphertext security. In \emph{FOCS}, pages 543--553,
+1999.
+
+{[}SS11{]} Damien Stehl´e and Ron Steinfeld. Making NTRU as secure as
+worst-case problems over ideal lattices. In \emph{EUROCRYPT}, pages
+27--47, 2011.
+
+{[}SSTX09{]} Damien Stehl´e, Ron Steinfeld, Keisuke Tanaka, and Keita
+Xagawa. Efficient public key encryption based on ideal lattices. In
+\emph{ASIACRYPT}, pages 617--635, 2009.
+
+{[}Ste93{]} Jacques Stern. A new identification scheme based on syndrome
+decoding. In \emph{CRYPTO}, pages 13--21, 1993.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+{[}YY98{]}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+Adam L. Young and Moti Yung.
+\end{quote}
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Auto-recoverable auto-certifiable cryptosystems.
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\begin{quote}
+In \emph{EUROCRYPT},
+\end{quote}
+\end{minipage} \\
+\midrule()
+\endhead
+\bottomrule()
+\end{longtable}
+
+\begin{quote}
+pages 17--31, 1998.
+\end{quote}
+
+31
+
+\end{document}

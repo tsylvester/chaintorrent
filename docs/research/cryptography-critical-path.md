@@ -1,6 +1,6 @@
 # Entitlement cryptography critical path
 
-Current as of ledger log 39 (2026-11-11). If the ledger's latest log row is higher than this number, this file is stale and must be re-synced before work resumes.
+Current as of ledger log 45 (2026-11-12). If the ledger's latest log row is higher than this number, this file is stale and must be re-synced before work resumes.
 
 ## Role and rules
 
@@ -95,14 +95,16 @@ All algebra is the ledger's C11 section and Q09 third and fourth increments; not
 - **Q08 remainder, measurement.** Encoding sizes, capsule and proof bytes, decryption latency, proof generation and verification cost on the chosen curve, and settlement cost against E47's interface.
 - **Q06, second pass.** Re-run the whole-target table once the proofs and measurements exist.
 - **Handoff, done (log 35).** The Q05 attempt rules, the Q10 state machine and sidecar-coverage rule, and the Q09 settlement protocol are adopted into cryptography.md, MVP Scope.md, MVP Application Requirements.md and the Execution Trace, with the adapters `IPairingAdapter`, `ICredentialKemAdapter`, `PairingElGamalAdapter` and `IDeliveryProofAdapter` named there. Still open in the workplan's To-Do: the attempt-rule parameters and piece-group size, which the validation harness measures.
-- **Q11.** Answered (Q11 section; S24, S25, S26). Remaining: the full conditions of the quantum random-oracle result the delivery-validity statement leans on, and an independent re-derivation.
-- **Q12.** A post-quantum credential KEM under the unchanged interface constraints, or the exact missing property.
-- **Q13.** The C09, C10 and C11 comparison rerun with post-quantum instantiations.
-- **Q14.** A post-quantum envelope a delivery proof can speak about.
-- **Q15.** The signed intent verified on chain under a post-quantum scheme, which is all the minimum needs; and a delivery proof with its verifier environment for whatever statement Q12 and Q14 produce.
-- **Q16.** How far P16's minimum and target reach under the unchanged constraints, and what would have to bend.
+- **Q11.** Answered (Q11 section; S24, S25, S26). The quantum random-oracle result the delivery-validity statement leans on is read and applies.
+- **Q12.** Answered in shape (C12; S27). Under the asset scope a post-quantum credential KEM with authorship at sale exists at sketch level: a published traitor-tracing scheme supplies master issuance, and publishing differences of preimages lets a seller rerandomize at constant size, with non-holder confidentiality argued from that scheme's hardness result and one entropy condition. Under the entitlement scope, non-convertibility and master hiding hold only against coalitions below about the lattice's dimension, and far fewer over compact structured lattices; this is the first limit P16 meets under unchanged constraints, and what would bend is that scope's attribution. Detail of the path follows. Short-preimage credentials under a lattice trapdoor carry the common capsule, public credential validity and issuance at mint. Authorship at sale without the master secret has one route with the present construction's shape: rerandomizing within a coset of short kernel vectors published with the parameter set, at constant size and with no growth, on the premise that LWE stays hard given such vectors. The base scheme and its proof under a quantum-accessible oracle are confirmed from the texts, and a published traitor-tracing scheme is the asset-scope master-issued KEM as built. Bearer transfer is available and reaches the minimum reading of loss at transfer; basis delegation is excluded (X24). No publicly checkable capsule exists in this family. Sizes at any stated parameter set are orders of magnitude above the present ones. Missing: the lemma's unchecked steps, parameters at category 3, a capsule check.
+- **Q13.** The C09, C10 and C11 comparison rerun with post-quantum instantiations. The bearer route ports directly, the delegation route with a depth bound, and the rerandomization route only if C12's premise holds.
+- **Q14.** Answered in shape. A lattice credential's validity is a linear statement with a short witness, so one published verifiable-encryption proof serves mint and transfer, the chained proof is not needed, and the seller's witness is its credential, not its envelope secrets. The envelope and proof run between 18 and 125 kilobytes per settlement. Extraction is relaxed to an extended language, which the KEM's parameters must absorb; soundness with a quantum-accessible oracle is open.
+- **Q15.** Answered in shape. Verification and the envelope's bytes stay in the settlement; carrying them off chain with a hash is excluded (X25). The cost is a large multiple of today's, unmeasured, and binds on the free path. The minimum's post-quantum signer is measured only at the smallest lattice parameter set, one category below the target.
+- **Q16.** Report written. The minimum is reachable through signatures and bounded by the chain's own integrity. The target is reachable at sketch level under the asset scope; under the entitlement scope it is not reachable with the present construction's coalition-proof attribution. Only AES-256 meets the strength target. Settlement cost is driven by bytes and verifier compute and is unmeasured on the launch network; an unconfirmed estimate puts the data fee for a hundred kilobytes there at cents in ordinary conditions, which would leave execution as the larger term and the free path's multiplication by closure size as the cost question. Alternatives on record: signatures now with confidentiality stated as classical; a lattice suite under the asset scope; one with bounded-coalition attribution; the present construction layered with a lattice asset-scope layer; a confidentiality floor that concedes distinctness; a natively post-quantum chain. Awaiting the user on attribution, on opening the chain question, on adopting the minimum meanwhile, and on the free path.
 
 Exposure to a quantum adversary is open under P16. It is not an accepted residual.
+
+Independent re-derivation of the P16 work is one pass by a second agent over Q11–Q16 together, after every undetermined item is first resolved (log 41). Until then every P16 conclusion here is one maintainer's.
 
 ## Accepted residuals
 
@@ -120,7 +122,7 @@ Met only under a user-accepted limit. Not open items; do not re-open without the
 
 ## Do not re-propose
 
-Check S01–S22 and X01–X23 in the ledger before proposing anything. Titles only; the ledger holds the reason and the reopening condition.
+Check S01–S27 and X01–X25 in the ledger before proposing anything. Titles only; the ledger holds the reason and the reopening condition.
 
 | ID | Excluded |
 | --- | --- |
@@ -147,11 +149,13 @@ Check S01–S22 and X01–X23 in the ledger before proposing anything. Titles on
 | X21 | Puncturable or forward-secure KEM as an O(1) (b)-route |
 | X22 | Offset-linkage proof as a correctness requirement (adopted only for precompile verifiability) |
 | X23 | Source-group substitutes for the target-group first message of the direct validity proof |
+| X24 | Lattice basis delegation as authorship at sale |
+| X25 | Envelope and delivery proof off chain with only a hash in the settlement |
 
-Also do not restart with: the impossibility of revoking retained secrets (S01); traitor-tracing difficulty (P06, S06); a survey of the same broad encryption families (C01–C08); registration-based encryption as an access path (S11, X18); the pre-2026-09-16 premise that no issuer may hold a master secret (S17); a contract method as a secret holder (S03, S08); holder-assisted issuance under C11a (S22); or a shared secret across the two envelope keys (Q09 third increment, hazard). Under P16 the changed premise is the adversary model alone: do not re-survey C01–C08 for the classical adversary, and do not relax R01–R15 to reach P16 (log 37).
+Also do not restart with: the impossibility of revoking retained secrets (S01); traitor-tracing difficulty (P06, S06); a survey of the same broad encryption families (C01–C08); registration-based encryption as an access path (S11, X18); the pre-2026-09-16 premise that no issuer may hold a master secret (S17); a contract method as a secret holder (S03, S08); holder-assisted issuance under C11a (S22); or a shared secret across the two envelope keys (Q09 third increment, hazard). Under P16 the changed premise is the adversary model alone: do not re-survey C01–C08 for the classical adversary, and do not relax R01–R15 to reach P16 (log 37). Do not offer an ordinary single-key post-quantum KEM as a credential KEM: the requirement is many master-issued credentials opening one common capsule (log 45).
 
 ## Next unit of work
 
 Measurement on the chosen curve (Q08 remainder), which needs an implementation and therefore an engineering decision; then the Q06 second pass. Adoption of the Q05, Q09 and Q10 conclusions into cryptography.md and MVP Scope.md is separate work and awaits the user's decision. No research question remains open on the critical path against a classical adversary.
 
-Research under P16 runs beside it and blocks none of it: Q12 next, a post-quantum credential KEM under the unchanged interface constraints, whose answer Q13 and Q14 depend on; Q15's signer-verification half is independent of it and may run beside it; Q16 last.
+Research under P16 runs beside it and blocks none of it: The user's decisions on Q16's report come next; the research that follows them is the kernel-hint lemma's unchecked steps, a parameter set at the category target, a quantum-oracle soundness proof for the delivery proof, and measurement. The derivations behind C12 are in [cryptography-pq-credential-kem-derivation.md](cryptography-pq-credential-kem-derivation.md).
