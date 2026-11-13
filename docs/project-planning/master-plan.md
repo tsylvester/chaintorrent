@@ -46,7 +46,7 @@ The template's word is phases; here they are groupings addressed by dependency r
 
 **Entry.** Foundation grouping closed. External cryptographic review starts on the composition claims, including the multi-set sidecar layer and the provenance boundary, at this grouping's start.
 
-**Exit.** CD-07 and AS-21: sizes, timings, and delivery cost as L2 execution and L1 data fee on both curves; the measurements, the piece-group size and curve defaults in force, and any adjustment the data supports recorded in release evidence; cross-set agreement; the verifier deployed on Base Sepolia as shipped code; throughput recorded.
+**Exit.** CD-07 and AS-21: sizes, timings, and delivery cost as L2 execution and L1 data fee on both curves; the measurements, the piece-group size and curve defaults in force, and any adjustment the data supports recorded in release evidence; cross-set agreement; the verifier deployed on Base Sepolia as shipped code, one address per distinct curve name emitted as the deployment record; throughput recorded.
 
 **Stop criterion.** The post-harness estimate of remaining work, produced by re-mapping the next grouping to tickets from measured throughput, is beyond what the project can fund.
 
