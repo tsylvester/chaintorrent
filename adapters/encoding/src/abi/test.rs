@@ -5,14 +5,24 @@ use super::provides::{
 };
 use crate::factory::provides::{
     CanonicalFieldKind, CanonicalFieldReaderErrorReturn, CanonicalFieldValue,
-    CanonicalFieldsOverrides, DecodeErrorReturn, EncodeErrorReturn, EncodingTypeName,
-    EncodingTypeNameConstructorParamsOverrides, EncodingTypeNameErrorReturn, IDecoderAdapter,
-    IEncoderAdapter, IEncodingContract, MockIEncodingContract, build_canonical_fields,
-    build_decode_params, build_encode_params, build_encoding_type_name_constructor_params,
-    build_type_name_params,
+    CanonicalFieldsOverrides, DecodeErrorReturn, ENCODING_INTERFACE_VERSION, EncodeErrorReturn,
+    EncodingIdentifier, EncodingTypeName, EncodingTypeNameConstructorParamsOverrides,
+    EncodingTypeNameErrorReturn, IDecoderAdapter, IEncoderAdapter, IEncodingContract,
+    MockIEncodingContract, build_canonical_fields, build_decode_params, build_encode_params,
+    build_encoding_type_name_constructor_params, build_type_name_params,
 };
 use alloy::dyn_abi::DynSolType;
 use std::collections::BTreeSet;
+
+const _: () = assert!(
+    matches!(AbiEncoding::DECLARATION.name.as_bytes(), b"abi")
+        && matches!(
+            AbiEncoding::DECLARATION.identifier,
+            EncodingIdentifier::EthereumAbiV1
+        )
+        && AbiEncoding::DECLARATION.adapter_version == 1
+        && AbiEncoding::DECLARATION.interface_version == ENCODING_INTERFACE_VERSION
+);
 
 const REFERENCE_VECTOR_HEX: &str = concat!(
     "0000000000000000000000000000000000000000000000000000000000000100",

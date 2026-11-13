@@ -204,6 +204,7 @@ pub fn build_mock_i_canonical_field(
 
 #[derive(Default)]
 pub struct EncodingDeclarationOverrides {
+    pub name: Option<&'static str>,
     pub identifier: Option<EncodingIdentifier>,
     pub adapter_version: Option<u32>,
     pub interface_version: Option<u32>,
@@ -211,6 +212,9 @@ pub struct EncodingDeclarationOverrides {
 
 pub fn build_encoding_declaration(overrides: EncodingDeclarationOverrides) -> EncodingDeclaration {
     EncodingDeclaration {
+        name: overrides
+            .name
+            .unwrap_or(MOCK_I_ENCODER_ADAPTER_DECLARATION.name),
         identifier: overrides
             .identifier
             .unwrap_or(MOCK_I_ENCODER_ADAPTER_DECLARATION.identifier),
@@ -296,6 +300,7 @@ fn mock_take<'a>(payload: &'a [u8], cursor: &mut usize, length: usize) -> Option
 }
 
 pub(crate) const MOCK_I_ENCODER_ADAPTER_DECLARATION: EncodingDeclaration = EncodingDeclaration {
+    name: "mock",
     identifier: EncodingIdentifier::Mock,
     adapter_version: 1,
     interface_version: ENCODING_INTERFACE_VERSION,
@@ -383,6 +388,7 @@ impl IDecoderAdapter for MockIEncoderAdapter {
 }
 
 pub(crate) const MOCK_I_DECODER_ADAPTER_DECLARATION: EncodingDeclaration = EncodingDeclaration {
+    name: "mock",
     identifier: EncodingIdentifier::Mock,
     adapter_version: 1,
     interface_version: ENCODING_INTERFACE_VERSION,

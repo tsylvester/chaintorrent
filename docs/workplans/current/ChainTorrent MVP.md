@@ -3457,19 +3457,19 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Each `the_…_concrete_from_the_factory_samples_and_encodes_through_secret` integration test passes, each proving its `Secret → <Concrete> → create_pairing` chain with every link real (CR-07, secret material crosses the family inside `Secret`; CR-10, every concrete reached through the factory)
     * `[✅]`   No `ark-` crate or `halo2curves` is named outside its concretes, and no code outside `adapters/pairing` can name a concrete
 
-* `[ ]`   `harness-crypto/benchmark` **Pairing benchmark timing scalar multiplication, multi-scalar multiplication, and the pairing-product check on whichever concrete the pairing factory hands it; creates the `apps/harness-crypto` crate**
+* `[✅]`   `harness-crypto/benchmark` **Pairing benchmark timing scalar multiplication, multi-scalar multiplication, and the pairing-product check on whichever concrete the pairing factory hands it; creates the `apps/harness-crypto` crate**
 
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: the run constructs it for each selected concrete with each selected identifier and records the measurements, so each concrete's cost for the operations the KEM, envelope, and proof perform is measured through the factory, with no module naming a library
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: the run constructs it for each selected concrete with each selected identifier and records the measurements, so each concrete's cost for the operations the KEM, envelope, and proof perform is measured through the factory, with no module naming a library
     * `[✅]`   Functional: handed any concrete by `create_pairing`, the benchmark draws two scalars from the randomness family, samples them through the concrete's sampling bound, and times first-group and second-group scalar multiplication, first-group and second-group multi-scalar multiplication over two terms, and the pairing-product check over two terms
     * `[✅]`   Functional: each timing is the mean over a configured number of iterations, returned per operation with the exact `PairingConcrete` measured and the nonzero iteration count used to compute it
     * `[✅]`   Functional: a failed draw or a failed sampling is returned unchanged in the error arm, before anything is timed
     * `[✅]`   Non-functional: the benchmark names no curve library and no concrete; it reaches every concrete only through `create_pairing` and `IPairingAdapter`
 
-  * `[ ]`   `role`
-    * `[ ]`   App module: an `IPairingConsumer` the harness passes to `create_pairing` for each selected concrete with each selected identifier; it is a class in the adapter role, implementing a repo-owned trait and wrapping the operating system's monotonic clock
+  * `[✅]`   `role`
+    * `[✅]`   App module: an `IPairingConsumer` the harness passes to `create_pairing` for each selected concrete with each selected identifier; it is a class in the adapter role, implementing a repo-owned trait and wrapping the operating system's monotonic clock
     * `[✅]`   Creates the `apps/harness-crypto` crate as a library crate and adds `"apps/*"` to the root manifest's `members`, the member glob `workspace/cargo` specifies, so the crate is admitted
-    * `[ ]`   Returns the timings, concrete identity, and iteration count of the concrete it is handed and selects nothing; the harness run constructs it for each selected concrete with each selected identifier and records the measurements
+    * `[✅]`   Returns the timings, concrete identity, and iteration count of the concrete it is handed and selects nothing; the harness run constructs it for each selected concrete with each selected identifier and records the measurements
     * `[✅]`   Does not author `main.rs`; `harness-crypto/main` authors the binary entry, reading `harness-crypto/config` and composing every family through its factory
     * `[✅]`   Does not time decoding, encoding, or sampling
     * `[✅]`   Does not carry a commit
@@ -3579,8 +3579,8 @@ Write each element in the fixed dependency order below — do not reorder or mer
       * `[✅]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))`
       * `[✅]`   Assert: `assert_eq!(result.ok().and_then(|success| success.output.err()), Some(PairingBenchmarkErrorReturn::SampleScalar(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 64 })))`, the whole error, the `SampleScalar` variant being the subject's wrapping and the carried error the mock concrete's own value for that mode written as a literal
 
-  * `[ ]`   `construction`
-    * `[ ]`   `PairingBenchmark::try_new` is the only producer; the harness run constructs one for each selected concrete with each selected identifier from the random source `create_random_source` returns and the configured iteration count, and passes it as `CreatePairingDeps { consumer }`
+  * `[✅]`   `construction`
+    * `[✅]`   `PairingBenchmark::try_new` is the only producer; the harness run constructs one for each selected concrete with each selected identifier from the random source `create_random_source` returns and the configured iteration count, and passes it as `CreatePairingDeps { consumer }`
 
   * `[✅]`   `apps/harness-crypto/src/benchmark/mod.rs`
     * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`

@@ -111,6 +111,7 @@ pub enum EncodingIdentifier {
 }
 
 pub struct EncodingDeclaration {
+    pub name: &'static str,
     pub identifier: EncodingIdentifier,
     pub adapter_version: u32,
     pub interface_version: u32,

@@ -21,6 +21,7 @@ use interface::{
 
 impl AbiEncoding {
     pub const DECLARATION: EncodingDeclaration = EncodingDeclaration {
+        name: "abi",
         identifier: EncodingIdentifier::EthereumAbiV1,
         adapter_version: 1,
         interface_version: ENCODING_INTERFACE_VERSION,

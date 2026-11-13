@@ -30,7 +30,7 @@ Branch contract for the `abi` module of the `encoding` crate: `AbiEncoding`, the
 
 ## `AbiEncoding::DECLARATION`
 
-The inherent constant `EncodingDeclaration { identifier: EncodingIdentifier::EthereumAbiV1, adapter_version: 1, interface_version: ENCODING_INTERFACE_VERSION }`.
+The inherent constant `EncodingDeclaration { name: "abi", identifier: EncodingIdentifier::EthereumAbiV1, adapter_version: 1, interface_version: ENCODING_INTERFACE_VERSION }`.
 
 ## `IEncoderAdapter::encode<D: IEncodingContract>(&self, params: EncodeParams<'_, D>, payload: &D::Described) -> EncodeReturn`
 
