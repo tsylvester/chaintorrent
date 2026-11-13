@@ -1,5 +1,4 @@
 use core::convert::Infallible;
-use core::num::NonZeroU32;
 use encoding::{CanonicalFieldKind, CanonicalFieldReaderErrorReturn};
 #[cfg(any(test, feature = "mocks"))]
 use pairing::{CreatePairingErrorReturn, CreatePairingParams, IPairingReference};
@@ -9,38 +8,7 @@ use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 use random::{FillBytesErrorReturn, IRandomSourceAdapter};
 
 use super::super::render::provides::{SolidityMemberName, SolidityMemberNameTryNewErrorReturn};
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct VectorCount {
-    pub(super) count: NonZeroU32,
-}
-
-pub struct VectorCountConstructorParams {
-    pub count: u32,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum VectorCountTryNewErrorReturn {
-    Zero,
-}
-
-pub type VectorCountTryNewReturn = Result<VectorCount, VectorCountTryNewErrorReturn>;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct MsmTermCount {
-    pub(super) count: NonZeroU32,
-}
-
-pub struct MsmTermCountConstructorParams {
-    pub count: u32,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum MsmTermCountTryNewErrorReturn {
-    Zero,
-}
-
-pub type MsmTermCountTryNewReturn = Result<MsmTermCount, MsmTermCountTryNewErrorReturn>;
+use super::super::super::factory::provides::{MsmTermCount, VectorCount};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FirstGroupVectorCounts {

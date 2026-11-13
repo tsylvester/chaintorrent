@@ -7,7 +7,6 @@ pub mod provides;
 #[cfg(test)]
 mod test;
 
-use core::num::NonZeroU32;
 use encoding::{
     CanonicalFieldKind, CanonicalFieldReader, CanonicalFieldValue, CanonicalFields,
     FromFieldsParams, FromFieldsReturn, FromFieldsSuccessReturn, IEncodingContract, ToFieldsParams,
@@ -30,42 +29,14 @@ use self::interface::{
     GroupOperationVectorDescription, GroupOperationVectorDescriptionConstructorParams,
     GroupOperationVectorDescriptionTryNewReturn, GroupOperationVectorFromFieldsErrorReturn,
     GroupVectorsDeps, GroupVectorsErrorReturn, GroupVectorsParams, GroupVectorsPayload,
-    GroupVectorsReturn, GroupVectorsSuccessReturn, MsmTermCount, MsmTermCountConstructorParams,
-    MsmTermCountTryNewErrorReturn, MsmTermCountTryNewReturn, PAIRING_CHECK_VECTOR_FIELD_KINDS,
+    GroupVectorsReturn, GroupVectorsSuccessReturn, PAIRING_CHECK_VECTOR_FIELD_KINDS,
     PairingCheckVector, PairingCheckVectorDescription,
     PairingCheckVectorDescriptionConstructorParams, PairingCheckVectorDescriptionTryNewReturn,
     PairingCheckVectorFromFieldsErrorReturn, SecondGroupVectors, VECTOR_RECORD_FIELD_COUNT,
-    VECTOR_RECORD_MEMBER_NAMES, VectorCount, VectorCountConstructorParams,
-    VectorCountTryNewErrorReturn, VectorCountTryNewReturn, VectorRecordMemberNamesErrorReturn,
+    VECTOR_RECORD_MEMBER_NAMES, VectorRecordMemberNamesErrorReturn,
     VectorRecordMemberNamesReturn,
 };
 use super::render::provides::{SolidityMemberName, SolidityMemberNameConstructorParams};
-
-impl VectorCount {
-    pub fn try_new(params: VectorCountConstructorParams) -> VectorCountTryNewReturn {
-        match NonZeroU32::new(params.count) {
-            Some(count) => Ok(VectorCount { count }),
-            None => Err(VectorCountTryNewErrorReturn::Zero),
-        }
-    }
-
-    pub fn get(&self) -> u32 {
-        self.count.get()
-    }
-}
-
-impl MsmTermCount {
-    pub fn try_new(params: MsmTermCountConstructorParams) -> MsmTermCountTryNewReturn {
-        match NonZeroU32::new(params.count) {
-            Some(count) => Ok(MsmTermCount { count }),
-            None => Err(MsmTermCountTryNewErrorReturn::Zero),
-        }
-    }
-
-    pub fn get(&self) -> u32 {
-        self.count.get()
-    }
-}
 
 impl GroupOperationVectorDescription {
     pub fn try_new(

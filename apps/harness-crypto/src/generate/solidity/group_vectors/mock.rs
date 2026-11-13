@@ -23,47 +23,14 @@ use super::interface::{
     GroupVectorsCaseDeps, GroupVectorsCaseErrorReturn, GroupVectorsCaseParams,
     GroupVectorsCasePayload, GroupVectorsCaseReturn, GroupVectorsCaseSuccessReturn,
     GroupVectorsDeps, GroupVectorsParams, GroupVectorsPayload, GroupVectorsReturn,
-    GroupVectorsSuccessReturn, IGroupVectorsCaseConsumer, MsmTermCount,
-    MsmTermCountConstructorParams, MsmVectorSettings, PairingCheckVector,
-    PairingCheckVectorDescription, PairingCheckVectorDescriptionConstructorParams,
-    SecondGroupVectorCounts, SecondGroupVectors, VectorCount, VectorCountConstructorParams,
+    GroupVectorsSuccessReturn, IGroupVectorsCaseConsumer, MsmVectorSettings,
+    PairingCheckVector, PairingCheckVectorDescription,
+    PairingCheckVectorDescriptionConstructorParams, SecondGroupVectorCounts,
+    SecondGroupVectors,
 };
-
-#[derive(Default)]
-pub struct VectorCountConstructorParamsOverrides {
-    pub count: Option<u32>,
-}
-
-pub fn build_vector_count_constructor_params(
-    overrides: VectorCountConstructorParamsOverrides,
-) -> VectorCountConstructorParams {
-    VectorCountConstructorParams {
-        count: overrides.count.unwrap_or(2),
-    }
-}
-
-pub fn build_vector_count(overrides: VectorCountConstructorParamsOverrides) -> VectorCount {
-    VectorCount::try_new(build_vector_count_constructor_params(overrides))
-        .expect("built params are valid")
-}
-
-#[derive(Default)]
-pub struct MsmTermCountConstructorParamsOverrides {
-    pub count: Option<u32>,
-}
-
-pub fn build_msm_term_count_constructor_params(
-    overrides: MsmTermCountConstructorParamsOverrides,
-) -> MsmTermCountConstructorParams {
-    MsmTermCountConstructorParams {
-        count: overrides.count.unwrap_or(2),
-    }
-}
-
-pub fn build_msm_term_count(overrides: MsmTermCountConstructorParamsOverrides) -> MsmTermCount {
-    MsmTermCount::try_new(build_msm_term_count_constructor_params(overrides))
-        .expect("built params are valid")
-}
+use super::super::super::factory::provides::{
+    MsmTermCount, VectorCount, build_msm_term_count, build_vector_count,
+};
 
 #[derive(Default)]
 pub struct FirstGroupVectorCountsOverrides {
@@ -410,40 +377,6 @@ fn second_group_vectors_value(vectors: &SecondGroupVectors) -> Value {
                 .collect(),
         ),
     );
-    Value::Object(fields)
-}
-
-#[derive(Default)]
-pub struct VectorCountConstructorParamsCorruptions {
-    pub count: Option<Value>,
-}
-
-pub fn invalidate_vector_count_constructor_params(
-    corruptions: VectorCountConstructorParamsCorruptions,
-) -> Value {
-    let params = build_vector_count_constructor_params(Default::default());
-    let mut fields = Map::new();
-    fields.insert("count".to_string(), Value::from(params.count));
-    if let Some(count) = corruptions.count {
-        fields.insert("count".to_string(), count);
-    }
-    Value::Object(fields)
-}
-
-#[derive(Default)]
-pub struct MsmTermCountConstructorParamsCorruptions {
-    pub count: Option<Value>,
-}
-
-pub fn invalidate_msm_term_count_constructor_params(
-    corruptions: MsmTermCountConstructorParamsCorruptions,
-) -> Value {
-    let params = build_msm_term_count_constructor_params(Default::default());
-    let mut fields = Map::new();
-    fields.insert("count".to_string(), Value::from(params.count));
-    if let Some(count) = corruptions.count {
-        fields.insert("count".to_string(), count);
-    }
     Value::Object(fields)
 }
 

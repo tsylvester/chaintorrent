@@ -6,25 +6,25 @@ use chain::{
     build_create_chain_forms_payload, create_chain_forms,
 };
 use encoding::{
-    CanonicalFieldKind, ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingParams,
-    ICanonicalField, IDecoderAdapter, IEncoderAdapter, IEncodingConsumer, TypeNameParams,
-    build_create_encoding_deps, build_create_encoding_params, build_create_encoding_payload,
-    create_encoding,
+    ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingParams, IDecoderAdapter,
+    IEncoderAdapter, IEncodingConsumer, build_create_encoding_deps, build_create_encoding_params,
+    build_create_encoding_payload, create_encoding,
 };
 use envelope::KeyAgreementDeclaration;
 use kem::KemDeclaration;
 use pairing::{
     ConsumePairingParams, ConsumePairingPayload, CreatePairingParams, CreatePairingPayload,
-    IPairingArithmetic, IPairingConsumer, IPairingReference, build_create_pairing_deps,
-    build_create_pairing_params, create_pairing,
+    IPairingArithmetic, IPairingConsumer, IPairingReference, PrecompileEncoding,
+    build_create_pairing_deps, build_create_pairing_params, create_pairing,
 };
 use proof::{DELIVERY_STATEMENT_VERSION_ONE, DeliveryProofDeclaration};
 
 use super::super::render::provides::{SolidityLibraryEntry, build_solidity_library_entry};
 use super::interface::{
-    ConstantsCaseDeps, ConstantsCaseErrorReturn, ConstantsCaseParams, ConstantsCasePayload,
-    ConstantsCaseReturn, ConstantsCaseSuccessReturn, ConstantsDeps, ConstantsParams,
-    ConstantsPayload, ConstantsReturn, ConstantsSuccessReturn, IConstantsCaseConsumer,
+    CellValues, CellValuesDescription, CellValuesDescriptionConstructorParams, ConstantsCaseDeps,
+    ConstantsCaseErrorReturn, ConstantsCaseParams, ConstantsCasePayload, ConstantsCaseReturn,
+    ConstantsCaseSuccessReturn, ConstantsDeps, ConstantsParams, ConstantsPayload, ConstantsReturn,
+    ConstantsSuccessReturn, IConstantsCaseConsumer,
 };
 
 #[derive(Default)]
@@ -70,6 +70,7 @@ pub fn build_constants_payload<'a>(
 #[derive(Default)]
 pub struct ConstantsSuccessReturnOverrides {
     pub entries: Option<Vec<SolidityLibraryEntry>>,
+    pub cell_values: Option<CellValues>,
 }
 
 pub fn build_constants_success_return(
@@ -79,7 +80,52 @@ pub fn build_constants_success_return(
         entries: overrides
             .entries
             .unwrap_or_else(|| vec![build_solidity_library_entry(Default::default())]),
+        cell_values: overrides
+            .cell_values
+            .unwrap_or_else(|| build_cell_values(Default::default())),
     }
+}
+
+#[derive(Default)]
+pub struct CellValuesOverrides {
+    pub curve_name: Option<String>,
+    pub precompile_encoding: Option<String>,
+    pub scalar_field_order: Option<[u8; 32]>,
+    pub g1_generator: Option<Vec<u8>>,
+    pub g2_generator: Option<Vec<u8>>,
+    pub second_group_arithmetic: Option<bool>,
+}
+
+pub fn build_cell_values(overrides: CellValuesOverrides) -> CellValues {
+    CellValues {
+        curve_name: overrides.curve_name.unwrap_or_else(|| "Mock".to_string()),
+        precompile_encoding: overrides
+            .precompile_encoding
+            .unwrap_or_else(|| format!("{:?}", PrecompileEncoding::Mock)),
+        scalar_field_order: overrides.scalar_field_order.unwrap_or_else(|| {
+            let mut bytes = [0x00; 32];
+            bytes[30] = 0xFF;
+            bytes[31] = 0xF1;
+            bytes
+        }),
+        g1_generator: overrides
+            .g1_generator
+            .unwrap_or_else(|| 1u64.to_be_bytes().to_vec()),
+        g2_generator: overrides
+            .g2_generator
+            .unwrap_or_else(|| 2u64.to_be_bytes().to_vec()),
+        second_group_arithmetic: overrides.second_group_arithmetic.unwrap_or(false),
+    }
+}
+
+#[derive(Default)]
+pub struct CellValuesDescriptionConstructorParamsOverrides;
+
+pub fn build_cell_values_description(
+    _overrides: CellValuesDescriptionConstructorParamsOverrides,
+) -> CellValuesDescription {
+    let Ok(description) = CellValuesDescription::try_new(CellValuesDescriptionConstructorParams);
+    description
 }
 
 pub fn mock_constants<'a, P: IPairingReference, E: IEncoderAdapter>(
@@ -88,90 +134,6 @@ pub fn mock_constants<'a, P: IPairingReference, E: IEncoderAdapter>(
     _payload: ConstantsPayload<'_>,
 ) -> ConstantsReturn {
     Ok(build_constants_success_return(Default::default()))
-}
-
-fn field_names<E: IEncoderAdapter>(encoder: &E, kinds: &[CanonicalFieldKind]) -> String {
-    kinds
-        .iter()
-        .map(|kind| {
-            let Ok(success) = encoder.type_name(TypeNameParams, *kind);
-            success.name.as_str().to_string()
-        })
-        .collect::<Vec<_>>()
-        .join(",")
-}
-
-pub fn build_mint_fields_text<E: IEncoderAdapter, F: IChainForms>(encoder: &E) -> String {
-    field_names(
-        encoder,
-        &[
-            CanonicalFieldKind::FixedBytes32,
-            CanonicalFieldKind::Unsigned16,
-            <F::ChainIdentifier as ICanonicalField>::KIND,
-            <F::Identity as ICanonicalField>::KIND,
-            CanonicalFieldKind::FixedBytes32,
-            CanonicalFieldKind::FixedBytes32,
-            <F::Entitlement as ICanonicalField>::KIND,
-            <F::Entitlement as ICanonicalField>::KIND,
-            <F::Interval as ICanonicalField>::KIND,
-            <F::Interval as ICanonicalField>::KIND,
-            CanonicalFieldKind::Unsigned16,
-            <F::Identity as ICanonicalField>::KIND,
-            <F::Identity as ICanonicalField>::KIND,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Unsigned64,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-        ],
-    )
-}
-
-pub fn build_transfer_fields_text<E: IEncoderAdapter, F: IChainForms>(encoder: &E) -> String {
-    field_names(
-        encoder,
-        &[
-            CanonicalFieldKind::FixedBytes32,
-            CanonicalFieldKind::Unsigned16,
-            <F::ChainIdentifier as ICanonicalField>::KIND,
-            <F::Identity as ICanonicalField>::KIND,
-            CanonicalFieldKind::FixedBytes32,
-            CanonicalFieldKind::FixedBytes32,
-            <F::Entitlement as ICanonicalField>::KIND,
-            <F::Entitlement as ICanonicalField>::KIND,
-            <F::Interval as ICanonicalField>::KIND,
-            <F::Interval as ICanonicalField>::KIND,
-            CanonicalFieldKind::Unsigned16,
-            <F::Identity as ICanonicalField>::KIND,
-            <F::Identity as ICanonicalField>::KIND,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Unsigned64,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-            CanonicalFieldKind::Bytes,
-        ],
-    )
 }
 
 #[derive(Default)]

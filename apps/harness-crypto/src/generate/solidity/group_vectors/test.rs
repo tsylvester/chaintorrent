@@ -20,22 +20,25 @@ use super::super::render::provides::{
 use super::group_vectors;
 use super::interface::{
     GroupOperationVectorFromFieldsErrorReturn, GroupVectorsCasePayload, GroupVectorsErrorReturn,
-    GroupVectorsParams, GroupVectorsReturn, IGroupVectorsCaseConsumer, MsmTermCount,
-    MsmTermCountTryNewErrorReturn, PairingCheckVectorFromFieldsErrorReturn, VectorCount,
-    VectorCountTryNewErrorReturn,
+    GroupVectorsParams, GroupVectorsReturn, IGroupVectorsCaseConsumer,
+    PairingCheckVectorFromFieldsErrorReturn,
 };
 use super::mock::{
     FirstGroupVectorCountsOverrides, GroupOperationVectorOverrides,
     GroupVectorsCaseParamsOverrides, GroupVectorsParamsOverrides,
-    MsmTermCountConstructorParamsOverrides, PairingCheckVectorOverrides,
-    VectorCountConstructorParamsOverrides, build_first_group_vector_counts,
+    PairingCheckVectorOverrides, build_first_group_vector_counts,
     build_group_operation_vector, build_group_operation_vector_description,
     build_group_vectors_case_deps, build_group_vectors_case_params,
     build_group_vectors_case_payload, build_group_vectors_deps, build_group_vectors_params,
-    build_group_vectors_payload, build_msm_term_count_constructor_params,
-    build_pairing_check_vector, build_pairing_check_vector_description,
-    build_second_group_vector_counts, build_vector_count, build_vector_count_constructor_params,
+    build_group_vectors_payload, build_pairing_check_vector,
+    build_pairing_check_vector_description, build_second_group_vector_counts,
     run_group_vectors_case,
+};
+use super::super::super::factory::provides::{
+    MsmTermCount, MsmTermCountConstructorParamsOverrides, MsmTermCountTryNewErrorReturn,
+    VectorCount, VectorCountConstructorParamsOverrides, VectorCountTryNewErrorReturn,
+    build_msm_term_count_constructor_params, build_vector_count,
+    build_vector_count_constructor_params,
 };
 
 /// Contract: `NonZeroU32::new(params.count)` is `Some` → `Ok(VectorCount { count })`,

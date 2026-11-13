@@ -1,6 +1,7 @@
 #[cfg(any(test, feature = "mocks"))]
 use chain::{CreateChainFormsErrorReturn, CreateChainFormsParams, IChainForms};
-use encoding::IEncoderAdapter;
+use core::convert::Infallible;
+use encoding::{CanonicalFieldKind, CanonicalFieldReaderErrorReturn, IEncoderAdapter};
 #[cfg(any(test, feature = "mocks"))]
 use encoding::{CreateEncodingErrorReturn, CreateEncodingParams, IDecoderAdapter};
 use envelope::KeyAgreementDeclaration;
@@ -12,6 +13,7 @@ use proof::DeliveryProofDeclaration;
 
 use super::super::render::provides::{
     SolidityAbiTypeTryNewErrorReturn, SolidityConstantNameTryNewErrorReturn, SolidityLibraryEntry,
+    SolidityMemberName, SolidityMemberNameTryNewErrorReturn,
     SolidityStringLiteralTryNewErrorReturn,
 };
 
@@ -32,8 +34,59 @@ pub struct ConstantsPayload<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CellValues {
+    pub curve_name: String,
+    pub precompile_encoding: String,
+    pub scalar_field_order: [u8; 32],
+    pub g1_generator: Vec<u8>,
+    pub g2_generator: Vec<u8>,
+    pub second_group_arithmetic: bool,
+}
+
+pub const CELL_VALUES_FIELD_COUNT: usize = 6;
+
+pub const CELL_VALUES_MEMBER_NAMES: [&str; CELL_VALUES_FIELD_COUNT] = [
+    "curveName",
+    "precompileEncoding",
+    "scalarFieldOrder",
+    "g1Generator",
+    "g2Generator",
+    "secondGroupArithmetic",
+];
+
+pub const CELL_VALUES_FIELD_KINDS: [CanonicalFieldKind; CELL_VALUES_FIELD_COUNT] = [
+    CanonicalFieldKind::Text,
+    CanonicalFieldKind::Text,
+    CanonicalFieldKind::FixedBytes32,
+    CanonicalFieldKind::Bytes,
+    CanonicalFieldKind::Bytes,
+    CanonicalFieldKind::Unsigned16,
+];
+
+pub struct CellValuesDescription;
+
+pub struct CellValuesDescriptionConstructorParams;
+
+pub type CellValuesDescriptionTryNewReturn = Result<CellValuesDescription, Infallible>;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CellValuesFromFieldsErrorReturn {
+    Fields(CanonicalFieldReaderErrorReturn),
+    SecondGroupArithmetic { actual: u16 },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CellValuesMemberNamesErrorReturn {
+    MemberName(SolidityMemberNameTryNewErrorReturn),
+}
+
+pub type CellValuesMemberNamesReturn =
+    Result<Vec<SolidityMemberName>, CellValuesMemberNamesErrorReturn>;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ConstantsSuccessReturn {
     pub entries: Vec<SolidityLibraryEntry>,
+    pub cell_values: CellValues,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

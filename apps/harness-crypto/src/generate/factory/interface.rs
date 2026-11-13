@@ -2,6 +2,7 @@ use chain::IChainForms;
 #[cfg(any(test, feature = "mocks"))]
 use chain::{CreateChainFormsErrorReturn, CreateChainFormsParams};
 use core::convert::Infallible;
+use core::num::NonZeroU32;
 #[cfg(any(test, feature = "mocks"))]
 use encoding::{CreateEncodingErrorReturn, CreateEncodingParams, IDecoderAdapter};
 use encoding::{EncodingIdentifier, IEncoderAdapter};
@@ -27,10 +28,40 @@ use random::IRandomSourceAdapter;
 use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 use std::path::PathBuf;
 
-use super::super::solidity::provides::{
-    MsmTermCount, SolidityGenerateErrorReturn, SolidityGenerateSettings, VectorCount,
-};
+use super::super::solidity::provides::{SolidityGenerateErrorReturn, SolidityGenerateSettings};
 use crate::delivery::provides::AdmittedKemIdentity;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct VectorCount {
+    pub(super) count: NonZeroU32,
+}
+
+pub struct VectorCountConstructorParams {
+    pub count: u32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VectorCountTryNewErrorReturn {
+    Zero,
+}
+
+pub type VectorCountTryNewReturn = Result<VectorCount, VectorCountTryNewErrorReturn>;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct MsmTermCount {
+    pub(super) count: NonZeroU32,
+}
+
+pub struct MsmTermCountConstructorParams {
+    pub count: u32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MsmTermCountTryNewErrorReturn {
+    Zero,
+}
+
+pub type MsmTermCountTryNewReturn = Result<MsmTermCount, MsmTermCountTryNewErrorReturn>;
 
 pub const GENERATE_INTERFACE_VERSION: u32 = 1;
 

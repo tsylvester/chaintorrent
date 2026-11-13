@@ -7,6 +7,7 @@ pub mod provides;
 #[cfg(test)]
 mod test;
 
+use core::num::NonZeroU32;
 use encoding::IEncoderAdapter;
 use envelope::IKeyAgreementAdapter;
 use kem::ICredentialKemAdapter;
@@ -20,11 +21,40 @@ use super::solidity::provides::{
 use interface::{
     ConsumeGenerateParams, ConsumeGeneratePayload, CreateGenerateDeps, CreateGenerateErrorReturn,
     CreateGenerateParams, CreateGeneratePayload, CreateGenerateReturn, CreateGenerateSuccessReturn,
-    GenerateConcrete, IGenerateAdapter, IGenerateConsumer, VectorKindQuantity, VectorKindSettings,
-    VectorKindSize, VectorKindSizing,
+    GenerateConcrete, IGenerateAdapter, IGenerateConsumer, MsmTermCount,
+    MsmTermCountConstructorParams, MsmTermCountTryNewErrorReturn, MsmTermCountTryNewReturn,
+    VectorCount, VectorCountConstructorParams, VectorCountTryNewErrorReturn,
+    VectorCountTryNewReturn, VectorKindQuantity, VectorKindSettings, VectorKindSize,
+    VectorKindSizing,
 };
 #[cfg(any(test, feature = "mocks"))]
 use mock::{MockIGenerateAdapter, MockIGenerateAdapterConstructorParams};
+
+impl VectorCount {
+    pub fn try_new(params: VectorCountConstructorParams) -> VectorCountTryNewReturn {
+        match NonZeroU32::new(params.count) {
+            Some(count) => Ok(VectorCount { count }),
+            None => Err(VectorCountTryNewErrorReturn::Zero),
+        }
+    }
+
+    pub fn get(&self) -> u32 {
+        self.count.get()
+    }
+}
+
+impl MsmTermCount {
+    pub fn try_new(params: MsmTermCountConstructorParams) -> MsmTermCountTryNewReturn {
+        match NonZeroU32::new(params.count) {
+            Some(count) => Ok(MsmTermCount { count }),
+            None => Err(MsmTermCountTryNewErrorReturn::Zero),
+        }
+    }
+
+    pub fn get(&self) -> u32 {
+        self.count.get()
+    }
+}
 
 pub fn create_generate<
     'a,

@@ -52,8 +52,8 @@ use serde_json::{Map, Value};
 use std::path::PathBuf;
 
 use super::super::solidity::provides::{
-    MsmTermCount, SOLIDITY_GENERATE_DECLARATION, VectorCount, build_msm_term_count,
-    build_solidity_generate_settings, build_vector_count, invalidate_solidity_generate_settings,
+    SOLIDITY_GENERATE_DECLARATION, build_solidity_generate_settings,
+    invalidate_solidity_generate_settings,
 };
 use super::interface::{
     ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload, ConsumeGenerateParams,
@@ -64,11 +64,82 @@ use super::interface::{
     EmitParams, EmitPayload, EmitReturn, EmitSuccessReturn, EmittedFile,
     GENERATE_INTERFACE_VERSION, GenerateConcrete, GenerateConcreteKind, GenerateDeclaration,
     ICreateGenerateCaseConsumer, IGenerateAdapter, IGenerateConsumer,
-    MockIGenerateAdapterEmitErrorReturn, MockIGenerateAdapterFailureMode, RunCreateGenerateCaseFn,
-    VectorKind, VectorKindConfiguration, VectorKindDeclaration, VectorKindQuantities,
-    VectorKindSettings, VectorKindSize, VectorKindSizing,
+    MockIGenerateAdapterEmitErrorReturn, MockIGenerateAdapterFailureMode, MsmTermCount,
+    MsmTermCountConstructorParams, RunCreateGenerateCaseFn, VectorCount,
+    VectorCountConstructorParams, VectorKind, VectorKindConfiguration, VectorKindDeclaration,
+    VectorKindQuantities, VectorKindSettings, VectorKindSize, VectorKindSizing,
 };
 use crate::delivery::provides::{AdmittedKemIdentity, build_admitted_kem_identity};
+
+#[derive(Default)]
+pub struct VectorCountConstructorParamsOverrides {
+    pub count: Option<u32>,
+}
+
+pub fn build_vector_count_constructor_params(
+    overrides: VectorCountConstructorParamsOverrides,
+) -> VectorCountConstructorParams {
+    VectorCountConstructorParams {
+        count: overrides.count.unwrap_or(2),
+    }
+}
+
+pub fn build_vector_count(overrides: VectorCountConstructorParamsOverrides) -> VectorCount {
+    VectorCount::try_new(build_vector_count_constructor_params(overrides))
+        .expect("built params are valid")
+}
+
+#[derive(Default)]
+pub struct MsmTermCountConstructorParamsOverrides {
+    pub count: Option<u32>,
+}
+
+pub fn build_msm_term_count_constructor_params(
+    overrides: MsmTermCountConstructorParamsOverrides,
+) -> MsmTermCountConstructorParams {
+    MsmTermCountConstructorParams {
+        count: overrides.count.unwrap_or(2),
+    }
+}
+
+pub fn build_msm_term_count(overrides: MsmTermCountConstructorParamsOverrides) -> MsmTermCount {
+    MsmTermCount::try_new(build_msm_term_count_constructor_params(overrides))
+        .expect("built params are valid")
+}
+
+#[derive(Default)]
+pub struct VectorCountConstructorParamsCorruptions {
+    pub count: Option<Value>,
+}
+
+pub fn invalidate_vector_count_constructor_params(
+    corruptions: VectorCountConstructorParamsCorruptions,
+) -> Value {
+    let params = build_vector_count_constructor_params(Default::default());
+    let mut fields = Map::new();
+    fields.insert("count".to_string(), Value::from(params.count));
+    if let Some(count) = corruptions.count {
+        fields.insert("count".to_string(), count);
+    }
+    Value::Object(fields)
+}
+
+#[derive(Default)]
+pub struct MsmTermCountConstructorParamsCorruptions {
+    pub count: Option<Value>,
+}
+
+pub fn invalidate_msm_term_count_constructor_params(
+    corruptions: MsmTermCountConstructorParamsCorruptions,
+) -> Value {
+    let params = build_msm_term_count_constructor_params(Default::default());
+    let mut fields = Map::new();
+    fields.insert("count".to_string(), Value::from(params.count));
+    if let Some(count) = corruptions.count {
+        fields.insert("count".to_string(), count);
+    }
+    Value::Object(fields)
+}
 
 #[derive(Default)]
 pub struct VectorKindDeclarationOverrides {

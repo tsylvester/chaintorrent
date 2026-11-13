@@ -15,24 +15,22 @@ use pairing::{
     G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingArithmetic,
     IPairingReference, IsIdentityG1Params, IsIdentityG1Payload, IsIdentityG2Params,
     IsIdentityG2Payload, NegG1Params, NegG1Payload, NegG2Params, NegG2Payload, PAIRING_CONCRETES,
-    PairingConcrete, PrecompileEncoding, ScalarFieldOrderParams, ScalarFieldOrderPayload,
-    TargetGroupEncodingIdentifier, build_create_pairing_params,
+    PairingConcrete, PrecompileEncoding, TargetGroupEncodingIdentifier,
+    build_create_pairing_params,
 };
 use proof::{DeliveryProofDeclarationOverrides, build_delivery_proof_declaration};
 
 use super::super::render::provides::{
     SolidityConstantNameConstructorParamsOverrides, SolidityConstantValue, SolidityLibraryEntry,
     SolidityLibraryEntryOverrides, SolidityStringLiteralConstructorParamsOverrides,
-    SolidityUint256ConstructorParamsOverrides, build_solidity_constant_name,
-    build_solidity_library_entry, build_solidity_string_literal, build_solidity_uint256,
+    build_solidity_constant_name, build_solidity_library_entry, build_solidity_string_literal,
 };
 use super::constants;
 use super::provides::{
     ConstantsCaseParams, ConstantsCaseParamsOverrides, ConstantsCasePayload,
     IConstantsCaseConsumer, build_constants_case_deps, build_constants_case_params,
     build_constants_case_payload, build_constants_deps, build_constants_params,
-    build_constants_payload, build_mint_fields_text, build_transfer_fields_text,
-    run_constants_case,
+    build_constants_payload, run_constants_case,
 };
 
 fn entry_named<'a>(entries: &'a [SolidityLibraryEntry], text: &str) -> &'a SolidityLibraryEntry {
@@ -271,22 +269,22 @@ fn the_entries_carry_the_statement_version_and_each_purpose_code_in_declared_ord
 
 /// Contract: given the forms the chain family hands the consumer and the ABI
 ///   concrete the encoding family hands it, `constants` returns `Ok` whose entries
-///   `MINT_FIELDS` and `TRANSFER_FIELDS` are `String` holding the type names the ABI
-///   concrete returns for the kinds of `MintStatementDescription::FIELDS` and
+///   `MINT_FIELDS` and `TRANSFER_FIELDS` are `String` holding the type names the
+///   ABI concrete returns for the kinds of `MintStatementDescription::FIELDS` and
 ///   `TransferStatementDescription::FIELDS` joined by `,` in field order, a fixed
 ///   twenty-byte kind as `bytes20`; this block proves the absorbed `KIND` outcomes
 ///   of the four `chain/create_chain_forms` round-trip entries the spec
 ///   dispositions.
 /// Arrange: the defaults; every concrete of both declared sets is the variation,
-///   each sequence compared with the text its builder states.
+///   each sequence compared with its own literal.
 /// Act:    `run_constants_case` per member of each declared set, the consumer's
 ///   method calling `constants::<P, E, F>`.
 /// Assert: the entry `MINT_FIELDS` equals `String` of `build_solidity_string_literal`
-///   over the text `build_mint_fields_text` states for the handed encoder and
-///   forms, and the entry `TRANSFER_FIELDS` equals `String` of
-///   `build_solidity_string_literal` over the text `build_transfer_fields_text`
-///   states likewise, each builder declaring the kinds its description's
-///   interaction spec lists.
+///   over the literal ABI type names the block assembles from the field kinds
+///   `proof/mint_statement`'s interaction spec lists, the forms' kinds, and the
+///   ABI table `encoding/abi` states, joined by `,`, and the entry
+///   `TRANSFER_FIELDS` equals `String` of the literal assembled likewise from
+///   `proof/transfer_statement`'s spec.
 /// Boundary: `constants` over the real encoder's `type_name`,
 ///   `SolidityAbiType::try_new` and `as_str`, `SolidityStringLiteral::try_new`, and
 ///   the real forms concrete.
@@ -324,10 +322,26 @@ fn the_entries_carry_the_mint_and_transfer_field_sequences_over_the_chain_forms(
             // Assert
             let entries = result.expect("a supported version admits").entries;
             for (text, sequence) in [
-                ("MINT_FIELDS", build_mint_fields_text::<E, F>(encoder)),
+                (
+                    "MINT_FIELDS",
+                    [
+                        "bytes32", "uint16", "uint256", "bytes20", "bytes32", "bytes32", "uint256",
+                        "uint256", "uint64", "uint64", "uint16", "bytes20", "bytes20", "bytes",
+                        "bytes", "bytes", "bytes", "bytes", "bytes", "uint64", "bytes", "bytes",
+                        "bytes", "bytes", "bytes",
+                    ]
+                    .join(","),
+                ),
                 (
                     "TRANSFER_FIELDS",
-                    build_transfer_fields_text::<E, F>(encoder),
+                    [
+                        "bytes32", "uint16", "uint256", "bytes20", "bytes32", "bytes32", "uint256",
+                        "uint256", "uint64", "uint64", "uint16", "bytes20", "bytes20", "bytes",
+                        "bytes", "bytes", "bytes", "bytes", "bytes", "bytes", "bytes", "bytes",
+                        "bytes", "bytes", "bytes", "uint64", "bytes", "bytes", "bytes", "bytes",
+                        "bytes", "bytes",
+                    ]
+                    .join(","),
                 ),
             ] {
                 assert_eq!(
@@ -366,22 +380,21 @@ fn the_entries_carry_the_mint_and_transfer_field_sequences_over_the_chain_forms(
 // the_entries_carry_the_mint_and_transfer_field_sequences_over_the_chain_forms
 
 /// Contract: given a pairing of `PAIRING_CONCRETES`, `constants` returns `Ok` whose
-///   entry `SCALAR_FIELD_ORDER` is `Uint256` whose 32 bytes the same pairing's
+///   member `cell_values.scalar_field_order` holds 32 bytes the same pairing's
 ///   `decode_scalar` refuses with `NonCanonical` and whose bytes less one it
 ///   admits.
 /// Arrange: the defaults; every concrete of `PAIRING_CONCRETES` is the variation,
 ///   so a constant, a truncated, a little-endian, or an off-by-one order fails.
 /// Act:    `run_constants_case` per member of `PAIRING_CONCRETES`, the consumer's
 ///   method calling `constants::<P, E, F>`.
-/// Assert: in place in the consumer's method, the entry is `Uint256`; the received
-///   pairing's `decode_scalar` over the entry's bytes returns
-///   `Err(DecodeScalarErrorReturn::NonCanonical)` whole, and over the entry's bytes
-///   less one returns `Ok`.
-/// Boundary: `constants` over the real `SolidityUint256::try_new`, with the real
-///   `decode_scalar` as the oracle.
+/// Assert: in place in the consumer's method, the received pairing's
+///   `decode_scalar` over the member's bytes returns
+///   `Err(DecodeScalarErrorReturn::NonCanonical)` whole, and over the member's
+///   bytes less one returns `Ok`.
+/// Boundary: `constants`, with the real `decode_scalar` as the oracle.
 /// Mocked:  nothing.
 #[test]
-fn the_entries_carry_the_scalar_field_order_as_32_big_endian_bytes() {
+fn the_record_carries_the_scalar_field_order_as_32_big_endian_bytes() {
     struct Consumer;
 
     impl IConstantsCaseConsumer for Consumer {
@@ -411,24 +424,17 @@ fn the_entries_carry_the_scalar_field_order_as_32_big_endian_bytes() {
             );
 
             // Assert
-            let entries = result.expect("a supported version admits").entries;
-            let Ok(success) =
-                pairing.scalar_field_order(ScalarFieldOrderParams, ScalarFieldOrderPayload);
-            let big_endian = <[u8; 32]>::try_from(success.bytes)
-                .expect("each pairing concrete returns its order as 32 big-endian bytes");
+            let scalar_field_order = result
+                .expect("a supported version admits")
+                .cell_values
+                .scalar_field_order;
             assert_eq!(
-                &entry_named(&entries, "SCALAR_FIELD_ORDER").value,
-                &SolidityConstantValue::Uint256(build_solidity_uint256(
-                    SolidityUint256ConstructorParamsOverrides {
-                        big_endian: Some(big_endian),
-                    }
-                ))
-            );
-            assert_eq!(
-                pairing.decode_scalar(DecodeScalarParams, &big_endian).err(),
+                pairing
+                    .decode_scalar(DecodeScalarParams, &scalar_field_order)
+                    .err(),
                 Some(DecodeScalarErrorReturn::NonCanonical)
             );
-            let mut less_one = big_endian;
+            let mut less_one = scalar_field_order;
             less_one[31] -= 1;
             assert!(pairing.decode_scalar(DecodeScalarParams, &less_one).is_ok());
         }
@@ -446,26 +452,26 @@ fn the_entries_carry_the_scalar_field_order_as_32_big_endian_bytes() {
         }
     }
 }
-// the_entries_carry_the_scalar_field_order_as_32_big_endian_bytes
+// the_record_carries_the_scalar_field_order_as_32_big_endian_bytes
 
 /// Contract: given a pairing of `PAIRING_CONCRETES`, `constants` returns `Ok` whose
-///   entries `G1_GENERATOR` and `G2_GENERATOR` are `Bytes` that the same pairing's
-///   `decode_g1` and `decode_g2` admit, each decoded point's sum with the negation
-///   of that group's generator being the identity.
+///   members `cell_values.g1_generator` and `cell_values.g2_generator` are bytes
+///   the same pairing's `decode_g1` and `decode_g2` admit, each decoded point's
+///   sum with the negation of that group's generator being the identity.
 /// Arrange: the defaults; every concrete of `PAIRING_CONCRETES` is the variation,
-///   so an entry holding the other group's generator or another point fails at the
-///   decoder.
+///   so a member holding the other group's generator or another point fails at
+///   the decoder.
 /// Act:    `run_constants_case` per member of `PAIRING_CONCRETES`, the consumer's
 ///   method calling `constants::<P, E, F>`.
-/// Assert: in place in the consumer's method, each entry is `Bytes`; the received
-///   pairing's `decode_g1` and `decode_g2` over the entries' bytes return `Ok`; the
-///   sum of each decoded point with the negation of that group's generator
-///   satisfies `is_identity_g1` or `is_identity_g2`.
+/// Assert: in place in the consumer's method, the received pairing's `decode_g1`
+///   and `decode_g2` over the members' bytes return `Ok`; the sum of each decoded
+///   point with the negation of that group's generator satisfies `is_identity_g1`
+///   or `is_identity_g2`.
 /// Boundary: `constants` over the real pairing, with the decoders and group
 ///   operations as the oracle.
 /// Mocked:  nothing.
 #[test]
-fn the_entries_carry_the_generators_precompile_encodings() {
+fn the_record_carries_the_generators_precompile_encodings() {
     struct Consumer;
 
     impl IConstantsCaseConsumer for Consumer {
@@ -495,16 +501,11 @@ fn the_entries_carry_the_generators_precompile_encodings() {
             );
 
             // Assert
-            let entries = result.expect("a supported version admits").entries;
+            let cell_values = result.expect("a supported version admits").cell_values;
 
-            let SolidityConstantValue::Bytes(g1_bytes) =
-                &entry_named(&entries, "G1_GENERATOR").value
-            else {
-                panic!("G1_GENERATOR is Bytes");
-            };
             let decoded_g1 = pairing
-                .decode_g1(DecodeG1Params, g1_bytes)
-                .expect("the G1_GENERATOR encoding decodes");
+                .decode_g1(DecodeG1Params, &cell_values.g1_generator)
+                .expect("the g1_generator encoding decodes");
             let Ok(generator) = pairing.g1_generator(G1GeneratorParams, G1GeneratorPayload);
             let Ok(negation) = pairing.neg_g1(
                 NegG1Params,
@@ -523,14 +524,9 @@ fn the_entries_carry_the_generators_precompile_encodings() {
                 pairing.is_identity_g1(IsIdentityG1Params, IsIdentityG1Payload { point: sum.sum });
             assert!(identity.is_identity);
 
-            let SolidityConstantValue::Bytes(g2_bytes) =
-                &entry_named(&entries, "G2_GENERATOR").value
-            else {
-                panic!("G2_GENERATOR is Bytes");
-            };
             let decoded_g2 = pairing
-                .decode_g2(DecodeG2Params, g2_bytes)
-                .expect("the G2_GENERATOR encoding decodes");
+                .decode_g2(DecodeG2Params, &cell_values.g2_generator)
+                .expect("the g2_generator encoding decodes");
             let Ok(generator) = pairing.g2_generator(G2GeneratorParams, G2GeneratorPayload);
             let Ok(negation) = pairing.neg_g2(
                 NegG2Params,
@@ -563,24 +559,25 @@ fn the_entries_carry_the_generators_precompile_encodings() {
         }
     }
 }
-// the_entries_carry_the_generators_precompile_encodings
+// the_record_carries_the_generators_precompile_encodings
 
 /// Contract: given a pairing of `PAIRING_CONCRETES`, `constants` returns `Ok` whose
-///   entry `SECOND_GROUP_ARITHMETIC` is `Bool(false)` for a pairing whose
-///   declaration carries `PrecompileEncoding::Eip196Eip197` and `Bool(true)` for
+///   member `cell_values.second_group_arithmetic` is `false` for a pairing whose
+///   declaration carries `PrecompileEncoding::Eip196Eip197` and `true` for
 ///   `PrecompileEncoding::Eip2537`.
 /// Arrange: the defaults; every concrete of `PAIRING_CONCRETES` is the variation,
 ///   which holds a pairing of each precompile encoding, so a constant fails.
 /// Act:    `run_constants_case` per member of `PAIRING_CONCRETES`, the consumer's
 ///   method calling `constants::<P, E, F>`.
-/// Assert: in place in the consumer's method, the entry `SECOND_GROUP_ARITHMETIC`
-///   equals `Bool(false)` where `P::DECLARATION.precompile_encoding` is
-///   `Eip196Eip197` and `Bool(true)` where it is `Eip2537`, the expectation keyed
-///   on the encoding and not on `verifier_group_arithmetic`.
+/// Assert: in place in the consumer's method, the member
+///   `cell_values.second_group_arithmetic` equals `false` where
+///   `P::DECLARATION.precompile_encoding` is `Eip196Eip197` and `true` where it is
+///   `Eip2537`, the expectation keyed on the encoding and not on
+///   `verifier_group_arithmetic`.
 /// Boundary: `constants` over the real pairing and forms concretes.
 /// Mocked:  nothing.
 #[test]
-fn the_entries_carry_the_verifier_form_the_pairing_declares() {
+fn the_record_carries_the_verifier_form_the_pairing_declares() {
     struct Consumer;
 
     impl IConstantsCaseConsumer for Consumer {
@@ -610,16 +607,16 @@ fn the_entries_carry_the_verifier_form_the_pairing_declares() {
             );
 
             // Assert
-            let entries = result.expect("a supported version admits").entries;
+            let second_group_arithmetic = result
+                .expect("a supported version admits")
+                .cell_values
+                .second_group_arithmetic;
             let expected = match P::DECLARATION.precompile_encoding {
-                PrecompileEncoding::Eip196Eip197 => SolidityConstantValue::Bool(false),
-                PrecompileEncoding::Eip2537 => SolidityConstantValue::Bool(true),
+                PrecompileEncoding::Eip196Eip197 => false,
+                PrecompileEncoding::Eip2537 => true,
                 PrecompileEncoding::Mock => panic!("PAIRING_CONCRETES names no Mock pairing"),
             };
-            assert_eq!(
-                &entry_named(&entries, "SECOND_GROUP_ARITHMETIC").value,
-                &expected
-            );
+            assert_eq!(second_group_arithmetic, expected);
         }
     }
 
@@ -635,14 +632,13 @@ fn the_entries_carry_the_verifier_form_the_pairing_declares() {
         }
     }
 }
-// the_entries_carry_the_verifier_form_the_pairing_declares
+// the_record_carries_the_verifier_form_the_pairing_declares
 
 /// Contract: given a concrete of each declared set, `constants` returns `Ok` whose
 ///   entry names, in order, are `IDENTITY_TAG`, `POSSESSION_G1_TAG`,
 ///   `POSSESSION_G2_TAG`, `CHALLENGE_TAG`, `WEIGHT_TAG`, `DELIVERY_STATEMENT_VERSION`,
 ///   `PURPOSE_MINT`, `PURPOSE_TRANSFER`, `PURPOSE_GRANT`, `PURPOSE_REPLACEMENT`,
-///   `MINT_FIELDS`, `TRANSFER_FIELDS`, `SCALAR_FIELD_ORDER`, `G1_GENERATOR`,
-///   `G2_GENERATOR`, and `SECOND_GROUP_ARITHMETIC`.
+///   `MINT_FIELDS`, and `TRANSFER_FIELDS`.
 /// Arrange: the defaults; every concrete of both declared sets is the variation.
 /// Act:    `run_constants_case` per member of each declared set, the consumer's
 ///   method calling `constants::<P, E, F>` and returning the entries as its output.
@@ -711,10 +707,6 @@ fn the_entries_are_listed_in_declared_order() {
                 "PURPOSE_REPLACEMENT",
                 "MINT_FIELDS",
                 "TRANSFER_FIELDS",
-                "SCALAR_FIELD_ORDER",
-                "G1_GENERATOR",
-                "G2_GENERATOR",
-                "SECOND_GROUP_ARITHMETIC",
             ]
             .iter()
             .map(|text| {
@@ -732,16 +724,16 @@ fn the_entries_are_listed_in_declared_order() {
 /// Contract: the absorbed entry
 ///   `libraries_sharing_an_identifier_return_the_same_scalar_field_order`: given
 ///   any two concretes whose declared target-group encoding identifiers are equal,
-///   the `SCALAR_FIELD_ORDER` entries `constants` returns are equal.
+///   the `scalar_field_order` members `constants` returns are equal.
 /// Arrange: the defaults; every concrete of `PAIRING_CONCRETES` is the variation,
 ///   whose declared set holds libraries that share an identifier and libraries
 ///   that do not, so a constant order or an order read from the wrong pairing
 ///   fails.
 /// Act:    `run_constants_case` per member of `PAIRING_CONCRETES`, the consumer's
 ///   method calling `constants::<P, E, F>` and returning the pairing's
-///   `P::DECLARATION.target_group_encoding` with the `SCALAR_FIELD_ORDER` entry as
-///   its output.
-/// Assert: any two outputs whose identifiers are equal hold equal entries.
+///   `P::DECLARATION.target_group_encoding` with the `cell_values.scalar_field_order`
+///   member as its output.
+/// Assert: any two outputs whose identifiers are equal hold equal members.
 /// Boundary: `constants` over every real pairing concrete, the comparison made
 ///   across the runs.
 /// Mocked:  nothing.
@@ -750,7 +742,7 @@ fn libraries_sharing_an_identifier_carry_the_same_scalar_field_order() {
     struct Consumer;
 
     impl IConstantsCaseConsumer for Consumer {
-        type Output = (TargetGroupEncodingIdentifier, SolidityLibraryEntry);
+        type Output = (TargetGroupEncodingIdentifier, [u8; 32]);
 
         fn consume_constants_case<
             P: IPairingArithmetic + IPairingReference,
@@ -775,10 +767,12 @@ fn libraries_sharing_an_identifier_carry_the_same_scalar_field_order() {
                 build_constants_payload(&kem, &key_agreement, &delivery_proof, Default::default()),
             );
 
-            let entries = result.expect("a supported version admits").entries;
             (
                 P::DECLARATION.target_group_encoding,
-                entry_named(&entries, "SCALAR_FIELD_ORDER").clone(),
+                result
+                    .expect("a supported version admits")
+                    .cell_values
+                    .scalar_field_order,
             )
         }
     }
@@ -800,10 +794,10 @@ fn libraries_sharing_an_identifier_carry_the_same_scalar_field_order() {
     }
 
     // Assert
-    for (i, (identifier_a, entry_a)) in outputs.iter().enumerate() {
-        for (identifier_b, entry_b) in outputs.iter().skip(i + 1) {
+    for (i, (identifier_a, member_a)) in outputs.iter().enumerate() {
+        for (identifier_b, member_b) in outputs.iter().skip(i + 1) {
             if identifier_a == identifier_b {
-                assert_eq!(entry_a, entry_b);
+                assert_eq!(member_a, member_b);
             }
         }
     }

@@ -14,6 +14,10 @@ use random::{
     build_create_random_source_params,
 };
 
+use super::super::super::factory::provides::{
+    MsmTermCountConstructorParamsOverrides, VectorCountConstructorParamsOverrides,
+    build_msm_term_count, build_vector_count,
+};
 use super::super::render::provides::{
     SolidityMemberNameConstructorParamsOverrides, build_solidity_member_name,
 };
@@ -24,16 +28,15 @@ use super::interface::{
 };
 use super::mock::{
     FirstGroupVectorCountsOverrides, GroupOperationVectorOverrides,
-    GroupVectorsCaseParamsOverrides, GroupVectorsParamsOverrides,
-    MsmTermCountConstructorParamsOverrides, MsmVectorSettingsOverrides,
+    GroupVectorsCaseParamsOverrides, GroupVectorsParamsOverrides, MsmVectorSettingsOverrides,
     PairingCheckVectorOverrides, SecondGroupVectorCountsOverrides,
-    VectorCountConstructorParamsOverrides, build_first_group_vector_counts,
-    build_group_operation_vector, build_group_operation_vector_description,
-    build_group_vectors_case_deps, build_group_vectors_case_params,
-    build_group_vectors_case_payload, build_group_vectors_deps, build_group_vectors_params,
-    build_group_vectors_payload, build_msm_term_count, build_msm_vector_settings,
-    build_pairing_check_vector, build_pairing_check_vector_description,
-    build_second_group_vector_counts, build_vector_count, run_group_vectors_case,
+    build_first_group_vector_counts, build_group_operation_vector,
+    build_group_operation_vector_description, build_group_vectors_case_deps,
+    build_group_vectors_case_params, build_group_vectors_case_payload,
+    build_group_vectors_deps, build_group_vectors_params, build_group_vectors_payload,
+    build_msm_vector_settings, build_pairing_check_vector,
+    build_pairing_check_vector_description, build_second_group_vector_counts,
+    run_group_vectors_case,
 };
 
 fn case_params(pairing_concrete: &PairingConcrete) -> GroupVectorsCaseParams {
