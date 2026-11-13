@@ -57,6 +57,7 @@ const BN254_SEED: u64 = 4_965_661_367_192_848_881;
 
 impl Bn254ArkworksPairing {
     pub const DECLARATION: PairingDeclaration = PairingDeclaration {
+        concrete_name: "bn254_arkworks",
         curve: PairingCurve::Bn254,
         verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly,
         precompile_encoding: PrecompileEncoding::Eip196Eip197,

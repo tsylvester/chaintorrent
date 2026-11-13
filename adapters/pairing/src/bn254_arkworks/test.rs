@@ -52,7 +52,8 @@ use num_bigint::BigUint;
 use zeroize::Zeroize;
 
 const _: () = assert!(
-    matches!(Bn254ArkworksPairing::DECLARATION.curve, PairingCurve::Bn254)
+    matches!(Bn254ArkworksPairing::DECLARATION.concrete_name.as_bytes(), b"bn254_arkworks")
+        && matches!(Bn254ArkworksPairing::DECLARATION.curve, PairingCurve::Bn254)
         && matches!(
             Bn254ArkworksPairing::DECLARATION.verifier_group_arithmetic,
             VerifierGroupArithmetic::FirstGroupOnly
@@ -71,6 +72,9 @@ const _: () = assert!(
 
 const _: () = assert!(
     matches!(
+        <Bn254ArkworksPairing as IPairingAdapter>::DECLARATION.concrete_name.as_bytes(),
+        b"bn254_arkworks"
+    ) && matches!(
         <Bn254ArkworksPairing as IPairingAdapter>::DECLARATION.curve,
         PairingCurve::Bn254
     ) && matches!(

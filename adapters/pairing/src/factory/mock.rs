@@ -50,6 +50,7 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[derive(Default)]
 pub struct PairingDeclarationOverrides {
+    pub concrete_name: Option<&'static str>,
     pub curve: Option<PairingCurve>,
     pub verifier_group_arithmetic: Option<VerifierGroupArithmetic>,
     pub precompile_encoding: Option<PrecompileEncoding>,
@@ -60,6 +61,7 @@ pub struct PairingDeclarationOverrides {
 
 pub fn build_pairing_declaration(overrides: PairingDeclarationOverrides) -> PairingDeclaration {
     PairingDeclaration {
+        concrete_name: overrides.concrete_name.unwrap_or("bn254_arkworks"),
         curve: overrides.curve.unwrap_or(PairingCurve::Bn254),
         verifier_group_arithmetic: overrides
             .verifier_group_arithmetic
@@ -1338,6 +1340,7 @@ pub(crate) fn build_mock_i_pairing_adapter<const UNIFORM: usize>(
 
 impl<const UNIFORM: usize> IPairingAdapter for MockIPairingAdapter<UNIFORM> {
     const DECLARATION: PairingDeclaration = PairingDeclaration {
+        concrete_name: "mock_concrete",
         curve: PairingCurve::Mock,
         verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly,
         precompile_encoding: PrecompileEncoding::Mock,

@@ -14,7 +14,7 @@ The error arm has no branch: the adapter takes no configuration, so `Infallible`
 
 An inherent constant, readable from the type before any instance exists:
 
-`PairingDeclaration { curve: PairingCurve::Bn254, verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly, precompile_encoding: PrecompileEncoding::Eip196Eip197, target_group_encoding: TargetGroupEncodingIdentifier::Bn254V1, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
+`PairingDeclaration { concrete_name: "bn254_arkworks", curve: PairingCurve::Bn254, verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly, precompile_encoding: PrecompileEncoding::Eip196Eip197, target_group_encoding: TargetGroupEncodingIdentifier::Bn254V1, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
 
 The trait constant `IPairingAdapter::DECLARATION` is this constant.
 

@@ -54,6 +54,7 @@ pub enum TargetGroupEncodingIdentifier {
 }
 
 pub struct PairingDeclaration {
+    pub concrete_name: &'static str,
     pub curve: PairingCurve,
     pub verifier_group_arithmetic: VerifierGroupArithmetic,
     pub precompile_encoding: PrecompileEncoding,
