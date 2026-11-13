@@ -64,6 +64,7 @@ fn decode_coordinate(bytes: &[u8]) -> Option<Fq> {
 
 impl Bls12381ArkworksPairing {
     pub const DECLARATION: PairingDeclaration = PairingDeclaration {
+        concrete_name: "bls12_381_arkworks",
         curve: PairingCurve::Bls12381,
         verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups,
         precompile_encoding: PrecompileEncoding::Eip2537,

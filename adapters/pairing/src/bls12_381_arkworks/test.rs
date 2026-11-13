@@ -53,6 +53,11 @@ use zeroize::Zeroize;
 
 const _: () = assert!(
     matches!(
+        Bls12381ArkworksPairing::DECLARATION
+            .concrete_name
+            .as_bytes(),
+        b"bls12_381_arkworks"
+    ) && matches!(
         Bls12381ArkworksPairing::DECLARATION.curve,
         PairingCurve::Bls12381
     ) && matches!(
@@ -70,6 +75,11 @@ const _: () = assert!(
 
 const _: () = assert!(
     matches!(
+        <Bls12381ArkworksPairing as IPairingAdapter>::DECLARATION
+            .concrete_name
+            .as_bytes(),
+        b"bls12_381_arkworks"
+    ) && matches!(
         <Bls12381ArkworksPairing as IPairingAdapter>::DECLARATION.curve,
         PairingCurve::Bls12381
     ) && matches!(

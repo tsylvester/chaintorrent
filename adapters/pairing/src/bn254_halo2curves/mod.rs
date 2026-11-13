@@ -58,6 +58,7 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 
 impl Bn254Halo2curvesPairing {
     pub const DECLARATION: PairingDeclaration = PairingDeclaration {
+        concrete_name: "bn254_halo2curves",
         curve: PairingCurve::Bn254,
         verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly,
         precompile_encoding: PrecompileEncoding::Eip196Eip197,

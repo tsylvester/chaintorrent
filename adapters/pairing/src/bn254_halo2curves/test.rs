@@ -54,6 +54,11 @@ use zeroize::Zeroize;
 
 const _: () = assert!(
     matches!(
+        Bn254Halo2curvesPairing::DECLARATION
+            .concrete_name
+            .as_bytes(),
+        b"bn254_halo2curves"
+    ) && matches!(
         Bn254Halo2curvesPairing::DECLARATION.curve,
         PairingCurve::Bn254
     ) && matches!(
@@ -71,6 +76,11 @@ const _: () = assert!(
 
 const _: () = assert!(
     matches!(
+        <Bn254Halo2curvesPairing as IPairingAdapter>::DECLARATION
+            .concrete_name
+            .as_bytes(),
+        b"bn254_halo2curves"
+    ) && matches!(
         <Bn254Halo2curvesPairing as IPairingAdapter>::DECLARATION.curve,
         PairingCurve::Bn254
     ) && matches!(
