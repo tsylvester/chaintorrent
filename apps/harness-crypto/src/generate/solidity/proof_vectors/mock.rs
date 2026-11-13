@@ -43,7 +43,7 @@ use random::{
 };
 use serde_json::{Map, Value};
 
-use super::super::group_vectors::provides::{VectorCount, build_vector_count};
+use super::super::super::factory::provides::{VectorCount, build_vector_count};
 use super::interface::{
     ConsumeProofVectorsCaseParams, ConsumeProofVectorsCasePayload, IProofVectorsCaseConsumer,
     MintProofVector, MintProofVectorDescription, MintProofVectorDescriptionConstructorParams,

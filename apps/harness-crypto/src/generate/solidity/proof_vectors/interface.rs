@@ -32,7 +32,7 @@ use random::IRandomSourceAdapter;
 #[cfg(any(test, feature = "mocks"))]
 use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 
-use super::super::group_vectors::provides::VectorCount;
+use super::super::super::factory::provides::VectorCount;
 use super::super::render::provides::{SolidityMemberName, SolidityMemberNameTryNewErrorReturn};
 use crate::delivery::provides::{AdmittedKemIdentity, MintErrorReturn, TransferErrorReturn};
 

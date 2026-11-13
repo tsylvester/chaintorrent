@@ -20,7 +20,7 @@ use proof::{DeliveryContext, DeliveryProofDeclaration, MintPurpose, TransferPurp
 use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 use random::{FillBytesErrorReturn, IRandomSourceAdapter};
 
-use super::super::group_vectors::provides::VectorCount;
+use super::super::super::factory::provides::VectorCount;
 use super::super::render::provides::{SolidityMemberName, SolidityMemberNameTryNewErrorReturn};
 #[cfg(any(test, feature = "mocks"))]
 use crate::config::provides::CanonicalDeliveryContext;

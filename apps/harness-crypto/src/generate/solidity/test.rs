@@ -17,9 +17,10 @@ use proof::{
 
 use super::super::factory::provides::{
     EmitErrorReturn, EmitPayloadOverrides, EmitReturn, EmittedFile, GENERATE_INTERFACE_VERSION,
-    IGenerateAdapter, VectorKind, VectorKindDeclarationOverrides, VectorKindSettings,
-    VectorKindSettingsOverrides, VectorKindSize, VectorKindSizing, build_emit_params,
-    build_emit_payload, build_vector_kind_declaration, build_vector_kind_settings,
+    IGenerateAdapter, VectorCountConstructorParamsOverrides, VectorKind,
+    VectorKindDeclarationOverrides, VectorKindSettings, VectorKindSettingsOverrides,
+    VectorKindSize, VectorKindSizing, build_emit_params, build_emit_payload, build_msm_term_count,
+    build_vector_count, build_vector_kind_declaration, build_vector_kind_settings,
 };
 use super::challenge_vectors::provides::{
     ChallengeVectorDescription, ChallengeVectorsDeps, ChallengeVectorsErrorReturn,
@@ -28,16 +29,17 @@ use super::challenge_vectors::provides::{
     build_challenge_vector_description, build_challenge_vectors_success_return,
 };
 use super::constants::provides::{
-    ConstantsDeps, ConstantsErrorReturn, ConstantsParams, ConstantsPayload, ConstantsReturn,
+    CellValuesDescription, CellValuesDescriptionConstructorParamsOverrides, ConstantsDeps,
+    ConstantsErrorReturn, ConstantsParams, ConstantsPayload, ConstantsReturn,
+    build_cell_values_description,
 };
 use super::group_vectors::provides::{
     FirstGroupVectorsOverrides, GroupOperationVectorDescription, GroupVectorsDeps,
     GroupVectorsErrorReturn, GroupVectorsParams, GroupVectorsPayload, GroupVectorsReturn,
-    GroupVectorsSuccessReturnOverrides, PairingCheckVectorDescription,
-    VectorCountConstructorParamsOverrides, build_first_group_vectors, build_group_operation_vector,
-    build_group_operation_vector_description, build_group_vectors_success_return,
-    build_msm_term_count, build_pairing_check_vector, build_pairing_check_vector_description,
-    build_vector_count,
+    GroupVectorsSuccessReturnOverrides, PairingCheckVectorDescription, build_first_group_vectors,
+    build_group_operation_vector, build_group_operation_vector_description,
+    build_group_vectors_success_return, build_pairing_check_vector,
+    build_pairing_check_vector_description,
 };
 use super::interface::{
     ConsumeSolidityGenerateCaseParams, ConsumeSolidityGenerateCasePayload, GeneratedDirectory,
@@ -73,16 +75,14 @@ use super::rejection_vectors::provides::{
 };
 use super::render::provides::{
     RenderDeps, RenderParams, RenderPayload, RenderReturn, RenderSuccessReturnOverrides,
-    SolidityAbiTypeConstructorParamsOverrides, SolidityLibraryBody,
-    SolidityLibraryNameConstructorParamsOverrides, SolidityMemberName, SolidityRecordDeclaration,
-    SolidityRecordDeclarationOverrides, SolidityRecordDeclarations,
+    SolidityAbiTypeConstructorParamsOverrides, SolidityLibraryBody, SolidityMemberName,
+    SolidityRecordDeclaration, SolidityRecordDeclarationOverrides, SolidityRecordDeclarations,
     SolidityRecordDeclarationsConstructorParams, SolidityRecordDeclarationsTryNewErrorReturn,
     SolidityRecordMemberOverrides, SolidityRecordMembers,
     SolidityRecordMembersConstructorParamsOverrides, SoliditySourceTextOverrides,
     SolidityStringLiteralConstructorParamsOverrides, build_render_success_return,
-    build_solidity_abi_type, build_solidity_library_name, build_solidity_record_declaration,
-    build_solidity_record_member, build_solidity_record_members, build_solidity_source_text,
-    build_solidity_string_literal,
+    build_solidity_abi_type, build_solidity_record_declaration, build_solidity_record_member,
+    build_solidity_record_members, build_solidity_source_text, build_solidity_string_literal,
 };
 
 /// Contract: a text whose every byte is an ASCII letter, digit, `.`, `_`, or
@@ -542,6 +542,11 @@ fn solidity_generate_declares_its_kinds_with_their_sizing_and_second_group_gates
             sizing: Some(VectorKindSizing::Drawn),
             requires_second_group_arithmetic: Some(false),
         }),
+        build_vector_kind_declaration(VectorKindDeclarationOverrides {
+            kind: Some(VectorKind::CellValues),
+            sizing: Some(VectorKindSizing::Enumerated),
+            requires_second_group_arithmetic: Some(false),
+        }),
     ];
 
     // Act
@@ -660,16 +665,15 @@ fn emit_refuses_settings_missing_an_emitted_kind() {
 // emit_refuses_settings_missing_an_emitted_kind
 
 /// Contract: an emitted kind with no entry in `self.sizes` is refused
-///   `Err(EmitErrorReturn::Solidity(SolidityGenerateErrorReturn::MissingKindSettings { kind }))`,
-///   `kind` the first such kind in declared order, before any function is
-///   called.
+///   `Err(EmitErrorReturn::MissingKindSize { kind })`, `kind` the first such
+///   kind in declared order, before any function is called.
 /// Arrange: `sizes` overridden to one `build_vector_kind_settings` per kind
 ///   the default list names but the challenge and mint-proof kinds, each
 ///   with the kind and size the default sizes hold, and `settings` at its
 ///   default, so two emitted kinds lack sizes; the root removed before the
 ///   act.
 /// Act:    `emit` once inside the case consumer's method.
-/// Assert: `matches!(result, Err(EmitErrorReturn::Solidity(SolidityGenerateErrorReturn::MissingKindSettings { kind: VectorKind::Challenge })))`
+/// Assert: `matches!(result, Err(EmitErrorReturn::MissingKindSize { kind: VectorKind::Challenge }))`
 ///   and the root does not exist.
 #[test]
 fn emit_refuses_sizes_missing_an_emitted_kind() {
@@ -776,11 +780,9 @@ fn emit_refuses_sizes_missing_an_emitted_kind() {
     // Assert
     assert!(matches!(
         result,
-        Err(EmitErrorReturn::Solidity(
-            SolidityGenerateErrorReturn::MissingKindSettings {
-                kind: VectorKind::Challenge,
-            }
-        ))
+        Err(EmitErrorReturn::MissingKindSize {
+            kind: VectorKind::Challenge,
+        })
     ));
     assert!(!root.exists());
 }
@@ -901,6 +903,7 @@ fn emit_hands_second_group_settings_only_where_the_pairing_has_both_groups() {
             Some(VectorKind::Challenge),
             Some(VectorKind::MintProof),
             Some(VectorKind::TransferProof),
+            Some(VectorKind::CellValues),
             None,
             None,
         ]
@@ -961,6 +964,10 @@ fn emit_routes_each_kinds_admitted_size_to_its_function() {
         drawn(VectorKind::Challenge, 17),
         drawn(VectorKind::MintProof, 19),
         drawn(VectorKind::TransferProof, 23),
+        build_vector_kind_settings(VectorKindSettingsOverrides {
+            kind: Some(VectorKind::CellValues),
+            size: Some(VectorKindSize::Enumerated),
+        }),
     ];
     let settings = build_solidity_generate_settings(Default::default());
     let root = settings.foundry_root.clone();
@@ -2056,17 +2063,21 @@ fn emit_refuses_a_repeated_struct_name_with_its_indexes_and_writes_nothing() {
 // emit_refuses_a_repeated_struct_name_with_its_indexes_and_writes_nothing
 
 /// Contract: the files are written in the emitted kinds' declared order, then
-///   the constants library, then the records library, under the root, the
-///   generated directory's segments, and the curve directory → `Ok` whose
-///   `files` list them in that order, each existing.
+///   the constants library, then the records library, each vector file under
+///   the root, the generated directory's segments, and the cell directory's
+///   two segments and each library directly under the generated directory →
+///   `Ok` whose `files` list them in that order, each existing.
 /// Arrange: `generated_directory` of two distinct segments by
 ///   `build_generated_directory`, the default selections, every handle at its
-///   function mock, and the default file names.
+///   function mock, and the default file names, which are distinct across the
+///   kinds and the libraries.
 /// Act:    `emit`, once, in the case consumer's method.
 /// Assert: `files` equals, in order, one entry per expected path, each `path`
-///   the root joined with the two segments, `mock`, and the file name, and each
-///   entry's `kind` `Some` of the kind whose file it is for a vector file and
-///   `None` for the libraries, and each path exists.
+///   the root joined with the two segments, the two declared names, and the
+///   file name for a vector file and the root joined with the two segments and
+///   the configured file name for a library, and each entry's `kind` `Some` of
+///   the kind whose file it is for a vector file and `None` for the constants
+///   library's file and the records library's, and each path exists.
 #[test]
 fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order() {
     // Arrange
@@ -2088,61 +2099,67 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order() {
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
-    let under = |file: &str| {
+    let cell = |file: &str| {
         root.clone()
             .join("suite")
             .join("generated")
+            .join("mock_concrete")
             .join("mock")
             .join(file)
     };
+    let library = |file: &str| root.clone().join("suite").join("generated").join(file);
     let expected = vec![
         EmittedFile {
             kind: Some(VectorKind::G1Addition),
-            path: under("g1_add.vectors"),
+            path: cell("g1_add.vectors"),
         },
         EmittedFile {
             kind: Some(VectorKind::G1Multiplication),
-            path: under("g1_mul.vectors"),
+            path: cell("g1_mul.vectors"),
         },
         EmittedFile {
             kind: Some(VectorKind::PairingCheck),
-            path: under("pairing_check.vectors"),
+            path: cell("pairing_check.vectors"),
         },
         EmittedFile {
             kind: Some(VectorKind::DecodeRejection),
-            path: under("decode_rejection.vectors"),
+            path: cell("decode_rejection.vectors"),
         },
         EmittedFile {
             kind: Some(VectorKind::HashToScalar),
-            path: under("hash_to_scalar.vectors"),
+            path: cell("hash_to_scalar.vectors"),
         },
         EmittedFile {
             kind: Some(VectorKind::IdentityMapping),
-            path: under("identity_mapping.vectors"),
+            path: cell("identity_mapping.vectors"),
         },
         EmittedFile {
             kind: Some(VectorKind::Possession),
-            path: under("possession.vectors"),
+            path: cell("possession.vectors"),
         },
         EmittedFile {
             kind: Some(VectorKind::Challenge),
-            path: under("challenge.vectors"),
+            path: cell("challenge.vectors"),
         },
         EmittedFile {
             kind: Some(VectorKind::MintProof),
-            path: under("mint_proof.vectors"),
+            path: cell("mint_proof.vectors"),
         },
         EmittedFile {
             kind: Some(VectorKind::TransferProof),
-            path: under("transfer_proof.vectors"),
+            path: cell("transfer_proof.vectors"),
+        },
+        EmittedFile {
+            kind: Some(VectorKind::CellValues),
+            path: cell("cell_values.vectors"),
         },
         EmittedFile {
             kind: None,
-            path: under("Constants.sol"),
+            path: library("Constants.sol"),
         },
         EmittedFile {
             kind: None,
-            path: under("VectorRecords.sol"),
+            path: library("VectorRecords.sol"),
         },
     ];
 
@@ -2217,68 +2234,25 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order() {
 }
 // emit_writes_each_emitted_kind_then_both_libraries_in_write_order
 
-/// Contract: a pairing declaring `PairingCurve::Mock` selects the settings'
-///   `mock` directory and the `mock` library names → every file is written
-///   under the `mock` directory and the libraries are named by the `mock`
-///   entries.
-/// Arrange: `curve_directories` built with `bn254`, `bls12_381`, and `mock`
-///   each a distinct text, `curve_libraries` built with each curve's file
-///   names and library names distinct from every other's, every handle at its
-///   function mock.
+/// Contract: the cell directory is the generated directory joined with the
+///   name the received pairing's declaration supplies for its concrete and the
+///   name the borrowed encoder's declaration supplies → every vector file is
+///   written under it and the libraries outside it under their configured
+///   names.
+/// Arrange: the default selections, which select the pairing family's and the
+///   encoding family's mock concretes, and file names distinct across the
+///   kinds and the libraries, every handle at its function mock.
 /// Act:    `emit`, once, in the case consumer's method.
-/// Assert: the result is `Ok`, every entry of `files` has the `mock` directory
-///   text as its parent directory's name, the two library entries carry the
-///   `mock` entries' file names, and neither the `bn254` nor the `bls12_381`
-///   directory exists under the generated directory.
+/// Assert: the result is `Ok`, every vector-file entry's `path` is the root
+///   joined with the generated directory's segments, the concrete-name literal
+///   `"mock_concrete"`, and the encoding-name literal `"mock"`, the two
+///   library entries sit directly under the generated directory at their
+///   configured file names, and no other directory exists under the generated
+///   directory.
 #[test]
-fn emit_selects_the_mock_curves_directory_and_library_names() {
+fn emit_derives_the_cell_directory_from_the_received_declarations() {
     // Arrange
-    fn file_name(text: &str) -> GeneratedFileName {
-        build_generated_file_name(GeneratedFileNameConstructorParamsOverrides {
-            text: Some(text.to_string()),
-        })
-    }
-
-    fn library_name(text: &str) -> super::render::provides::SolidityLibraryName {
-        build_solidity_library_name(SolidityLibraryNameConstructorParamsOverrides {
-            text: Some(text.to_string()),
-        })
-    }
-
-    fn libraries(stem: &str) -> super::interface::SolidityCurveLibraryNames {
-        build_solidity_curve_library_names(SolidityCurveLibraryNamesOverrides {
-            constants_library: Some(build_solidity_library_names(
-                SolidityLibraryNamesOverrides {
-                    file_name: Some(file_name(&format!("{stem}Constants.sol"))),
-                    library_name: Some(library_name(&format!("{stem}Constants"))),
-                },
-            )),
-            records_library: Some(build_solidity_library_names(
-                SolidityLibraryNamesOverrides {
-                    file_name: Some(file_name(&format!("{stem}Records.sol"))),
-                    library_name: Some(library_name(&format!("{stem}Records"))),
-                },
-            )),
-        })
-    }
-
-    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
-        curve_directories: Some(build_solidity_curve_directories(
-            SolidityCurveDirectoriesOverrides {
-                bn254: Some(file_name("first-directory")),
-                bls12_381: Some(file_name("second-directory")),
-                mock: Some(file_name("mock-directory")),
-            },
-        )),
-        curve_libraries: Some(build_solidity_curve_libraries(
-            SolidityCurveLibrariesOverrides {
-                bn254: Some(libraries("First")),
-                bls12_381: Some(libraries("Second")),
-                mock: Some(libraries("Mock")),
-            },
-        )),
-        ..Default::default()
-    });
+    let settings = build_solidity_generate_settings(Default::default());
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
@@ -2349,29 +2323,22 @@ fn emit_selects_the_mock_curves_directory_and_library_names() {
     let Ok(success) = result else {
         panic!("emit admits the case's arrangement")
     };
-    for file in &success.files {
-        assert_eq!(
-            file.path
-                .parent()
-                .and_then(|parent| parent.file_name())
-                .and_then(|name| name.to_str()),
-            Some("mock-directory")
-        );
+    let generated = root.join("generated");
+    let cell = generated.join("mock_concrete").join("mock");
+    for file in &success.files[..success.files.len() - 2] {
+        assert_eq!(file.path.parent(), Some(cell.as_path()));
     }
     let libraries = &success.files[success.files.len() - 2..];
-    assert_eq!(
-        libraries[0].path.file_name().and_then(|name| name.to_str()),
-        Some("MockConstants.sol")
-    );
-    assert_eq!(
-        libraries[1].path.file_name().and_then(|name| name.to_str()),
-        Some("MockRecords.sol")
-    );
-    let generated = root.join("generated");
-    assert!(!generated.join("first-directory").exists());
-    assert!(!generated.join("second-directory").exists());
+    assert_eq!(libraries[0].path, generated.join("Constants.sol"));
+    assert_eq!(libraries[1].path, generated.join("VectorRecords.sol"));
+    let directories: Vec<_> = std::fs::read_dir(&generated)
+        .expect("the generated directory exists")
+        .map(|entry| entry.expect("each entry reads").file_name())
+        .filter(|name| generated.join(name).is_dir())
+        .collect();
+    assert_eq!(directories, vec![std::ffi::OsString::from("mock_concrete")]);
 }
-// emit_selects_the_mock_curves_directory_and_library_names
+// emit_derives_the_cell_directory_from_the_received_declarations
 
 /// Contract: a failure of `create_dir_all` →
 ///   `Err(EmitErrorReturn::Solidity(SolidityGenerateErrorReturn::CreateDirectory { path, error }))`,
@@ -2380,9 +2347,10 @@ fn emit_selects_the_mock_curves_directory_and_library_names() {
 ///   root's removal, every handle at its function mock.
 /// Act:    `emit`, once, in the case consumer's method.
 /// Assert: `matches!` with `path` equal to the root joined with the generated
-///   directory's segments and the `mock` curve directory, and `error` equal in
-///   `kind()`, `raw_os_error()`, and `to_string()` to the error the block
-///   obtains by calling `std::fs::create_dir_all` over that path after `emit`.
+///   directory's segments and the cell directory's two declared names, and
+///   `error` equal in `kind()`, `raw_os_error()`, and `to_string()` to the
+///   error the block obtains by calling `std::fs::create_dir_all` over that
+///   path after `emit`.
 #[test]
 fn emit_returns_a_directory_creation_failure_with_its_path() {
     // Arrange
@@ -2390,7 +2358,7 @@ fn emit_returns_a_directory_creation_failure_with_its_path() {
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     std::fs::write(&root, b"not-a-directory").expect("the blocker file is written");
-    let expected_path = root.join("generated").join("mock");
+    let expected_path = root.join("generated").join("mock_concrete").join("mock");
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
 
     struct Case {
@@ -2488,7 +2456,11 @@ fn emit_returns_a_file_write_failure_with_its_path() {
     let settings = build_solidity_generate_settings(Default::default());
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
-    let blocked = root.join("generated").join("mock").join("g1_add.vectors");
+    let blocked = root
+        .join("generated")
+        .join("mock_concrete")
+        .join("mock")
+        .join("g1_add.vectors");
     std::fs::create_dir_all(&blocked).expect("the blocker directory is created");
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
 
@@ -2566,13 +2538,7 @@ fn emit_returns_a_file_write_failure_with_its_path() {
     assert_eq!(error.kind(), expected_error.kind());
     assert_eq!(error.raw_os_error(), expected_error.raw_os_error());
     assert_eq!(error.to_string(), expected_error.to_string());
-    assert!(
-        !root
-            .join("generated")
-            .join("mock")
-            .join("Constants.sol")
-            .exists()
-    );
+    assert!(!root.join("generated").join("Constants.sol").exists());
 }
 // emit_returns_a_file_write_failure_with_its_path
 
@@ -2589,8 +2555,8 @@ fn emit_returns_a_file_write_failure_with_its_path() {
 ///   builds through `SolidityRecordDeclarations::try_new`, and `differs`
 ///   otherwise; every other handle at its function mock.
 /// Act:    `emit`, once, in the case consumer's method.
-/// Assert: the result is `Ok` and the records library, read from the `mock`
-///   curve's configured records file name, holds the text `matches`.
+/// Assert: the result is `Ok` and the records library, read from the generated
+///   directory at its configured records file name, holds the text `matches`.
 #[test]
 fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
     // Arrange
@@ -2717,6 +2683,11 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                 let transfer_proof_names = transfer_proof
                     .member_names()
                     .expect("the transfer-proof description declares its member names");
+                let cell_values =
+                    build_cell_values_description(CellValuesDescriptionConstructorParamsOverrides);
+                let cell_values_names = cell_values
+                    .member_names()
+                    .expect("the cell-values description declares its member names");
                 let declarations = vec![
                     declaration(
                         &settings.kinds[0].names,
@@ -2724,7 +2695,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             group_names.clone(),
                             <GroupOperationVectorDescription as IEncodingContract>::FIELDS,
                         ),
-                        "generated/mock/g1_add.vectors",
+                        "g1_add.vectors",
                     ),
                     declaration(
                         &settings.kinds[1].names,
@@ -2732,7 +2703,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             group_names,
                             <GroupOperationVectorDescription as IEncodingContract>::FIELDS,
                         ),
-                        "generated/mock/g1_mul.vectors",
+                        "g1_mul.vectors",
                     ),
                     declaration(
                         &settings.kinds[2].names,
@@ -2740,7 +2711,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             pairing_check_names,
                             <PairingCheckVectorDescription as IEncodingContract>::FIELDS,
                         ),
-                        "generated/mock/pairing_check.vectors",
+                        "pairing_check.vectors",
                     ),
                     declaration(
                         &settings.kinds[6].names,
@@ -2748,7 +2719,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             rejection_names,
                             <RejectionVectorDescription as IEncodingContract>::FIELDS,
                         ),
-                        "generated/mock/decode_rejection.vectors",
+                        "decode_rejection.vectors",
                     ),
                     declaration(
                         &settings.kinds[7].names,
@@ -2756,7 +2727,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             scalar_names,
                             <HashToScalarVectorDescription as IEncodingContract>::FIELDS,
                         ),
-                        "generated/mock/hash_to_scalar.vectors",
+                        "hash_to_scalar.vectors",
                     ),
                     declaration(
                         &settings.kinds[8].names,
@@ -2764,7 +2735,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             mapping_names,
                             <IdentityMappingVectorDescription as IEncodingContract>::FIELDS,
                         ),
-                        "generated/mock/identity_mapping.vectors",
+                        "identity_mapping.vectors",
                     ),
                     declaration(
                         &settings.kinds[9].names,
@@ -2772,7 +2743,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             possession_names,
                             <PossessionVectorDescription as IEncodingContract>::FIELDS,
                         ),
-                        "generated/mock/possession.vectors",
+                        "possession.vectors",
                     ),
                     declaration(
                         &settings.kinds[10].names,
@@ -2780,7 +2751,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             challenge_names,
                             <ChallengeVectorDescription as IEncodingContract>::FIELDS,
                         ),
-                        "generated/mock/challenge.vectors",
+                        "challenge.vectors",
                     ),
                     declaration(
                         &settings.kinds[11].names,
@@ -2788,7 +2759,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             mint_proof_names,
                             <MintProofVectorDescription<F> as IEncodingContract>::FIELDS,
                         ),
-                        "generated/mock/mint_proof.vectors",
+                        "mint_proof.vectors",
                     ),
                     declaration(
                         &settings.kinds[12].names,
@@ -2796,7 +2767,15 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             transfer_proof_names,
                             <TransferProofVectorDescription<F> as IEncodingContract>::FIELDS,
                         ),
-                        "generated/mock/transfer_proof.vectors",
+                        "transfer_proof.vectors",
+                    ),
+                    declaration(
+                        &settings.kinds[13].names,
+                        members(
+                            cell_values_names,
+                            <CellValuesDescription as IEncodingContract>::FIELDS,
+                        ),
+                        "cell_values.vectors",
                     ),
                 ];
                 let expected = SolidityRecordDeclarations::try_new(
@@ -2865,14 +2844,11 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
     .output;
 
     // Assert
-    let Ok(success) = result else {
-        panic!("emit admits the case's arrangement")
-    };
-    let records = success
-        .files
-        .last()
-        .expect("the last file written is the records library");
-    let source = std::fs::read_to_string(&records.path).expect("the records library was written");
+    assert!(result.is_ok(), "emit admits the case's arrangement");
+    let records = root
+        .join("generated")
+        .join(settings.records_library.file_name.as_str());
+    let source = std::fs::read_to_string(&records).expect("the records library was written");
     assert!(
         source.contains("matches"),
         "the records library holds the records the render fn admits"

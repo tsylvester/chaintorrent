@@ -24,6 +24,9 @@ use proof::{
     DELIVERY_PURPOSE_TRANSFER, DeliveryContext, IDeliveryProofAdapter, MintPurpose,
     TransferPurpose, build_create_delivery_proof_params, build_delivery_context,
 };
+use random::{
+    CreateRandomSourceParamsOverrides, RandomSourceKind, build_create_random_source_params,
+};
 
 use super::create_generate;
 use super::interface::{
@@ -195,6 +198,11 @@ fn emit_returns_a_distinct_path_for_every_kind_the_declaration_does_not_gate() {
                             },
                         )),
                         kem: Some(*kem),
+                        random_source: Some(build_create_random_source_params(
+                            CreateRandomSourceParamsOverrides {
+                                kind: Some(RandomSourceKind::OperatingSystem),
+                            },
+                        )),
                         ..Default::default()
                     });
                 // Act
@@ -225,6 +233,11 @@ fn emit_returns_a_distinct_path_for_every_kind_the_declaration_does_not_gate() {
                         ..Default::default()
                     })),
                     kem: Some(*kem),
+                    random_source: Some(build_create_random_source_params(
+                        CreateRandomSourceParamsOverrides {
+                            kind: Some(RandomSourceKind::OperatingSystem),
+                        },
+                    )),
                     ..Default::default()
                 });
             // Act
@@ -379,6 +392,11 @@ fn a_refused_write_returns_the_mock_concretes_own_error() {
                                         ..Default::default()
                                     },
                                 )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides {
+                                        kind: Some(RandomSourceKind::OperatingSystem),
+                                    },
+                                )),
                                 ..Default::default()
                             });
                         // Act
@@ -513,6 +531,11 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
                 concrete: EncodingConcrete::Mock,
                 identifier: EncodingIdentifier::Mock,
             }),
+            random_source: Some(build_create_random_source_params(
+                CreateRandomSourceParamsOverrides {
+                    kind: Some(RandomSourceKind::OperatingSystem),
+                },
+            )),
             ..Default::default()
         });
         // Act
@@ -548,6 +571,11 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
                 CreateChainFormsParamsOverrides {
                     concrete: Some(CHAIN_FORMS_CONCRETES[0]),
                     ..Default::default()
+                },
+            )),
+            random_source: Some(build_create_random_source_params(
+                CreateRandomSourceParamsOverrides {
+                    kind: Some(RandomSourceKind::OperatingSystem),
                 },
             )),
             ..Default::default()

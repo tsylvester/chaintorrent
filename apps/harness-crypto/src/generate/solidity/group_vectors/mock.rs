@@ -17,19 +17,18 @@ use random::{
 };
 use serde_json::{Map, Value};
 
+use super::super::super::factory::provides::{
+    MsmTermCount, VectorCount, build_msm_term_count, build_vector_count,
+};
 use super::interface::{
     FirstGroupVectorCounts, FirstGroupVectors, GroupOperationVector,
     GroupOperationVectorDescription, GroupOperationVectorDescriptionConstructorParams,
     GroupVectorsCaseDeps, GroupVectorsCaseErrorReturn, GroupVectorsCaseParams,
     GroupVectorsCasePayload, GroupVectorsCaseReturn, GroupVectorsCaseSuccessReturn,
     GroupVectorsDeps, GroupVectorsParams, GroupVectorsPayload, GroupVectorsReturn,
-    GroupVectorsSuccessReturn, IGroupVectorsCaseConsumer, MsmVectorSettings,
-    PairingCheckVector, PairingCheckVectorDescription,
-    PairingCheckVectorDescriptionConstructorParams, SecondGroupVectorCounts,
-    SecondGroupVectors,
-};
-use super::super::super::factory::provides::{
-    MsmTermCount, VectorCount, build_msm_term_count, build_vector_count,
+    GroupVectorsSuccessReturn, IGroupVectorsCaseConsumer, MsmVectorSettings, PairingCheckVector,
+    PairingCheckVectorDescription, PairingCheckVectorDescriptionConstructorParams,
+    SecondGroupVectorCounts, SecondGroupVectors,
 };
 
 #[derive(Default)]

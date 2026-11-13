@@ -33,7 +33,9 @@ use super::super::factory::provides::{
 use super::challenge_vectors::provides::{
     ChallengeVectorMemberNamesErrorReturn, ChallengeVectorsErrorReturn, ChallengeVectorsFn,
 };
-use super::constants::provides::{ConstantsErrorReturn, ConstantsFn};
+use super::constants::provides::{
+    CellValuesMemberNamesErrorReturn, ConstantsErrorReturn, ConstantsFn,
+};
 use super::group_vectors::provides::{
     GroupVectorsErrorReturn, GroupVectorsFn, VectorRecordMemberNamesErrorReturn,
 };
@@ -115,34 +117,12 @@ pub struct SolidityLibraryNames {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SolidityCurveLibraryNames {
-    pub constants_library: SolidityLibraryNames,
-    pub records_library: SolidityLibraryNames,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SolidityCurveLibraries {
-    pub bn254: SolidityCurveLibraryNames,
-    pub bls12_381: SolidityCurveLibraryNames,
-    #[cfg(any(test, feature = "mocks"))]
-    pub mock: SolidityCurveLibraryNames,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SolidityCurveDirectories {
-    pub bn254: GeneratedFileName,
-    pub bls12_381: GeneratedFileName,
-    #[cfg(any(test, feature = "mocks"))]
-    pub mock: GeneratedFileName,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SolidityGenerateSettings {
     pub kinds: Vec<SolidityVectorKindSettings>,
-    pub curve_libraries: SolidityCurveLibraries,
+    pub constants_library: SolidityLibraryNames,
+    pub records_library: SolidityLibraryNames,
     pub foundry_root: PathBuf,
     pub generated_directory: GeneratedDirectory,
-    pub curve_directories: SolidityCurveDirectories,
     pub compiler_version: SolidityCompilerVersion,
     pub license: SpdxLicenseIdentifier,
 }
@@ -273,6 +253,11 @@ pub const SOLIDITY_GENERATE_DECLARATION: GenerateDeclaration = GenerateDeclarati
             sizing: VectorKindSizing::Drawn,
             requires_second_group_arithmetic: false,
         },
+        VectorKindDeclaration {
+            kind: VectorKind::CellValues,
+            sizing: VectorKindSizing::Enumerated,
+            requires_second_group_arithmetic: false,
+        },
     ],
     adapter_version: 1,
     interface_version: GENERATE_INTERFACE_VERSION,
@@ -284,6 +269,7 @@ pub enum SolidityGenerateErrorReturn {
     MissingKindSettings {
         kind: VectorKind,
     },
+    GeneratedFileName(GeneratedFileNameTryNewErrorReturn),
     Constants(ConstantsErrorReturn),
     GroupVectors(GroupVectorsErrorReturn),
     RejectionVectors(RejectionVectorsErrorReturn),
@@ -297,6 +283,7 @@ pub enum SolidityGenerateErrorReturn {
     PossessionMembers(PossessionVectorMemberNamesErrorReturn),
     ChallengeMembers(ChallengeVectorMemberNamesErrorReturn),
     ProofMembers(ProofVectorMemberNamesErrorReturn),
+    CellValuesMembers(CellValuesMemberNamesErrorReturn),
     MemberCount {
         kind: VectorKind,
         expected: usize,

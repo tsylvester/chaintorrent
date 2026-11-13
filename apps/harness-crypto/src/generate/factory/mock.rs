@@ -175,6 +175,7 @@ fn vector_kind_value(kind: VectorKind) -> Value {
         VectorKind::Challenge => "Challenge",
         VectorKind::MintProof => "MintProof",
         VectorKind::TransferProof => "TransferProof",
+        VectorKind::CellValues => "CellValues",
     })
 }
 

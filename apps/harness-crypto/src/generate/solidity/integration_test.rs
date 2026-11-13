@@ -6,7 +6,8 @@ use chain::{
 };
 use encoding::{
     CanonicalFieldKind, CreateEncodingParamsOverrides, DECLARED_ENCODING_SELECTIONS, DecodeParams,
-    IDecoderAdapter, IEncoderAdapter, IEncodingContract, build_create_encoding_params,
+    EncodingConcrete, IDecoderAdapter, IEncoderAdapter, IEncodingContract,
+    build_create_encoding_params,
 };
 use envelope::{DECLARED_KEY_AGREEMENT_SELECTIONS, IKeyAgreementAdapter};
 use hash_to_scalar::{
@@ -18,8 +19,8 @@ use hashing::{Root, RootConstructorParamsOverrides, build_root};
 use kem::{DECLARED_KEM_SELECTIONS, ICredentialKemAdapter};
 use pairing::{
     CreatePairingParamsOverrides, IPairingArithmetic, IPairingReference, ISampleUniformScalar,
-    PAIRING_CONCRETES, PairingConcrete, PairingCurve, SampleUniformScalarErrorReturn,
-    VerifierGroupArithmetic, build_create_pairing_params,
+    PAIRING_CONCRETES, PairingConcrete, SampleUniformScalarErrorReturn,
+    TargetGroupEncodingIdentifier, VerifierGroupArithmetic, build_create_pairing_params,
 };
 use proof::{
     CreateDeliveryProofParamsOverrides, DELIVERY_PROOF_CONCRETES, DELIVERY_PURPOSE_MINT,
@@ -32,16 +33,18 @@ use random::{
 use std::cell::RefCell;
 
 use super::super::factory::provides::{
-    EmitErrorReturn, EmitPayloadOverrides, EmitReturn, IGenerateAdapter, VectorKind,
+    EmitErrorReturn, EmitPayloadOverrides, EmitReturn, IGenerateAdapter,
+    MsmTermCountConstructorParamsOverrides, VectorCountConstructorParamsOverrides, VectorKind,
     VectorKindSettings, VectorKindSettingsOverrides, VectorKindSize, build_emit_params,
-    build_emit_payload, build_vector_kind_settings,
+    build_emit_payload, build_msm_term_count, build_vector_count, build_vector_kind_settings,
 };
 use super::challenge_vectors::provides::{build_challenge_vector_description, challenge_vectors};
-use super::constants::provides::{ConstantsErrorReturn, constants};
+use super::constants::provides::{
+    CellValuesDescriptionConstructorParamsOverrides, ConstantsErrorReturn,
+    build_cell_values_description, constants,
+};
 use super::group_vectors::provides::{
-    MsmTermCountConstructorParamsOverrides, VectorCountConstructorParamsOverrides,
-    build_group_operation_vector_description, build_msm_term_count,
-    build_pairing_check_vector_description, build_vector_count, group_vectors,
+    build_group_operation_vector_description, build_pairing_check_vector_description, group_vectors,
 };
 use super::interface::{
     ConsumeSolidityGenerateCaseParams, ConsumeSolidityGenerateCasePayload,
@@ -71,13 +74,14 @@ use super::render::provides::{
 };
 
 /// Contract: `emit` writes each emitted kind's file in declared order, then the
-///   constants library's file, then the records library's, under the root, the
-///   generated directory's segments, and the case's curve directory, each
-///   existing.
-/// Arrange: `generated_directory` of two distinct segments, `curve_directories`
-///   of two distinct texts, file names distinct across the kinds and the
-///   libraries; every case the private surface names: `PAIRING_CONCRETES` ×
-///   the `DECLARED_HASH_TO_SCALAR_SELECTIONS` that declare `Keccak256V1` ×
+///   constants library's file, then the records library's, each vector file
+///   under the root, the generated directory's segments, and the cell
+///   directory's two segments and each library directly under the generated
+///   directory, each existing.
+/// Arrange: `generated_directory` of two distinct segments and file names
+///   distinct across the kinds and the libraries; every case the private
+///   surface names: `PAIRING_CONCRETES` × the
+///   `DECLARED_HASH_TO_SCALAR_SELECTIONS` that declare `Keccak256V1` ×
 ///   `DECLARED_ENCODING_SELECTIONS` × `CHAIN_FORMS_CONCRETES` ×
 ///   `DECLARED_KEM_SELECTIONS` × `DECLARED_KEY_AGREEMENT_SELECTIONS` ×
 ///   `DELIVERY_PROOF_CONCRETES` over `RandomSourceKind::OperatingSystem`.
@@ -86,14 +90,17 @@ use super::render::provides::{
 /// Assert: the runner's return `is_ok()`; `files` holds one entry per expected
 ///   path in order, each entry's `path` equal to it and existing, the entry's
 ///   `kind` `Some` of the kind whose file it is for a vector file and `None`
-///   for a library.
+///   for a library, where the cell directory's segments are the names the
+///   case's pairing's and encoder's declarations supply and the second-group
+///   kinds are present only where the case's pairing declares second-group
+///   arithmetic.
 /// Boundary: `emit` and the real chain `create_pairing` → `create_hash_to_scalar`
 ///   → `create_encoding` → `create_chain_forms` → `create_kem` →
 ///   `create_key_agreement` → `create_delivery_proof` → `create_random_source`.
 /// Mocked:   the filesystem — a directory beneath the operating system's
 ///   temporary directory — and the operating system's generator, running real.
 #[test]
-fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_curve_directory() {
+fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cell_directory() {
     // Arrange
     let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
         generated_directory: Some(build_generated_directory(
@@ -108,121 +115,30 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
                 ]),
             },
         )),
-        curve_directories: Some(build_solidity_curve_directories(
-            SolidityCurveDirectoriesOverrides {
-                bn254: Some(build_generated_file_name(
+        constants_library: Some(build_solidity_library_names(
+            SolidityLibraryNamesOverrides {
+                file_name: Some(build_generated_file_name(
                     GeneratedFileNameConstructorParamsOverrides {
-                        text: Some("first-curve".to_string()),
+                        text: Some("CaseConstants.sol".to_string()),
                     },
                 )),
-                bls12_381: Some(build_generated_file_name(
-                    GeneratedFileNameConstructorParamsOverrides {
-                        text: Some("second-curve".to_string()),
-                    },
-                )),
-                mock: Some(build_generated_file_name(
-                    GeneratedFileNameConstructorParamsOverrides {
-                        text: Some("mock-curve".to_string()),
+                library_name: Some(build_solidity_library_name(
+                    SolidityLibraryNameConstructorParamsOverrides {
+                        text: Some("CaseConstants".to_string()),
                     },
                 )),
             },
         )),
-        curve_libraries: Some(build_solidity_curve_libraries(
-            SolidityCurveLibrariesOverrides {
-                bn254: Some(build_solidity_curve_library_names(
-                    SolidityCurveLibraryNamesOverrides {
-                        constants_library: Some(build_solidity_library_names(
-                            SolidityLibraryNamesOverrides {
-                                file_name: Some(build_generated_file_name(
-                                    GeneratedFileNameConstructorParamsOverrides {
-                                        text: Some("FirstConstants.sol".to_string()),
-                                    },
-                                )),
-                                library_name: Some(build_solidity_library_name(
-                                    SolidityLibraryNameConstructorParamsOverrides {
-                                        text: Some("FirstConstants".to_string()),
-                                    },
-                                )),
-                            },
-                        )),
-                        records_library: Some(build_solidity_library_names(
-                            SolidityLibraryNamesOverrides {
-                                file_name: Some(build_generated_file_name(
-                                    GeneratedFileNameConstructorParamsOverrides {
-                                        text: Some("FirstRecords.sol".to_string()),
-                                    },
-                                )),
-                                library_name: Some(build_solidity_library_name(
-                                    SolidityLibraryNameConstructorParamsOverrides {
-                                        text: Some("FirstRecords".to_string()),
-                                    },
-                                )),
-                            },
-                        )),
+        records_library: Some(build_solidity_library_names(
+            SolidityLibraryNamesOverrides {
+                file_name: Some(build_generated_file_name(
+                    GeneratedFileNameConstructorParamsOverrides {
+                        text: Some("CaseRecords.sol".to_string()),
                     },
                 )),
-                bls12_381: Some(build_solidity_curve_library_names(
-                    SolidityCurveLibraryNamesOverrides {
-                        constants_library: Some(build_solidity_library_names(
-                            SolidityLibraryNamesOverrides {
-                                file_name: Some(build_generated_file_name(
-                                    GeneratedFileNameConstructorParamsOverrides {
-                                        text: Some("SecondConstants.sol".to_string()),
-                                    },
-                                )),
-                                library_name: Some(build_solidity_library_name(
-                                    SolidityLibraryNameConstructorParamsOverrides {
-                                        text: Some("SecondConstants".to_string()),
-                                    },
-                                )),
-                            },
-                        )),
-                        records_library: Some(build_solidity_library_names(
-                            SolidityLibraryNamesOverrides {
-                                file_name: Some(build_generated_file_name(
-                                    GeneratedFileNameConstructorParamsOverrides {
-                                        text: Some("SecondRecords.sol".to_string()),
-                                    },
-                                )),
-                                library_name: Some(build_solidity_library_name(
-                                    SolidityLibraryNameConstructorParamsOverrides {
-                                        text: Some("SecondRecords".to_string()),
-                                    },
-                                )),
-                            },
-                        )),
-                    },
-                )),
-                mock: Some(build_solidity_curve_library_names(
-                    SolidityCurveLibraryNamesOverrides {
-                        constants_library: Some(build_solidity_library_names(
-                            SolidityLibraryNamesOverrides {
-                                file_name: Some(build_generated_file_name(
-                                    GeneratedFileNameConstructorParamsOverrides {
-                                        text: Some("MockConstants.sol".to_string()),
-                                    },
-                                )),
-                                library_name: Some(build_solidity_library_name(
-                                    SolidityLibraryNameConstructorParamsOverrides {
-                                        text: Some("MockConstants".to_string()),
-                                    },
-                                )),
-                            },
-                        )),
-                        records_library: Some(build_solidity_library_names(
-                            SolidityLibraryNamesOverrides {
-                                file_name: Some(build_generated_file_name(
-                                    GeneratedFileNameConstructorParamsOverrides {
-                                        text: Some("MockRecords.sol".to_string()),
-                                    },
-                                )),
-                                library_name: Some(build_solidity_library_name(
-                                    SolidityLibraryNameConstructorParamsOverrides {
-                                        text: Some("MockRecords".to_string()),
-                                    },
-                                )),
-                            },
-                        )),
+                library_name: Some(build_solidity_library_name(
+                    SolidityLibraryNameConstructorParamsOverrides {
+                        text: Some("CaseRecords".to_string()),
                     },
                 )),
             },
@@ -240,7 +156,7 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
 
     struct Case {
         settings: SolidityGenerateSettings,
-        curve: RefCell<Option<PairingCurve>>,
+        cell: RefCell<Option<(&'static str, &'static str)>>,
         arithmetic: RefCell<Option<VerifierGroupArithmetic>>,
     }
 
@@ -260,7 +176,7 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
-            *self.curve.borrow_mut() = Some(P::DECLARATION.curve);
+            *self.cell.borrow_mut() = Some((P::DECLARATION.concrete_name, E::DECLARATION.name));
             *self.arithmetic.borrow_mut() = Some(P::DECLARATION.verifier_group_arithmetic);
             let mint =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());
@@ -317,7 +233,7 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
                                 let deps = build_solidity_generate_case_deps(
                                     Case {
                                         settings: settings.clone(),
-                                        curve: RefCell::new(None),
+                                        cell: RefCell::new(None),
                                         arithmetic: RefCell::new(None),
                                     },
                                     Default::default(),
@@ -378,28 +294,10 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
                                 assert!(result.is_ok());
 
                                 // Assert
-                                let curve_ref = deps.consumer.curve.borrow();
-                                let curve = curve_ref.as_ref().expect("the case ran");
+                                let (concrete_name, encoding_name) =
+                                    (*deps.consumer.cell.borrow()).expect("the case ran");
                                 let arithmetic =
                                     (*deps.consumer.arithmetic.borrow()).expect("the case ran");
-                                let curve_directory = match curve {
-                                    PairingCurve::Bn254 => {
-                                        settings.curve_directories.bn254.as_str()
-                                    }
-                                    PairingCurve::Bls12381 => {
-                                        settings.curve_directories.bls12_381.as_str()
-                                    }
-                                    PairingCurve::Mock => {
-                                        panic!("PAIRING_CONCRETES names no Mock pairing")
-                                    }
-                                };
-                                let curve_library = match curve {
-                                    PairingCurve::Bn254 => &settings.curve_libraries.bn254,
-                                    PairingCurve::Bls12381 => &settings.curve_libraries.bls12_381,
-                                    PairingCurve::Mock => {
-                                        panic!("PAIRING_CONCRETES names no Mock pairing")
-                                    }
-                                };
                                 let emitted: Vec<VectorKind> = SOLIDITY_GENERATE_DECLARATION
                                     .kinds
                                     .iter()
@@ -426,7 +324,8 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
                                     let expected = root
                                         .join("alpha")
                                         .join("beta")
-                                        .join(curve_directory)
+                                        .join(concrete_name)
+                                        .join(encoding_name)
                                         .join(names.file_name.as_str());
                                     assert_eq!(success.files[index].kind, Some(*kind));
                                     assert_eq!(success.files[index].path, expected);
@@ -435,16 +334,14 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
                                 let constants_path = root
                                     .join("alpha")
                                     .join("beta")
-                                    .join(curve_directory)
-                                    .join(curve_library.constants_library.file_name.as_str());
+                                    .join(settings.constants_library.file_name.as_str());
                                 assert_eq!(success.files[emitted.len()].kind, None);
                                 assert_eq!(success.files[emitted.len()].path, constants_path);
                                 assert!(constants_path.exists());
                                 let records_path = root
                                     .join("alpha")
                                     .join("beta")
-                                    .join(curve_directory)
-                                    .join(curve_library.records_library.file_name.as_str());
+                                    .join(settings.records_library.file_name.as_str());
                                 assert_eq!(success.files[emitted.len() + 1].kind, None);
                                 assert_eq!(success.files[emitted.len() + 1].path, records_path);
                                 assert!(records_path.exists());
@@ -456,7 +353,7 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
         }
     }
 }
-// emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_curve_directory
+// emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cell_directory
 
 /// Contract: each kind's file holds one hex line per record at the kind's
 ///   admitted size, each line `0x` and lowercase hex, each file ending in a
@@ -469,10 +366,12 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cu
 ///   challenge kind's, which holds twice its count, the hash-to-scalar file
 ///   holds its count for each of the identity, possession first-group,
 ///   possession second-group, challenge, and weight domain tags, the
-///   identity-mapping file holds one line per configured identity, and the
-///   decode-rejection file holds lines, every line `0x` followed by an even
-///   run of lowercase hex digits, each file ending in `\n` and holding no
-///   empty line.
+///   identity-mapping file holds one line per configured identity, the
+///   decode-rejection file holds the lines the case's pairing's declaration
+///   enumerates for the kind, and the cell-values file holds the one record
+///   `constants` returns, every line `0x` followed by an even run of
+///   lowercase hex digits, each file ending in `\n` and holding no empty
+///   line.
 /// Boundary: `emit` and the real chain the private surface names.
 /// Mocked:   the filesystem and the operating system's generator, running real.
 #[test]
@@ -531,6 +430,10 @@ fn each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size() {
         drawn(VectorKind::Challenge, 37),
         drawn(VectorKind::MintProof, 41),
         drawn(VectorKind::TransferProof, 43),
+        build_vector_kind_settings(VectorKindSettingsOverrides {
+            kind: Some(VectorKind::CellValues),
+            size: Some(VectorKindSize::Enumerated),
+        }),
     ];
     let expected_lines = |kind: VectorKind| -> usize {
         match kind {
@@ -547,6 +450,7 @@ fn each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size() {
             VectorKind::Challenge => 2 * 37,
             VectorKind::MintProof => 41,
             VectorKind::TransferProof => 43,
+            VectorKind::CellValues => 1,
         }
     };
     let settings = build_solidity_generate_settings(Default::default());
@@ -561,6 +465,7 @@ fn each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size() {
 
     struct Case {
         sizes: Vec<VectorKindSettings>,
+        rejection_lines: RefCell<Option<usize>>,
     }
 
     impl ISolidityGenerateCaseConsumer for Case {
@@ -579,6 +484,12 @@ fn each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
+            *self.rejection_lines.borrow_mut() = Some(
+                2 + usize::from(
+                    P::DECLARATION.target_group_encoding
+                        == TargetGroupEncodingIdentifier::Bls12381V1,
+                ),
+            );
             let mint =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());
             let transfer = build_delivery_context::<F, TransferPurpose>(
@@ -631,13 +542,15 @@ fn each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size() {
                     for kem_selection in DECLARED_KEM_SELECTIONS {
                         for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
                             for proof_concrete in DELIVERY_PROOF_CONCRETES {
+                                let deps = build_solidity_generate_case_deps(
+                                    Case {
+                                        sizes: sizes.clone(),
+                                        rejection_lines: RefCell::new(None),
+                                    },
+                                    Default::default(),
+                                );
                                 let result = run_solidity_generate_case(
-                                    &build_solidity_generate_case_deps(
-                                        Case {
-                                            sizes: sizes.clone(),
-                                        },
-                                        Default::default(),
-                                    ),
+                                    &deps,
                                     build_solidity_generate_case_params(
                                         SolidityGenerateCaseParamsOverrides {
                                             pairing: Some(build_create_pairing_params(
@@ -692,6 +605,8 @@ fn each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size() {
                                 assert!(result.is_ok());
 
                                 // Assert
+                                let rejection_lines = (*deps.consumer.rejection_lines.borrow())
+                                    .expect("the case ran");
                                 let result = result.expect("the case chain runs clean").output;
                                 let Ok(success) = result else {
                                     panic!("emit admits the case's arrangement")
@@ -704,7 +619,7 @@ fn each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size() {
                                         .expect("the kind's file was written");
                                     let lines: Vec<&str> = text.lines().collect();
                                     if kind == VectorKind::DecodeRejection {
-                                        assert!(!lines.is_empty());
+                                        assert_eq!(lines.len(), rejection_lines);
                                     } else {
                                         assert_eq!(lines.len(), expected_lines(kind));
                                     }
@@ -820,6 +735,8 @@ fn every_written_line_decodes_under_its_kinds_description() {
             let challenge = build_challenge_vector_description(Default::default());
             let mint_proof = build_mint_proof_vector_description::<F>(Default::default());
             let transfer_proof = build_transfer_proof_vector_description::<F>(Default::default());
+            let cell_values =
+                build_cell_values_description(CellValuesDescriptionConstructorParamsOverrides);
             let hex_bytes = |hex: &str| -> Vec<u8> {
                 (0..hex.len())
                     .step_by(2)
@@ -1003,6 +920,24 @@ fn every_written_line_decodes_under_its_kinds_description() {
                             }
                             decoded
                         }
+                        VectorKind::CellValues => {
+                            let mut decoded = 0usize;
+                            for line in text.lines() {
+                                assert!(
+                                    payload
+                                        .decoder
+                                        .decode(
+                                            DecodeParams {
+                                                description: &cell_values,
+                                            },
+                                            hex_bytes(&line[2..]).as_slice(),
+                                        )
+                                        .is_ok()
+                                );
+                                decoded += 1;
+                            }
+                            decoded
+                        }
                     };
                     assert_eq!(decoded, text.lines().count());
                 }
@@ -1090,17 +1025,18 @@ fn every_written_line_decodes_under_its_kinds_description() {
 }
 // every_written_line_decodes_under_its_kinds_description
 
-/// Contract: `Constants.sol` opens with the configured license, compiler
-///   version, and library name and holds the delivery proof declaration's
-///   challenge tag.
+/// Contract: the constants library opens with the configured license,
+///   compiler version, and the configured constants library name and holds
+///   the delivery proof declaration's challenge tag.
 /// Arrange: `license` and `compiler_version` each built with a value other
 ///   than its builder default and `constants_library`'s `library_name` other
 ///   than `Constants`; every case the private surface names.
 /// Act:    `emit` in the case consumer's method, once per case.
-/// Assert: the runner's return `is_ok()`; the file under the configured file
-///   name begins with `// SPDX-License-Identifier: ` and the configured
-///   license, `\npragma solidity ` and the configured version, `;\n\nlibrary `
-///   and the configured name, and ` {\n`, and holds the line
+/// Assert: the runner's return `is_ok()`; the constants library, read from
+///   the root, the generated directory's segments, and the configured
+///   constants file name, begins with `// SPDX-License-Identifier: ` and the
+///   configured license, `\npragma solidity ` and the configured version,
+///   `;\n\nlibrary ` and the configured name, and ` {\n`, and holds the line
 ///   `    bytes internal constant CHALLENGE_TAG = hex"` followed by the
 ///   lowercase hex of the declaration's `challenge_tag` and `";`.
 /// Boundary: `emit` and the real chain the private surface names.
@@ -1120,63 +1056,16 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
     let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
         license: Some(license.clone()),
         compiler_version: Some(compiler_version),
-        curve_libraries: Some(build_solidity_curve_libraries(
-            SolidityCurveLibrariesOverrides {
-                bn254: Some(build_solidity_curve_library_names(
-                    SolidityCurveLibraryNamesOverrides {
-                        constants_library: Some(build_solidity_library_names(
-                            SolidityLibraryNamesOverrides {
-                                file_name: Some(build_generated_file_name(
-                                    GeneratedFileNameConstructorParamsOverrides {
-                                        text: Some("FirstConstants.sol".to_string()),
-                                    },
-                                )),
-                                library_name: Some(build_solidity_library_name(
-                                    SolidityLibraryNameConstructorParamsOverrides {
-                                        text: Some("FirstConstants".to_string()),
-                                    },
-                                )),
-                            },
-                        )),
-                        ..Default::default()
+        constants_library: Some(build_solidity_library_names(
+            SolidityLibraryNamesOverrides {
+                file_name: Some(build_generated_file_name(
+                    GeneratedFileNameConstructorParamsOverrides {
+                        text: Some("CaseConstants.sol".to_string()),
                     },
                 )),
-                bls12_381: Some(build_solidity_curve_library_names(
-                    SolidityCurveLibraryNamesOverrides {
-                        constants_library: Some(build_solidity_library_names(
-                            SolidityLibraryNamesOverrides {
-                                file_name: Some(build_generated_file_name(
-                                    GeneratedFileNameConstructorParamsOverrides {
-                                        text: Some("SecondConstants.sol".to_string()),
-                                    },
-                                )),
-                                library_name: Some(build_solidity_library_name(
-                                    SolidityLibraryNameConstructorParamsOverrides {
-                                        text: Some("SecondConstants".to_string()),
-                                    },
-                                )),
-                            },
-                        )),
-                        ..Default::default()
-                    },
-                )),
-                mock: Some(build_solidity_curve_library_names(
-                    SolidityCurveLibraryNamesOverrides {
-                        constants_library: Some(build_solidity_library_names(
-                            SolidityLibraryNamesOverrides {
-                                file_name: Some(build_generated_file_name(
-                                    GeneratedFileNameConstructorParamsOverrides {
-                                        text: Some("MockConstants.sol".to_string()),
-                                    },
-                                )),
-                                library_name: Some(build_solidity_library_name(
-                                    SolidityLibraryNameConstructorParamsOverrides {
-                                        text: Some("MockConstants".to_string()),
-                                    },
-                                )),
-                            },
-                        )),
-                        ..Default::default()
+                library_name: Some(build_solidity_library_name(
+                    SolidityLibraryNameConstructorParamsOverrides {
+                        text: Some("CaseConstants".to_string()),
                     },
                 )),
             },
@@ -1195,7 +1084,6 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
     struct Case {
         settings: SolidityGenerateSettings,
         challenge_tag: RefCell<Option<&'static [u8]>>,
-        curve: RefCell<Option<PairingCurve>>,
     }
 
     impl ISolidityGenerateCaseConsumer for Case {
@@ -1215,7 +1103,6 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
             *self.challenge_tag.borrow_mut() = Some(D::DECLARATION.challenge_tag);
-            *self.curve.borrow_mut() = Some(P::DECLARATION.curve);
             let mint =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());
             let transfer = build_delivery_context::<F, TransferPurpose>(
@@ -1272,7 +1159,6 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
                                     Case {
                                         settings: settings.clone(),
                                         challenge_tag: RefCell::new(None),
-                                        curve: RefCell::new(None),
                                     },
                                     Default::default(),
                                 );
@@ -1334,34 +1220,13 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
                                 // Assert
                                 let challenge_tag =
                                     (*deps.consumer.challenge_tag.borrow()).expect("the case ran");
-                                let curve_ref = deps.consumer.curve.borrow();
-                                let curve = curve_ref.as_ref().expect("the case ran");
-                                let curve_directory = match curve {
-                                    PairingCurve::Bn254 => {
-                                        settings.curve_directories.bn254.as_str()
-                                    }
-                                    PairingCurve::Bls12381 => {
-                                        settings.curve_directories.bls12_381.as_str()
-                                    }
-                                    PairingCurve::Mock => {
-                                        panic!("PAIRING_CONCRETES names no Mock pairing")
-                                    }
-                                };
-                                let curve_library = match curve {
-                                    PairingCurve::Bn254 => &settings.curve_libraries.bn254,
-                                    PairingCurve::Bls12381 => &settings.curve_libraries.bls12_381,
-                                    PairingCurve::Mock => {
-                                        panic!("PAIRING_CONCRETES names no Mock pairing")
-                                    }
-                                };
                                 let result = result.expect("the case chain runs clean").output;
                                 let Ok(_success) = result else {
                                     panic!("emit admits the case's arrangement")
                                 };
                                 let library_path = root
                                     .join("generated")
-                                    .join(curve_directory)
-                                    .join(curve_library.constants_library.file_name.as_str());
+                                    .join(settings.constants_library.file_name.as_str());
                                 let text = std::fs::read_to_string(&library_path)
                                     .expect("the constants library was written");
                                 assert!(text.starts_with(&format!(
@@ -1370,7 +1235,7 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
                                     compiler_version.major,
                                     compiler_version.minor,
                                     compiler_version.patch,
-                                    curve_library.constants_library.library_name.as_str()
+                                    settings.constants_library.library_name.as_str()
                                 )));
                                 let tag_hex = challenge_tag
                                     .iter()
@@ -1390,27 +1255,26 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
 }
 // the_constants_library_opens_with_the_configured_license_version_and_name_and_holds_the_tag_entries
 
-/// Contract: `VectorRecords.sol` declares for each written kind its struct
+/// Contract: the records library declares for each written kind its struct
 ///   with its members typed by the Ethereum ABI encoder's names for their
-///   kinds, decode function, and path constant, the path joining the generated
-///   directory's segments, the curve directory, and the kind's file name by
-///   `/`, and declares no kind not written.
+///   kinds, decode function, and path constant, the path constant the kind's
+///   file name alone, and declares no kind not written.
 /// Arrange: `records_library`'s `library_name` other than `VectorRecords`,
 ///   each kind's names distinct, and `generated_directory` of two distinct
 ///   segments; every case the private surface names.
 /// Act:    `emit` in the case consumer's method, once per case.
-/// Assert: the runner's return `is_ok()`; the records library, read from its
-///   configured file name, holds the configured header and library name, and
-///   for the possession kind `    struct PossessionVector {` followed by one
-///   member line per field of its description, each member's name the
-///   description's `member_names()` entry and its type the name assembled in
-///   the block from the ABI table for the kind the description's `FIELDS`
-///   holds at its index, `    string internal constant POSSESSION_PATH = "`
-///   followed by the segments, the curve directory text, and
-///   `possession.vectors` joined by `/` and `";`, and
+/// Assert: the runner's return `is_ok()`; the records library, read from the
+///   generated directory at its configured records file name, holds the
+///   configured header and library name, and for the possession kind
+///   `    struct PossessionVector {` followed by one member line per field of
+///   its description, each member's name the description's `member_names()`
+///   entry and its type the name assembled in the block from the ABI table
+///   for the kind the description's `FIELDS` holds at its index,
+///   `    string internal constant POSSESSION_PATH = "` followed by
+///   `possession.vectors` and `";`, and
 ///   `    function decodePossession(bytes memory line) internal pure returns (PossessionVector memory) {`,
-///   and holds `G2AddVector` only on the curve whose verifier writes the
-///   second-group kinds.
+///   and holds `G2AddVector` only where the case's pairing declares
+///   second-group arithmetic.
 /// Boundary: `emit` and the real chain the private surface names.
 /// Mocked:   the filesystem and the operating system's generator, running real.
 #[test]
@@ -1442,53 +1306,14 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
                 ]),
             },
         )),
-        curve_libraries: Some(build_solidity_curve_libraries(
-            SolidityCurveLibrariesOverrides {
-                bn254: Some(build_solidity_curve_library_names(
-                    SolidityCurveLibraryNamesOverrides {
-                        records_library: Some(build_solidity_library_names(
-                            SolidityLibraryNamesOverrides {
-                                library_name: Some(build_solidity_library_name(
-                                    SolidityLibraryNameConstructorParamsOverrides {
-                                        text: Some("FirstRecords".to_string()),
-                                    },
-                                )),
-                                ..Default::default()
-                            },
-                        )),
-                        ..Default::default()
+        records_library: Some(build_solidity_library_names(
+            SolidityLibraryNamesOverrides {
+                library_name: Some(build_solidity_library_name(
+                    SolidityLibraryNameConstructorParamsOverrides {
+                        text: Some("CaseRecords".to_string()),
                     },
                 )),
-                bls12_381: Some(build_solidity_curve_library_names(
-                    SolidityCurveLibraryNamesOverrides {
-                        records_library: Some(build_solidity_library_names(
-                            SolidityLibraryNamesOverrides {
-                                library_name: Some(build_solidity_library_name(
-                                    SolidityLibraryNameConstructorParamsOverrides {
-                                        text: Some("SecondRecords".to_string()),
-                                    },
-                                )),
-                                ..Default::default()
-                            },
-                        )),
-                        ..Default::default()
-                    },
-                )),
-                mock: Some(build_solidity_curve_library_names(
-                    SolidityCurveLibraryNamesOverrides {
-                        records_library: Some(build_solidity_library_names(
-                            SolidityLibraryNamesOverrides {
-                                library_name: Some(build_solidity_library_name(
-                                    SolidityLibraryNameConstructorParamsOverrides {
-                                        text: Some("MockRecords".to_string()),
-                                    },
-                                )),
-                                ..Default::default()
-                            },
-                        )),
-                        ..Default::default()
-                    },
-                )),
+                ..Default::default()
             },
         )),
         ..Default::default()
@@ -1504,7 +1329,6 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
 
     struct Case {
         settings: SolidityGenerateSettings,
-        curve: RefCell<Option<PairingCurve>>,
         arithmetic: RefCell<Option<VerifierGroupArithmetic>>,
     }
 
@@ -1524,7 +1348,6 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
-            *self.curve.borrow_mut() = Some(P::DECLARATION.curve);
             *self.arithmetic.borrow_mut() = Some(P::DECLARATION.verifier_group_arithmetic);
             let mint =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());
@@ -1581,7 +1404,6 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
                                 let deps = build_solidity_generate_case_deps(
                                     Case {
                                         settings: settings.clone(),
-                                        curve: RefCell::new(None),
                                         arithmetic: RefCell::new(None),
                                     },
                                     Default::default(),
@@ -1642,28 +1464,8 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
                                 assert!(result.is_ok());
 
                                 // Assert
-                                let curve_ref = deps.consumer.curve.borrow();
-                                let curve = curve_ref.as_ref().expect("the case ran");
                                 let arithmetic =
                                     (*deps.consumer.arithmetic.borrow()).expect("the case ran");
-                                let curve_directory = match curve {
-                                    PairingCurve::Bn254 => {
-                                        settings.curve_directories.bn254.as_str()
-                                    }
-                                    PairingCurve::Bls12381 => {
-                                        settings.curve_directories.bls12_381.as_str()
-                                    }
-                                    PairingCurve::Mock => {
-                                        panic!("PAIRING_CONCRETES names no Mock pairing")
-                                    }
-                                };
-                                let curve_library = match curve {
-                                    PairingCurve::Bn254 => &settings.curve_libraries.bn254,
-                                    PairingCurve::Bls12381 => &settings.curve_libraries.bls12_381,
-                                    PairingCurve::Mock => {
-                                        panic!("PAIRING_CONCRETES names no Mock pairing")
-                                    }
-                                };
                                 let result = result.expect("the case chain runs clean").output;
                                 let Ok(_success) = result else {
                                     panic!("emit admits the case's arrangement")
@@ -1671,13 +1473,12 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
                                 let library_path = root
                                     .join("suite")
                                     .join("generated")
-                                    .join(curve_directory)
-                                    .join(curve_library.records_library.file_name.as_str());
+                                    .join(settings.records_library.file_name.as_str());
                                 let text = std::fs::read_to_string(&library_path)
                                     .expect("the records library was written");
                                 assert!(text.contains(&format!(
                                     "library {} {{\n",
-                                    curve_library.records_library.library_name.as_str()
+                                    settings.records_library.library_name.as_str()
                                 )));
                                 assert!(text.contains("    struct PossessionVector {"));
                                 for (index, kind) in
@@ -1691,13 +1492,9 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
                                         member_names[index]
                                     )));
                                 }
-                                assert!(text.contains(&format!(
-                                    "    string internal constant POSSESSION_PATH = \"{}\";",
-                                    format_args!(
-                                        "suite/generated/{}/possession.vectors",
-                                        curve_directory
-                                    )
-                                )));
+                                assert!(text.contains(
+                                    "    string internal constant POSSESSION_PATH = \"possession.vectors\";"
+                                ));
                                 assert!(text.contains(
                                     "    function decodePossession(bytes memory line) internal pure returns (PossessionVector memory) {"
                                 ));
@@ -2851,9 +2648,10 @@ fn a_repeated_struct_name_is_refused_before_a_repeated_decode_function_name() {
 /// Act:    `emit` in the case consumer's method, once per case.
 /// Assert: the runner's return `is_ok()`;
 ///   `matches!` with `path` equal to the root joined with the generated
-///   directory's segments and the curve directory, and `error` equal in
-///   `kind()`, `raw_os_error()`, and `to_string()` to the error the block
-///   obtains by calling `std::fs::create_dir_all` over that path after `emit`.
+///   directory's segments and the cell directory's two segments, and `error`
+///   equal in `kind()`, `raw_os_error()`, and `to_string()` to the error the
+///   block obtains by calling `std::fs::create_dir_all` over that path after
+///   `emit`.
 /// Boundary: `emit` and the real chain the private surface names.
 /// Mocked:   the filesystem and the operating system's generator, running real.
 #[test]
@@ -2872,7 +2670,7 @@ fn a_root_that_is_a_file_refuses_directory_creation_with_its_path() {
 
     struct Case {
         settings: SolidityGenerateSettings,
-        curve: RefCell<Option<PairingCurve>>,
+        cell: RefCell<Option<(&'static str, &'static str)>>,
     }
 
     impl ISolidityGenerateCaseConsumer for Case {
@@ -2891,7 +2689,7 @@ fn a_root_that_is_a_file_refuses_directory_creation_with_its_path() {
             A: IKeyAgreementAdapter<Pairing = P>,
             D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
         {
-            *self.curve.borrow_mut() = Some(P::DECLARATION.curve);
+            *self.cell.borrow_mut() = Some((P::DECLARATION.concrete_name, E::DECLARATION.name));
             let mint =
                 build_delivery_context::<F, MintPurpose>(DELIVERY_PURPOSE_MINT, Default::default());
             let transfer = build_delivery_context::<F, TransferPurpose>(
@@ -2947,7 +2745,7 @@ fn a_root_that_is_a_file_refuses_directory_creation_with_its_path() {
                                 let deps = build_solidity_generate_case_deps(
                                     Case {
                                         settings: settings.clone(),
-                                        curve: RefCell::new(None),
+                                        cell: RefCell::new(None),
                                     },
                                     Default::default(),
                                 );
@@ -3007,20 +2805,12 @@ fn a_root_that_is_a_file_refuses_directory_creation_with_its_path() {
                                 assert!(result.is_ok());
 
                                 // Assert
-                                let curve_ref = deps.consumer.curve.borrow();
-                                let curve = curve_ref.as_ref().expect("the case ran");
-                                let curve_directory = match curve {
-                                    PairingCurve::Bn254 => {
-                                        settings.curve_directories.bn254.as_str()
-                                    }
-                                    PairingCurve::Bls12381 => {
-                                        settings.curve_directories.bls12_381.as_str()
-                                    }
-                                    PairingCurve::Mock => {
-                                        panic!("PAIRING_CONCRETES names no Mock pairing")
-                                    }
-                                };
-                                let expected = root.join("generated").join(curve_directory);
+                                let (concrete_name, encoding_name) =
+                                    (*deps.consumer.cell.borrow()).expect("the case ran");
+                                let expected = root
+                                    .join("generated")
+                                    .join(concrete_name)
+                                    .join(encoding_name);
                                 let probe = std::fs::create_dir_all(&expected).expect_err(
                                     "a regular file at the root refuses directory creation",
                                 );
@@ -3146,37 +2936,23 @@ fn a_directory_at_a_kinds_file_path_refuses_the_write_with_its_path() {
                     for kem_selection in DECLARED_KEM_SELECTIONS {
                         for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
                             for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                let curve_directory = match pairing_concrete {
-                                    PairingConcrete::Bn254Arkworks
-                                    | PairingConcrete::Bn254Halo2curves => {
-                                        settings.curve_directories.bn254.as_str()
-                                    }
-                                    PairingConcrete::Bls12381Arkworks
-                                    | PairingConcrete::Bls12381Halo2curves => {
-                                        settings.curve_directories.bls12_381.as_str()
-                                    }
+                                let concrete_name = match pairing_concrete {
+                                    PairingConcrete::Bn254Arkworks => "bn254_arkworks",
+                                    PairingConcrete::Bn254Halo2curves => "bn254_halo2curves",
+                                    PairingConcrete::Bls12381Arkworks => "bls12381_arkworks",
+                                    PairingConcrete::Bls12381Halo2curves => "bls12_381_halo2curves",
                                     PairingConcrete::Mock(_)
-                                    | PairingConcrete::MockShortUniform(_) => {
-                                        settings.curve_directories.mock.as_str()
-                                    }
+                                    | PairingConcrete::MockShortUniform(_) => "mock_concrete",
                                 };
-                                let curve_library = match pairing_concrete {
-                                    PairingConcrete::Bn254Arkworks
-                                    | PairingConcrete::Bn254Halo2curves => {
-                                        &settings.curve_libraries.bn254
-                                    }
-                                    PairingConcrete::Bls12381Arkworks
-                                    | PairingConcrete::Bls12381Halo2curves => {
-                                        &settings.curve_libraries.bls12_381
-                                    }
-                                    PairingConcrete::Mock(_)
-                                    | PairingConcrete::MockShortUniform(_) => {
-                                        &settings.curve_libraries.mock
-                                    }
+                                let encoding_name = match encoding_selection.concrete {
+                                    EncodingConcrete::Abi => "abi",
+                                    #[cfg(any(test, feature = "mocks"))]
+                                    EncodingConcrete::Mock => "mock",
                                 };
                                 let file_path = root
                                     .join("generated")
-                                    .join(curve_directory)
+                                    .join(concrete_name)
+                                    .join(encoding_name)
                                     .join(&first_file_name);
                                 std::fs::create_dir_all(&file_path)
                                     .expect("a directory occupies the first kind's file path");
@@ -3258,8 +3034,7 @@ fn a_directory_at_a_kinds_file_path_refuses_the_write_with_its_path() {
                                 ));
                                 let constants_path = root
                                     .join("generated")
-                                    .join(curve_directory)
-                                    .join(curve_library.constants_library.file_name.as_str());
+                                    .join(settings.constants_library.file_name.as_str());
                                 assert!(!constants_path.exists());
                                 let _ = std::fs::remove_dir_all(&root);
                             }

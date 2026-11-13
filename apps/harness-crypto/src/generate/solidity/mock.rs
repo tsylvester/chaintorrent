@@ -52,21 +52,19 @@ use std::path::PathBuf;
 
 use super::super::factory::provides::{
     IGenerateAdapter, VectorKind, VectorKindSettings, VectorKindSize, VectorKindSizing,
+    build_msm_term_count, build_vector_count,
 };
 use super::challenge_vectors::provides::{ChallengeVectorsFn, mock_challenge_vectors};
 use super::constants::provides::{ConstantsFn, mock_constants};
-use super::group_vectors::provides::{
-    GroupVectorsFn, build_msm_term_count, build_vector_count, mock_group_vectors,
-};
+use super::group_vectors::provides::{GroupVectorsFn, mock_group_vectors};
 use super::interface::{
     ConsumeSolidityGenerateCaseParams, ConsumeSolidityGenerateCasePayload, GeneratedDirectory,
     GeneratedDirectoryConstructorParams, GeneratedFileName, GeneratedFileNameConstructorParams,
     ISolidityGenerateCaseConsumer, RunSolidityGenerateCaseFn, SOLIDITY_GENERATE_DECLARATION,
-    SolidityCurveDirectories, SolidityCurveLibraries, SolidityCurveLibraryNames, SolidityGenerate,
-    SolidityGenerateCaseDeps, SolidityGenerateCaseErrorReturn, SolidityGenerateCaseParams,
-    SolidityGenerateCasePayload, SolidityGenerateCaseReturn, SolidityGenerateCaseSuccessReturn,
-    SolidityGenerateConstructorParams, SolidityGenerateSettings, SolidityLibraryNames,
-    SolidityVectorKindNames, SolidityVectorKindSettings,
+    SolidityGenerate, SolidityGenerateCaseDeps, SolidityGenerateCaseErrorReturn,
+    SolidityGenerateCaseParams, SolidityGenerateCasePayload, SolidityGenerateCaseReturn,
+    SolidityGenerateCaseSuccessReturn, SolidityGenerateConstructorParams, SolidityGenerateSettings,
+    SolidityLibraryNames, SolidityVectorKindNames, SolidityVectorKindSettings,
 };
 use super::mapping_vectors::provides::{MappingVectorsFn, mock_mapping_vectors};
 use super::possession_vectors::provides::{PossessionVectorsFn, mock_possession_vectors};
@@ -267,6 +265,7 @@ fn vector_kind_value(kind: VectorKind) -> Value {
         VectorKind::Challenge => "Challenge",
         VectorKind::MintProof => "MintProof",
         VectorKind::TransferProof => "TransferProof",
+        VectorKind::CellValues => "CellValues",
     })
 }
 
@@ -361,212 +360,6 @@ pub fn invalidate_solidity_library_names(corruptions: SolidityLibraryNamesCorrup
     Value::Object(fields)
 }
 
-#[derive(Default)]
-pub struct SolidityCurveLibraryNamesOverrides {
-    pub constants_library: Option<SolidityLibraryNames>,
-    pub records_library: Option<SolidityLibraryNames>,
-}
-
-pub fn build_solidity_curve_library_names(
-    overrides: SolidityCurveLibraryNamesOverrides,
-) -> SolidityCurveLibraryNames {
-    SolidityCurveLibraryNames {
-        constants_library: overrides
-            .constants_library
-            .unwrap_or_else(|| build_solidity_library_names(Default::default())),
-        records_library: overrides.records_library.unwrap_or_else(|| {
-            build_solidity_library_names(SolidityLibraryNamesOverrides {
-                file_name: Some(build_generated_file_name(
-                    GeneratedFileNameConstructorParamsOverrides {
-                        text: Some("VectorRecords.sol".to_string()),
-                    },
-                )),
-                library_name: Some(build_solidity_library_name(
-                    SolidityLibraryNameConstructorParamsOverrides {
-                        text: Some("VectorRecords".to_string()),
-                    },
-                )),
-            })
-        }),
-    }
-}
-
-#[derive(Default)]
-pub struct SolidityCurveLibraryNamesCorruptions {
-    pub constants_library: Option<Value>,
-    pub records_library: Option<Value>,
-}
-
-pub fn invalidate_solidity_curve_library_names(
-    corruptions: SolidityCurveLibraryNamesCorruptions,
-) -> Value {
-    let mut fields = Map::new();
-    fields.insert(
-        "constants_library".to_string(),
-        invalidate_solidity_library_names(Default::default()),
-    );
-    fields.insert(
-        "records_library".to_string(),
-        invalidate_solidity_library_names(Default::default()),
-    );
-    if let Some(constants_library) = corruptions.constants_library {
-        fields.insert("constants_library".to_string(), constants_library);
-    }
-    if let Some(records_library) = corruptions.records_library {
-        fields.insert("records_library".to_string(), records_library);
-    }
-    Value::Object(fields)
-}
-
-fn build_named_curve_library_names(
-    constants_name: &str,
-    records_name: &str,
-) -> SolidityCurveLibraryNames {
-    build_solidity_curve_library_names(SolidityCurveLibraryNamesOverrides {
-        constants_library: Some(build_solidity_library_names(
-            SolidityLibraryNamesOverrides {
-                library_name: Some(build_solidity_library_name(
-                    SolidityLibraryNameConstructorParamsOverrides {
-                        text: Some(constants_name.to_string()),
-                    },
-                )),
-                ..Default::default()
-            },
-        )),
-        records_library: Some(build_solidity_library_names(
-            SolidityLibraryNamesOverrides {
-                file_name: Some(build_generated_file_name(
-                    GeneratedFileNameConstructorParamsOverrides {
-                        text: Some("VectorRecords.sol".to_string()),
-                    },
-                )),
-                library_name: Some(build_solidity_library_name(
-                    SolidityLibraryNameConstructorParamsOverrides {
-                        text: Some(records_name.to_string()),
-                    },
-                )),
-            },
-        )),
-    })
-}
-
-#[derive(Default)]
-pub struct SolidityCurveLibrariesOverrides {
-    pub bn254: Option<SolidityCurveLibraryNames>,
-    pub bls12_381: Option<SolidityCurveLibraryNames>,
-    pub mock: Option<SolidityCurveLibraryNames>,
-}
-
-pub fn build_solidity_curve_libraries(
-    overrides: SolidityCurveLibrariesOverrides,
-) -> SolidityCurveLibraries {
-    SolidityCurveLibraries {
-        bn254: overrides.bn254.unwrap_or_else(|| {
-            build_named_curve_library_names("Bn254Constants", "Bn254VectorRecords")
-        }),
-        bls12_381: overrides.bls12_381.unwrap_or_else(|| {
-            build_named_curve_library_names("Bls12381Constants", "Bls12381VectorRecords")
-        }),
-        mock: overrides.mock.unwrap_or_else(|| {
-            build_named_curve_library_names("MockConstants", "MockVectorRecords")
-        }),
-    }
-}
-
-#[derive(Default)]
-pub struct SolidityCurveLibrariesCorruptions {
-    pub bn254: Option<Value>,
-    pub bls12_381: Option<Value>,
-    pub mock: Option<Value>,
-}
-
-pub fn invalidate_solidity_curve_libraries(
-    corruptions: SolidityCurveLibrariesCorruptions,
-) -> Value {
-    let mut fields = Map::new();
-    fields.insert(
-        "bn254".to_string(),
-        invalidate_solidity_curve_library_names(Default::default()),
-    );
-    fields.insert(
-        "bls12_381".to_string(),
-        invalidate_solidity_curve_library_names(Default::default()),
-    );
-    fields.insert(
-        "mock".to_string(),
-        invalidate_solidity_curve_library_names(Default::default()),
-    );
-    if let Some(bn254) = corruptions.bn254 {
-        fields.insert("bn254".to_string(), bn254);
-    }
-    if let Some(bls12_381) = corruptions.bls12_381 {
-        fields.insert("bls12_381".to_string(), bls12_381);
-    }
-    if let Some(mock) = corruptions.mock {
-        fields.insert("mock".to_string(), mock);
-    }
-    Value::Object(fields)
-}
-
-#[derive(Default)]
-pub struct SolidityCurveDirectoriesOverrides {
-    pub bn254: Option<GeneratedFileName>,
-    pub bls12_381: Option<GeneratedFileName>,
-    pub mock: Option<GeneratedFileName>,
-}
-
-pub fn build_solidity_curve_directories(
-    overrides: SolidityCurveDirectoriesOverrides,
-) -> SolidityCurveDirectories {
-    SolidityCurveDirectories {
-        bn254: overrides.bn254.unwrap_or_else(|| {
-            build_generated_file_name(GeneratedFileNameConstructorParamsOverrides {
-                text: Some("bn254".to_string()),
-            })
-        }),
-        bls12_381: overrides.bls12_381.unwrap_or_else(|| {
-            build_generated_file_name(GeneratedFileNameConstructorParamsOverrides {
-                text: Some("bls12_381".to_string()),
-            })
-        }),
-        mock: overrides.mock.unwrap_or_else(|| {
-            build_generated_file_name(GeneratedFileNameConstructorParamsOverrides {
-                text: Some("mock".to_string()),
-            })
-        }),
-    }
-}
-
-#[derive(Default)]
-pub struct SolidityCurveDirectoriesCorruptions {
-    pub bn254: Option<Value>,
-    pub bls12_381: Option<Value>,
-    pub mock: Option<Value>,
-}
-
-pub fn invalidate_solidity_curve_directories(
-    corruptions: SolidityCurveDirectoriesCorruptions,
-) -> Value {
-    let directories = build_solidity_curve_directories(Default::default());
-    let mut fields = Map::new();
-    fields.insert("bn254".to_string(), Value::from(directories.bn254.as_str()));
-    fields.insert(
-        "bls12_381".to_string(),
-        Value::from(directories.bls12_381.as_str()),
-    );
-    fields.insert("mock".to_string(), Value::from(directories.mock.as_str()));
-    if let Some(bn254) = corruptions.bn254 {
-        fields.insert("bn254".to_string(), bn254);
-    }
-    if let Some(bls12_381) = corruptions.bls12_381 {
-        fields.insert("bls12_381".to_string(), bls12_381);
-    }
-    if let Some(mock) = corruptions.mock {
-        fields.insert("mock".to_string(), mock);
-    }
-    Value::Object(fields)
-}
-
 fn vector_kind_stems(kind: VectorKind) -> (&'static str, &'static str) {
     match kind {
         VectorKind::G1Addition => ("g1_add", "G1Add"),
@@ -582,6 +375,7 @@ fn vector_kind_stems(kind: VectorKind) -> (&'static str, &'static str) {
         VectorKind::Challenge => ("challenge", "Challenge"),
         VectorKind::MintProof => ("mint_proof", "MintProof"),
         VectorKind::TransferProof => ("transfer_proof", "TransferProof"),
+        VectorKind::CellValues => ("cell_values", "CellValues"),
     }
 }
 
@@ -619,10 +413,10 @@ fn build_kind_vector_kind_settings(kind: VectorKind) -> SolidityVectorKindSettin
 #[derive(Default)]
 pub struct SolidityGenerateSettingsOverrides {
     pub kinds: Option<Vec<SolidityVectorKindSettings>>,
-    pub curve_libraries: Option<SolidityCurveLibraries>,
+    pub constants_library: Option<SolidityLibraryNames>,
+    pub records_library: Option<SolidityLibraryNames>,
     pub foundry_root: Option<PathBuf>,
     pub generated_directory: Option<GeneratedDirectory>,
-    pub curve_directories: Option<SolidityCurveDirectories>,
     pub compiler_version: Option<SolidityCompilerVersion>,
     pub license: Option<SpdxLicenseIdentifier>,
 }
@@ -638,9 +432,23 @@ pub fn build_solidity_generate_settings(
                 .map(|declaration| build_kind_vector_kind_settings(declaration.kind))
                 .collect()
         }),
-        curve_libraries: overrides
-            .curve_libraries
-            .unwrap_or_else(|| build_solidity_curve_libraries(Default::default())),
+        constants_library: overrides
+            .constants_library
+            .unwrap_or_else(|| build_solidity_library_names(Default::default())),
+        records_library: overrides.records_library.unwrap_or_else(|| {
+            build_solidity_library_names(SolidityLibraryNamesOverrides {
+                file_name: Some(build_generated_file_name(
+                    GeneratedFileNameConstructorParamsOverrides {
+                        text: Some("VectorRecords.sol".to_string()),
+                    },
+                )),
+                library_name: Some(build_solidity_library_name(
+                    SolidityLibraryNameConstructorParamsOverrides {
+                        text: Some("VectorRecords".to_string()),
+                    },
+                )),
+            })
+        }),
         foundry_root: overrides.foundry_root.unwrap_or_else(|| {
             std::env::temp_dir().join(format!(
                 "chaintorrent-generate-{}-{:?}",
@@ -651,9 +459,6 @@ pub fn build_solidity_generate_settings(
         generated_directory: overrides
             .generated_directory
             .unwrap_or_else(|| build_generated_directory(Default::default())),
-        curve_directories: overrides
-            .curve_directories
-            .unwrap_or_else(|| build_solidity_curve_directories(Default::default())),
         compiler_version: overrides
             .compiler_version
             .unwrap_or_else(|| build_solidity_compiler_version(Default::default())),
@@ -666,10 +471,10 @@ pub fn build_solidity_generate_settings(
 #[derive(Default)]
 pub struct SolidityGenerateSettingsCorruptions {
     pub kinds: Option<Value>,
-    pub curve_libraries: Option<Value>,
+    pub constants_library: Option<Value>,
+    pub records_library: Option<Value>,
     pub foundry_root: Option<Value>,
     pub generated_directory: Option<Value>,
-    pub curve_directories: Option<Value>,
     pub compiler_version: Option<Value>,
     pub license: Option<Value>,
 }
@@ -690,8 +495,12 @@ pub fn invalidate_solidity_generate_settings(
         ),
     );
     fields.insert(
-        "curve_libraries".to_string(),
-        invalidate_solidity_curve_libraries(Default::default()),
+        "constants_library".to_string(),
+        invalidate_solidity_library_names(Default::default()),
+    );
+    fields.insert(
+        "records_library".to_string(),
+        invalidate_solidity_library_names(Default::default()),
     );
     fields.insert(
         "foundry_root".to_string(),
@@ -709,10 +518,6 @@ pub fn invalidate_solidity_generate_settings(
         ),
     );
     fields.insert(
-        "curve_directories".to_string(),
-        invalidate_solidity_curve_directories(Default::default()),
-    );
-    fields.insert(
         "compiler_version".to_string(),
         Value::from(format!(
             "{}.{}.{}",
@@ -728,17 +533,17 @@ pub fn invalidate_solidity_generate_settings(
     if let Some(kinds) = corruptions.kinds {
         fields.insert("kinds".to_string(), kinds);
     }
-    if let Some(curve_libraries) = corruptions.curve_libraries {
-        fields.insert("curve_libraries".to_string(), curve_libraries);
+    if let Some(constants_library) = corruptions.constants_library {
+        fields.insert("constants_library".to_string(), constants_library);
+    }
+    if let Some(records_library) = corruptions.records_library {
+        fields.insert("records_library".to_string(), records_library);
     }
     if let Some(foundry_root) = corruptions.foundry_root {
         fields.insert("foundry_root".to_string(), foundry_root);
     }
     if let Some(generated_directory) = corruptions.generated_directory {
         fields.insert("generated_directory".to_string(), generated_directory);
-    }
-    if let Some(curve_directories) = corruptions.curve_directories {
-        fields.insert("curve_directories".to_string(), curve_directories);
     }
     if let Some(compiler_version) = corruptions.compiler_version {
         fields.insert("compiler_version".to_string(), compiler_version);

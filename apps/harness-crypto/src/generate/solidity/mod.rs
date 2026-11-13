@@ -20,26 +20,29 @@ use encoding::{
 };
 use envelope::IKeyAgreementAdapter;
 use kem::ICredentialKemAdapter;
-use pairing::{IPairingArithmetic, IPairingReference, PairingCurve, VerifierGroupArithmetic};
+use pairing::{IPairingArithmetic, IPairingReference, VerifierGroupArithmetic};
 use proof::IDeliveryProofAdapter;
 use std::fs;
 use std::path::PathBuf;
 
 use super::factory::provides::{
     EmitErrorReturn, EmitParams, EmitPayload, EmitReturn, EmitSuccessReturn, EmittedFile,
-    GenerateDeclaration, IGenerateAdapter, VectorKind, VectorKindSize,
+    GenerateDeclaration, IGenerateAdapter, VectorCount, VectorKind, VectorKindSize,
 };
 
 use self::challenge_vectors::provides::{
     ChallengeVectorDescription, ChallengeVectorDescriptionConstructorParams, ChallengeVectorsDeps,
     ChallengeVectorsParams, ChallengeVectorsPayload,
 };
-use self::constants::provides::{ConstantsDeps, ConstantsParams, ConstantsPayload};
+use self::constants::provides::{
+    CellValuesDescription, CellValuesDescriptionConstructorParams, ConstantsDeps, ConstantsParams,
+    ConstantsPayload,
+};
 use self::group_vectors::provides::{
     FirstGroupVectorCounts, GroupOperationVectorDescription,
     GroupOperationVectorDescriptionConstructorParams, GroupVectorsDeps, GroupVectorsParams,
     GroupVectorsPayload, MsmVectorSettings, PairingCheckVectorDescription,
-    PairingCheckVectorDescriptionConstructorParams, SecondGroupVectorCounts, VectorCount,
+    PairingCheckVectorDescriptionConstructorParams, SecondGroupVectorCounts,
 };
 use self::interface::{
     GeneratedDirectory, GeneratedDirectoryConstructorParams, GeneratedDirectoryTryNewErrorReturn,
@@ -171,21 +174,20 @@ where
 
         let mut kind_settings = Vec::with_capacity(emitted.len());
         for kind in &emitted {
-            let names = self.settings.kinds.iter().find(|entry| entry.kind == *kind);
-            let size = self.sizes.iter().find(|entry| entry.kind == *kind);
-            let (Some(names), Some(size)) = (names, size) else {
+            let Some(names) = self.settings.kinds.iter().find(|entry| entry.kind == *kind) else {
                 return Err(EmitErrorReturn::Solidity(
                     SolidityGenerateErrorReturn::MissingKindSettings { kind: *kind },
                 ));
+            };
+            let Some(size) = self.sizes.iter().find(|entry| entry.kind == *kind) else {
+                return Err(EmitErrorReturn::MissingKindSize { kind: *kind });
             };
             kind_settings.push((*kind, names, size));
         }
 
         let size_of = |kind: VectorKind| -> Result<&VectorKindSize, EmitErrorReturn> {
             let Some((_, _, size)) = kind_settings.iter().find(|entry| entry.0 == kind) else {
-                return Err(EmitErrorReturn::Solidity(
-                    SolidityGenerateErrorReturn::MissingKindSettings { kind },
-                ));
+                return Err(EmitErrorReturn::MissingKindSize { kind });
             };
             Ok(&size.size)
         };
@@ -426,6 +428,8 @@ where
         let Ok(transfer_proof) = TransferProofVectorDescription::<D::Forms>::try_new(
             TransferProofVectorDescriptionConstructorParams,
         );
+        let Ok(cell_values_description) =
+            CellValuesDescription::try_new(CellValuesDescriptionConstructorParams);
 
         let record_members = |names: Vec<SolidityMemberName>,
                               fields: &[CanonicalFieldKind],
@@ -477,49 +481,7 @@ where
             line
         };
 
-        let relative_directory = self
-            .settings
-            .generated_directory
-            .segments
-            .iter()
-            .map(|segment| segment.as_str())
-            .collect::<Vec<_>>()
-            .join("/");
-        #[allow(unreachable_patterns)]
-        let (curve_directory, curve_library) = match P::DECLARATION.curve {
-            PairingCurve::Bn254 => (
-                &self.settings.curve_directories.bn254,
-                &self.settings.curve_libraries.bn254,
-            ),
-            PairingCurve::Bls12381 => (
-                &self.settings.curve_directories.bls12_381,
-                &self.settings.curve_libraries.bls12_381,
-            ),
-            _ => {
-                #[cfg(any(test, feature = "mocks"))]
-                {
-                    (
-                        &self.settings.curve_directories.mock,
-                        &self.settings.curve_libraries.mock,
-                    )
-                }
-                #[cfg(not(any(test, feature = "mocks")))]
-                {
-                    (
-                        &self.settings.curve_directories.bls12_381,
-                        &self.settings.curve_libraries.bls12_381,
-                    )
-                }
-            }
-        };
-        let mut directory_path = self.settings.foundry_root.clone();
-        for segment in &self.settings.generated_directory.segments {
-            directory_path.push(segment.as_str());
-        }
-        directory_path.push(curve_directory.as_str());
-
-        let mut declarations = Vec::with_capacity(emitted.len());
-        let mut writes: Vec<(VectorKind, String, PathBuf)> = Vec::with_capacity(emitted.len());
+        let mut staged = Vec::with_capacity(emitted.len());
         for (kind, settings, _size) in &kind_settings {
             let (contents, members) = match kind {
                 VectorKind::G1Addition => {
@@ -960,16 +922,77 @@ where
                     }
                     (contents, members)
                 }
+                VectorKind::CellValues => {
+                    let member_names = match cell_values_description.member_names() {
+                        Ok(names) => names,
+                        Err(error) => {
+                            return Err(EmitErrorReturn::Solidity(
+                                SolidityGenerateErrorReturn::CellValuesMembers(error),
+                            ));
+                        }
+                    };
+                    let members = record_members(
+                        member_names,
+                        <CellValuesDescription as IEncodingContract>::FIELDS,
+                        *kind,
+                    )?;
+                    let mut contents = String::new();
+                    let encoded = match self.encoder.encode(
+                        EncodeParams {
+                            description: &cell_values_description,
+                        },
+                        &constants.cell_values,
+                    ) {
+                        Ok(encoded) => encoded,
+                        Err(error) => {
+                            return Err(EmitErrorReturn::Solidity(
+                                SolidityGenerateErrorReturn::Encode(error),
+                            ));
+                        }
+                    };
+                    contents.push_str(&hex_line(&encoded.bytes));
+                    (contents, members)
+                }
             };
-            let relative_path = format!(
-                "{}/{}/{}",
-                relative_directory,
-                curve_directory.as_str(),
-                settings.names.file_name.as_str()
-            );
+            staged.push((*kind, *settings, contents, members));
+        }
+
+        let concrete_segment =
+            match GeneratedFileName::try_new(GeneratedFileNameConstructorParams {
+                text: P::DECLARATION.concrete_name.to_string(),
+            }) {
+                Ok(name) => name,
+                Err(error) => {
+                    return Err(EmitErrorReturn::Solidity(
+                        SolidityGenerateErrorReturn::GeneratedFileName(error),
+                    ));
+                }
+            };
+        let encoding_segment =
+            match GeneratedFileName::try_new(GeneratedFileNameConstructorParams {
+                text: E::DECLARATION.name.to_string(),
+            }) {
+                Ok(name) => name,
+                Err(error) => {
+                    return Err(EmitErrorReturn::Solidity(
+                        SolidityGenerateErrorReturn::GeneratedFileName(error),
+                    ));
+                }
+            };
+        let mut generated_path = self.settings.foundry_root.clone();
+        for segment in &self.settings.generated_directory.segments {
+            generated_path.push(segment.as_str());
+        }
+        let mut cell_path = generated_path.clone();
+        cell_path.push(concrete_segment.as_str());
+        cell_path.push(encoding_segment.as_str());
+
+        let mut declarations = Vec::with_capacity(emitted.len());
+        let mut writes: Vec<(VectorKind, String, PathBuf)> = Vec::with_capacity(emitted.len());
+        for (kind, settings, contents, members) in staged {
             let path =
                 match SolidityStringLiteral::try_new(SolidityStringLiteralConstructorParams {
-                    text: relative_path,
+                    text: settings.names.file_name.as_str().to_string(),
                 }) {
                     Ok(path) => path,
                     Err(error) => {
@@ -986,9 +1009,9 @@ where
                 path,
             });
             writes.push((
-                *kind,
+                kind,
                 contents,
-                directory_path.join(settings.names.file_name.as_str()),
+                cell_path.join(settings.names.file_name.as_str()),
             ));
         }
 
@@ -1010,7 +1033,7 @@ where
                 compiler_version: self.settings.compiler_version,
             },
             RenderPayload {
-                library_name: curve_library.constants_library.library_name.clone(),
+                library_name: self.settings.constants_library.library_name.clone(),
                 body: SolidityLibraryBody::Constants(entries),
             },
         );
@@ -1021,15 +1044,15 @@ where
                 compiler_version: self.settings.compiler_version,
             },
             RenderPayload {
-                library_name: curve_library.records_library.library_name.clone(),
+                library_name: self.settings.records_library.library_name.clone(),
                 body: SolidityLibraryBody::Records(declarations),
             },
         );
 
-        if let Err(error) = fs::create_dir_all(&directory_path) {
+        if let Err(error) = fs::create_dir_all(&cell_path) {
             return Err(EmitErrorReturn::Solidity(
                 SolidityGenerateErrorReturn::CreateDirectory {
-                    path: directory_path.clone(),
+                    path: cell_path.clone(),
                     error,
                 },
             ));
@@ -1050,7 +1073,7 @@ where
             });
         }
         let constants_path =
-            directory_path.join(curve_library.constants_library.file_name.as_str());
+            generated_path.join(self.settings.constants_library.file_name.as_str());
         if let Err(error) = fs::write(&constants_path, constants_library.source.as_str()) {
             return Err(EmitErrorReturn::Solidity(
                 SolidityGenerateErrorReturn::WriteFile {
@@ -1063,7 +1086,7 @@ where
             kind: None,
             path: constants_path,
         });
-        let records_path = directory_path.join(curve_library.records_library.file_name.as_str());
+        let records_path = generated_path.join(self.settings.records_library.file_name.as_str());
         if let Err(error) = fs::write(&records_path, records_library.source.as_str()) {
             return Err(EmitErrorReturn::Solidity(
                 SolidityGenerateErrorReturn::WriteFile {

@@ -38,7 +38,7 @@ use random::{
     create_random_source,
 };
 
-use super::super::group_vectors::provides::{
+use super::super::super::factory::provides::{
     VectorCountConstructorParamsOverrides, build_vector_count,
 };
 use super::interface::{

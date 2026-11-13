@@ -7,8 +7,8 @@ use pairing::{IPairingArithmetic, SampleUniformScalarErrorReturn};
 use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 use random::{FillBytesErrorReturn, IRandomSourceAdapter};
 
-use super::super::render::provides::{SolidityMemberName, SolidityMemberNameTryNewErrorReturn};
 use super::super::super::factory::provides::{MsmTermCount, VectorCount};
+use super::super::render::provides::{SolidityMemberName, SolidityMemberNameTryNewErrorReturn};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FirstGroupVectorCounts {

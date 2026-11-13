@@ -7,7 +7,6 @@ use kem::ICredentialKemAdapter;
 use pairing::{IPairingArithmetic, IPairingReference};
 use proof::IDeliveryProofAdapter;
 
-use super::super::solidity::provides::build_msm_term_count;
 use super::create_generate;
 use super::interface::{
     ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload, CreateGenerateErrorReturn,
@@ -19,7 +18,8 @@ use super::mock::{
     VectorKindQuantitiesOverrides, build_create_generate_case_deps,
     build_create_generate_case_params, build_create_generate_case_payload,
     build_create_generate_deps, build_create_generate_params, build_create_generate_payload,
-    build_vector_kind_configuration, build_vector_kind_quantities, run_create_generate_case,
+    build_msm_term_count, build_vector_kind_configuration, build_vector_kind_quantities,
+    run_create_generate_case,
 };
 
 /// Contract: every declared kind named exactly once by the entries, in any

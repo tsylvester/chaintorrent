@@ -5,8 +5,7 @@ pub use super::interface::{
     GeneratedDirectory, GeneratedDirectoryConstructorParams, GeneratedDirectoryTryNewErrorReturn,
     GeneratedDirectoryTryNewReturn, GeneratedFileName, GeneratedFileNameConstructorParams,
     GeneratedFileNameTryNewErrorReturn, GeneratedFileNameTryNewReturn,
-    SOLIDITY_GENERATE_DECLARATION, SolidityCurveDirectories, SolidityCurveLibraries,
-    SolidityCurveLibraryNames, SolidityGenerateErrorReturn, SolidityGenerateSettings,
+    SOLIDITY_GENERATE_DECLARATION, SolidityGenerateErrorReturn, SolidityGenerateSettings,
     SolidityLibraryNames, SolidityVectorKindNames, SolidityVectorKindSettings,
 };
 pub(crate) use super::interface::{SolidityGenerate, SolidityGenerateConstructorParams};

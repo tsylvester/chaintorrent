@@ -30,7 +30,7 @@ use random::{
     IRandomSourceAdapter, build_create_random_source_params, create_random_source,
 };
 
-use super::super::group_vectors::provides::{VectorCount, build_vector_count};
+use super::super::super::factory::provides::{VectorCount, build_vector_count};
 use super::interface::{
     IPossessionVectorsCaseConsumer, PossessionVector, PossessionVectorDescription,
     PossessionVectorDescriptionConstructorParams, PossessionVectorsCaseDeps,

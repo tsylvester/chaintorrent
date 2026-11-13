@@ -80,6 +80,7 @@ pub enum VectorKind {
     Challenge,
     MintProof,
     TransferProof,
+    CellValues,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -165,6 +166,9 @@ pub struct EmittedFile {
 
 #[derive(Debug)]
 pub enum EmitErrorReturn {
+    MissingKindSize {
+        kind: VectorKind,
+    },
     Solidity(SolidityGenerateErrorReturn),
     #[cfg(any(test, feature = "mocks"))]
     Mock(MockIGenerateAdapterEmitErrorReturn),

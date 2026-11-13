@@ -17,7 +17,7 @@ use proof::DeliveryProofDeclaration;
 use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 use random::{FillBytesErrorReturn, IRandomSourceAdapter};
 
-use super::super::group_vectors::provides::VectorCount;
+use super::super::super::factory::provides::VectorCount;
 use super::super::render::provides::{SolidityMemberName, SolidityMemberNameTryNewErrorReturn};
 use crate::delivery::provides::AdmittedKemIdentity;
 

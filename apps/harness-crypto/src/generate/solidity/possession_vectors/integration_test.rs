@@ -24,7 +24,7 @@ use random::{
     build_create_random_source_params,
 };
 
-use super::super::group_vectors::provides::{
+use super::super::super::factory::provides::{
     VectorCount, VectorCountConstructorParamsOverrides, build_vector_count,
 };
 use super::interface::{

@@ -33,8 +33,7 @@ use self::interface::{
     PairingCheckVector, PairingCheckVectorDescription,
     PairingCheckVectorDescriptionConstructorParams, PairingCheckVectorDescriptionTryNewReturn,
     PairingCheckVectorFromFieldsErrorReturn, SecondGroupVectors, VECTOR_RECORD_FIELD_COUNT,
-    VECTOR_RECORD_MEMBER_NAMES, VectorRecordMemberNamesErrorReturn,
-    VectorRecordMemberNamesReturn,
+    VECTOR_RECORD_MEMBER_NAMES, VectorRecordMemberNamesErrorReturn, VectorRecordMemberNamesReturn,
 };
 use super::render::provides::{SolidityMemberName, SolidityMemberNameConstructorParams};
 
