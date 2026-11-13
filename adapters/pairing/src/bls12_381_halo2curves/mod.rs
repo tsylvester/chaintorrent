@@ -69,6 +69,7 @@ fn decode_coordinate(bytes: &[u8]) -> Option<Fq> {
 
 impl Bls12381Halo2curvesPairing {
     pub const DECLARATION: PairingDeclaration = PairingDeclaration {
+        concrete_name: "bls12_381_halo2curves",
         curve: PairingCurve::Bls12381,
         verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups,
         precompile_encoding: PrecompileEncoding::Eip2537,

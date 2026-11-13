@@ -128,6 +128,34 @@ fn create_pairing_admits_the_mock_concrete() {
     assert!(result.is_ok());
 }
 
+/// Contract: given `params.concrete` is `MockShortUniform(Succeeds)`, its declared
+///   precompile encoding is among `params.supported_encodings`, and its declared
+///   target-group encoding equals `params.target_group_encoding`, the factory returns
+///   the success arm.
+/// Arrange: `build_create_pairing_params` with only `concrete` overridden to
+///   `MockShortUniform(MockIPairingAdapterFailureMode::Succeeds)`, so
+///   `supported_encodings` holds the encoding of each concrete and
+///   `target_group_encoding` is `Mock`; deps hold `MockIPairingConsumer` with no override.
+/// Act:     `create_pairing(&deps, params, CreatePairingPayload)`.
+/// Assert:  `result.is_ok()`.
+#[test]
+fn create_pairing_admits_the_mock_short_uniform_concrete() {
+    // Arrange
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
+    let params = build_create_pairing_params(CreatePairingParamsOverrides {
+        concrete: Some(PairingConcrete::MockShortUniform(
+            MockIPairingAdapterFailureMode::Succeeds,
+        )),
+        ..Default::default()
+    });
+
+    // Act
+    let result = create_pairing(&deps, params, CreatePairingPayload);
+
+    // Assert
+    assert!(result.is_ok());
+}
+
 /// Contract: given the `Bn254Arkworks` declared precompile encoding is not in
 ///   `params.supported_encodings`, the factory returns
 ///   `Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding)`.
@@ -260,6 +288,39 @@ fn create_pairing_refuses_the_mock_concrete_whose_encoding_the_chain_does_not_de
     let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Mock(
+            MockIPairingAdapterFailureMode::Succeeds,
+        )),
+        supported_encodings: Some(vec![PrecompileEncoding::Eip196Eip197]),
+        ..Default::default()
+    });
+
+    // Act
+    let result = create_pairing(&deps, params, CreatePairingPayload);
+
+    // Assert
+    assert_eq!(
+        result.err(),
+        Some(CreatePairingErrorReturn::UnsupportedPrecompileEncoding)
+    );
+}
+
+/// Contract: given the `MockShortUniform` declared precompile encoding is not in
+///   `params.supported_encodings`, the factory returns
+///   `Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding)`.
+/// Arrange: `build_create_pairing_params` with `concrete` overridden to
+///   `MockShortUniform(MockIPairingAdapterFailureMode::Succeeds)` and
+///   `supported_encodings` overridden to hold only `Eip196Eip197`, which the variant
+///   does not declare; `target_group_encoding` at the builder's `Mock` default; deps
+///   with no override.
+/// Act:     `create_pairing(&deps, params, CreatePairingPayload)`.
+/// Assert:  `result.err()` is `Some(CreatePairingErrorReturn::UnsupportedPrecompileEncoding)`.
+#[test]
+fn create_pairing_refuses_the_mock_short_uniform_concrete_whose_encoding_the_chain_does_not_deploy()
+{
+    // Arrange
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
+    let params = build_create_pairing_params(CreatePairingParamsOverrides {
+        concrete: Some(PairingConcrete::MockShortUniform(
             MockIPairingAdapterFailureMode::Succeeds,
         )),
         supported_encodings: Some(vec![PrecompileEncoding::Eip196Eip197]),
@@ -429,6 +490,39 @@ fn create_pairing_refuses_the_mock_concrete_whose_target_group_encoding_the_suit
     );
 }
 
+/// Contract: given the `MockShortUniform` declared precompile encoding is in
+///   `params.supported_encodings` and its declared target-group encoding differs from
+///   `params.target_group_encoding`, the factory returns
+///   `Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding)`.
+/// Arrange: `build_create_pairing_params` with `concrete` overridden to
+///   `MockShortUniform(MockIPairingAdapterFailureMode::Succeeds)` and
+///   `target_group_encoding` overridden to `Bn254V1`, which the variant does not
+///   declare; `supported_encodings` at the builder's default; deps with no override.
+/// Act:     `create_pairing(&deps, params, CreatePairingPayload)`.
+/// Assert:  `result.err()` is `Some(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding)`.
+#[test]
+fn create_pairing_refuses_the_mock_short_uniform_concrete_whose_target_group_encoding_the_suite_does_not_require()
+ {
+    // Arrange
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
+    let params = build_create_pairing_params(CreatePairingParamsOverrides {
+        concrete: Some(PairingConcrete::MockShortUniform(
+            MockIPairingAdapterFailureMode::Succeeds,
+        )),
+        target_group_encoding: Some(TargetGroupEncodingIdentifier::Bn254V1),
+        ..Default::default()
+    });
+
+    // Act
+    let result = create_pairing(&deps, params, CreatePairingPayload);
+
+    // Assert
+    assert_eq!(
+        result.err(),
+        Some(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding)
+    );
+}
+
 /// Contract: given both the `Bn254Arkworks` declared precompile encoding is not in
 ///   `params.supported_encodings` and its declared target-group encoding differs from
 ///   `params.target_group_encoding`, the factory returns
@@ -570,6 +664,41 @@ fn create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_
     let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
     let params = build_create_pairing_params(CreatePairingParamsOverrides {
         concrete: Some(PairingConcrete::Mock(
+            MockIPairingAdapterFailureMode::Succeeds,
+        )),
+        supported_encodings: Some(vec![PrecompileEncoding::Eip196Eip197]),
+        target_group_encoding: Some(TargetGroupEncodingIdentifier::Bn254V1),
+    });
+
+    // Act
+    let result = create_pairing(&deps, params, CreatePairingPayload);
+
+    // Assert
+    assert_eq!(
+        result.err(),
+        Some(CreatePairingErrorReturn::UnsupportedPrecompileEncoding)
+    );
+}
+
+/// Contract: given both the `MockShortUniform` declared precompile encoding is not in
+///   `params.supported_encodings` and its declared target-group encoding differs from
+///   `params.target_group_encoding`, the factory returns
+///   `Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding)`, the encoding
+///   admission preceding the target-group admission.
+/// Arrange: `build_create_pairing_params` with `concrete` overridden to
+///   `MockShortUniform(MockIPairingAdapterFailureMode::Succeeds)`,
+///   `supported_encodings` overridden to hold only `Eip196Eip197`, and
+///   `target_group_encoding` overridden to `Bn254V1`, so both admissions fail; deps
+///   with no override.
+/// Act:     `create_pairing(&deps, params, CreatePairingPayload)`.
+/// Assert:  `result.err()` is `Some(CreatePairingErrorReturn::UnsupportedPrecompileEncoding)`.
+#[test]
+fn create_pairing_refuses_the_encoding_before_the_target_group_encoding_for_the_mock_short_uniform_concrete()
+ {
+    // Arrange
+    let deps = build_create_pairing_deps(MockIPairingConsumer, Default::default());
+    let params = build_create_pairing_params(CreatePairingParamsOverrides {
+        concrete: Some(PairingConcrete::MockShortUniform(
             MockIPairingAdapterFailureMode::Succeeds,
         )),
         supported_encodings: Some(vec![PrecompileEncoding::Eip196Eip197]),
