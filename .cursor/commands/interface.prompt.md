@@ -10,7 +10,7 @@ A factory's interface carries its family's mock concrete under the `mocks` featu
 
 A type this interface should own but cannot declare from the node and the files alone is a discovery, not a guess: report it and halt (`docs/agents/discovery-halt.md`). Do not type it inline, do not widen it to `unknown`, and do not mint a union at a use site (`docs/agents/types.md`).
 
-Conforms to: `docs/agents/composition.md`, `docs/agents/types.md`, `docs/agents/errors-and-returns.md`, `docs/agents/dependency-injection.md`.
+Conforms to: `docs/agents/composition.md`, `docs/agents/types.md`, `docs/agents/errors-and-returns.md`, `docs/agents/dependency-injection.md`, `docs/agents/families.md`.
 
 Do only the interface. Follow `docs/agents/loop.md`, `docs/agents/scope.md`, and `docs/agents/precedence.md`.
 

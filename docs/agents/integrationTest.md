@@ -27,6 +27,10 @@ In Rust the `Contract` of every block transcribes one entry of the node's `inter
 
 A block run over a family's declared set varies configuration only through the overrides of the factory params' builder, which carry the family's configuration (see [composition](composition.md#configuration-follows-ownership-rust)). Each member's selection, and any family-level value the member's declaration determines, come from the family's declared-selection builders at their defaults (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)). A concrete's own configuration is never varied in such a block; it is varied in that concrete's node, where the concrete is the subject. Where the subject composes more than one family, the block runs the subject's case runner once per member, its case params built from those selections, and a value a level determines is produced by the runner, never chosen per member by the block (see [mocks](mocks.md#the-case-runner--composing-families-for-a-subject-rust)).
 
+### Configuration over the declared set (TypeScript)
+
+A block run over a family's declared set calls the factory once per identifier in the declared set, with that member's selection from the declared-selection builder, and writes its body once (see [mocks](mocks.md#families--the-typescript-form)). A member's settings are never varied in such a block; they are varied in that member's node, where the member is the subject.
+
 <a id="integration-private"></a>
 ## Private integration test (Rust)
 

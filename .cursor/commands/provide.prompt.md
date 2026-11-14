@@ -10,7 +10,7 @@ Export the public surface — interfaces, guards, functions, mocks — so a cons
 
 Close with the enumeration: every internal file, and its `export *` line or the reason it has none (`docs/agents/scope.md`, the coverage canary). The canary counts files here, never symbols — a per-symbol list would satisfy it while reintroducing exactly the churn the star export exists to prevent.
 
-Conforms to: `docs/agents/boundaries.md`.
+Conforms to: `docs/agents/boundaries.md`, `docs/agents/families.md`.
 
 Do only the provides file. Follow `docs/agents/loop.md`, `docs/agents/scope.md`, and `docs/agents/precedence.md`.
 

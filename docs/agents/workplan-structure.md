@@ -185,6 +185,7 @@ The author does the thinking so the implementer does not. Every node must be gro
 | A dead error branch in a mock's no-failure path | The conversion uses `expect` naming its invariant, and the mock carries no variant for it |
 | A mock step that reaches a mock concrete's constant by choosing a type for its type parameter, or that adds the parameter to a builder not generic in it | The constant is declared once on an item with no type parameter, which the impl's associated item names and the builder reads (see [composition](composition.md#type-parameters-follow-dependency-rust), [mocks](mocks.md#fields-with-no-default-rust)) |
 | A test element that has each block declare the nested consumers of several families, or a mock element that omits the case runner the subject's deps require | The interface element declares the case runner's types, the mock element provides its builders, levels, and runner, and each block declares one case consumer (see [mocks](mocks.md#the-case-runner--composing-families-for-a-subject-rust)) |
+| A node outside a family that names one of its concretes, builds its selection, admits its settings, or states a member's declared value | The node consumes the family through its factory, consumer surface, declaration lookup, selection admission, or composition admission, and its `deps` element names that surface (see [families](families.md)) |
 | A params field, case-params field, or test value supplying a value a received type or adapter determines | The level that receives the type or adapter reads the value and hands it inward (see [composition](composition.md#nested-calls-build-their-inputs-from-what-they-receive-rust)) |
 | Revising a line of a completed node and leaving it, or any line above it, `[✅]` while the work is left for another implementer | The revised line and every line above it, up to the node's top-level line, are `[ ]`, so the implementer diffs the node against the files on disk and does what is unmet |
 | Reopening a node's lines, correcting the files in the same assignment, and closing the lines again | The lines keep their status through the assignment; only lines the files still do not meet when the assignment halts are reopened (see [Handling the workplan](#handling-the-workplan)) |
@@ -200,6 +201,7 @@ The groups are numbered `## N. Title` for teaching only. An **actual node omits 
 ```
   ## 1. Intent & Position
   * `[ ]`   `objective`
+    * Conforms to: families
     * `[ ]`   Define the *problem being solved* (not the solution)
     * `[ ]`   Separate functional goals (what must happen) from non-functional constraints
     * `[ ]`   Each goal is atomic and testable
@@ -211,7 +213,7 @@ The groups are numbered `## N. Title` for teaching only. An **actual node omits 
     * `[ ]`   Define the bounded context; what concepts/data belong inside vs outside
 
   ## 2. Dependencies & Injection
-  * Conforms to: dependency-injection, boundaries
+  * Conforms to: dependency-injection, boundaries, families
   * `[ ]`   `deps`
     * `[ ]`   For each dependency: provider, layer, direction (why allowed), purpose
     * `[ ]`   Confirm no reverse dependencies and no lateral layer violations
@@ -224,7 +226,7 @@ The groups are numbered `## N. Title` for teaching only. An **actual node omits 
     * `[ ]`   Prove this function's contract for this work: type membership, return-union arms and flavors, invariants
 
   ## 4. Structural Boundary (Shape)
-  * Conforms to: composition, types, errors-and-returns, dependency-injection
+  * Conforms to: composition, types, errors-and-returns, dependency-injection, families
   * `[ ]`   `[function].interface.ts`
     * `[ ]`   Declare this function's signature: deps, params, payload, and the Success | Error return union
     * `[ ]`   In Rust, where the function's deps hold the types of more than one family, declare its case runner's types
@@ -236,7 +238,7 @@ The groups are numbered `## N. Title` for teaching only. An **actual node omits 
     * `[ ]`   In Rust, declare the integration elements — own entries, callee dispositions with routes, private surface, and public surface where the boundary is a public entry
 
   ## 6. Simulation
-  * Conforms to: mocks
+  * Conforms to: mocks, families
   * `[ ]`   `[function].mock.ts`
     * `[ ]`   Provide the builders, invalidators, and function mocks this interface owns (before the guard test consumes them)
     * `[ ]`   In Rust, where the function's deps hold the types of more than one family, provide its case runner: the builders of its types, one level per family, and the runner
@@ -262,7 +264,7 @@ The groups are numbered `## N. Title` for teaching only. An **actual node omits 
     * `[ ]`   Factory/constructor entrypoints; required deps at creation; no partially constructed instances
 
   ## 10. Implementation
-  * Conforms to: composition, dependency-injection, types, errors-and-returns, guards, logging
+  * Conforms to: composition, dependency-injection, types, errors-and-returns, guards, logging, families
   * `[ ]`   `[function].ts`
     * `[ ]`   Implement the behavior from requirements and the interaction spec
     * `[ ]`   Introduce no undeclared dependencies; bypass no guards or contracts
@@ -273,7 +275,7 @@ The groups are numbered `## N. Title` for teaching only. An **actual node omits 
     * `[ ]`   Prove each entry the spec's private surface lists over the real in-crate chain; mock only the outer-edge collaborators it names
 
   ## 12. External Boundary
-  * Conforms to: boundaries
+  * Conforms to: boundaries, families
   * `[ ]`   `[function].provides.ts`
     * `[ ]`   Export the public surface: interfaces, guards, functions, mocks
 

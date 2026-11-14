@@ -20,4 +20,6 @@ Run every check below. For each, give its enumeration, then its findings.
 
 **External surface.** Whether the node's boundary is a public entry, from the crate barrel the node states. If it is, every outcome an outside caller can observe through the public surface and the official mocks, each paired with the public block that proves it. An observable outcome with no block is a finding.
 
+**Families.** Every family the node consumes, paired with the surface its `deps` element names for it. Every concrete's name, type, constant, constructor, or setting the node states outside that concrete's family. What a further concrete in each family the node consumes or belongs to would change, against the measure `docs/agents/families.md` states. A family with no named surface, a concrete named outside its family, or a change beyond the measure is a finding.
+
 Report each finding with its location, the quoted source or topic it fails, its nature, its severity, and the change that brings the node into compliance. Then halt. State the node complete, correct, and compliant only when every enumeration is complete and no check has a finding.

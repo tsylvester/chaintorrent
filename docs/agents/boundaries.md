@@ -40,7 +40,7 @@ pub use super::interface::*;
 pub use super::mock::*;
 ```
 
-A module's `provides` re-exports each internal file and each child module's `provides` whole. A named, crate-visible line carries only a family concrete's items that a consumer in the crate imports.
+A module's `provides` re-exports each internal file and each child module's `provides` whole. A family module re-exports its factory's and its family-owned functions' `provides` and never a concrete's; how a family keeps its concretes unreachable is owned by [families](families.md#concretes-are-unreachable-outside-their-family).
 
 The mock is part of the public surface on purpose: a consumer's tests import the module's official mock rather than hand-rolling a test double (see [mocks](mocks.md)); a family's mock concrete is reached through the family's factory (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust)).
 

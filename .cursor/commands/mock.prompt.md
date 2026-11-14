@@ -12,7 +12,7 @@ For each owned object type: the overrides type, builder, corruptions type, and i
 
 Close with the enumeration: every symbol the interface exports, and each one's disposition — the symbols you wrote, and the ones the procedure resolved to nothing. A mock file covering fewer owned symbols than the interface exports is incomplete (`docs/agents/scope.md`, the coverage canary).
 
-Conforms to: `docs/agents/mocks.md`, `docs/agents/tdd-ordering.md`.
+Conforms to: `docs/agents/mocks.md`, `docs/agents/tdd-ordering.md`, `docs/agents/families.md`.
 
 Do only the mock. Follow `docs/agents/loop.md`, `docs/agents/scope.md`, and `docs/agents/precedence.md`.
 

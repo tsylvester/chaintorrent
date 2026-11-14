@@ -38,7 +38,7 @@ The general rule and its outcomes are owned by [tdd-ordering](tdd-ordering.md#se
 
 - **Builder** — it returns the production type. `SomeType` in the return position is the invariant, whatever the function is called and wherever it lives.
 - **Function mock** — it *is* the production function type, so its type annotation is the invariant: a value declared `: SomeFn`.
-- **Family mock concrete** — it is the member the family's selection carries under the `mocks` feature (see [Families](#families--the-mock-is-a-concrete-of-the-family-rust)). Read the selection, never a name.
+- **Family mock concrete** — in Rust it is the member the family's selection carries under the `mocks` feature (see [Families](#families--the-mock-is-a-concrete-of-the-family-rust)); read the selection, never a name. In TypeScript it is the builder returning the family's interface type in the factory module's mock file (see [Families — the TypeScript form](#families--the-typescript-form)); the return type is the invariant.
 - **Invalidator** — it returns `unknown` by mandate, so **its signature ties it to nothing**. There is no invariant to search on. Find the builder first, then read the file the builder turned out to live in — and do not assume that file is beside the interface, or that it holds an invalidator at all.
 
 An invalidator that does not exist is the found-but-missing outcome in [tdd-ordering](tdd-ordering.md#outcomes-of-the-search), not the not-found outcome: the mock file exists and is missing a symbol, which is another file's edit and so a discovery. Do not write the invalidator into a foreign mock file, and do not substitute a cast or a hand-rolled malformed object for the one that is missing.
@@ -55,7 +55,7 @@ For each symbol the interface owns, ask what it is:
 - An **enum, primitive/string-literal alias, or constant** → nothing. It is used directly by its production value or type.
 - A family's **selection enum whose variants carry configuration a constant cannot hold** → the [declared-selection builder](#families--the-mock-is-a-concrete-of-the-family-rust), the one exception to the enum rule above.
 - A **guard** → nothing here; guards are their own element (see [guards](guards.md)).
-- A **class** → never mocked as a class. It decomposes by who constructs it: injected → mock the interface it implements, as an object type; constructed by the code itself → a builder returning a real instance, plus the object-type symbols on its constructor-params type (see [Classes](#classes--decompose-never-mock-the-class)). In Rust a trait a factory selects concretes for takes the [family form](#families--the-mock-is-a-concrete-of-the-family-rust).
+- A **class** → never mocked as a class. It decomposes by who constructs it: injected → mock the interface it implements, as an object type; constructed by the code itself → a builder returning a real instance, plus the object-type symbols on its constructor-params type (see [Classes](#classes--decompose-never-mock-the-class)). In Rust a trait a factory selects concretes for takes the [family form](#families--the-mock-is-a-concrete-of-the-family-rust); in TypeScript a family's interface takes the [TypeScript family form](#families--the-typescript-form).
 - A **function whose return carries a consumer's type** → a function mock in the [consumer-invoking form](#a-return-that-carries-the-consumers-type-rust).
 - A **subject whose deps hold the types of more than one family** → the [case runner](#the-case-runner--composing-families-for-a-subject-rust): its types in the subject's interface, its builders, levels, and runner here.
 
@@ -277,7 +277,7 @@ Runtime type safety is never bypassed anywhere, **including the invalidator**. I
 
 ## Function mocks — the production function, nothing else
 
-`mockFunctionName` **is** an implementation of `FunctionName`: identical signature, identical return type, zero extra parameters. It returns built defaults; where its return carries a consumer's type, it returns the built success return around the consumer's output (see [A return that carries the consumer's type](#a-return-that-carries-the-consumers-type-rust)).
+`mockFunctionName` **is** an implementation of `FunctionName`: identical signature, identical return type, zero extra parameters. It returns built defaults; where its return carries a consumer's type, it returns the built success return around the consumer's output (see [A return that carries the consumer's type](#a-return-that-carries-the-consumers-type-rust)). A family method's function mock computes the contract's outcomes from its inputs instead (see [Families — the TypeScript form](#families--the-typescript-form)).
 
 ```ts
 export const mockFunctionName: FunctionName = async (deps, params, payload) => {
@@ -445,11 +445,15 @@ spreading a class instance in a builder or invalidator (`{ ...instance, ...overr
 
 ## Families — the mock is a concrete of the family (Rust)
 
-A family is a factory module that owns a trait and selects its concrete from configuration. Its mock is a concrete of that family, and a test reaches it the way every caller reaches every concrete: through the factory, selected by configuration, admitted by its declaration, received as the family's trait. A test names no concrete but its own subject. Configuration that names a failure mode, and the whole-error assertion of what that failure mode returns, name the failure mode, not the mock concrete.
+What a family is, what it owns, and how every caller reaches its concretes are owned by [families](families.md). A family's mock is a concrete of that family, and a test reaches it the way every caller reaches every concrete (see [families](families.md#the-rule)). A test names no concrete but its own subject. Configuration that names a failure mode, and the whole-error assertion of what that failure mode returns, name the failure mode, not the mock concrete.
 
 The mock concrete, `MockI<Trait>` after the trait it implements, lives in the factory module's mock file. Under the `mocks` feature the family's selection and the factory's selection branch carry it beside the real concretes, and the error union of a method carries its error variant where a failure mode of that method returns the mock concrete's own error. The declared set holds the real concretes alone, so a consumer or an integration test that runs over the declared set never reaches it. Its type is crate-visible; the public surface carries the configuration that selects it.
 
-A family whose selection's variants carry configuration that a constant cannot hold declares its set by identifier, and its factory module's mock file holds the family's **declared-selection builders**. The selection's builder takes the identifier of a member of the declared set as its leading parameter and a fieldless overrides struct, and returns the selection that names that concrete with the concrete's own configuration at its default, from the concrete's own builder. A companion builder takes the same leading parameter and returns a family-level value the selected concrete's declaration determines, such as one configuration entry per kind the declaration names at default quantities. Each is an exhaustive `match` on the identifier, so a further concrete adds an arm, and they are the one mock location that names each real concrete. It carries no override into a concrete's configuration: a test varies the family's configuration through the factory params' builder, and a concrete's own configuration only in that concrete's node (see [composition](composition.md#configuration-follows-ownership-rust), [integrationTest](integrationTest.md#configuration-over-the-declared-set-rust)).
+A family whose selection's variants carry configuration that a constant cannot hold declares its set by identifier, and its factory module's mock file holds the family's **declared-selection builders**. The selection's builder takes the identifier of a member of the declared set as its leading parameter and a fieldless overrides struct, and returns the selection that names that concrete with the concrete's own configuration at its default, from the concrete's own builder. A companion builder takes the same leading parameter and returns a family-level value the selected concrete's declaration determines, such as one configuration entry per kind the declaration names at default quantities.
+
+Each declared-selection builder is an exhaustive `match` on the identifier, so a further concrete adds an arm, and they are the one mock location that names each real concrete. Their production counterpart is the family's selection admission (see [families](families.md#selecting-a-concrete-from-configuration)).
+
+A declared-selection builder carries no override into a concrete's configuration: a test varies the family's configuration through the factory params' builder, and a concrete's own configuration only in that concrete's node (see [composition](composition.md#configuration-follows-ownership-rust), [integrationTest](integrationTest.md#configuration-over-the-declared-set-rust)).
 
 It is self-contained. Its declaration, associated types, and error variant are its own; it never takes a concrete as a type parameter, wraps or delegates to a concrete, or borrows a concrete's declaration, associated types, or errors. A failure a contract entry states as the family's, reached by an input or by a failure mode, it returns as the family's flavor, as every concrete does (see [errors-and-returns](errors-and-returns.md#a-familys-errors)); its error variant carries only the errors of failure modes that stand for a concrete's own error.
 
@@ -537,6 +541,41 @@ Nothing at any level is assembled by hand, so every input at every level is reac
 **It hands every block what it uses.** The case consumer receives the union, over every test element of the module, of the adapters and produced values a block uses: the subject's deps, and every adapter a block uses to build its expected values. The author derives the union from the interaction spec's branches and integration entries, so no block needs an adapter the runner does not hand.
 
 **The block's side.** A block declares one consumer implementing the case consumer trait. It holds only the block's arrangement, and its method makes the block's single call to the subject; where the subject's return names no received type the method returns it whole as its output and the block asserts on it, and where it does the method asserts in place and its output is `()`. The block calls the runner over the case deps' builder with its consumer, the case params' builder, and the case payload's builder. A selection — a failure mode, a scope — varies only through the case params' overrides. A block run over a declared set builds the case params for each member from the declared-selection builders and calls the runner once per member.
+
+## Families — the TypeScript form
+
+TypeScript has no compile-time feature that keeps a mock member out of a production type, and the family's interface type erases the concrete, so a TypeScript caller receives a concrete as the family's interface itself: the composition root calls the factory with configuration and injects the adapter it returns, typed by the family's interface (see [families](families.md#reading-a-declaration-before-construction)). A family's mock is therefore its interface, mocked as an injected interface (see [Injected at the composition root](#injected-at-the-composition-root--mock-the-interface-never-the-class)): the factory module's mock file holds the interface's builder, each method defaulting to that file's function mock for the method. The selection carries no mock member, and the declared set holds the real concretes alone.
+
+- **It answers the family's contract.** A family method's function mock computes from its inputs the outcomes the factory's contract entries state, a working simplified implementation, and returns the family's flavor where an entry states the failure as the family's; it never returns a constant an entry would reject. A consumer test that passes against it holds for every member of the declared set.
+- **An arm no input reaches.** An outer-edge failure is reached by the test overriding that method, through the interface builder's overrides, with its own production-typed function composed from builders (see [Function mocks](#function-mocks--the-production-function-nothing-else)), returning the error the contract entry states.
+- **A subject that calls the factory.** The composition root receives the factory's function mock, which returns the built success return around the interface's builder at its defaults.
+- **The declared set.** The factory module's mock file holds the family's declared-selection builder, named for the selection it returns and taking a member's identifier: an exhaustive `switch` returning the selection that names that member with its settings at their default, from the member's own settings builder. It carries no override into a member's settings. A block run over the declared set takes each member's selection from it (see [integrationTest](integrationTest.md#configuration-over-the-declared-set-typescript)).
+- **A test names no concrete but its own subject.** It receives a family's adapter only from the interface's builder or from the factory over the declared set.
+
+```ts
+// myFamily/factory/factory.mock.ts
+export type IMyAdapterOverrides = Partial<IMyAdapter>;
+
+export function buildIMyAdapter(overrides?: IMyAdapterOverrides): IMyAdapter {
+  const base: IMyAdapter = {
+    myMethod: mockIMyAdapterMyMethod,   // computes the contract's outcomes from its inputs
+  };
+  return overrides ? { ...base, ...overrides } : base;
+}
+
+export const mockCreateMyAdapter: CreateMyAdapterFn = (deps, params, payload) => {
+  return buildCreateMyAdapterSuccessReturn({ adapter: buildIMyAdapter() });
+};
+
+export function buildMyFamilySelection(identifier: MyFamilyIdentifier): MyFamilySelection {
+  switch (identifier) {
+    case "myConcrete":
+      return { identifier: "myConcrete", settings: buildMyConcreteSettings() };
+    case "otherConcrete":
+      return { identifier: "otherConcrete", settings: buildOtherConcreteSettings() };
+  }
+}
+```
 
 ## Litmus
 
