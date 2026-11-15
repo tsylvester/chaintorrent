@@ -237,9 +237,13 @@ A concrete whose behavior includes a component outside the codebase's language �
 
 A test reaches a family's members as production code does, names no concrete but its own subject, and runs over the declared set; how is owned by [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust), [mocks](mocks.md#families--the-typescript-form), and [integrationTest](integrationTest.md#configuration-over-the-declared-set-rust).
 
+## A further concrete extends its family
+
+A family location is complete when it covers every concrete that exists. Each concrete's node is followed, in dependency order, by an increment node for each family location the measure lists, which adds that concrete to the location. A family location never names a concrete before that concrete's node, and is never left without the increment that adds it. Every file other than a family location is written once, complete, in its one node.
+
 ## Ownership at the first consumer
 
-A family, a family-owned function, and every value a family owns are authored once, complete, in the node for their first consumer (see [workplan-structure](workplan-structure.md#node-constructions--wrong-vs-right)). Where that consumer precedes the family's concretes in the work breakdown, the family's nodes are inserted ahead of it. No module holds a family's value for a later node to take over.
+A family, a family-owned function, and every value a family owns are [authored once, complete](#a-further-concrete-extends-its-family), in the node for their first consumer (see [workplan-structure](workplan-structure.md#node-constructions--wrong-vs-right)). Where that consumer precedes the family's concretes in the work breakdown, the family's nodes are inserted ahead of it. No module holds a family's value for a later node to take over.
 
 ## Canary
 
@@ -257,4 +261,4 @@ Each of these is a discovery: report, propose the node, and halt (see [discovery
 
 ## Precedence
 
-This topic outranks the workplan. A node step that names a concrete outside its family, builds a selection outside the family's selection admission, carries a concrete's settings in a shared table or as a literal outside its declaration, restates a member's declared value from knowledge of the member, takes a value a member's declaration fixes from configuration, puts a member's own model on the family's surface, branches on a concrete's error variant outside the family, constructs a member or causes a side effect before the composition admits it, or re-exports a concrete beyond its family is defective — comply with this topic and report the discrepancy.
+This topic outranks the workplan. A node step that names a concrete outside its family, names a concrete outside its family in place of a family location's increment, builds a selection outside the family's selection admission, carries a concrete's settings in a shared table or as a literal outside its declaration, restates a member's declared value from knowledge of the member, takes a value a member's declaration fixes from configuration, puts a member's own model on the family's surface, branches on a concrete's error variant outside the family, constructs a member or causes a side effect before the composition admits it, or re-exports a concrete beyond its family is defective — comply with this topic and report the discrepancy.

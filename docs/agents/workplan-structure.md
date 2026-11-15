@@ -23,7 +23,7 @@ Cited by: construction view (the workplan author builds nodes) and, for handling
 
 - A top-level node addresses exactly **one source file** and its entire support system — its interface, interface test, mock, guard test, guard, tests, provides, and integration tests, to the extent the work requires them. This is inviolate.
 - One source file per node. You cannot add a second source file "for one small edit." `function1.ts` and `function2.ts` are different nodes.
-- All changes to a source file and its support live in **that file's one node**. Do not split a single source file across multiple nodes, and do not create multiple sequential nodes that edit the same set of files.
+- All changes to a source file and its support live in **that file's one node**. Do not split a single source file across multiple nodes, and do not create multiple sequential nodes that edit the same set of files, except a family location's increment (see [families](families.md#a-further-concrete-extends-its-family)).
 - Files that have no types and no tests (e.g. a database migration) are the only ones exempt from the full support-file structure.
 
 A node names **elements**, not the symbols inside them. That is not an omission to be corrected by longer nodes — the symbols are a fact on disk, read from the interface's export surface, and a node that tries to enumerate them dates the moment the interface changes. What the node owes is the boundary; what the standards owe is completeness within it (see [scope](scope.md)).

@@ -456,14 +456,14 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   A generator failure is returned as `FillBytesErrorReturn::OperatingSystem` holding `OsRandomSourceFillBytesErrorReturn::OperatingSystem` with the `getrandom::Error` unchanged, fixed by the error arm's type; the failure branch has no unit test, since the operating system's generator cannot be driven to fail from a test and the vendor is not mocked
     * `[✅]`   Code outside `adapters/random` naming `OsRandomSource` or anything under `os` fails to compile; the crate's public surface is the `factory` module's `provides`
 
-* `[✅]`   `random/factory` **Randomness factory constructing the concrete a configuration names and returning it behind the family's trait, which reports its declaration; carries the family's integration test and the grouping's commit**
+* `[ ]`   `random/factory` **Randomness factory constructing the concrete a configuration names and returning it behind the family's trait, which reports its declaration; carries the family's integration test and the grouping's commit**
 
-  * `[✅]`   `objective`
+  * `[ ]`   `objective`
     * `[✅]`   Problem: a consumer obtains a randomness source only through the family's generic surface, never by naming a concrete, and the composition reads what was constructed from its declaration (CR-05; Composition Boundary)
     * `[✅]`   Functional: given a requested `RandomSourceKind`, the factory constructs the matching concrete and returns it as `Box<dyn IRandomSourceAdapter>` together with that concrete's declaration
     * `[✅]`   Functional: a concrete's constructor error is returned unchanged in the factory's error arm, one variant per concrete
     * `[✅]`   Functional: a source obtained from the factory draws the requested number of random bytes through the family's trait
-    * `[✅]`   Non-functional: adding a concrete is its module, its variant in the family's error enums, and its branch here; no consumer changes
+    * `[ ]`   Non-functional: adding a concrete is its module, its variant in `RandomSourceKind` and in the family's error enums, its entry in `RANDOM_SOURCE_KINDS`, and its branch here; no consumer changes
 
   * `[✅]`   `role`
     * `[✅]`   Adapter family factory: the implementation of the `factory` module, which is the randomness family's construction point and the crate's public surface
@@ -472,8 +472,8 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Does not draw bytes; drawing is the concrete's
     * `[✅]`   Carries the family's integration test and the commit for the workspace and discipline bootstrap milestone
 
-  * `[✅]`   `module`
-    * `[✅]`   Bounded context: the `factory` module of `adapters/random`, holding the factory function, its deps, params, payload, and return types, its signature type, its function mock and builders, and the crate's integration test under `adapters/random/tests`
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the `factory` module of `adapters/random`, holding the factory function, its deps, params, payload, and return types, its signature type, the family's declared set, its function mock and builders, and the crate's integration test under `adapters/random/tests`
     * `[✅]`   Outside: every concrete's behavior, the decoding of configuration, and every consumer of the family
 
   * `[✅]`   `deps`
@@ -486,7 +486,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `context_slice`
     * `[✅]`   From `os`: `OsRandomSource::try_new(OsRandomSourceConstructorParams) -> Result<OsRandomSource, Infallible>`, the inherent constant `OsRandomSource::DECLARATION: RandomSourceDeclaration`, and `OsRandomSource`'s implementation of `IRandomSourceAdapter`
 
-  * `[✅]`   `adapters/random/src/factory/interface.rs`
+  * `[ ]`   `adapters/random/src/factory/interface.rs`
     * `[✅]`   `CreateRandomSourceDeps`, the fieldless struct `pub struct CreateRandomSourceDeps;`
     * `[✅]`   `CreateRandomSourceParams`, a struct with `pub kind: RandomSourceKind`, the selection of the concrete to construct
     * `[✅]`   `CreateRandomSourcePayload`, the fieldless struct `pub struct CreateRandomSourcePayload;`, since the factory operates on no data
@@ -494,6 +494,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `CreateRandomSourceErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]`, which `Infallible` satisfies, and the variant `OperatingSystem(Infallible)`, the operating-system concrete's constructor error carried unchanged, and, under `#[cfg(any(test, feature = "mocks"))]`, the variant `MockIRandomSourceAdapter(Infallible)`, the mock concrete's constructor error carried unchanged; each concrete's constructor error is its own variant
     * `[✅]`   `CreateRandomSourceReturn`, the type alias `Result<CreateRandomSourceSuccessReturn, CreateRandomSourceErrorReturn>`
     * `[✅]`   `CreateRandomSourceFn`, the type alias `fn(&CreateRandomSourceDeps, CreateRandomSourceParams, CreateRandomSourcePayload) -> CreateRandomSourceReturn`
+    * `[ ]`   `RANDOM_SOURCE_KINDS`, the constant `pub const RANDOM_SOURCE_KINDS: &[RandomSourceKind] = &[RandomSourceKind::OperatingSystem];`, the family's declared set of real kinds; it never holds the mock selection
     * `[✅]`   Adds the import of `core::convert::Infallible`; every item `random/os` authored in this file is unchanged
 
   * `[✅]`   `adapters/random/src/factory/interaction.spec.md`
@@ -509,14 +510,14 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `CreateRandomSourceDepsOverrides` and `CreateRandomSourcePayloadOverrides`, each the fieldless unit struct with `#[derive(Default)]`; `build_create_random_source_deps(_overrides: CreateRandomSourceDepsOverrides) -> CreateRandomSourceDeps` and `build_create_random_source_payload(_overrides: CreateRandomSourcePayloadOverrides) -> CreateRandomSourcePayload`, each returning its production value, with no corruptions and no invalidator
     * `[✅]`   No builder for the enum `CreateRandomSourceErrorReturn`, used by its production value; every symbol `random/os` authored in this file is unchanged
 
-  * `[✅]`   `adapters/random/src/factory/test.rs`
-    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`; imports `create_random_source`, `build_create_random_source_deps`, `build_create_random_source_payload`, `CreateRandomSourceParamsOverrides`, `build_create_random_source_params`, `MockIRandomSourceAdapterFailureMode`, `RandomSourceKind`, and `RANDOM_SOURCE_INTERFACE_VERSION` from `super::provides`
-    * `[✅]`   `create_random_source_returns_the_operating_system_source_for_its_kind`
-      * `[✅]`   Contract: `params.kind` is `RandomSourceKind::OperatingSystem` → `Ok(CreateRandomSourceSuccessReturn { adapter })` holding the operating-system concrete, which reports `OsRandomSource::DECLARATION` through `declaration()`
-      * `[✅]`   Collaborators: `OsRandomSource::try_new`, the concrete the factory constructs, runs for real; fixtures `build_create_random_source_params`, `build_create_random_source_deps`, and `build_create_random_source_payload`
-      * `[✅]`   Arrange: `build_create_random_source_params` with the kind override set to `RandomSourceKind::OperatingSystem`
-      * `[✅]`   Act: `create_random_source(&build_create_random_source_deps(Default::default()), params, build_create_random_source_payload(Default::default()))`
-      * `[✅]`   Assert: the success arm is extracted with `expect`; `adapter.declaration()` has `source` matching `RandomSourceKind::OperatingSystem` under `matches!`, `adapter_version` equal to the literal 1 written in the assertion, and `interface_version` equal to `RANDOM_SOURCE_INTERFACE_VERSION`
+  * `[ ]`   `adapters/random/src/factory/test.rs`
+    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`; imports `create_random_source`, `build_create_random_source_deps`, `build_create_random_source_payload`, `CreateRandomSourceParamsOverrides`, `build_create_random_source_params`, `MockIRandomSourceAdapterFailureMode`, `RandomSourceKind`, `RANDOM_SOURCE_KINDS`, and `RANDOM_SOURCE_INTERFACE_VERSION` from `super::provides`
+    * `[ ]`   `every_member_of_the_declared_set_returns_the_concrete_its_kind_names`
+      * `[ ]`   Contract: `create_random_source` is called once per `kind` of `RANDOM_SOURCE_KINDS` with `params.kind` that `kind` → each call returns `Ok(CreateRandomSourceSuccessReturn { adapter })` holding the concrete `kind` names, which reports `kind` as its declaration's `source`
+      * `[ ]`   Collaborators: the `try_new` of the concrete each member names, which the factory constructs, runs for real; fixtures `build_create_random_source_params`, `build_create_random_source_deps`, and `build_create_random_source_payload`
+      * `[ ]`   Arrange: the block's body written once and run over each `kind` of `RANDOM_SOURCE_KINDS`, `build_create_random_source_params` with the kind override set to the member
+      * `[ ]`   Act: `create_random_source(&build_create_random_source_deps(Default::default()), params, build_create_random_source_payload(Default::default()))`
+      * `[ ]`   Assert: each success arm is extracted with `expect`; `adapter.declaration().source` equals the member's `kind`; `adapter_version` equals the member's declared adapter version, the literal 1 written in the assertion for the operating-system member; `interface_version` equals `RANDOM_SOURCE_INTERFACE_VERSION`
     * `[✅]`   `create_random_source_returns_the_mock_source_carrying_the_failure_mode_its_kind_names`
       * `[✅]`   Contract: `params.kind` is `RandomSourceKind::Mock(mode)` → `Ok(CreateRandomSourceSuccessReturn { adapter })` holding the mock concrete, whose declaration's `source` is `RandomSourceKind::Mock(mode)`
       * `[✅]`   Collaborators: `MockIRandomSourceAdapter::try_new`, the concrete the factory constructs, runs for real; fixtures `build_create_random_source_params`, `build_create_random_source_deps`, and `build_create_random_source_payload`
@@ -533,41 +534,41 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Imports `OsRandomSource` and `OsRandomSourceConstructorParams` from `crate::os::provides`, under the same `cfg` `MockIRandomSourceAdapter` and `MockIRandomSourceAdapterConstructorParams` from `crate::factory::mock`, and this module's types from `interface`
     * `[✅]`   No other item; no `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
-  * `[✅]`   `adapters/random/src/factory/provides.rs`
-    * `[✅]`   Adds `pub use super::create_random_source;` to the re-exports `random/os` authored
+  * `[ ]`   `adapters/random/src/factory/provides.rs`
+    * `[ ]`   Adds `pub use super::create_random_source;` and `RANDOM_SOURCE_KINDS` to the re-exports `random/os` authored
 
-  * `[✅]`   `adapters/random/tests/integration_test.rs`
-    * `[✅]`   Outside the crate, so it reaches only the crate's public surface: module-level `#![allow(clippy::expect_used)]`; imports from the `random` crate `create_random_source`, `build_create_random_source_deps`, `build_create_random_source_payload`, `CreateRandomSourceParamsOverrides`, `build_create_random_source_params`, `FillBytesParams`, `FillBytesPayloadOverrides`, `build_fill_bytes_payload`, `RandomSourceKind`, and `RANDOM_SOURCE_INTERFACE_VERSION`, and `HashSet` from `std::collections`
-    * `[✅]`   `a_source_from_the_factory_draws_random_bytes_through_the_family_trait`
-      * `[✅]`   Contract: a source obtained from `create_random_source` for `RandomSourceKind::OperatingSystem` draws the requested number of bytes through `fill_bytes`, and the draw is filled by the operating system's generator
-      * `[✅]`   Boundary: the crate's public surface; the real chain `create_random_source` → `OsRandomSource::try_new` → `OsRandomSource::fill_bytes` → `getrandom::fill`
-      * `[✅]`   Mocked: nothing; the operating system's generator is the outer edge and runs real, so this test proves the generator's output reaches the caller and does not prove the generator's quality
-      * `[✅]`   Arrange: the adapter returned by `create_random_source` with `build_create_random_source_params` carrying the kind override `RandomSourceKind::OperatingSystem`, and `build_create_random_source_deps(Default::default())` and `build_create_random_source_payload(Default::default())` as its deps and payload; `build_fill_bytes_payload` with the length override set to 1024, which splits into segments of 32 bytes and differs from the builder's default of 32
-      * `[✅]`   Act: `fill_bytes(FillBytesParams, payload)` on the returned adapter
-      * `[✅]`   Assert: the success arm is extracted with `expect`; the length of `bytes.expose()` equals the literal 1024 written in the assertion; the 32-byte segments of `bytes.expose()` collected into a `HashSet` number the literal 32 written in the assertion
-    * `[✅]`   `a_source_from_the_factory_draws_an_empty_buffer_for_a_zero_length`
-      * `[✅]`   Contract: a source obtained from `create_random_source` for `RandomSourceKind::OperatingSystem` draws zero bytes for a `payload.length` of zero through `fill_bytes`
-      * `[✅]`   Boundary: the crate's public surface; the real chain `create_random_source` → `OsRandomSource::try_new` → `OsRandomSource::fill_bytes` → `getrandom::fill`
-      * `[✅]`   Mocked: nothing; the operating system's generator is the outer edge and runs real
-      * `[✅]`   Arrange: the adapter returned by `create_random_source` with `build_create_random_source_params` carrying the kind override `RandomSourceKind::OperatingSystem`, and `build_create_random_source_deps(Default::default())` and `build_create_random_source_payload(Default::default())` as its deps and payload; `build_fill_bytes_payload` with the length override set to 0, which differs from the builder's default of 32
-      * `[✅]`   Act: `fill_bytes(FillBytesParams, payload)` on the returned adapter
-      * `[✅]`   Assert: the success arm is extracted with `expect`; `bytes.expose()` is empty
-    * `[✅]`   `a_source_from_the_factory_reports_the_operating_system_declaration`
-      * `[✅]`   Contract: a source obtained from `create_random_source` for `RandomSourceKind::OperatingSystem` reports `OsRandomSource::DECLARATION` through `declaration()`
-      * `[✅]`   Boundary: the crate's public surface; the real chain `create_random_source` → `OsRandomSource::try_new` → `OsRandomSource::declaration`
-      * `[✅]`   Mocked: nothing; the chain has no outer edge beyond the standard library
-      * `[✅]`   Arrange: the adapter returned by `create_random_source` with `build_create_random_source_params` carrying the kind override `RandomSourceKind::OperatingSystem`, and `build_create_random_source_deps(Default::default())` and `build_create_random_source_payload(Default::default())` as its deps and payload
-      * `[✅]`   Act: `declaration()` on the returned adapter
-      * `[✅]`   Assert: `source` matches `RandomSourceKind::OperatingSystem` under `matches!`; `adapter_version` equals the literal 1 written in the assertion; `interface_version` equals `RANDOM_SOURCE_INTERFACE_VERSION`
+  * `[ ]`   `adapters/random/tests/integration_test.rs`
+    * `[ ]`   Outside the crate, so it reaches only the crate's public surface: module-level `#![allow(clippy::expect_used)]`; imports from the `random` crate `create_random_source`, `build_create_random_source_deps`, `build_create_random_source_payload`, `CreateRandomSourceParamsOverrides`, `build_create_random_source_params`, `FillBytesParams`, `FillBytesPayloadOverrides`, `build_fill_bytes_payload`, `RandomSourceKind`, `RANDOM_SOURCE_KINDS`, and `RANDOM_SOURCE_INTERFACE_VERSION`, and `HashSet` from `std::collections`
+    * `[ ]`   `a_source_from_the_factory_draws_random_bytes_through_the_family_trait`
+      * `[ ]`   Contract: a source obtained from `create_random_source` for each member of `RANDOM_SOURCE_KINDS` draws the requested number of bytes through `fill_bytes`, and the draw is filled by that member's generator
+      * `[ ]`   Boundary: the crate's public surface; the real chain `create_random_source` → the member's `try_new` → `IRandomSourceAdapter::fill_bytes` → the member's generator
+      * `[ ]`   Mocked: nothing; each member's generator is its outer edge and runs real, so this test proves the generator's output reaches the caller and does not prove the generator's quality
+      * `[ ]`   Arrange: the adapter returned by `create_random_source` for each member of `RANDOM_SOURCE_KINDS` in turn, `build_create_random_source_params` carrying the kind override set to the member, and `build_create_random_source_deps(Default::default())` and `build_create_random_source_payload(Default::default())` as its deps and payload; `build_fill_bytes_payload` with the length override set to 1024, which splits into segments of 32 bytes and differs from the builder's default of 32
+      * `[ ]`   Act: `fill_bytes(FillBytesParams, payload)` on the returned adapter
+      * `[ ]`   Assert: the success arm is extracted with `expect`; the length of `bytes.expose()` equals the literal 1024 written in the assertion; the 32-byte segments of `bytes.expose()` collected into a `HashSet` number the literal 32 written in the assertion
+    * `[ ]`   `a_source_from_the_factory_draws_an_empty_buffer_for_a_zero_length`
+      * `[ ]`   Contract: a source obtained from `create_random_source` for each member of `RANDOM_SOURCE_KINDS` draws zero bytes for a `payload.length` of zero through `fill_bytes`
+      * `[ ]`   Boundary: the crate's public surface; the real chain `create_random_source` → the member's `try_new` → `IRandomSourceAdapter::fill_bytes` → the member's generator
+      * `[ ]`   Mocked: nothing; each member's generator is its outer edge and runs real
+      * `[ ]`   Arrange: the adapter returned by `create_random_source` for each member of `RANDOM_SOURCE_KINDS` in turn, `build_create_random_source_params` carrying the kind override set to the member, and `build_create_random_source_deps(Default::default())` and `build_create_random_source_payload(Default::default())` as its deps and payload; `build_fill_bytes_payload` with the length override set to 0, which differs from the builder's default of 32
+      * `[ ]`   Act: `fill_bytes(FillBytesParams, payload)` on the returned adapter
+      * `[ ]`   Assert: the success arm is extracted with `expect`; `bytes.expose()` is empty
+    * `[ ]`   `every_source_from_the_factory_reports_the_declaration_of_its_kind`
+      * `[ ]`   Contract: a source obtained from `create_random_source` for each member of `RANDOM_SOURCE_KINDS` reports, through `declaration()`, the declaration of the concrete its `kind` names
+      * `[ ]`   Boundary: the crate's public surface; the real chain `create_random_source` → the member's `try_new` → `IRandomSourceAdapter::declaration`
+      * `[ ]`   Mocked: nothing; the chain has no outer edge beyond the standard library
+      * `[ ]`   Arrange: the adapter returned by `create_random_source` for each member of `RANDOM_SOURCE_KINDS` in turn, `build_create_random_source_params` carrying the kind override set to the member, and `build_create_random_source_deps(Default::default())` and `build_create_random_source_payload(Default::default())` as its deps and payload
+      * `[ ]`   Act: `declaration()` on the returned adapter
+      * `[ ]`   Assert: `source` equals the member's `kind`; `adapter_version` equals the member's declared adapter version, the literal 1 written in the assertion for the operating-system member; `interface_version` equals `RANDOM_SOURCE_INTERFACE_VERSION`
 
   * `[✅]`   `directionality`
     * `[✅]`   The `factory` module depends on `os` through `crate::os::provides` and on its own interface; `os` depends on the `factory` module's surface, the family form's recorded cycle; the crate's public surface is the `factory` module's `provides`; nothing depends on the crate yet
 
-  * `[✅]`   `requirements`
-    * `[✅]`   `create_random_source_returns_the_operating_system_source_for_its_kind` passes
+  * `[ ]`   `requirements`
+    * `[ ]`   `every_member_of_the_declared_set_returns_the_concrete_its_kind_names` passes
     * `[✅]`   `create_random_source_returns_the_mock_source_carrying_the_failure_mode_its_kind_names` passes
     * `[✅]`   `CreateRandomSourceErrorReturn` derives `Debug`, `PartialEq`, and `Eq`
-    * `[✅]`   `a_source_from_the_factory_draws_random_bytes_through_the_family_trait` passes (CR-05, a production draw passes through the factory's surface)
+    * `[ ]`   `a_source_from_the_factory_draws_random_bytes_through_the_family_trait` passes (CR-05, a production draw passes through the factory's surface)
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning in every target, the `os` concrete's unused-item warnings having no remaining cause
     * `[✅]`   `getrandom` is named nowhere outside `adapters/random/src/os`, and no code outside `adapters/random` can name `OsRandomSource`
     * `[✅]`   The workspace and discipline bootstrap milestone's exit holds: the workspace, `crates/domain`, and `adapters/random` build and pass the Rust CI definition on Windows, macOS, and Linux
@@ -3203,31 +3204,31 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   The declaration and concrete-identity compile-time assertions compile, the `ZeroizeOnDrop` compile-time assertion compiles, `bls12_381_halo2curves_scalar_zeroize_clears_its_value` passes (CR-07), and `pairing_product_of_the_generators_equals_the_definition`, `encode_gt_writes_the_published_pairing_of_the_generators`, and `reduced_pairing_correction_inverts_three` pass (CR-10, the target-group value fixed by the identifier's definition, executed in the test, and its serialization by the standard's published value)
     * `[✅]`   Code outside `adapters/pairing` naming `Bls12381Halo2curvesPairing` or anything under `bls12_381_halo2curves` fails to compile; the crate's public surface is the `factory` module's `provides`
 
-* `[✅]`   `pairing/factory` **Pairing factory constructing the concrete the composition names, admitted against the chain's precompile encodings and the suite's target-group encoding identifier, and handing it to a consumer generic over the family's arithmetic and reference traits; carries the family's integration test proving the libraries of each curve agree**
+* `[ ]`   `pairing/factory` **Pairing factory constructing the concrete the composition names, admitted against the chain's precompile encodings and the suite's target-group encoding identifier, and handing it to a consumer generic over the family's arithmetic and reference traits; carries the family's integration test proving the libraries of each curve agree**
 
-  * `[✅]`   `objective`
+  * `[ ]`   `objective`
     * `[✅]`   Problem: a consumer obtains a pairing adapter only through the family's generic surface, never by naming a concrete, and a concrete whose precompile encoding the target chain does not deploy is refused before anything is constructed (CR-10; Composition Boundary)
     * `[✅]`   Problem: the KEM, the envelope, and the delivery proof reach a pairing concrete only through `create_pairing` and `IPairingConsumer`; a capsule encapsulated under one library must decapsulate to the same wrapping key under the other, so both libraries on a curve encode a target-group value to the same bytes; and the bytes are fixed by the suite's target-group encoding identifier, so the factory admits a concrete only when it declares that identifier, as the KEM factory admits by scope and the delivery-proof factory by algebra, form, and version (CR-08; CR-10; CR-11; the product requirements' canonical target-group value position)
     * `[✅]`   Problem: a consumer that mirrors the reference to a target suite reaches the group order and the outside-the-subgroup encodings only through the concrete the factory hands it, so the consumer surface requires the reference trait of that concrete; and two libraries of one curve are interchangeable under one suite only if they return the same bytes for both, which agreement between each concrete and its own decoder does not prove (CR-10; CR-11; the dependency map's `pairing/factory` row; the Pairing adapters and key derivation milestone's exit)
-    * `[✅]`   Functional: given the concrete the composition names, the precompile encodings the chain declares, and the target-group encoding identifier the suite requires, the factory refuses a concrete whose declared encoding is not among the chain's, or whose declared identifier is not the suite's, with no construction and no call to the consumer
+    * `[ ]`   Functional: given the concrete the composition names, the precompile encodings the chain member's declaration declares, and the target-group encoding identifier the suite requires, the factory refuses a concrete whose declared encoding is not among the chain member's, or whose declared identifier is not the suite's, with no construction and no call to the consumer
     * `[✅]`   Functional: an admitted concrete is constructed and handed to a consumer generic over a concrete implementing `IPairingArithmetic` and `IPairingReference`, which reads `P::DECLARATION` and `P::CONCRETE`, and the consumer's output is returned; the consumer never names the concrete; a consumer whose `consume_pairing` is written against `IPairingAdapter` or `IPairingArithmetic` alone is a valid implementation, an implementation's bound being no stricter than the trait's
     * `[✅]`   Functional: a concrete's constructor error is returned unchanged in the factory's error arm, one variant per concrete
     * `[✅]`   Functional: every concrete obtained from the factory computes through the family's traits; the arkworks and halo2curves concretes on BN254 encode the pairing of the same inputs to the same bytes, and likewise on BLS12-381, each concrete's definition test in its own node passing
     * `[✅]`   Functional: through the family's surface alone, both concretes of BN254 return the same scalar field order, no first-group encoding, and the same second-group encoding, which `decode_g2` refuses as outside the subgroup; both concretes of BLS12-381 return the same scalar field order and the same encoding in each group, each of which its group's decoder refuses as outside the subgroup
-    * `[✅]`   Non-functional: adding a concrete is its module, its variant in the selection enum and in the error enum, its entry in `PAIRING_CONCRETES`, its arm here, and the variants of the family's own declaration enums a new curve brings; no consumer changes
+    * `[ ]`   Non-functional: adding a concrete is its module, its variant in the selection enum and in the error enum, its entry in `PAIRING_CONCRETES`, its arm here, and the variants of the family's own declaration enums a new curve brings with their entries in `PRECOMPILE_ENCODINGS` and `TARGET_GROUP_ENCODING_IDENTIFIERS`; no consumer changes
 
-  * `[✅]`   `role`
+  * `[ ]`   `role`
     * `[✅]`   Adapter family factory: the implementation of the `factory` module, which is the pairing family's construction point and the crate's public surface; binds the arithmetic and reference traits into the consumer surface
     * `[✅]`   Hands the concrete to a consumer rather than returning it, because the family's traits carry associated types and so cannot be returned as one type across concretes; the consumer is written once, generic over the family's traits, and the factory instantiates it for the concrete it constructs
     * `[✅]`   Admits by the chain's precompile encodings and by the suite's target-group encoding identifier, both read before any construction
     * `[✅]`   Does not choose a concrete when none is named; the composition names one from the configuration catalogue
-    * `[✅]`   Does not read the chain family; the composition resolver passes the chain's declared encodings as values of this family's `PrecompileEncoding`
+    * `[ ]`   Does not read the chain family; the run reads the precompile encodings the configured chain member's declaration states through `chain/lookup_chain_declaration` and passes them as values of this family's `PrecompileEncoding`
     * `[✅]`   Does not decode or validate configuration; the configuration registry hands the factory typed params
     * `[✅]`   Does not edit any concrete
     * `[✅]`   Carries the family's integration test; does not carry a commit
 
-  * `[✅]`   `module`
-    * `[✅]`   Bounded context: the `factory` module of `adapters/pairing`, holding the factory function, its deps, params, payload, and return types, its signature type, the consumer trait with its params and payload types, the derive on `PrecompileEncoding` the admission compares by, the function mock and builders, the unit test, the private integration test, and the crate's public integration test under `adapters/pairing/tests`
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the `factory` module of `adapters/pairing`, holding the factory function, its deps, params, payload, and return types, its signature type, the consumer trait with its params and payload types, the derive on `PrecompileEncoding` the admission compares by, the declared sets `PRECOMPILE_ENCODINGS` and `TARGET_GROUP_ENCODING_IDENTIFIERS`, the function mock and builders, the unit test, the private integration test, and the crate's public integration test under `adapters/pairing/tests`
     * `[✅]`   The node's files: `adapters/pairing/src/factory/interface.rs`, `interaction.spec.md`, `mock.rs`, `test.rs`, `mod.rs`, `integration_test.rs`, and `provides.rs`, and `adapters/pairing/tests/factory_integration_test.rs`
     * `[✅]`   Outside: every concrete's behavior, the family's traits and declaration, the chain family's declarations, the configuration catalogue, and every consumer of the family
 
@@ -3244,8 +3245,8 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   From the `factory` module's mock: `MockIPairingConsumer`, implementing `IPairingConsumer` with `type Output = ();`, the official consumer mock the unit test hands the factory
     * `[✅]`   In the private and public integration tests: `ISampleUniformScalar::sample_from_uniform_bytes(SampleUniformScalarParams, SampleUniformScalarPayload { uniform })`, which reads `uniform` through `Secret::expose` and returns `scalar: Secret<P::Scalar>`; `IPairingAdapter::encode_scalar(&self, EncodeScalarParams, EncodeScalarPayload { scalar })` returning `bytes: Secret<P::EncodedScalar>`; `IPairingAdapter::decode_g1`, `decode_g2`, `g1_generator`, `g2_generator`, and `mul_g1` with their params, payload, and error types; `IPairingArithmetic::pairing_product` and `encode_gt`; `IPairingReference::scalar_field_order`, `g1_outside_subgroup_encoding`, and `g2_outside_subgroup_encoding`; `PAIRING_CONCRETES`, the declared set each block runs, and `PairingConcrete::Mock(MockIPairingAdapterFailureMode)`, the selection a failure-mode block makes; `Secret::expose(&self) -> &T`; and, from `domain`'s mocks, `build_secret(value: Vec<u8>, SecretConstructorParamsOverrides) -> Secret<Vec<u8>>`
 
-  * `[✅]`   `adapters/pairing/src/factory/interface.rs`
-    * `[✅]`   `PrecompileEncoding` derives `PartialEq` and `Eq`, so the admission compares a declared encoding with the chain's
+  * `[ ]`   `adapters/pairing/src/factory/interface.rs`
+    * `[ ]`   `PrecompileEncoding` derives `PartialEq` and `Eq`, so the admission compares a declared encoding with the chain member's
     * `[✅]`   `IPairingConsumer`, `pub trait IPairingConsumer` with `type Output;` and `fn consume_pairing<P: IPairingArithmetic + IPairingReference>(&self, params: ConsumePairingParams, payload: ConsumePairingPayload<P>) -> Self::Output;`, the work a composition performs with whichever concrete the factory constructs
     * `[✅]`   `ConsumePairingParams`, the fieldless struct `pub struct ConsumePairingParams;`
     * `[✅]`   `ConsumePairingPayload<P: IPairingAdapter>`, a struct with only `pub adapter: P`; the consumer reads `P::DECLARATION` and `P::CONCRETE`, so neither metadata value can be paired with another adapter
@@ -3257,6 +3258,8 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `CreatePairingReturn<O>`, the alias `Result<CreatePairingSuccessReturn<O>, CreatePairingErrorReturn>`
     * `[✅]`   `CreatePairingFn<C>`, the alias `fn(&CreatePairingDeps<C>, CreatePairingParams, CreatePairingPayload) -> CreatePairingReturn<<C as IPairingConsumer>::Output>`
     * `[✅]`   `PAIRING_CONCRETES`, a `pub const` slice of `PairingConcrete` holding each real concrete's variant of the selection enum, the family's declared set of selectable concretes; the mock member is not in it
+    * `[ ]`   `PRECOMPILE_ENCODINGS`, the constant `pub const PRECOMPILE_ENCODINGS: &[PrecompileEncoding] = &[PrecompileEncoding::Eip196Eip197, PrecompileEncoding::Eip2537];`, the declared set of real encodings; it never holds the mock variant
+    * `[ ]`   `TARGET_GROUP_ENCODING_IDENTIFIERS`, the constant `pub const TARGET_GROUP_ENCODING_IDENTIFIERS: &[TargetGroupEncodingIdentifier] = &[TargetGroupEncodingIdentifier::Bn254V1, TargetGroupEncodingIdentifier::Bls12381V1];`, the declared set of real identifiers; it never holds the mock variant
     * `[✅]`   No derives on any type this node declares beyond those stated; the file names no vendor and no concrete
 
   * `[✅]`   `adapters/pairing/src/factory/interaction.spec.md`
@@ -3316,8 +3319,8 @@ Write each element in the fixed dependency order below — do not reorder or mer
       * `[✅]`   Act: `create_pairing(&deps, params, CreatePairingPayload)`
       * `[✅]`   Assert: `assert_eq!(result.err(), Some(CreatePairingErrorReturn::UnsupportedPrecompileEncoding))`, the interaction spec's outcome as a literal
 
-  * `[✅]`   `construction`
-    * `[✅]`   The composition root writes its pairing-dependent work once as an `IPairingConsumer`, generic over `P: IPairingArithmetic + IPairingReference`, and calls `create_pairing` with `CreatePairingDeps { consumer }`, `CreatePairingParams` holding the configured `PairingConcrete`, the chain's declared encodings, and the suite's identifier, and `CreatePairingPayload`; no consumer constructs or names a concrete
+  * `[ ]`   `construction`
+    * `[ ]`   The composition root writes its pairing-dependent work once as an `IPairingConsumer`, generic over `P: IPairingArithmetic + IPairingReference`, and calls `create_pairing` with `CreatePairingDeps { consumer }`, `CreatePairingParams` holding the configured `PairingConcrete`, the precompile encodings the configured chain member's declaration states, read through `chain/lookup_chain_declaration`, and the suite's identifier, and `CreatePairingPayload`; no consumer constructs or names a concrete
 
   * `[✅]`   `adapters/pairing/src/factory/mod.rs`
     * `[✅]`   The module wiring holds `#[cfg(test)] mod test;` and `#[cfg(test)] mod integration_test;`; imports each concrete's adapter type and constructor params from `crate::bn254_arkworks::provides`, `crate::bn254_halo2curves::provides`, `crate::bls12_381_arkworks::provides`, and `crate::bls12_381_halo2curves::provides`, under `#[cfg(any(test, feature = "mocks"))]` `MockIPairingAdapter` and `MockIPairingAdapterConstructorParams` from `self::mock`, and from `interface` `ConsumePairingParams`, `ConsumePairingPayload`, `CreatePairingDeps`, `CreatePairingErrorReturn`, `CreatePairingParams`, `CreatePairingPayload`, `CreatePairingReturn`, `CreatePairingSuccessReturn`, `IPairingConsumer`, and `PairingConcrete`
@@ -3457,7 +3460,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Each `the_…_concrete_from_the_factory_samples_and_encodes_through_secret` integration test passes, each proving its `Secret → <Concrete> → create_pairing` chain with every link real (CR-07, secret material crosses the family inside `Secret`; CR-10, every concrete reached through the factory)
     * `[✅]`   No `ark-` crate or `halo2curves` is named outside its concretes, and no code outside `adapters/pairing` can name a concrete
 
-* `[✅]`   `harness-crypto/benchmark` **Pairing benchmark timing scalar multiplication, multi-scalar multiplication, and the pairing-product check on whichever concrete the pairing factory hands it; creates the `apps/harness-crypto` crate**
+* `[ ]`   `harness-crypto/benchmark` **Pairing benchmark timing scalar multiplication, multi-scalar multiplication, and the pairing-product check on whichever concrete the pairing factory hands it; creates the `apps/harness-crypto` crate**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: the run constructs it for each selected concrete with each selected identifier and records the measurements, so each concrete's cost for the operations the KEM, envelope, and proof perform is measured through the factory, with no module naming a library
@@ -3479,17 +3482,17 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Creates the crate at `apps/harness-crypto`, admitted by the `apps/*` glob this node adds
     * `[✅]`   Outside: the choice of which concretes to run, the iteration count's configured value, the recording of timings, and every other harness module
 
-  * `[✅]`   `deps`
+  * `[ ]`   `deps`
     * `[✅]`   `pairing`, `adapters/pairing`, adapter ring, path dependency; supplies `IPairingConsumer`, `ConsumePairingParams`, `ConsumePairingPayload`, `IPairingAdapter`, `ISampleUniformScalar`, `SampleUniformScalarParams`, `SampleUniformScalarPayload`, `SampleUniformScalarErrorReturn`, and every method's params and payload types used below; in `interface.rs`'s case types `IPairingArithmetic`, `IPairingReference`, `ConsumePairingParams`, `ConsumePairingPayload`, `CreatePairingParams`, and `CreatePairingErrorReturn`; in the case runner `create_pairing`, `IPairingConsumer`, `build_create_pairing_deps`, `build_create_pairing_params`, and `build_create_pairing_payload`; in the unit test and the integration test `IPairingConsumer`, `IPairingArithmetic`, `IPairingReference`, `ConsumePairingParams`, `ConsumePairingPayload`, `build_create_pairing_params`, and `CreatePairingParamsOverrides`; `PairingConcrete` and `MockIPairingAdapterFailureMode` in the mock, the unit test, and the integration test, and `PAIRING_CONCRETES` in the integration test; direction inward, app on adapter
-    * `[✅]`   `random`, `adapters/random`, adapter ring, path dependency; supplies `IRandomSourceAdapter`, `FillBytesParams`, `FillBytesPayload`, and `FillBytesErrorReturn`; the source `create_random_source` returns for the `random_source` selection of the case params, the family's mock concrete by default, is the source the case runner's pairing level hands the block's consumer, which hands it the benchmark builder; in `interface.rs`'s case types `CreateRandomSourceParams` and `CreateRandomSourceErrorReturn`; in the case runner `create_random_source`, `build_create_random_source_deps`, `build_create_random_source_params`, `CreateRandomSourceParamsOverrides`, and `build_create_random_source_payload`; in the unit test and the integration test `IRandomSourceAdapter`, `build_create_random_source_params`, `CreateRandomSourceParamsOverrides`, and `RandomSourceKind`, and in the unit test `MockIRandomSourceAdapterFailureMode` and `FillBytesErrorReturn`
+    * `[ ]`   `random`, `adapters/random`, adapter ring, path dependency; supplies `IRandomSourceAdapter`, `FillBytesParams`, `FillBytesPayload`, and `FillBytesErrorReturn`; the source `create_random_source` returns for the `random_source` selection of the case params, the family's mock concrete by default, is the source the case runner's pairing level hands the block's consumer, which hands it the benchmark builder; in `interface.rs`'s case types `CreateRandomSourceParams` and `CreateRandomSourceErrorReturn`; in the case runner `create_random_source`, `build_create_random_source_deps`, `build_create_random_source_params`, `CreateRandomSourceParamsOverrides`, and `build_create_random_source_payload`; in the unit test and the integration test `IRandomSourceAdapter`, `build_create_random_source_params`, `CreateRandomSourceParamsOverrides`, and `RandomSourceKind`, in the integration test also `RANDOM_SOURCE_KINDS`, and in the unit test `MockIRandomSourceAdapterFailureMode` and `FillBytesErrorReturn`
     * `[✅]`   `pairing` and `random` with their `mocks` features, as dev-dependencies and through this crate's `mocks` feature
     * `[✅]`   `std::time::Instant` and `core::time::Duration`, standard library, the monotonic clock and its measure; `core::num::NonZeroU32`, standard library, the iteration count, so the mean never divides by zero; `core::convert::Infallible`, standard library, the constructor's error arm
     * `[✅]`   No external crate at runtime; no reverse dependency
 
-  * `[✅]`   `context_slice`
+  * `[ ]`   `context_slice`
     * `[✅]`   From `pairing`: `IPairingConsumer` with `type Output` and `consume_pairing<P: IPairingArithmetic + IPairingReference>(&self, ConsumePairingParams, ConsumePairingPayload<P>) -> Self::Output`; `ConsumePairingPayload<P>` with only `adapter`, held by value, and `P::DECLARATION` and `P::CONCRETE` read from the trait; the adapter methods `g1_generator`, `g2_generator`, `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one`, each returning `Result<_, Infallible>`; `ISampleUniformScalar` with `UNIFORM_BYTES_LENGTH` and `sample_from_uniform_bytes`
     * `[✅]`   From `pairing`'s mocks: `build_create_pairing_deps<C: IPairingConsumer>(consumer: C, CreatePairingDepsOverrides) -> CreatePairingDeps<C>` and `build_create_pairing_payload(CreatePairingPayloadOverrides) -> CreatePairingPayload`, the deps and payload of the runner's `create_pairing` call, and `build_create_pairing_params(CreatePairingParamsOverrides) -> CreatePairingParams`, whose default selects the family's mock concrete, the `pairing` field's default in the case params and the selection a block overrides
-    * `[✅]`   From `random`: `create_random_source(&CreateRandomSourceDeps, CreateRandomSourceParams, CreateRandomSourcePayload) -> CreateRandomSourceReturn` with `CreateRandomSourceSuccessReturn { adapter }`, the leaf call the case runner's pairing level makes, `build_create_random_source_deps(CreateRandomSourceDepsOverrides) -> CreateRandomSourceDeps` and `build_create_random_source_payload(CreateRandomSourcePayloadOverrides) -> CreateRandomSourcePayload`, each returning its production value, `build_create_random_source_params(CreateRandomSourceParamsOverrides)` whose default selects the family's mock concrete and which the level rebuilds from the `Copy` `kind` of the selection it carries, and `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode)`, the mode `FillBytesRefused` refusing every draw with `FillBytesErrorReturn::MockIRandomSourceAdapter`
+    * `[ ]`   From `random`: `create_random_source(&CreateRandomSourceDeps, CreateRandomSourceParams, CreateRandomSourcePayload) -> CreateRandomSourceReturn` with `CreateRandomSourceSuccessReturn { adapter }`, the leaf call the case runner's pairing level makes, `build_create_random_source_deps(CreateRandomSourceDepsOverrides) -> CreateRandomSourceDeps` and `build_create_random_source_payload(CreateRandomSourcePayloadOverrides) -> CreateRandomSourcePayload`, each returning its production value, `build_create_random_source_params(CreateRandomSourceParamsOverrides)` whose default selects the family's mock concrete and which the level rebuilds from the `Copy` `kind` of the selection it carries, `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode)`, the mode `FillBytesRefused` refusing every draw with `FillBytesErrorReturn::MockIRandomSourceAdapter`, and `RANDOM_SOURCE_KINDS`, the declared set of real kinds the public integration test's sources run over
     * `[✅]`   From `pairing`: `PAIRING_CONCRETES`, the declared set of real concretes the integration test runs over, and `PairingConcrete::Mock(MockIPairingAdapterFailureMode)`, whose default `Succeeds` is the selection `build_create_pairing_params` makes and whose mode `SampleScalarWrongLength` makes the mock concrete's sampling return `Err(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 64 })`
     * `[✅]`   From `random`: `IRandomSourceAdapter::fill_bytes(&self, FillBytesParams, FillBytesPayload) -> Result<FillBytesSuccessReturn, FillBytesErrorReturn>`, the draw inside a `Secret`
     * `[✅]`   From the standard library: `Instant::now()` and `Instant::elapsed()`, `Duration`'s division by `u32`, and `NonZeroU32::get()`
@@ -3527,7 +3530,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `RunPairingBenchmarkCaseFn<C>`, under the same gate, the alias `fn(&PairingBenchmarkCaseDeps<C>, PairingBenchmarkCaseParams, PairingBenchmarkCasePayload) -> PairingBenchmarkCaseReturn<<C as IPairingBenchmarkCaseConsumer>::Output>`
     * `[✅]`   Imports `IRandomSourceAdapter` and `FillBytesErrorReturn` from `random`, `SampleUniformScalarErrorReturn` and `PairingConcrete` from `pairing`, `core::num::NonZeroU32`, `core::time::Duration`, and `core::convert::Infallible`; and, under `#[cfg(any(test, feature = "mocks"))]`, `IPairingArithmetic`, `IPairingReference`, `ConsumePairingParams`, `ConsumePairingPayload`, `CreatePairingParams`, and `CreatePairingErrorReturn` from `pairing` and `CreateRandomSourceParams` and `CreateRandomSourceErrorReturn` from `random`; no derives beyond those stated
 
-  * `[✅]`   `apps/harness-crypto/src/benchmark/interaction.spec.md`
+  * `[ ]`   `apps/harness-crypto/src/benchmark/interaction.spec.md`
     * `[✅]`   `PairingBenchmark::try_new(params: PairingBenchmarkConstructorParams) -> PairingBenchmarkTryNewReturn`: one branch; outcome `Ok(PairingBenchmark)` holding the random source and the iteration count; the error arm has no branch
     * `[✅]`   `consume_pairing<P: IPairingAdapter>(&self, _params: ConsumePairingParams, payload: ConsumePairingPayload<P>) -> PairingBenchmarkReturn`, draw failed: condition `self.random.fill_bytes(FillBytesParams, FillBytesPayload { length: P::Scalar::UNIFORM_BYTES_LENGTH })` returns `Err(error)` for either scalar; outcome `Err(PairingBenchmarkErrorReturn::FillBytes(error))`; nothing is timed
     * `[✅]`   Sampling failed: condition `P::Scalar::sample_from_uniform_bytes(SampleUniformScalarParams, SampleUniformScalarPayload { uniform: draw.bytes })` returns `Err(error)` for either scalar; outcome `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`; nothing is timed
@@ -3539,7 +3542,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
       * `[✅]`   `a_sampled_scalar_encodes_through_secret`: carried; restated where this node transforms it: the benchmark draws `P::Scalar::UNIFORM_BYTES_LENGTH` bytes into a `Secret`, samples both scalars with `sample_from_uniform_bytes`, and consumes them in the group operations instead of `encode_scalar`, so the output is `Ok` for every concrete
       * `[✅]`   `a_sampling_refusal_reaches_the_caller_unchanged`: carried; restated where this node transforms it: a sampling refusal is the output's `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`, the error whole; its concrete is the pairing family's mock concrete selected by `PairingConcrete::Mock(MockIPairingAdapterFailureMode::SampleScalarWrongLength)`
     * `[✅]`   `Integration: own entries`, a bulleted section, each entry named and proven by the public integration block of the same name
-      * `[✅]`   `every_operation_is_timed_on_every_concrete`: condition the benchmark runs through `create_pairing` on a concrete of `PAIRING_CONCRETES` with the source `create_random_source` constructs for `RandomSourceKind::OperatingSystem`; outcome `Ok` whose timings for `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one` are each greater than `Duration::ZERO`; variation every concrete of the declared set, whose operations are real, so a timing left at its zero default fails; edge each operation runs on scalars sampled from the draw and on the concrete's own points, so none is skipped
+      * `[ ]`   `every_operation_is_timed_on_every_concrete`: condition the benchmark runs through `create_pairing` on a concrete of `PAIRING_CONCRETES` with the source `create_random_source` constructs for a member of `RANDOM_SOURCE_KINDS`; outcome `Ok` whose timings for `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one` are each greater than `Duration::ZERO`; variation every concrete of the declared set paired with each member of `RANDOM_SOURCE_KINDS`, whose operations and draws are real, so a timing left at its zero default fails; edge each operation runs on scalars sampled from the draw and on the concrete's own points, so none is skipped
     * `[✅]`   `Integration: public surface`: an outside caller constructs `PairingBenchmark` with `PairingBenchmark::try_new` from `PairingBenchmarkConstructorParams` holding the source `create_random_source` returns and an iteration count, passes it as `CreatePairingDeps { consumer }` to `create_pairing` from `pairing`'s public surface with `CreatePairingParams` naming a concrete and `CreatePairingPayload`, and observes the benchmark's `PairingBenchmarkReturn` in `CreatePairingSuccessReturn`; the test drives that composition through the case runner — a block declares one consumer implementing `IPairingBenchmarkCaseConsumer` and calls `run_pairing_benchmark_case` once per case, the runner's pairing level running `create_random_source` inward and handing the source, the consume params, and the consume payload to the consumer, whose method builds the benchmark and makes the single `consume_pairing` call; the entries proven are every carried entry and the own entry above; the route of each is as the callee dispositions state; the outer-edge collaborators are the operating system's generator and monotonic clock, run real, and, for `a_sampling_refusal_reaches_the_caller_unchanged`, the pairing family's mock concrete; the fixtures are `build_pairing_benchmark`, `build_pairing_benchmark_case_deps`, `build_pairing_benchmark_case_params`, `build_pairing_benchmark_case_payload`, `run_pairing_benchmark_case`, `build_create_pairing_params`, and `build_create_random_source_params`
 
   * `[✅]`   `apps/harness-crypto/src/benchmark/mock.rs`
@@ -3592,52 +3595,52 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `apps/harness-crypto/src/benchmark/provides.rs`
     * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, nothing else
 
-  * `[✅]`   `apps/harness-crypto/tests/benchmark_integration_test.rs`
-    * `[✅]`   Outside the crate, so it reaches only the crate's public surface and the official mocks under the `mocks` feature: module-level `#![allow(clippy::expect_used)]`; imports from `harness_crypto` `IPairingBenchmarkCaseConsumer`, `PairingBenchmarkErrorReturn`, `PairingBenchmarkReturn`, `build_pairing_benchmark`, `build_pairing_benchmark_case_deps`, `build_pairing_benchmark_case_params`, `build_pairing_benchmark_case_payload`, and `run_pairing_benchmark_case`; from `pairing` `IPairingConsumer`, `IPairingArithmetic`, `IPairingReference`, `ConsumePairingParams`, `ConsumePairingPayload`, `PAIRING_CONCRETES`, `PairingConcrete`, `MockIPairingAdapterFailureMode`, `SampleUniformScalarErrorReturn`, `CreatePairingParamsOverrides`, and `build_create_pairing_params`; from `random` `IRandomSourceAdapter`, `RandomSourceKind`, `CreateRandomSourceParamsOverrides`, and `build_create_random_source_params`; and `Duration` from `core::time`
-    * `[✅]`   Every block declares inside itself one consumer implementing `IPairingBenchmarkCaseConsumer` with `type Output = PairingBenchmarkReturn`, whose method builds the benchmark `build_pairing_benchmark(random, Default::default())` over the received source and makes the block's single call `benchmark.consume_pairing(params, payload)`; its body is written once and runs over `PAIRING_CONCRETES`, naming no concrete, except `a_sampling_refusal_reaches_the_caller_unchanged`, whose concrete is the configuration's mock selection; per concrete `params` is `build_pairing_benchmark_case_params` with the `pairing` override set to `build_create_pairing_params` carrying `concrete` and the `random_source` override set to `build_create_random_source_params` carrying `RandomSourceKind::OperatingSystem`, `deps` is `build_pairing_benchmark_case_deps(Consumer, Default::default())`, and the call is `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))`, whose result is observed as `result`, its `output` the `PairingBenchmarkReturn`; each block asserts `result.is_ok()`, proving the runner's level ran; the operating system's generator and monotonic clock run real
+  * `[ ]`   `apps/harness-crypto/tests/benchmark_integration_test.rs`
+    * `[ ]`   Outside the crate, so it reaches only the crate's public surface and the official mocks under the `mocks` feature: module-level `#![allow(clippy::expect_used)]`; imports from `harness_crypto` `IPairingBenchmarkCaseConsumer`, `PairingBenchmarkErrorReturn`, `PairingBenchmarkReturn`, `build_pairing_benchmark`, `build_pairing_benchmark_case_deps`, `build_pairing_benchmark_case_params`, `build_pairing_benchmark_case_payload`, and `run_pairing_benchmark_case`; from `pairing` `IPairingConsumer`, `IPairingArithmetic`, `IPairingReference`, `ConsumePairingParams`, `ConsumePairingPayload`, `PAIRING_CONCRETES`, `PairingConcrete`, `MockIPairingAdapterFailureMode`, `SampleUniformScalarErrorReturn`, `CreatePairingParamsOverrides`, and `build_create_pairing_params`; from `random` `IRandomSourceAdapter`, `RandomSourceKind`, `RANDOM_SOURCE_KINDS`, `CreateRandomSourceParamsOverrides`, and `build_create_random_source_params`; and `Duration` from `core::time`
+    * `[✅]`   Every block declares inside itself one consumer implementing `IPairingBenchmarkCaseConsumer` with `type Output = PairingBenchmarkReturn`, whose method builds the benchmark `build_pairing_benchmark(random, Default::default())` over the received source and makes the block's single call `benchmark.consume_pairing(params, payload)`; its body is written once and runs over `PAIRING_CONCRETES`, naming no concrete, except `a_sampling_refusal_reaches_the_caller_unchanged`, whose concrete is the configuration's mock selection; per concrete `params` is `build_pairing_benchmark_case_params` with the `pairing` override set to `build_create_pairing_params` carrying `concrete` and the `random_source` override set to `build_create_random_source_params` carrying the `kind` of a member of `RANDOM_SOURCE_KINDS`, each pairing member run with each member of the random family's declared set, `deps` is `build_pairing_benchmark_case_deps(Consumer, Default::default())`, and the call is `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))`, whose result is observed as `result`, its `output` the `PairingBenchmarkReturn`; each block asserts `result.is_ok()`, proving the runner's level ran; the operating system's generator and monotonic clock run real
     * `[✅]`   `the_consumer_receives_the_concrete_the_params_name`
       * `[✅]`   Contract: entry `the_consumer_receives_the_concrete_the_params_name`; given `params.pairing`'s `concrete` is a variant of `PAIRING_CONCRETES` and the admissions pass, the `concrete` of the `Ok` measurement equals that variant
       * `[✅]`   Arrange: every variant of the declared set in turn, including both libraries of one curve, so a benchmark that returns a fixed concrete, or the factory constructing a sibling library, fails
       * `[✅]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))` per concrete
       * `[✅]`   Assert: per concrete, `assert!(result.ok().and_then(|success| success.output.ok()).map(|measurement| measurement.concrete) == Some(*concrete))`, the variant coming from the declared set and not from the call
-      * `[✅]`   Boundary: the public `create_pairing`, driven by the case runner; the real chain is `create_pairing`, the arm's `try_new`, `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group operations
+      * `[ ]`   Boundary: the public `create_pairing`, driven by the case runner; the real chain is `create_pairing`, the arm's `try_new`, `PairingBenchmark::consume_pairing`, the selected random member's `fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group operations
       * `[✅]`   Mocked: none
     * `[✅]`   `a_sampled_scalar_encodes_through_secret`
       * `[✅]`   Contract: entry `a_sampled_scalar_encodes_through_secret`; the draw of `P::Scalar::UNIFORM_BYTES_LENGTH` bytes crosses inside a `Secret` into `sample_from_uniform_bytes`, and the sampled scalars are consumed by the concrete's group operations, so the output is `Ok`
       * `[✅]`   Arrange: every concrete of the declared set in turn, each sampling bound its own, so a benchmark that draws a length the bound does not name fails for the concrete whose bound differs
       * `[✅]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))` per concrete
       * `[✅]`   Assert: per concrete, `assert_eq!(result.ok().map(|success| success.output.err()), Some(None))`, the runner's success arm present and the output's error arm empty, the whole error shown on failure
-      * `[✅]`   Boundary: the public `create_pairing`, driven by the case runner; the real chain is `create_pairing`, the arm's `try_new`, `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group operations
+      * `[ ]`   Boundary: the public `create_pairing`, driven by the case runner; the real chain is `create_pairing`, the arm's `try_new`, `PairingBenchmark::consume_pairing`, the selected random member's `fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group operations
       * `[✅]`   Mocked: none
     * `[✅]`   `a_sampling_refusal_reaches_the_caller_unchanged`
       * `[✅]`   Contract: entry `a_sampling_refusal_reaches_the_caller_unchanged`; a sampling refusal is the output's `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`, the error whole
       * `[✅]`   Arrange: `params` from `build_pairing_benchmark_case_params` with the `pairing` override set to `build_create_pairing_params` carrying the `concrete` override `PairingConcrete::Mock(MockIPairingAdapterFailureMode::SampleScalarWrongLength)`, against the `Ok` outputs of the entries above, so a benchmark that ignores a refused sampling fails
       * `[✅]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))`
       * `[✅]`   Assert: `assert_eq!(result.ok().and_then(|success| success.output.err()), Some(PairingBenchmarkErrorReturn::SampleScalar(SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 64 })))`, the whole error, the carried error the mock concrete's own value for that mode written as a literal
-      * `[✅]`   Boundary: the public `create_pairing`, driven by the case runner; the real chain is `create_pairing`, the mock arm's `try_new`, `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, and `sample_from_uniform_bytes`
+      * `[ ]`   Boundary: the public `create_pairing`, driven by the case runner; the real chain is `create_pairing`, the mock arm's `try_new`, `PairingBenchmark::consume_pairing`, the selected random member's `fill_bytes`, and `sample_from_uniform_bytes`
       * `[✅]`   Mocked: the pairing family's mock concrete, selected by configuration; this block does not prove a real concrete's sampling
     * `[✅]`   `every_operation_is_timed_on_every_concrete`
       * `[✅]`   Contract: entry `every_operation_is_timed_on_every_concrete`; the `Ok` measurement's timings for `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one` are each greater than `Duration::ZERO`
       * `[✅]`   Arrange: every concrete of the declared set in turn, whose operations are real, so a timing left at its zero default fails
       * `[✅]`   Act: `run_pairing_benchmark_case(&deps, params, build_pairing_benchmark_case_payload(Default::default()))` per concrete
       * `[✅]`   Assert: per concrete, the measurement is extracted with `expect` from `result.ok().and_then(|success| success.output.ok())`; each of the five timings is greater than `Duration::ZERO` under `assert!`; the exact means are not asserted
-      * `[✅]`   Boundary: the public `create_pairing`, driven by the case runner; the real chain is `create_pairing`, the arm's `try_new`, `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group operations and clock reads
+      * `[ ]`   Boundary: the public `create_pairing`, driven by the case runner; the real chain is `create_pairing`, the arm's `try_new`, `PairingBenchmark::consume_pairing`, the selected random member's `fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group operations and clock reads
       * `[✅]`   Mocked: none
 
   * `[✅]`   `directionality`
     * `[✅]`   `benchmark` depends on `pairing`'s and `random`'s public surfaces and on the standard library; it names no concrete and no curve library; nothing depends on the crate yet; no cycle
 
-  * `[✅]`   `requirements`
+  * `[ ]`   `requirements`
     * `[✅]`   The root `Cargo.toml` lists `members = ["crates/*", "adapters/*", "apps/*"]` and is otherwise unchanged; `apps/harness-crypto/Cargo.toml` carries exactly the tables and keys stated above
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --check`, and `cargo deny check` complete without error or warning
     * `[✅]`   `PairingBenchmarkErrorReturn` derives `Debug`, `PartialEq`, and `Eq`
     * `[✅]`   `consume_pairing_returns_the_draw_error_unchanged` passes, asserting the whole error by `assert_eq!`
     * `[✅]`   `consume_pairing_draws_the_length_the_sampling_bound_requires` passes
     * `[✅]`   `consume_pairing_returns_the_sampling_error_unchanged` passes, asserting the whole error by `assert_eq!`
-    * `[✅]`   `the_consumer_receives_the_concrete_the_params_name` passes over every concrete of the declared set (CR-10, the concrete the factory constructs reaches the benchmark)
-    * `[✅]`   `a_sampled_scalar_encodes_through_secret` passes over every concrete of the declared set (CR-05, a production draw passes through the randomness factory and is sampled by a concrete's sampling bound; CR-07, draws and scalars cross the families inside `Secret` with every link real)
-    * `[✅]`   `a_sampling_refusal_reaches_the_caller_unchanged` passes, asserting the whole error by `assert_eq!`
-    * `[✅]`   `every_operation_is_timed_on_every_concrete` passes over every concrete of the declared set
+    * `[ ]`   `the_consumer_receives_the_concrete_the_params_name` passes over every concrete of the declared set paired with each member of `RANDOM_SOURCE_KINDS` (CR-10, the concrete the factory constructs reaches the benchmark)
+    * `[ ]`   `a_sampled_scalar_encodes_through_secret` passes over every concrete of the declared set paired with each member of `RANDOM_SOURCE_KINDS` (CR-05, a production draw passes through the randomness factory and is sampled by a concrete's sampling bound; CR-07, draws and scalars cross the families inside `Secret` with every link real)
+    * `[ ]`   `a_sampling_refusal_reaches_the_caller_unchanged` passes, asserting the whole error by `assert_eq!`
+    * `[ ]`   `every_operation_is_timed_on_every_concrete` passes over every concrete of the declared set paired with each member of `RANDOM_SOURCE_KINDS`
     * `[✅]`   `MockIPairingAdapterFailureMode` carries `SampleScalarWrongLength`, and the pairing mock concrete's sampling answers it
     * `[✅]`   No module of `apps/harness-crypto` names `ark-`, `halo2curves`, or a pairing concrete
 

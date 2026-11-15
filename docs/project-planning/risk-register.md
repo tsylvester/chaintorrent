@@ -244,7 +244,7 @@ Medium. Exhaustion stops free onboarding, which is the MVP's only onboarding; gr
 Medium for cost growth with success, since on Base L2 execution is cheap and the L1 data-posting fee is the dominant and measurable component; Medium for deliberate abuse.
 
 ## Mitigation
-Per-identity rate limits under relayer policy; short published lock expiries with refund; explicit failure states that never produce false authorization; relayer gas recorded per install with L2 execution and L1 data fee reported separately (LC-10, RO-01, RO-03, AS-27). Bundlers and paymasters on Base make sponsored transactions available but do not remove the project's gas bill. The subsidy is named as scaffolding to be replaced.
+Per-identity rate limits under relayer policy; short published lock expiries with refund; explicit failure states that never produce false authorization; relayer gas recorded per install, the cost reported through the verifier family's description of the concrete's own cost type (LC-10, RO-01, RO-03, AS-27). Bundlers and paymasters on Base make sponsored transactions available but do not remove the project's gas bill. The subsidy is named as scaffolding to be replaced.
 
 ## Seed Examples
 - Many fresh identities flood free mints for one package; each mint costs a precompile verification.
