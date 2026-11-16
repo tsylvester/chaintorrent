@@ -104,7 +104,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `Cargo.toml`, `rust-toolchain.toml`, `deny.toml`, and `.gitignore` exist at the repository root with exactly the keys and values stated above and no others
     * `[✅]`   No directory exists under `crates/`, `adapters/`, or `apps/` when this node completes
 
-* `[✅]`   `workspace/ci` **Continuous-integration matrix over Windows, macOS, and Linux running the workspace checks, tests, and dependency audits**
+* `[ ]`   `workspace/ci` **Continuous-integration matrix over Windows, macOS, and Linux running the workspace checks, tests, and dependency audits**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: every ticket's proof, format, type check, lint, tests, license policy, and advisories, runs on each platform the completion boundary names
@@ -113,9 +113,9 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Functional: each runner runs, in order, the format check, the type check, the lint, the tests, the dependency-policy check, and the advisory audit, and any failure fails that runner's job
     * `[✅]`   Non-functional: the workflow token is read-only, a newer run on the same ref cancels the older one, and no step exists beyond those listed here
 
-  * `[✅]`   `role`
+  * `[ ]`   `role`
     * `[✅]`   Infrastructure: one configuration file with no types and no tests, exempt from the support-file structure
-    * `[✅]`   Does not create the Solidity, TypeScript, fuzz, or end-to-end workflow definitions, each a separate file created once by the ticket that first needs it, `contracts/evm/IDeliveryVerifier` for `forge build`, `forge fmt --check`, and `forge test`, the first shell or webview ticket for the TypeScript linter, the first fuzz target for `cargo-fuzz`, and the first end-to-end scenario for the clean-runner job; no later ticket edits `rust.yml`
+    * `[ ]`   Does not create the Solidity, TypeScript, fuzz, or end-to-end workflow definitions, each a separate file created once by the ticket that first needs it, `contracts/evm/ParameterSets` for `forge build`, `forge fmt --check`, and `forge test`, the first shell or webview ticket for the TypeScript linter, the first fuzz target for `cargo-fuzz`, and the first end-to-end scenario for the clean-runner job; no later ticket edits `rust.yml`
     * `[✅]`   Does not edit `.github/workflows/npm-publish.yml`
     * `[✅]`   Does not package, sign, release, or publish, and reads no secret
     * `[✅]`   Does not carry a commit; the grouping's integration test and commit are carried by `random/factory`
@@ -3246,7 +3246,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   In the private and public integration tests: `ISampleUniformScalar::sample_from_uniform_bytes(SampleUniformScalarParams, SampleUniformScalarPayload { uniform })`, which reads `uniform` through `Secret::expose` and returns `scalar: Secret<P::Scalar>`; `IPairingAdapter::encode_scalar(&self, EncodeScalarParams, EncodeScalarPayload { scalar })` returning `bytes: Secret<P::EncodedScalar>`; `IPairingAdapter::decode_g1`, `decode_g2`, `g1_generator`, `g2_generator`, and `mul_g1` with their params, payload, and error types; `IPairingArithmetic::pairing_product` and `encode_gt`; `IPairingReference::scalar_field_order`, `g1_outside_subgroup_encoding`, and `g2_outside_subgroup_encoding`; `PAIRING_CONCRETES`, the declared set each block runs, and `PairingConcrete::Mock(MockIPairingAdapterFailureMode)`, the selection a failure-mode block makes; `Secret::expose(&self) -> &T`; and, from `domain`'s mocks, `build_secret(value: Vec<u8>, SecretConstructorParamsOverrides) -> Secret<Vec<u8>>`
 
   * `[ ]`   `adapters/pairing/src/factory/interface.rs`
-    * `[ ]`   `PrecompileEncoding` derives `PartialEq` and `Eq`, so the admission compares a declared encoding with the chain member's
+    * `[ ]`   `PrecompileEncoding` derives `Clone`, `Copy`, `Debug`, `PartialEq`, and `Eq`, so the admission compares a declared encoding with the chain member's and a declaration that holds a declared encoding is copied, printed, and compared by value
     * `[✅]`   `IPairingConsumer`, `pub trait IPairingConsumer` with `type Output;` and `fn consume_pairing<P: IPairingArithmetic + IPairingReference>(&self, params: ConsumePairingParams, payload: ConsumePairingPayload<P>) -> Self::Output;`, the work a composition performs with whichever concrete the factory constructs
     * `[✅]`   `ConsumePairingParams`, the fieldless struct `pub struct ConsumePairingParams;`
     * `[✅]`   `ConsumePairingPayload<P: IPairingAdapter>`, a struct with only `pub adapter: P`; the consumer reads `P::DECLARATION` and `P::CONCRETE`, so neither metadata value can be paired with another adapter
