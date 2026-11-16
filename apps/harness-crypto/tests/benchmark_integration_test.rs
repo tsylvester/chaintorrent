@@ -14,7 +14,7 @@ use pairing::{
     PairingConcrete, SampleUniformScalarErrorReturn, build_create_pairing_params,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
+    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RANDOM_SOURCE_KINDS, RandomSourceKind,
     build_create_random_source_params,
 };
 
@@ -24,15 +24,18 @@ use random::{
 ///   variant.
 /// Boundary: the public `create_pairing`, driven by the case runner; the real
 ///   chain is `create_pairing`, the arm's `try_new`,
-///   `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`,
-///   `sample_from_uniform_bytes`, and the concrete's group operations.
+///   `PairingBenchmark::consume_pairing`, the selected random member's
+///   `fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group
+///   operations.
 /// Mocked:   none.
 /// Arrange:  every variant of the declared set in turn, including both
 ///   libraries of one curve, so a benchmark that returns a fixed concrete, or
-///   the factory constructing a sibling library, fails; the source
-///   `create_random_source` constructs for `RandomSourceKind::OperatingSystem`.
+///   the factory constructing a sibling library, fails; each variant paired
+///   with each member of `RANDOM_SOURCE_KINDS`, whose source
+///   `create_random_source` constructs.
 /// Act:      `run_pairing_benchmark_case(&deps, params,
-///   build_pairing_benchmark_case_payload(Default::default()))` per concrete.
+///   build_pairing_benchmark_case_payload(Default::default()))` per concrete,
+///   per member of `RANDOM_SOURCE_KINDS`.
 /// Assert:   per concrete, `result.is_ok()`, the runner's level having run, and
 ///   the measured `concrete` equals the variant from the declared set, not the
 ///   value the call happened to construct.
@@ -55,36 +58,37 @@ fn the_consumer_receives_the_concrete_the_params_name() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        // Arrange
-        let deps = build_pairing_benchmark_case_deps(Consumer, Default::default());
-        let params = build_pairing_benchmark_case_params(PairingBenchmarkCaseParamsOverrides {
-            pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
-                concrete: Some(*concrete),
-                ..Default::default()
-            })),
-            random_source: Some(build_create_random_source_params(
-                CreateRandomSourceParamsOverrides {
-                    kind: Some(RandomSourceKind::OperatingSystem),
-                },
-            )),
-        });
+        for kind in RANDOM_SOURCE_KINDS {
+            // Arrange
+            let kind: RandomSourceKind = *kind;
+            let deps = build_pairing_benchmark_case_deps(Consumer, Default::default());
+            let params = build_pairing_benchmark_case_params(PairingBenchmarkCaseParamsOverrides {
+                pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                    concrete: Some(*concrete),
+                    ..Default::default()
+                })),
+                random_source: Some(build_create_random_source_params(
+                    CreateRandomSourceParamsOverrides { kind: Some(kind) },
+                )),
+            });
 
-        // Act
-        let result = run_pairing_benchmark_case(
-            &deps,
-            params,
-            build_pairing_benchmark_case_payload(Default::default()),
-        );
+            // Act
+            let result = run_pairing_benchmark_case(
+                &deps,
+                params,
+                build_pairing_benchmark_case_payload(Default::default()),
+            );
 
-        // Assert
-        assert!(result.is_ok());
-        assert!(
-            result
-                .ok()
-                .and_then(|success| success.output.ok())
-                .map(|measurement| measurement.concrete)
-                == Some(*concrete)
-        );
+            // Assert
+            assert!(result.is_ok());
+            assert!(
+                result
+                    .ok()
+                    .and_then(|success| success.output.ok())
+                    .map(|measurement| measurement.concrete)
+                    == Some(*concrete)
+            );
+        }
     }
 }
 
@@ -94,15 +98,18 @@ fn the_consumer_receives_the_concrete_the_params_name() {
 ///   concrete's group operations, so the output is `Ok`.
 /// Boundary: the public `create_pairing`, driven by the case runner; the real
 ///   chain is `create_pairing`, the arm's `try_new`,
-///   `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`,
-///   `sample_from_uniform_bytes`, and the concrete's group operations.
+///   `PairingBenchmark::consume_pairing`, the selected random member's
+///   `fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group
+///   operations.
 /// Mocked:   none.
 /// Arrange:  every concrete of the declared set in turn, each sampling bound
 ///   its own, so a benchmark that draws a length the bound does not name fails
-///   for the concrete whose bound differs; the source `create_random_source`
-///   constructs for `RandomSourceKind::OperatingSystem`.
+///   for the concrete whose bound differs; each concrete paired with each
+///   member of `RANDOM_SOURCE_KINDS`, whose source `create_random_source`
+///   constructs.
 /// Act:      `run_pairing_benchmark_case(&deps, params,
-///   build_pairing_benchmark_case_payload(Default::default()))` per concrete.
+///   build_pairing_benchmark_case_payload(Default::default()))` per concrete,
+///   per member of `RANDOM_SOURCE_KINDS`.
 /// Assert:   per concrete, `result.is_ok()`, the runner's level having run, and
 ///   `result.ok().map(|success| success.output.err())` equals `Some(None)`, the
 ///   runner's success arm present and the output's error arm empty, the whole
@@ -126,30 +133,31 @@ fn a_sampled_scalar_encodes_through_secret() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        // Arrange
-        let deps = build_pairing_benchmark_case_deps(Consumer, Default::default());
-        let params = build_pairing_benchmark_case_params(PairingBenchmarkCaseParamsOverrides {
-            pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
-                concrete: Some(*concrete),
-                ..Default::default()
-            })),
-            random_source: Some(build_create_random_source_params(
-                CreateRandomSourceParamsOverrides {
-                    kind: Some(RandomSourceKind::OperatingSystem),
-                },
-            )),
-        });
+        for kind in RANDOM_SOURCE_KINDS {
+            // Arrange
+            let kind: RandomSourceKind = *kind;
+            let deps = build_pairing_benchmark_case_deps(Consumer, Default::default());
+            let params = build_pairing_benchmark_case_params(PairingBenchmarkCaseParamsOverrides {
+                pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                    concrete: Some(*concrete),
+                    ..Default::default()
+                })),
+                random_source: Some(build_create_random_source_params(
+                    CreateRandomSourceParamsOverrides { kind: Some(kind) },
+                )),
+            });
 
-        // Act
-        let result = run_pairing_benchmark_case(
-            &deps,
-            params,
-            build_pairing_benchmark_case_payload(Default::default()),
-        );
+            // Act
+            let result = run_pairing_benchmark_case(
+                &deps,
+                params,
+                build_pairing_benchmark_case_payload(Default::default()),
+            );
 
-        // Assert
-        assert!(result.is_ok());
-        assert_eq!(result.ok().map(|success| success.output.err()), Some(None));
+            // Assert
+            assert!(result.is_ok());
+            assert_eq!(result.ok().map(|success| success.output.err()), Some(None));
+        }
     }
 }
 
@@ -158,8 +166,8 @@ fn a_sampled_scalar_encodes_through_secret() {
 ///   `Err(PairingBenchmarkErrorReturn::SampleScalar(error))`, the error whole.
 /// Boundary: the public `create_pairing`, driven by the case runner; the real
 ///   chain is `create_pairing`, the mock arm's `try_new`,
-///   `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`, and
-///   `sample_from_uniform_bytes`.
+///   `PairingBenchmark::consume_pairing`, the selected random member's
+///   `fill_bytes`, and `sample_from_uniform_bytes`.
 /// Mocked:   the pairing family's mock concrete, selected by configuration;
 ///   this block does not prove a real concrete's sampling.
 /// Arrange:  `params` from `build_pairing_benchmark_case_params` with the
@@ -167,10 +175,11 @@ fn a_sampled_scalar_encodes_through_secret() {
 ///   `concrete` override `PairingConcrete::Mock(
 ///   MockIPairingAdapterFailureMode::SampleScalarWrongLength)`, against the
 ///   `Ok` outputs of the entries above, so a benchmark that ignores a refused
-///   sampling fails; the source `create_random_source` constructs for
-///   `RandomSourceKind::OperatingSystem`.
+///   sampling fails; each member of `RANDOM_SOURCE_KINDS` in turn, whose
+///   source `create_random_source` constructs.
 /// Act:      `run_pairing_benchmark_case(&deps, params,
-///   build_pairing_benchmark_case_payload(Default::default()))`.
+///   build_pairing_benchmark_case_payload(Default::default()))` per member of
+///   `RANDOM_SOURCE_KINDS`.
 /// Assert:   `result.is_ok()`, the runner's level having run, and the observed
 ///   output error equals `PairingBenchmarkErrorReturn::SampleScalar(
 ///   SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 64 })`,
@@ -194,40 +203,41 @@ fn a_sampling_refusal_reaches_the_caller_unchanged() {
         }
     }
 
-    // Arrange
-    let deps = build_pairing_benchmark_case_deps(Consumer, Default::default());
-    let params = build_pairing_benchmark_case_params(PairingBenchmarkCaseParamsOverrides {
-        pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(PairingConcrete::Mock(
-                MockIPairingAdapterFailureMode::SampleScalarWrongLength,
+    for kind in RANDOM_SOURCE_KINDS {
+        // Arrange
+        let kind: RandomSourceKind = *kind;
+        let deps = build_pairing_benchmark_case_deps(Consumer, Default::default());
+        let params = build_pairing_benchmark_case_params(PairingBenchmarkCaseParamsOverrides {
+            pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                concrete: Some(PairingConcrete::Mock(
+                    MockIPairingAdapterFailureMode::SampleScalarWrongLength,
+                )),
+                ..Default::default()
+            })),
+            random_source: Some(build_create_random_source_params(
+                CreateRandomSourceParamsOverrides { kind: Some(kind) },
             )),
-            ..Default::default()
-        })),
-        random_source: Some(build_create_random_source_params(
-            CreateRandomSourceParamsOverrides {
-                kind: Some(RandomSourceKind::OperatingSystem),
-            },
-        )),
-    });
+        });
 
-    // Act
-    let result = run_pairing_benchmark_case(
-        &deps,
-        params,
-        build_pairing_benchmark_case_payload(Default::default()),
-    );
+        // Act
+        let result = run_pairing_benchmark_case(
+            &deps,
+            params,
+            build_pairing_benchmark_case_payload(Default::default()),
+        );
 
-    // Assert
-    assert!(result.is_ok());
-    assert_eq!(
-        result.ok().and_then(|success| success.output.err()),
-        Some(PairingBenchmarkErrorReturn::SampleScalar(
-            SampleUniformScalarErrorReturn::WrongLength {
-                expected: 64,
-                actual: 64,
-            }
-        ))
-    );
+        // Assert
+        assert!(result.is_ok());
+        assert_eq!(
+            result.ok().and_then(|success| success.output.err()),
+            Some(PairingBenchmarkErrorReturn::SampleScalar(
+                SampleUniformScalarErrorReturn::WrongLength {
+                    expected: 64,
+                    actual: 64,
+                }
+            ))
+        );
+    }
 }
 
 /// Contract: entry `every_operation_is_timed_on_every_concrete`; the `Ok`
@@ -235,15 +245,17 @@ fn a_sampling_refusal_reaches_the_caller_unchanged() {
 ///   `pairing_product_is_one` are each greater than `Duration::ZERO`.
 /// Boundary: the public `create_pairing`, driven by the case runner; the real
 ///   chain is `create_pairing`, the arm's `try_new`,
-///   `PairingBenchmark::consume_pairing`, `OsRandomSource::fill_bytes`,
-///   `sample_from_uniform_bytes`, and the concrete's group operations and clock
-///   reads.
+///   `PairingBenchmark::consume_pairing`, the selected random member's
+///   `fill_bytes`, `sample_from_uniform_bytes`, and the concrete's group
+///   operations and clock reads.
 /// Mocked:   none.
 /// Arrange:  every concrete of the declared set in turn, whose operations are
-///   real, so a timing left at its zero default fails; the source
-///   `create_random_source` constructs for `RandomSourceKind::OperatingSystem`.
+///   real, so a timing left at its zero default fails; each concrete paired
+///   with each member of `RANDOM_SOURCE_KINDS`, whose source
+///   `create_random_source` constructs.
 /// Act:      `run_pairing_benchmark_case(&deps, params,
-///   build_pairing_benchmark_case_payload(Default::default()))` per concrete.
+///   build_pairing_benchmark_case_payload(Default::default()))` per concrete,
+///   per member of `RANDOM_SOURCE_KINDS`.
 /// Assert:   per concrete, `result.is_ok()`, the runner's level having run, and
 ///   each of the five timings is greater than `Duration::ZERO`; the exact
 ///   means are not asserted.
@@ -266,37 +278,38 @@ fn every_operation_is_timed_on_every_concrete() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        // Arrange
-        let deps = build_pairing_benchmark_case_deps(Consumer, Default::default());
-        let params = build_pairing_benchmark_case_params(PairingBenchmarkCaseParamsOverrides {
-            pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
-                concrete: Some(*concrete),
-                ..Default::default()
-            })),
-            random_source: Some(build_create_random_source_params(
-                CreateRandomSourceParamsOverrides {
-                    kind: Some(RandomSourceKind::OperatingSystem),
-                },
-            )),
-        });
+        for kind in RANDOM_SOURCE_KINDS {
+            // Arrange
+            let kind: RandomSourceKind = *kind;
+            let deps = build_pairing_benchmark_case_deps(Consumer, Default::default());
+            let params = build_pairing_benchmark_case_params(PairingBenchmarkCaseParamsOverrides {
+                pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                    concrete: Some(*concrete),
+                    ..Default::default()
+                })),
+                random_source: Some(build_create_random_source_params(
+                    CreateRandomSourceParamsOverrides { kind: Some(kind) },
+                )),
+            });
 
-        // Act
-        let result = run_pairing_benchmark_case(
-            &deps,
-            params,
-            build_pairing_benchmark_case_payload(Default::default()),
-        );
+            // Act
+            let result = run_pairing_benchmark_case(
+                &deps,
+                params,
+                build_pairing_benchmark_case_payload(Default::default()),
+            );
 
-        // Assert
-        assert!(result.is_ok());
-        let measurement = result
-            .ok()
-            .and_then(|success| success.output.ok())
-            .expect("the measured arm");
-        assert!(measurement.timings.mul_g1 > Duration::ZERO);
-        assert!(measurement.timings.mul_g2 > Duration::ZERO);
-        assert!(measurement.timings.msm_g1 > Duration::ZERO);
-        assert!(measurement.timings.msm_g2 > Duration::ZERO);
-        assert!(measurement.timings.pairing_product > Duration::ZERO);
+            // Assert
+            assert!(result.is_ok());
+            let measurement = result
+                .ok()
+                .and_then(|success| success.output.ok())
+                .expect("the measured arm");
+            assert!(measurement.timings.mul_g1 > Duration::ZERO);
+            assert!(measurement.timings.mul_g2 > Duration::ZERO);
+            assert!(measurement.timings.msm_g1 > Duration::ZERO);
+            assert!(measurement.timings.msm_g2 > Duration::ZERO);
+            assert!(measurement.timings.pairing_product > Duration::ZERO);
+        }
     }
 }

@@ -380,16 +380,16 @@ Each group below names its nodes by address, in Work Breakdown Structure order, 
 
 * `[ ]`   The contract interface, verifier, measurement, report, and configuration nodes, through `harness-crypto/config`:
   * `[✅]`   Relocation: the node `contracts/evm/IdentityAccount` and the placeholders `contracts/evm/Binding` and `contracts/evm/Registry`, which sit after `harness-crypto/generate/factory` and before `domain/handshake_key_commitment`, move unchanged, in that order, to directly after `contracts/evm/DeliveryVerifier` and before `contracts/evm/deploy`. Their corrections are stated under the contract suite group, at their new position.
-  * `[ ]`   Halt: node insertion point after `harness-crypto/generate/factory` and before `harness-crypto/verifier/evm`, which holds the Chain Prerequisites Handoff's placeholders, for the new nodes of dependency-map tickets. Authoring a new node follows the node-authoring procedure, not this correction procedure, so the agent applying the corrections stops here, reports the insertion point and the tickets it holds, and does not author the nodes or correct any node after this point until the inserted nodes exist.
-    * `[ ]`   Each placeholder is authored to this handoff's requirements: `contracts/evm/ParameterSets` creating the toolchain and depending on `workspace/ci`, and `chain/base` authoring and binding `contracts/evm/abi/Registry.json` and `contracts/evm/abi/IEntitlement.json`, each as "Resolved" under the problem "contract interfaces stranded as nodes, and the forms' values restated in a contract" states.
-    * `[ ]`   `chain/base` also carries the network values and the estimated-fee description "Resolved" under the problem "the chain's network values" states.
-    * `[ ]`   `contracts/evm/ParameterSets`
-    * `[ ]`   `domain/handshake_key_commitment`
-    * `[ ]`   `chain/base`
-    * `[ ]`   `chain/admit_chain_selection`
-    * `[ ]`   `chain/lookup_chain_declaration`
-    * `[ ]`   `chain/admit_chain_composition`
-    * `[ ]`   `chain/factory`
+  * `[✅]`   Halt: node insertion point after `harness-crypto/generate/factory` and before `harness-crypto/verifier/evm`, which holds the Chain Prerequisites Handoff's placeholders, for the new nodes of dependency-map tickets. Authoring a new node follows the node-authoring procedure, not this correction procedure, so the agent applying the corrections stops here, reports the insertion point and the tickets it holds, and does not author the nodes or correct any node after this point until the inserted nodes exist.
+    * `[✅]`   Each placeholder is authored to this handoff's requirements: `contracts/evm/ParameterSets` creating the toolchain and depending on `workspace/ci`, and `chain/base` authoring and binding `contracts/evm/abi/Registry.json` and `contracts/evm/abi/IEntitlement.json`, each as "Resolved" under the problem "contract interfaces stranded as nodes, and the forms' values restated in a contract" states.
+    * `[✅]`   `chain/base` also carries the network values and the estimated-fee description "Resolved" under the problem "the chain's network values" states.
+    * `[✅]`   `contracts/evm/ParameterSets`
+    * `[✅]`   `domain/handshake_key_commitment`
+    * `[✅]`   `chain/base`
+    * `[✅]`   `chain/admit_chain_selection`
+    * `[✅]`   `chain/lookup_chain_declaration`
+    * `[✅]`   `chain/admit_chain_composition`
+    * `[✅]`   `chain/factory`
   * `[ ]`   `harness-crypto/verifier/evm`, a node marked largely complete whose content changes, so it returns to unbuilt and its files are rebuilt from the corrected node:
     * `[ ]`   The problem "the chain's network values": `EvmVerifierSettings`' endpoint and gas price oracle, "the OP Stack predeploy", `EvmVerifierEndpoint`, the `GasPriceOracle` field, the inline `IGasPriceOracle`, `unsigned_transaction`, `fee_request`, the oracle reads, and `L1FeeOutOfRange`. Each is replaced by the chain adapter the factory hands the concrete, whose endpoint it reaches the deployed verifier at and whose estimated-fee description, from the request the concrete hands it, its cost carries; the fee's reads and refusals move to `chain/base`.
     * `[ ]`   The problem "harness code outside a family that uses a concrete's own types": the verifier module's `provides.rs` re-exporting "the concrete's configuration surface".

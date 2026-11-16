@@ -56,7 +56,7 @@ use pairing::{
     build_mul_g2_payload, build_sample_uniform_scalar_payload,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
+    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RANDOM_SOURCE_KINDS,
     build_create_random_source_params,
 };
 
@@ -79,9 +79,9 @@ use random::{
 /// Boundary: the private surface's chain ending at `generate_keys`,
 ///   `key_pair_public_keys`, `public_keys_from_components`, `wrap_to`, and
 ///   `unwrap`.
-/// Mocked:  none; the operating system's generator runs real, so the block
+/// Mocked:  none; each declared member's generator runs real, so the block
 ///   proves the opening for coins and nonces no fixture chose and does not
-///   prove the generator's quality.
+///   prove a generator's quality.
 #[test]
 fn every_envelope_opens_under_its_key_pair_to_the_credential_it_wrapped() {
     // Arrange
@@ -274,46 +274,49 @@ fn every_envelope_opens_under_its_key_pair_to_the_credential_it_wrapped() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -334,7 +337,7 @@ fn every_envelope_opens_under_its_key_pair_to_the_credential_it_wrapped() {
 ///   equal to the encodings of `A` and `B`.
 /// Boundary: the private surface's chain ending at `wrap_to`,
 ///   `envelope_components`, and `unwrap`.
-/// Mocked:  none; the operating system's generator runs real.
+/// Mocked:  none; each declared member's generator runs real.
 #[test]
 fn independent_coins_change_every_envelope_element_and_still_open() {
     // Arrange
@@ -693,46 +696,49 @@ fn independent_coins_change_every_envelope_element_and_still_open() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -753,7 +759,7 @@ fn independent_coins_change_every_envelope_element_and_still_open() {
 ///   or of `B`.
 /// Boundary: the private surface's chain ending at `generate_keys`, `wrap_to`,
 ///   and `unwrap`.
-/// Mocked:  none; the operating system's generator runs real.
+/// Mocked:  none; each declared member's generator runs real.
 #[test]
 fn another_key_pair_opens_an_envelope_to_a_different_pair() {
     // Arrange
@@ -962,46 +968,49 @@ fn another_key_pair_opens_an_envelope_to_a_different_pair() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -1022,7 +1031,7 @@ fn another_key_pair_opens_an_envelope_to_a_different_pair() {
 ///   encodes equal to the encoding of `A` or of `B`.
 /// Boundary: the private surface's chain ending at `key_pair_components`,
 ///   `key_pair_from_components`, `wrap_to`, and `unwrap`.
-/// Mocked:  none; the operating system's generator runs real.
+/// Mocked:  none; each declared member's generator runs real.
 #[test]
 fn exchanged_secrets_open_an_envelope_to_a_different_pair() {
     // Arrange
@@ -1242,46 +1251,49 @@ fn exchanged_secrets_open_an_envelope_to_a_different_pair() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -1303,7 +1315,7 @@ fn exchanged_secrets_open_an_envelope_to_a_different_pair() {
 ///   encodes equal to `B`.
 /// Boundary: the private surface's chain ending at `wrap_to`,
 ///   `envelope_components`, `envelope_from_components`, and `unwrap`.
-/// Mocked:  none; the operating system's generator runs real.
+/// Mocked:  none; each declared member's generator runs real.
 #[test]
 fn a_first_group_coin_element_from_another_envelope_changes_only_the_first_component() {
     // Arrange
@@ -1608,46 +1620,49 @@ fn a_first_group_coin_element_from_another_envelope_changes_only_the_first_compo
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -1669,7 +1684,7 @@ fn a_first_group_coin_element_from_another_envelope_changes_only_the_first_compo
 ///   encodes equal to `A`.
 /// Boundary: as
 ///   `a_first_group_coin_element_from_another_envelope_changes_only_the_first_component`.
-/// Mocked:  none; the operating system's generator runs real.
+/// Mocked:  none; each declared member's generator runs real.
 #[test]
 fn a_second_group_coin_element_from_another_envelope_changes_only_the_second_component() {
     // Arrange
@@ -1974,46 +1989,49 @@ fn a_second_group_coin_element_from_another_envelope_changes_only_the_second_com
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -2036,7 +2054,7 @@ fn a_second_group_coin_element_from_another_envelope_changes_only_the_second_com
 ///   equal to the expected points' encodings.
 /// Boundary: the private surface's chain ending at `generate_keys`,
 ///   `key_pair_components`, and `key_pair_public_keys`.
-/// Mocked:  none; the draws are caller-supplied, and the operating system's
+/// Mocked:  none; the draws are caller-supplied, and each declared member's
 ///   generator runs real for the nonces.
 #[test]
 fn every_key_pair_holds_the_public_keys_its_secrets_form() {
@@ -2254,46 +2272,49 @@ fn every_key_pair_holds_the_public_keys_its_secrets_form() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -2316,7 +2337,7 @@ fn every_key_pair_holds_the_public_keys_its_secrets_form() {
 ///   `pk2` by `sigma`.
 /// Boundary: the private surface's chain ending at `generate_keys`,
 ///   `public_keys_from_components`, `wrap_to`, and `envelope_components`.
-/// Mocked:  none; the operating system's generator runs real.
+/// Mocked:  none; each declared member's generator runs real.
 #[test]
 fn every_wrap_returns_the_coins_its_envelope_was_formed_with() {
     // Arrange
@@ -2633,46 +2654,49 @@ fn every_wrap_returns_the_coins_its_envelope_was_formed_with() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -2694,7 +2718,7 @@ fn every_wrap_returns_the_coins_its_envelope_was_formed_with() {
 ///   `key_pair_public_keys`, and `public_keys_from_components`, with the
 ///   possession descriptions' `to_fields`, the encoder, and the hash-to-scalar
 ///   adapter running for real.
-/// Mocked:  none; the operating system's generator runs real for the nonces.
+/// Mocked:  none; each declared member's generator runs real for the nonces.
 #[test]
 fn public_keys_are_admitted_with_their_own_proof_of_possession() {
     // Arrange
@@ -2805,46 +2829,49 @@ fn public_keys_are_admitted_with_their_own_proof_of_possession() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -2866,7 +2893,7 @@ fn public_keys_are_admitted_with_their_own_proof_of_possession() {
 ///   public keys' `pk1` and `pk2` encode equal to the key pair's.
 /// Boundary: the private surface's chain ending at `possession_components`,
 ///   `possession_from_components`, and `public_keys_from_components`.
-/// Mocked:  none; the operating system's generator runs real for the nonces.
+/// Mocked:  none; each declared member's generator runs real for the nonces.
 #[test]
 fn public_keys_are_admitted_with_a_proof_rebuilt_from_its_components() {
     // Arrange
@@ -3004,46 +3031,49 @@ fn public_keys_are_admitted_with_a_proof_rebuilt_from_its_components() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -3064,7 +3094,7 @@ fn public_keys_are_admitted_with_a_proof_rebuilt_from_its_components() {
 ///   Some(PublicKeysFromComponentsErrorReturn::PossessionG1))`.
 /// Boundary: the private surface's chain ending at `generate_keys` and
 ///   `public_keys_from_components`.
-/// Mocked:  none; the operating system's generator runs real for the nonces.
+/// Mocked:  none; each declared member's generator runs real for the nonces.
 #[test]
 fn public_keys_are_refused_with_another_key_pairs_proof_of_possession() {
     // Arrange
@@ -3146,46 +3176,49 @@ fn public_keys_are_refused_with_another_key_pairs_proof_of_possession() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -3210,7 +3243,7 @@ fn public_keys_are_refused_with_another_key_pairs_proof_of_possession() {
 ///   Some(PublicKeysFromComponentsErrorReturn::PossessionG2))`.
 /// Boundary: the private surface's chain ending at `possession_components`,
 ///   `possession_from_components`, and `public_keys_from_components`.
-/// Mocked:  none; the operating system's generator runs real for the nonces.
+/// Mocked:  none; each declared member's generator runs real for the nonces.
 #[test]
 fn public_keys_are_refused_with_a_second_group_proof_from_another_key_pair() {
     // Arrange
@@ -3326,46 +3359,49 @@ fn public_keys_are_refused_with_a_second_group_proof_from_another_key_pair() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -3387,7 +3423,7 @@ fn public_keys_are_refused_with_a_second_group_proof_from_another_key_pair() {
 ///   Some(PublicKeysFromComponentsErrorReturn::IdentityKeyG1))`.
 /// Boundary: the private surface's chain ending at `generate_keys`,
 ///   `key_pair_public_keys`, and `public_keys_from_components`.
-/// Mocked:  none; the operating system's generator runs real for the nonces.
+/// Mocked:  none; each declared member's generator runs real for the nonces.
 #[test]
 fn public_keys_are_refused_with_an_identity_first_group_key() {
     // Arrange
@@ -3487,46 +3523,49 @@ fn public_keys_are_refused_with_an_identity_first_group_key() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -3549,7 +3588,7 @@ fn public_keys_are_refused_with_an_identity_first_group_key() {
 ///   Some(PublicKeysFromComponentsErrorReturn::IdentityKeyG2))`.
 /// Boundary: the private surface's chain ending at `generate_keys`,
 ///   `key_pair_public_keys`, and `public_keys_from_components`.
-/// Mocked:  none; the operating system's generator runs real for the nonces.
+/// Mocked:  none; each declared member's generator runs real for the nonces.
 #[test]
 fn public_keys_are_refused_with_an_identity_second_group_key() {
     // Arrange
@@ -3649,46 +3688,49 @@ fn public_keys_are_refused_with_an_identity_second_group_key() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -3712,7 +3754,7 @@ fn public_keys_are_refused_with_an_identity_second_group_key() {
 /// Boundary: the private surface's chain ending at `generate_keys` and
 ///   `public_keys_from_components`, with the pairing's `pairing_product_is_one`
 ///   running for real.
-/// Mocked:  none; the operating system's generator runs real for the nonces.
+/// Mocked:  none; each declared member's generator runs real for the nonces.
 #[test]
 fn public_keys_are_refused_with_a_secret_shared_across_the_groups() {
     // Arrange
@@ -3823,46 +3865,49 @@ fn public_keys_are_refused_with_a_secret_shared_across_the_groups() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -3883,7 +3928,7 @@ fn public_keys_are_refused_with_a_secret_shared_across_the_groups() {
 ///   `A` and `B`.
 /// Boundary: the private surface's chain ending at `key_pair_components`,
 ///   `key_pair_from_components`, `wrap_to`, and `unwrap`.
-/// Mocked:  none; the operating system's generator runs real.
+/// Mocked:  none; each declared member's generator runs real.
 #[test]
 fn a_key_pair_restored_from_its_components_opens_the_envelope() {
     // Arrange
@@ -4096,46 +4141,49 @@ fn a_key_pair_restored_from_its_components_opens_the_envelope() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -4156,7 +4204,7 @@ fn a_key_pair_restored_from_its_components_opens_the_envelope() {
 ///   `A` and `B`.
 /// Boundary: the private surface's chain ending at `envelope_components`,
 ///   `envelope_from_components`, and `unwrap`.
-/// Mocked:  none; the operating system's generator runs real.
+/// Mocked:  none; each declared member's generator runs real.
 #[test]
 fn an_envelope_rebuilt_from_its_components_opens() {
     // Arrange
@@ -4371,46 +4419,49 @@ fn an_envelope_rebuilt_from_its_components_opens() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -4442,7 +4493,7 @@ fn an_envelope_rebuilt_from_its_components_opens() {
 ///   `possession_components`, and `key_pair_public_keys`, with
 ///   `DomainTag::try_new`, the possession descriptions' `to_fields`, the
 ///   encoder's `encode`, and the adapter's `hash_to_scalar` running for real.
-/// Mocked:  none; the operating system's generator runs real for the nonces.
+/// Mocked:  none; each declared member's generator runs real for the nonces.
 #[test]
 fn each_proof_of_possession_hashes_its_challenge_under_the_declared_tag() {
     // Arrange
@@ -4906,53 +4957,56 @@ fn each_proof_of_possession_hashes_its_challenge_under_the_declared_tag() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                let (c1_pair, c2_pair, g1_pair, g2_pair, g1_wrong_tag, g2_wrong_tag) =
-                    created.expect("the case admits the selection").output;
-                assert_eq!(c1_pair.0, c1_pair.1);
-                assert_eq!(c2_pair.0, c2_pair.1);
-                assert_eq!(g1_pair.0, g1_pair.1);
-                assert_eq!(g2_pair.0, g2_pair.1);
-                assert_ne!(g1_wrong_tag.0, g1_wrong_tag.1);
-                assert_ne!(g2_wrong_tag.0, g2_wrong_tag.1);
+                    // Assert
+                    let (c1_pair, c2_pair, g1_pair, g2_pair, g1_wrong_tag, g2_wrong_tag) =
+                        created.expect("the case admits the selection").output;
+                    assert_eq!(c1_pair.0, c1_pair.1);
+                    assert_eq!(c2_pair.0, c2_pair.1);
+                    assert_eq!(g1_pair.0, g1_pair.1);
+                    assert_eq!(g2_pair.0, g2_pair.1);
+                    assert_ne!(g1_wrong_tag.0, g1_wrong_tag.1);
+                    assert_ne!(g2_wrong_tag.0, g2_wrong_tag.1);
+                }
             }
         }
     }
@@ -5027,46 +5081,49 @@ fn every_concrete_refuses_equal_secret_draws() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -5158,35 +5215,37 @@ fn every_concrete_refuses_a_key_pair_of_equal_secrets() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            // Act
-            let created = run_pairing_elgamal_key_agreement_case(
-                &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                build_pairing_elgamal_key_agreement_case_params(
-                    PairingElGamalKeyAgreementCaseParamsOverrides {
-                        pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
-                            concrete: Some(*concrete),
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                // Act
+                let created = run_pairing_elgamal_key_agreement_case(
+                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+                    build_pairing_elgamal_key_agreement_case_params(
+                        PairingElGamalKeyAgreementCaseParamsOverrides {
+                            pairing: Some(build_create_pairing_params(
+                                CreatePairingParamsOverrides {
+                                    concrete: Some(*concrete),
+                                    ..Default::default()
+                                },
+                            )),
+                            encoding: Some(build_create_encoding_params(
+                                CreateEncodingParamsOverrides {
+                                    concrete: Some(encoding_case.concrete),
+                                    identifier: Some(encoding_case.identifier),
+                                },
+                            )),
+                            random_source: Some(build_create_random_source_params(
+                                CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                            )),
                             ..Default::default()
-                        })),
-                        encoding: Some(build_create_encoding_params(
-                            CreateEncodingParamsOverrides {
-                                concrete: Some(encoding_case.concrete),
-                                identifier: Some(encoding_case.identifier),
-                            },
-                        )),
-                        random_source: Some(build_create_random_source_params(
-                            CreateRandomSourceParamsOverrides {
-                                kind: Some(RandomSourceKind::OperatingSystem),
-                            },
-                        )),
-                        ..Default::default()
-                    },
-                ),
-                build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-            );
+                        },
+                    ),
+                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                );
 
-            // Assert
-            assert!(created.is_ok());
+                // Assert
+                assert!(created.is_ok());
+            }
         }
     }
 }
@@ -5261,46 +5320,49 @@ fn every_concrete_refuses_a_zero_x_draw_as_an_identity_first_group_key() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -5376,46 +5438,49 @@ fn every_concrete_refuses_a_zero_y_draw_as_an_identity_second_group_key() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -5506,35 +5571,37 @@ fn every_concrete_refuses_a_key_pair_of_a_zero_x_secret() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            // Act
-            let created = run_pairing_elgamal_key_agreement_case(
-                &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                build_pairing_elgamal_key_agreement_case_params(
-                    PairingElGamalKeyAgreementCaseParamsOverrides {
-                        pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
-                            concrete: Some(*concrete),
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                // Act
+                let created = run_pairing_elgamal_key_agreement_case(
+                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+                    build_pairing_elgamal_key_agreement_case_params(
+                        PairingElGamalKeyAgreementCaseParamsOverrides {
+                            pairing: Some(build_create_pairing_params(
+                                CreatePairingParamsOverrides {
+                                    concrete: Some(*concrete),
+                                    ..Default::default()
+                                },
+                            )),
+                            encoding: Some(build_create_encoding_params(
+                                CreateEncodingParamsOverrides {
+                                    concrete: Some(encoding_case.concrete),
+                                    identifier: Some(encoding_case.identifier),
+                                },
+                            )),
+                            random_source: Some(build_create_random_source_params(
+                                CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                            )),
                             ..Default::default()
-                        })),
-                        encoding: Some(build_create_encoding_params(
-                            CreateEncodingParamsOverrides {
-                                concrete: Some(encoding_case.concrete),
-                                identifier: Some(encoding_case.identifier),
-                            },
-                        )),
-                        random_source: Some(build_create_random_source_params(
-                            CreateRandomSourceParamsOverrides {
-                                kind: Some(RandomSourceKind::OperatingSystem),
-                            },
-                        )),
-                        ..Default::default()
-                    },
-                ),
-                build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-            );
+                        },
+                    ),
+                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                );
 
-            // Assert
-            assert!(created.is_ok());
+                // Assert
+                assert!(created.is_ok());
+            }
         }
     }
 }
@@ -5624,35 +5691,37 @@ fn every_concrete_refuses_a_key_pair_of_a_zero_y_secret() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            // Act
-            let created = run_pairing_elgamal_key_agreement_case(
-                &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                build_pairing_elgamal_key_agreement_case_params(
-                    PairingElGamalKeyAgreementCaseParamsOverrides {
-                        pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
-                            concrete: Some(*concrete),
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                // Act
+                let created = run_pairing_elgamal_key_agreement_case(
+                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+                    build_pairing_elgamal_key_agreement_case_params(
+                        PairingElGamalKeyAgreementCaseParamsOverrides {
+                            pairing: Some(build_create_pairing_params(
+                                CreatePairingParamsOverrides {
+                                    concrete: Some(*concrete),
+                                    ..Default::default()
+                                },
+                            )),
+                            encoding: Some(build_create_encoding_params(
+                                CreateEncodingParamsOverrides {
+                                    concrete: Some(encoding_case.concrete),
+                                    identifier: Some(encoding_case.identifier),
+                                },
+                            )),
+                            random_source: Some(build_create_random_source_params(
+                                CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                            )),
                             ..Default::default()
-                        })),
-                        encoding: Some(build_create_encoding_params(
-                            CreateEncodingParamsOverrides {
-                                concrete: Some(encoding_case.concrete),
-                                identifier: Some(encoding_case.identifier),
-                            },
-                        )),
-                        random_source: Some(build_create_random_source_params(
-                            CreateRandomSourceParamsOverrides {
-                                kind: Some(RandomSourceKind::OperatingSystem),
-                            },
-                        )),
-                        ..Default::default()
-                    },
-                ),
-                build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-            );
+                        },
+                    ),
+                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                );
 
-            // Assert
-            assert!(created.is_ok());
+                // Assert
+                assert!(created.is_ok());
+            }
         }
     }
 }
@@ -5736,46 +5805,49 @@ fn every_concrete_returns_an_x_draw_sampling_refusal_whole() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }
@@ -5860,46 +5932,49 @@ fn every_concrete_returns_a_y_draw_sampling_refusal_whole() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-                .iter()
-                .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-            {
-                // Act
-                let created = run_pairing_elgamal_key_agreement_case(
-                    &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-                    build_pairing_elgamal_key_agreement_case_params(
-                        PairingElGamalKeyAgreementCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding_case.concrete),
-                                    identifier: Some(encoding_case.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(hash_case.concrete),
-                                    identifier: Some(hash_case.identifier),
-                                },
-                            )),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        },
-                    ),
-                    build_pairing_elgamal_key_agreement_case_payload(Default::default()),
-                );
+        for kind in RANDOM_SOURCE_KINDS {
+            for encoding_case in DECLARED_ENCODING_SELECTIONS {
+                for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
+                    .iter()
+                    .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
+                {
+                    // Act
+                    let created = run_pairing_elgamal_key_agreement_case(
+                        &build_pairing_elgamal_key_agreement_case_deps(
+                            Consumer,
+                            Default::default(),
+                        ),
+                        build_pairing_elgamal_key_agreement_case_params(
+                            PairingElGamalKeyAgreementCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding_case.concrete),
+                                        identifier: Some(encoding_case.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(hash_case.concrete),
+                                        identifier: Some(hash_case.identifier),
+                                    },
+                                )),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                )),
+                            },
+                        ),
+                        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+                    );
 
-                // Assert
-                assert!(created.is_ok());
+                    // Assert
+                    assert!(created.is_ok());
+                }
             }
         }
     }

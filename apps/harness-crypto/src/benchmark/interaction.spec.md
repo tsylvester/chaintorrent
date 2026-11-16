@@ -39,7 +39,7 @@ The `pairing/factory` entries this node's route reaches, each proven by the publ
 
 Each entry is named and proven by the public integration block of the same name.
 
-- `every_operation_is_timed_on_every_concrete`: condition the benchmark runs through `create_pairing` on a concrete of `PAIRING_CONCRETES` with the source `create_random_source` constructs for `RandomSourceKind::OperatingSystem`; outcome `Ok` whose timings for `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one` are each greater than `Duration::ZERO`; variation every concrete of the declared set, whose operations are real, so a timing left at its zero default fails; edge each operation runs on scalars sampled from the draw and on the concrete's own points, so none is skipped.
+- `every_operation_is_timed_on_every_concrete`: condition the benchmark runs through `create_pairing` on a concrete of `PAIRING_CONCRETES` with the source `create_random_source` constructs for a member of `RANDOM_SOURCE_KINDS`; outcome `Ok` whose timings for `mul_g1`, `mul_g2`, `msm_g1`, `msm_g2`, and `pairing_product_is_one` are each greater than `Duration::ZERO`; variation every concrete of the declared set paired with each member of `RANDOM_SOURCE_KINDS`, whose operations and draws are real, so a timing left at its zero default fails; edge each operation runs on scalars sampled from the draw and on the concrete's own points, so none is skipped.
 
 ## Integration: public surface
 

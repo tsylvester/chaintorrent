@@ -39,7 +39,7 @@ use pairing::{
 };
 use random::{
     CreateRandomSourceParamsOverrides, IRandomSourceAdapter, MockIRandomSourceAdapterFailureMode,
-    RandomSourceKind, build_create_random_source_params,
+    RANDOM_SOURCE_KINDS, RandomSourceKind, build_create_random_source_params,
 };
 
 /// Contract: own entry
@@ -56,7 +56,8 @@ use random::{
 ///   asset-scope selection maps formed over a `Root` from `build_root`, the
 ///   same root handed to `setup` and to `derive_identity`; two key pairs
 ///   from `build_generate_keys_payload` with draws that differ in every
-///   byte; `random_source` overridden to `RandomSourceKind::OperatingSystem`;
+///   byte; `random_source` overridden to each member of `RANDOM_SOURCE_KINDS`
+///   in turn;
 ///   each case, the other key pair's draws differing so that an unwrap that
 ///   ignores the key pair fails.
 /// Act:     `unwrap` under each key pair, after `credential_components`,
@@ -67,7 +68,7 @@ use random::{
 /// Boundary: the public `run_create_key_agreement_case` to the case
 ///   consumer, the public call `create_key_agreement` and the route of the
 ///   delivery entry in the spec's public surface.
-/// Mocked:  none; every draw is the operating system's generator, so this
+/// Mocked:  none; every draw is each declared member's generator, so this
 ///   block does not prove a draw a fixture chose.
 #[test]
 fn a_delivered_credential_opens_valid_for_its_recipient_and_invalid_for_another_key_pair() {
@@ -330,43 +331,43 @@ fn a_delivered_credential_opens_valid_for_its_recipient_and_invalid_for_another_
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for kem_case in DECLARED_KEM_SELECTIONS {
                     for case in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                        // Act
-                        let run = run_create_key_agreement_case(
-                            &build_create_key_agreement_case_deps(
-                                Consumer {
-                                    key_agreement: *case,
-                                    scope: kem_case.scope,
-                                },
-                                Default::default(),
-                            ),
-                            build_create_key_agreement_case_params(
-                                CreateKeyAgreementCaseParamsOverrides {
-                                    pairing: Some(build_create_pairing_params(
-                                        CreatePairingParamsOverrides {
-                                            concrete: Some(*pairing_concrete),
-                                            ..Default::default()
-                                        },
-                                    )),
-                                    encoding: Some(build_create_encoding_params(
-                                        CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
-                                        },
-                                    )),
-                                    hash_to_scalar: Some(*hash_case),
-                                    random_source: Some(build_create_random_source_params(
-                                        CreateRandomSourceParamsOverrides {
-                                            kind: Some(RandomSourceKind::OperatingSystem),
-                                        },
-                                    )),
-                                    kem: Some(*kem_case),
-                                },
-                            ),
-                            build_create_key_agreement_case_payload(Default::default()),
-                        );
+                        for kind in RANDOM_SOURCE_KINDS {
+                            // Act
+                            let run = run_create_key_agreement_case(
+                                &build_create_key_agreement_case_deps(
+                                    Consumer {
+                                        key_agreement: *case,
+                                        scope: kem_case.scope,
+                                    },
+                                    Default::default(),
+                                ),
+                                build_create_key_agreement_case_params(
+                                    CreateKeyAgreementCaseParamsOverrides {
+                                        pairing: Some(build_create_pairing_params(
+                                            CreatePairingParamsOverrides {
+                                                concrete: Some(*pairing_concrete),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        encoding: Some(build_create_encoding_params(
+                                            CreateEncodingParamsOverrides {
+                                                concrete: Some(encoding_case.concrete),
+                                                identifier: Some(encoding_case.identifier),
+                                            },
+                                        )),
+                                        hash_to_scalar: Some(*hash_case),
+                                        random_source: Some(build_create_random_source_params(
+                                            CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                        )),
+                                        kem: Some(*kem_case),
+                                    },
+                                ),
+                                build_create_key_agreement_case_payload(Default::default()),
+                            );
 
-                        // Assert
-                        assert!(run.is_ok());
+                            // Assert
+                            assert!(run.is_ok());
+                        }
                     }
                 }
             }
@@ -402,7 +403,7 @@ fn a_delivered_credential_opens_valid_for_its_recipient_and_invalid_for_another_
 ///   then `create_key_agreement`, `generate_keys`, and
 ///   `possession_components` inside each call.
 /// Mocked:  the randomness family's mock concrete under `Succeeds`; this
-///   block does not prove the operating system's generator.
+///   block does not prove a declared member's generator.
 #[test]
 fn libraries_sharing_an_identifier_flatten_a_first_group_statement_to_the_same_fields() {
     // Arrange
@@ -591,7 +592,7 @@ fn libraries_sharing_an_identifier_flatten_a_first_group_statement_to_the_same_f
 ///   then `create_key_agreement`, `generate_keys`, and
 ///   `possession_components` inside each call.
 /// Mocked:  the randomness family's mock concrete under `Succeeds`; this
-///   block does not prove the operating system's generator.
+///   block does not prove a declared member's generator.
 #[test]
 fn libraries_sharing_an_identifier_flatten_a_second_group_statement_to_the_same_fields() {
     // Arrange

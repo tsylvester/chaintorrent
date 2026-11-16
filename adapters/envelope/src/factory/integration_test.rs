@@ -52,7 +52,7 @@ use pairing::{
     build_mul_g2_payload, build_sample_uniform_scalar_payload,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
+    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RANDOM_SOURCE_KINDS,
     build_create_random_source_params,
 };
 
@@ -296,42 +296,42 @@ fn every_key_agreement_forms_the_public_keys_its_secrets_form() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -608,42 +608,42 @@ fn every_envelope_opens_under_its_key_pair_to_the_components_it_wrapped() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -941,42 +941,42 @@ fn another_key_pair_opens_an_envelope_to_different_components() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -1328,42 +1328,42 @@ fn every_wrap_returns_the_coins_its_envelope_was_formed_with() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -1477,42 +1477,42 @@ fn every_key_agreement_returns_an_x_draw_sampling_refusal_whole() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -1626,42 +1626,42 @@ fn every_key_agreement_returns_a_y_draw_sampling_refusal_whole() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -1763,42 +1763,42 @@ fn every_key_agreement_refuses_a_zero_x_draw_as_an_identity_first_group_key() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -1900,42 +1900,42 @@ fn every_key_agreement_refuses_a_zero_y_draw_as_an_identity_second_group_key() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -2036,42 +2036,42 @@ fn every_key_agreement_refuses_equal_secret_draws() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -2189,42 +2189,42 @@ fn every_key_agreement_refuses_a_key_pair_of_a_zero_x_secret() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -2342,42 +2342,42 @@ fn every_key_agreement_refuses_a_key_pair_of_a_zero_y_secret() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -2503,42 +2503,42 @@ fn every_key_agreement_refuses_a_key_pair_of_equal_secrets() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -2844,42 +2844,42 @@ fn a_key_pair_restored_from_its_components_opens_the_envelope() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -3177,42 +3177,42 @@ fn an_envelope_rebuilt_from_its_components_opens() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -3400,42 +3400,42 @@ fn public_keys_are_admitted_with_their_own_proof_of_possession() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -3575,42 +3575,42 @@ fn a_possession_rebuilt_from_its_components_is_admitted() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -3750,42 +3750,42 @@ fn public_keys_are_refused_with_another_key_pairs_proof_of_possession() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -3971,42 +3971,42 @@ fn public_keys_are_refused_with_a_second_group_proof_from_another_key_pair() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -4150,42 +4150,42 @@ fn public_keys_are_refused_with_an_identity_first_group_key() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -4340,42 +4340,42 @@ fn public_keys_are_refused_with_an_identity_second_group_key() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -4532,42 +4532,42 @@ fn public_keys_are_refused_with_a_secret_shared_across_the_groups() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -4672,42 +4672,42 @@ fn a_refused_nonce_draw_returns_the_mock_error_whole() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }
@@ -4854,42 +4854,42 @@ fn a_refused_coin_draw_returns_the_mock_error_whole() {
         for encoding_case in DECLARED_ENCODING_SELECTIONS {
             for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
                 for case in &cases {
-                    // Act
-                    let run = run_create_key_agreement_case(
-                        &build_create_key_agreement_case_deps(
-                            Consumer {
-                                key_agreement: *case,
-                            },
-                            Default::default(),
-                        ),
-                        build_create_key_agreement_case_params(
-                            CreateKeyAgreementCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding_case.concrete),
-                                        identifier: Some(encoding_case.identifier),
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_case),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                kem: Some(build_create_kem_params(Default::default())),
-                            },
-                        ),
-                        build_create_key_agreement_case_payload(Default::default()),
-                    );
+                    for kind in RANDOM_SOURCE_KINDS {
+                        // Act
+                        let run = run_create_key_agreement_case(
+                            &build_create_key_agreement_case_deps(
+                                Consumer {
+                                    key_agreement: *case,
+                                },
+                                Default::default(),
+                            ),
+                            build_create_key_agreement_case_params(
+                                CreateKeyAgreementCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding_case.concrete),
+                                            identifier: Some(encoding_case.identifier),
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_case),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                    )),
+                                    kem: Some(build_create_kem_params(Default::default())),
+                                },
+                            ),
+                            build_create_key_agreement_case_payload(Default::default()),
+                        );
 
-                    // Assert
-                    assert!(run.is_ok());
+                        // Assert
+                        assert!(run.is_ok());
+                    }
                 }
             }
         }

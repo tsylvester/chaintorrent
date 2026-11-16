@@ -37,7 +37,7 @@ use pairing::{
 };
 use random::{
     CreateRandomSourceParamsOverrides, FillBytesParams, FillBytesPayloadOverrides,
-    IRandomSourceAdapter, RandomSourceKind, build_create_random_source_params,
+    IRandomSourceAdapter, RANDOM_SOURCE_KINDS, build_create_random_source_params,
     build_fill_bytes_payload,
 };
 use workflows::{
@@ -654,8 +654,9 @@ fn unwrapping_what_the_wrap_produced_returns_the_piece_group_key() {
 // unwrapping_what_the_wrap_produced_returns_the_piece_group_key
 
 /// Contract: two parameter sets are each set up through `create_kem` under
-///   the entitlement scope over one pairing, every uniform input an
-///   operating-system draw; each set wraps one piece-group key under its own
+///   the entitlement scope over one pairing, every uniform input a draw
+///   from the adapter `create_random_source` returns for a member of
+///   `RANDOM_SOURCE_KINDS`; each set wraps one piece-group key under its own
 ///   encapsulated value and derivation context and unwraps it with the value
 ///   `decapsulate` returns for its credential and capsule → each
 ///   `Ok(UnwrapPieceGroupKeySuccessReturn { piece_group_key })` with
@@ -665,8 +666,8 @@ fn unwrapping_what_the_wrap_produced_returns_the_piece_group_key() {
 ///   `pairing` set to `build_create_pairing_params` carrying the member of
 ///   `PAIRING_CONCRETES`, `hash_to_scalar` to
 ///   `build_create_hash_to_scalar_params` carrying the case, `random_source`
-///   to `build_create_random_source_params` carrying
-///   `RandomSourceKind::OperatingSystem`, `encoding` and `key_derivation` to
+///   to `build_create_random_source_params` carrying each member of
+///   `RANDOM_SOURCE_KINDS` in turn, `encoding` and `key_derivation` to
 ///   `build_create_encoding_params` and `build_create_key_derivation_params`
 ///   carrying their cases, and `kem` and `kem_second` to
 ///   `build_create_kem_params` carrying the ordered pair's two cases of
@@ -702,12 +703,12 @@ fn unwrapping_what_the_wrap_produced_returns_the_piece_group_key() {
 ///   `create_key_derivation`, the selected KDF concrete's `derive_key`,
 ///   `create_pairing`, the arm's concrete through its `try_new`,
 ///   `create_hash_to_scalar`, the selected concrete's `try_new`,
-///   `create_random_source`, the operating-system concrete's `try_new` and
+///   `create_random_source`, the selected member's `try_new` and
 ///   `fill_bytes`, both `create_kem` calls, the selected KEM concretes'
 ///   `try_new`s, and every method the consumer calls.
-/// Mocked:  nothing; the operating system's generator is the outer edge and
-///   runs real, so this block proves the draws reach the samplers and the
-///   unwrap of each set returns the key, and not the generator's quality.
+/// Mocked:  nothing; each declared member's generator is the outer edge
+///   and runs real, so this block proves the draws reach the samplers and
+///   the unwrap of each set returns the key, and not a generator's quality.
 #[test]
 fn two_independently_generated_entitlement_scope_sets_unwrap_one_piece_group_key() {
     // Arrange
@@ -796,78 +797,81 @@ fn two_independently_generated_entitlement_scope_sets_unwrap_one_piece_group_key
     });
     for concrete in PAIRING_CONCRETES {
         for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
-                for kdf_selection in DECLARED_KDF_SELECTIONS {
-                    for first_case in DECLARED_KEM_SELECTIONS
-                        .iter()
-                        .filter(|case| case.scope == IdentityScope::Entitlement)
-                    {
-                        for second_case in DECLARED_KEM_SELECTIONS
+            for kind in RANDOM_SOURCE_KINDS {
+                for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                    for kdf_selection in DECLARED_KDF_SELECTIONS {
+                        for first_case in DECLARED_KEM_SELECTIONS
                             .iter()
                             .filter(|case| case.scope == IdentityScope::Entitlement)
                         {
-                            let consumer = Consumer {
-                                context_a: &context_a,
-                                context_b: &context_b,
-                                piece_group_key: &piece_group_key,
-                            };
-                            let deps = build_unwrap_piece_group_key_case_deps(
-                                consumer,
-                                Default::default(),
-                            );
-                            let params = build_unwrap_piece_group_key_case_params(
-                                UnwrapPieceGroupKeyCaseParamsOverrides {
-                                    encoding: Some(build_create_encoding_params(
-                                        CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_selection.concrete),
-                                            identifier: Some(encoding_selection.identifier),
-                                        },
-                                    )),
-                                    key_derivation: Some(build_create_key_derivation_params(
-                                        CreateKeyDerivationParamsOverrides {
-                                            concrete: Some(kdf_selection.concrete),
-                                            identifier: Some(kdf_selection.identifier),
-                                        },
-                                    )),
-                                    pairing: Some(build_create_pairing_params(
-                                        CreatePairingParamsOverrides {
-                                            concrete: Some(*concrete),
-                                            ..Default::default()
-                                        },
-                                    )),
-                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                        CreateHashToScalarParamsOverrides {
-                                            concrete: Some(h2s_case.concrete),
-                                            identifier: Some(h2s_case.identifier),
-                                        },
-                                    )),
-                                    random_source: Some(build_create_random_source_params(
-                                        CreateRandomSourceParamsOverrides {
-                                            kind: Some(RandomSourceKind::OperatingSystem),
-                                        },
-                                    )),
-                                    kem: Some(build_create_kem_params(CreateKemParamsOverrides {
-                                        concrete: Some(first_case.concrete),
-                                        identifier: Some(first_case.identifier),
-                                        scope: Some(first_case.scope),
-                                    })),
-                                    kem_second: Some(build_create_kem_params(
-                                        CreateKemParamsOverrides {
-                                            concrete: Some(second_case.concrete),
-                                            identifier: Some(second_case.identifier),
-                                            scope: Some(second_case.scope),
-                                        },
-                                    )),
-                                },
-                            );
-                            let payload =
-                                build_unwrap_piece_group_key_case_payload(Default::default());
+                            for second_case in DECLARED_KEM_SELECTIONS
+                                .iter()
+                                .filter(|case| case.scope == IdentityScope::Entitlement)
+                            {
+                                let consumer = Consumer {
+                                    context_a: &context_a,
+                                    context_b: &context_b,
+                                    piece_group_key: &piece_group_key,
+                                };
+                                let deps = build_unwrap_piece_group_key_case_deps(
+                                    consumer,
+                                    Default::default(),
+                                );
+                                let params = build_unwrap_piece_group_key_case_params(
+                                    UnwrapPieceGroupKeyCaseParamsOverrides {
+                                        encoding: Some(build_create_encoding_params(
+                                            CreateEncodingParamsOverrides {
+                                                concrete: Some(encoding_selection.concrete),
+                                                identifier: Some(encoding_selection.identifier),
+                                            },
+                                        )),
+                                        key_derivation: Some(build_create_key_derivation_params(
+                                            CreateKeyDerivationParamsOverrides {
+                                                concrete: Some(kdf_selection.concrete),
+                                                identifier: Some(kdf_selection.identifier),
+                                            },
+                                        )),
+                                        pairing: Some(build_create_pairing_params(
+                                            CreatePairingParamsOverrides {
+                                                concrete: Some(*concrete),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                            CreateHashToScalarParamsOverrides {
+                                                concrete: Some(h2s_case.concrete),
+                                                identifier: Some(h2s_case.identifier),
+                                            },
+                                        )),
+                                        random_source: Some(build_create_random_source_params(
+                                            CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                        )),
+                                        kem: Some(build_create_kem_params(
+                                            CreateKemParamsOverrides {
+                                                concrete: Some(first_case.concrete),
+                                                identifier: Some(first_case.identifier),
+                                                scope: Some(first_case.scope),
+                                            },
+                                        )),
+                                        kem_second: Some(build_create_kem_params(
+                                            CreateKemParamsOverrides {
+                                                concrete: Some(second_case.concrete),
+                                                identifier: Some(second_case.identifier),
+                                                scope: Some(second_case.scope),
+                                            },
+                                        )),
+                                    },
+                                );
+                                let payload =
+                                    build_unwrap_piece_group_key_case_payload(Default::default());
 
-                            // Act
-                            let result = run_unwrap_piece_group_key_case(&deps, params, payload);
+                                // Act
+                                let result =
+                                    run_unwrap_piece_group_key_case(&deps, params, payload);
 
-                            // Assert
-                            assert!(result.is_ok());
+                                // Assert
+                                assert!(result.is_ok());
+                            }
                         }
                     }
                 }
@@ -985,78 +989,81 @@ fn an_escrow_set_and_a_claimants_set_unwrap_one_piece_group_key() {
     });
     for concrete in PAIRING_CONCRETES {
         for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
-                for kdf_selection in DECLARED_KDF_SELECTIONS {
-                    for escrow_case in DECLARED_KEM_SELECTIONS
-                        .iter()
-                        .filter(|case| case.scope == IdentityScope::Asset)
-                    {
-                        for claimant_case in DECLARED_KEM_SELECTIONS
+            for kind in RANDOM_SOURCE_KINDS {
+                for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                    for kdf_selection in DECLARED_KDF_SELECTIONS {
+                        for escrow_case in DECLARED_KEM_SELECTIONS
                             .iter()
-                            .filter(|case| case.scope == IdentityScope::Entitlement)
+                            .filter(|case| case.scope == IdentityScope::Asset)
                         {
-                            let consumer = Consumer {
-                                context_a: &context_a,
-                                context_b: &context_b,
-                                piece_group_key: &piece_group_key,
-                            };
-                            let deps = build_unwrap_piece_group_key_case_deps(
-                                consumer,
-                                Default::default(),
-                            );
-                            let params = build_unwrap_piece_group_key_case_params(
-                                UnwrapPieceGroupKeyCaseParamsOverrides {
-                                    encoding: Some(build_create_encoding_params(
-                                        CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_selection.concrete),
-                                            identifier: Some(encoding_selection.identifier),
-                                        },
-                                    )),
-                                    key_derivation: Some(build_create_key_derivation_params(
-                                        CreateKeyDerivationParamsOverrides {
-                                            concrete: Some(kdf_selection.concrete),
-                                            identifier: Some(kdf_selection.identifier),
-                                        },
-                                    )),
-                                    pairing: Some(build_create_pairing_params(
-                                        CreatePairingParamsOverrides {
-                                            concrete: Some(*concrete),
-                                            ..Default::default()
-                                        },
-                                    )),
-                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                                        CreateHashToScalarParamsOverrides {
-                                            concrete: Some(h2s_case.concrete),
-                                            identifier: Some(h2s_case.identifier),
-                                        },
-                                    )),
-                                    random_source: Some(build_create_random_source_params(
-                                        CreateRandomSourceParamsOverrides {
-                                            kind: Some(RandomSourceKind::OperatingSystem),
-                                        },
-                                    )),
-                                    kem: Some(build_create_kem_params(CreateKemParamsOverrides {
-                                        concrete: Some(escrow_case.concrete),
-                                        identifier: Some(escrow_case.identifier),
-                                        scope: Some(escrow_case.scope),
-                                    })),
-                                    kem_second: Some(build_create_kem_params(
-                                        CreateKemParamsOverrides {
-                                            concrete: Some(claimant_case.concrete),
-                                            identifier: Some(claimant_case.identifier),
-                                            scope: Some(claimant_case.scope),
-                                        },
-                                    )),
-                                },
-                            );
-                            let payload =
-                                build_unwrap_piece_group_key_case_payload(Default::default());
+                            for claimant_case in DECLARED_KEM_SELECTIONS
+                                .iter()
+                                .filter(|case| case.scope == IdentityScope::Entitlement)
+                            {
+                                let consumer = Consumer {
+                                    context_a: &context_a,
+                                    context_b: &context_b,
+                                    piece_group_key: &piece_group_key,
+                                };
+                                let deps = build_unwrap_piece_group_key_case_deps(
+                                    consumer,
+                                    Default::default(),
+                                );
+                                let params = build_unwrap_piece_group_key_case_params(
+                                    UnwrapPieceGroupKeyCaseParamsOverrides {
+                                        encoding: Some(build_create_encoding_params(
+                                            CreateEncodingParamsOverrides {
+                                                concrete: Some(encoding_selection.concrete),
+                                                identifier: Some(encoding_selection.identifier),
+                                            },
+                                        )),
+                                        key_derivation: Some(build_create_key_derivation_params(
+                                            CreateKeyDerivationParamsOverrides {
+                                                concrete: Some(kdf_selection.concrete),
+                                                identifier: Some(kdf_selection.identifier),
+                                            },
+                                        )),
+                                        pairing: Some(build_create_pairing_params(
+                                            CreatePairingParamsOverrides {
+                                                concrete: Some(*concrete),
+                                                ..Default::default()
+                                            },
+                                        )),
+                                        hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                            CreateHashToScalarParamsOverrides {
+                                                concrete: Some(h2s_case.concrete),
+                                                identifier: Some(h2s_case.identifier),
+                                            },
+                                        )),
+                                        random_source: Some(build_create_random_source_params(
+                                            CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                                        )),
+                                        kem: Some(build_create_kem_params(
+                                            CreateKemParamsOverrides {
+                                                concrete: Some(escrow_case.concrete),
+                                                identifier: Some(escrow_case.identifier),
+                                                scope: Some(escrow_case.scope),
+                                            },
+                                        )),
+                                        kem_second: Some(build_create_kem_params(
+                                            CreateKemParamsOverrides {
+                                                concrete: Some(claimant_case.concrete),
+                                                identifier: Some(claimant_case.identifier),
+                                                scope: Some(claimant_case.scope),
+                                            },
+                                        )),
+                                    },
+                                );
+                                let payload =
+                                    build_unwrap_piece_group_key_case_payload(Default::default());
 
-                            // Act
-                            let result = run_unwrap_piece_group_key_case(&deps, params, payload);
+                                // Act
+                                let result =
+                                    run_unwrap_piece_group_key_case(&deps, params, payload);
 
-                            // Assert
-                            assert!(result.is_ok());
+                                // Assert
+                                assert!(result.is_ok());
+                            }
                         }
                     }
                 }

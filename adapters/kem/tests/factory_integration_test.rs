@@ -39,7 +39,7 @@ use pairing::{
 };
 use random::{
     CreateRandomSourceDeps, CreateRandomSourceParamsOverrides, CreateRandomSourcePayload,
-    FillBytesParams, FillBytesPayloadOverrides, IRandomSourceAdapter, RandomSourceKind,
+    FillBytesParams, FillBytesPayloadOverrides, IRandomSourceAdapter, RANDOM_SOURCE_KINDS,
     build_create_random_source_params, build_fill_bytes_payload, create_random_source,
 };
 
@@ -226,40 +226,33 @@ fn every_concrete_is_refused_under_an_identifier_it_does_not_declare() {
 /// Contract: own entry `a_kem_from_the_factory_round_trips_from_operating_system_draws`;
 ///   every uniform draw `setup`, `issue`, and `encapsulate` consume is the bytes
 ///   `fill_bytes` returns for `P::Scalar::UNIFORM_BYTES_LENGTH` from the adapter
-///   `create_random_source` returns for the operating-system kind, one draw per
-///   sampler, and the round trip `setup`, `derive_identity`, `issue`,
+///   `create_random_source` returns for a member of `RANDOM_SOURCE_KINDS`, one
+///   draw per sampler, and the round trip `setup`, `derive_identity`, `issue`,
 ///   `encapsulate`, `is_valid`, `is_well_formed`, `decapsulate` returns `true`
 ///   for the verdicts and `encapsulate`'s bytes for `decapsulate`.
 /// Arrange: each case of `DECLARED_KEM_SELECTIONS` over every member of
-///   `PAIRING_CONCRETES` and every case of `DECLARED_HASH_TO_SCALAR_SELECTIONS`;
-///   the random source the operating system's generator backs, created once in
-///   the arrangement.
+///   `PAIRING_CONCRETES`, each member of `RANDOM_SOURCE_KINDS`, and every case
+///   of `DECLARED_HASH_TO_SCALAR_SELECTIONS` the case params name; every
+///   uniform input is the bytes `fill_bytes` returns for
+///   `FillBytesPayloadOverrides { length: Some(P::Scalar::UNIFORM_BYTES_LENGTH)
+///   }` from the adapter `create_random_source` returns for that member's
+///   `kind`, one draw per sampler.
 /// Act:     in `KemConsumer`, `decapsulate` with the credential and capsule the
 ///   arrangement produced.
 /// Assert:  `is_valid` and `is_well_formed` returned `true`, and `decapsulate`'s
 ///   `key_material().expose()` bytes equal `encapsulate`'s; outside the
 ///   consumers, `created.is_ok()`.
 /// Boundary: the public call `create_kem`, with the route `create_random_source`,
-///   the operating-system concrete's `try_new` and `fill_bytes`,
-///   `create_pairing`, the arm's concrete through its `try_new`,
-///   `create_hash_to_scalar`, the selected concrete's `try_new`, `create_kem`,
-///   and every method the consumer calls.
-/// Mocked:  nothing; the operating system's generator is the outer edge and
-///   runs real, so this block proves the draws reach the samplers and not the
+///   the selected member's `try_new` and `fill_bytes`, `create_pairing`, the
+///   arm's concrete through its `try_new`, `create_hash_to_scalar`, the
+///   selected concrete's `try_new`, `create_kem`, and every method the consumer
+///   calls.
+/// Mocked:  nothing; each declared member's generator is the outer edge and
+///   runs real, so this block proves the draws reach the samplers and not a
 ///   generator's quality.
 #[test]
 fn a_kem_from_the_factory_round_trips_from_operating_system_draws() {
     // Arrange
-    let random = create_random_source(
-        &CreateRandomSourceDeps,
-        build_create_random_source_params(CreateRandomSourceParamsOverrides {
-            kind: Some(RandomSourceKind::OperatingSystem),
-        }),
-        CreateRandomSourcePayload,
-    )
-    .expect("the operating-system kind constructs its source")
-    .adapter;
-
     struct KemConsumer<'a> {
         random: &'a dyn IRandomSourceAdapter,
     }
@@ -280,7 +273,7 @@ fn a_kem_from_the_factory_round_trips_from_operating_system_draws() {
                             length: Some(P::Scalar::UNIFORM_BYTES_LENGTH),
                         }),
                     )
-                    .expect("the operating-system draw fills the uniform input")
+                    .expect("the declared source's draw fills the uniform input")
                     .bytes
             };
             let scope = payload.scope();
@@ -412,23 +405,35 @@ fn a_kem_from_the_factory_round_trips_from_operating_system_draws() {
         }
     }
 
-    for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            // Act
-            let created = run_create_kem_case(
-                &build_create_kem_case_deps(Consumer { random: &*random }, Default::default()),
-                build_create_kem_case_params(CreateKemCaseParamsOverrides {
-                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
-                        concrete: Some(*concrete),
-                        ..Default::default()
-                    })),
-                    hash_to_scalar: Some(*h2s_case),
-                }),
-                build_create_kem_case_payload(Default::default()),
-            );
+    for kind in RANDOM_SOURCE_KINDS {
+        let random = create_random_source(
+            &CreateRandomSourceDeps,
+            build_create_random_source_params(CreateRandomSourceParamsOverrides {
+                kind: Some(*kind),
+            }),
+            CreateRandomSourcePayload,
+        )
+        .expect("every declared kind constructs its source")
+        .adapter;
 
-            // Assert
-            assert!(created.is_ok());
+        for concrete in PAIRING_CONCRETES {
+            for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                // Act
+                let created = run_create_kem_case(
+                    &build_create_kem_case_deps(Consumer { random: &*random }, Default::default()),
+                    build_create_kem_case_params(CreateKemCaseParamsOverrides {
+                        pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                            concrete: Some(*concrete),
+                            ..Default::default()
+                        })),
+                        hash_to_scalar: Some(*h2s_case),
+                    }),
+                    build_create_kem_case_payload(Default::default()),
+                );
+
+                // Assert
+                assert!(created.is_ok());
+            }
         }
     }
 }
