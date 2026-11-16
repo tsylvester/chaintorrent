@@ -23,6 +23,8 @@ For `isOwnedObject`:
 5. Each required property omitted (rest-destructure the builder output) → `false`
 6. Each optional property absent → `true`; present but corrupted → `false`
 
+The Solidity form. The ABI decoder narrows calldata to the declared types before the contract's revert paths run (see [mocks](mocks.md#no-untrusted-form-solidity)), so the non-object cases and the omitted-property cases are the decoder's and no block is written for them. A corrupted-property case is a member assignment on the builder's return, assigning a value the member's type admits and its invariant refuses, stated as an independent literal (see [tests](tests.md#fixtures-call-the-builder-directly)); the block asserts the revert with `vm.expectRevert` of the error's full data. There is no invalidator.
+
 ### The contract header here
 
 The checklist **is** the contract, so this scope collapses to a **one-line `Contract` header** naming the case the block proves. The remaining three fields are invariant for every block in the scope — arrange a builder or invalidator, act by passing it to the guard, assert `true` or `false` — so they are stated once, here, and never repeated per block. There are no inline markers: the block is a single expression, with no sections to separate (see [tests](tests.md#every-test-states-its-contract)).

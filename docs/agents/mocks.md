@@ -577,6 +577,60 @@ export function buildMyFamilySelection(identifier: MyFamilyIdentifier): MyFamily
 }
 ```
 
+## The Solidity form
+
+A Solidity suite's mock element is `[Contract]Mock.sol` in the suite's `test/` (see [workplan-structure](workplan-structure.md#element-files-by-language)). It holds file-level free functions and contracts that carry the production names [Naming](#naming--the-symbols-per-owned-object-type) states. A consumer imports each by name, `import {buildMyObject, MockIMyContract} from "./MyContractMock.sol";`. No library or contract wraps the free functions, so the file holds no name beyond the production names. A Solidity library has no mock element.
+
+### Builders (Solidity)
+
+A builder is a free `pure` function that returns the owned struct in `memory`. Every member is at a documented default, and each nested struct comes from its own builder. Solidity has no optional member, so a builder takes no overrides and the form declares no `ObjectNameOverrides`. A block overrides a member by assigning it on the value the builder just returned, before that value is used. It writes one assignment per member its objective depends on. A built value is never copied into a second fixture or passed back through a builder.
+
+```solidity
+function buildMyObject() pure returns (IMyContract.MyObject memory) {
+    return IMyContract.MyObject({foo: bytes32(uint256(1)), bar: buildBar()});
+}
+
+// in a block
+IMyContract.MyObject memory object = buildMyObject();
+object.foo = bytes32(uint256(7));
+```
+
+### No untrusted form (Solidity)
+
+The ABI decoder narrows external calldata, and every `abi.decode`, to the declared types before any statement of the contract runs, and it refuses what it can't narrow. So a Solidity struct has no untrusted form, and the form declares no `ObjectNameCorruptions` and no invalidator. What a contract's revert paths refuse is the content of a typed value. A block reaches a refusal by assigning the member a value its type admits and its invariant refuses, as an override above, stated as an independent literal.
+
+### Interface mocks (Solidity)
+
+A contract another contract reaches through its interface is injected, so the interface is mocked and the contract never is (see [Injected at the composition root](#injected-at-the-composition-root--mock-the-interface-never-the-class)). The interface mock is `MockI<Interface>`, named after the interface it implements, as `MockIMyContract is IMyContract`. Its functions are the mocks of the interface's owned functions, so the form declares no separate `mockFunctionName`.
+
+- A `view` or `pure` function returns built defaults from this file's builders.
+- A state-changing function returns its built default, or nothing, without effect.
+- It has no constructor parameter, no setter, no state, and no revert.
+
+A block that needs another response substitutes it at the call site with `vm.mockCall` or `vm.mockCallRevert` on the mock's address, the return data encoded from builders and literals. A block that needs to observe a call uses `vm.expectCall`. Neither is ever written into the mock.
+
+```solidity
+contract MockIMyContract is IMyContract {
+    function myObject(bytes32) external pure returns (MyObject memory) {
+        return buildMyObject();
+    }
+
+    function register(bytes32, bytes calldata) external {}
+}
+```
+
+### What takes no mock (Solidity)
+
+These are used directly by their production values:
+
+- custom errors
+- events
+- enums
+- constants
+- the selectors of functions, events, and errors
+
+A contract a block deploys as its subject is the real instance from `new`, and is never mocked.
+
 ## Litmus
 
 Every export in the mock file is typed by a name from the interface file — builders return production object types, invalidators return `unknown`, function mocks are production function types. Any export whose type had to be invented is not a mock of this interface; it is new machinery, and new machinery is forbidden.

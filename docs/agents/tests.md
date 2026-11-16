@@ -135,6 +135,8 @@ const make = (o) => buildMyObject({ ...fixed, ...o });   // buildMyObject alread
 
 If you catch yourself writing a local object, spreading a built value, reassembling fields by hand, or wrapping the builder, stop — the builder replaces all of it. One direct `buildMyObject({ … })` per fixture, with only the overrides that fixture needs. The same applies to invalidators: `invalidateMyObject({ … })` directly, never staged or spread.
 
+The Solidity form. A builder takes no overrides (see [mocks](mocks.md#the-solidity-form)). A fixture is one direct builder call, followed by one member assignment for each member the test's objective depends on, made on the value that call returned and before the value is used. That assignment is the override; it is not a spread, a decomposition, or a reassembly. A block reaches a refusal the same way: it assigns the member a value its type admits and its invariant refuses, stated as an independent literal. Solidity has no invalidator.
+
 **Overrides are scoped to the test's objective.** Pass only the fields this test asserts on or depends on; every other field takes the builder's default. When adapting an existing test, do not carry the old literal's incidental values into the builder call — overriding `irrelevantField` merely because the pre-builder object happened to set it rebuilds the hand-rolled object one override at a time, which is the same defeat. Ask of each field: does this test's objective depend on it? If not, omit the override and let the default stand.
 
 ## Test scopes
