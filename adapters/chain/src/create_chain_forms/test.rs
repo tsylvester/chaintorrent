@@ -21,9 +21,10 @@ use encoding::{
 ///   `build_create_chain_forms_params` overriding `concrete` with
 ///   `ChainFormsConcrete::Evm`, the identifier at its default for that
 ///   concrete; case params from `build_create_chain_forms_case_params`
-///   overriding `encoding` with the member of `DECLARED_ENCODING_SELECTIONS`,
-///   which declares `EthereumAbiV1`; the `Evm` selection over the ABI
-///   concrete is the variation, since the builder defaults select `Mock`
+///   overriding `encoding` with each member of
+///   `DECLARED_ENCODING_SELECTIONS` that declares `EthereumAbiV1`; the
+///   `Evm` selection over the encoding concretes declaring `EthereumAbiV1`
+///   is the variation, since the builder defaults select `Mock`
 ///   over the mock concrete. The case consumer calls `create_chain_forms`
 ///   once over `MockIChainFormsConsumer` and the encoder the encoding
 ///   level hands it, and returns the result whole.
@@ -62,8 +63,10 @@ fn create_chain_forms_admits_and_constructs_the_evm_forms() {
         ..Default::default()
     });
     let deps = build_create_chain_forms_case_deps(CaseConsumer { params }, Default::default());
-    for selection in DECLARED_ENCODING_SELECTIONS {
-        assert_eq!(selection.identifier, EncodingIdentifier::EthereumAbiV1);
+    for selection in DECLARED_ENCODING_SELECTIONS
+        .iter()
+        .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
+    {
         let case_params =
             build_create_chain_forms_case_params(CreateChainFormsCaseParamsOverrides {
                 encoding: Some(CreateEncodingParams {
@@ -197,9 +200,10 @@ fn create_chain_forms_refuses_an_encoder_declaring_another_encoding_identifier_f
 ///   the `Mock` selection →
 ///   `Err(CreateChainFormsErrorReturn::UnsupportedEncodingIdentifier)`.
 /// Arrange: the block's `CaseConsumer`, holding params at their defaults,
-///   the `Mock` selection; case params overriding `encoding` with the
-///   member of `DECLARED_ENCODING_SELECTIONS`, so the encoder declares
-///   `EthereumAbiV1`, which the mock concrete does not require.
+///   the `Mock` selection; case params overriding `encoding` with each
+///   member of `DECLARED_ENCODING_SELECTIONS` that declares
+///   `EthereumAbiV1`, so the encoder declares `EthereumAbiV1`, which the
+///   mock concrete does not require.
 /// Act:     `create_chain_forms_case(&deps, case_params, case_payload)`
 ///   per member of `DECLARED_ENCODING_SELECTIONS`.
 /// Assert:  the case result is `Ok` and the output it holds is
@@ -235,8 +239,10 @@ fn create_chain_forms_refuses_an_encoder_declaring_another_encoding_identifier_f
     // Arrange
     let params = build_create_chain_forms_params(Default::default());
     let deps = build_create_chain_forms_case_deps(CaseConsumer { params }, Default::default());
-    for selection in DECLARED_ENCODING_SELECTIONS {
-        assert_eq!(selection.identifier, EncodingIdentifier::EthereumAbiV1);
+    for selection in DECLARED_ENCODING_SELECTIONS
+        .iter()
+        .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
+    {
         let case_params =
             build_create_chain_forms_case_params(CreateChainFormsCaseParamsOverrides {
                 encoding: Some(CreateEncodingParams {

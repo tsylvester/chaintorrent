@@ -28,7 +28,7 @@ use pairing::{
     build_create_pairing_params,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, RandomSourceKind, build_create_random_source_params,
+    CreateRandomSourceParamsOverrides, RANDOM_SOURCE_KINDS, build_create_random_source_params,
 };
 
 use super::provides::{
@@ -166,40 +166,42 @@ fn an_adapter_handed_to_the_consumer_declares_the_required_algebra_form_and_vers
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_create_delivery_proof_case(
-                        &build_create_delivery_proof_case_deps(Consumer, Default::default()),
-                        build_create_delivery_proof_case_params(
-                            CreateDeliveryProofCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_to_scalar),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding.concrete),
-                                        identifier: Some(encoding.identifier),
-                                    },
-                                )),
-                                chain_forms: Some(build_create_chain_forms_params(
-                                    CreateChainFormsParamsOverrides {
-                                        concrete: Some(*chain_forms_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                ..Default::default()
-                            },
-                        ),
-                        build_create_delivery_proof_case_payload(Default::default()),
-                    );
-                    assert!(result.is_ok());
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_create_delivery_proof_case(
+                            &build_create_delivery_proof_case_deps(Consumer, Default::default()),
+                            build_create_delivery_proof_case_params(
+                                CreateDeliveryProofCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_to_scalar),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding.concrete),
+                                            identifier: Some(encoding.identifier),
+                                        },
+                                    )),
+                                    chain_forms: Some(build_create_chain_forms_params(
+                                        CreateChainFormsParamsOverrides {
+                                            concrete: Some(*chain_forms_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides {
+                                            kind: Some(*random_kind),
+                                        },
+                                    )),
+                                    ..Default::default()
+                                },
+                            ),
+                            build_create_delivery_proof_case_payload(Default::default()),
+                        );
+                        assert!(result.is_ok());
+                    }
                 }
             }
         }
@@ -219,8 +221,8 @@ fn an_adapter_handed_to_the_consumer_declares_the_required_algebra_form_and_vers
 ///   purpose.
 /// Boundary: `create_delivery_proof`, the concrete's `try_new`, `prove_mint`,
 ///   and `verify` over the real chain.
-/// Mocked:  nothing; the real concrete draws its nonces from the operating
-///   system's generator.
+/// Mocked:  nothing; the real concrete draws its nonces from each declared
+///   member's generator.
 #[test]
 fn a_mint_proof_the_adapter_returns_verifies() {
     struct Consumer;
@@ -332,40 +334,42 @@ fn a_mint_proof_the_adapter_returns_verifies() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_create_delivery_proof_case(
-                        &build_create_delivery_proof_case_deps(Consumer, Default::default()),
-                        build_create_delivery_proof_case_params(
-                            CreateDeliveryProofCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_to_scalar),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding.concrete),
-                                        identifier: Some(encoding.identifier),
-                                    },
-                                )),
-                                chain_forms: Some(build_create_chain_forms_params(
-                                    CreateChainFormsParamsOverrides {
-                                        concrete: Some(*chain_forms_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                ..Default::default()
-                            },
-                        ),
-                        build_create_delivery_proof_case_payload(Default::default()),
-                    );
-                    assert!(result.is_ok());
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_create_delivery_proof_case(
+                            &build_create_delivery_proof_case_deps(Consumer, Default::default()),
+                            build_create_delivery_proof_case_params(
+                                CreateDeliveryProofCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_to_scalar),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding.concrete),
+                                            identifier: Some(encoding.identifier),
+                                        },
+                                    )),
+                                    chain_forms: Some(build_create_chain_forms_params(
+                                        CreateChainFormsParamsOverrides {
+                                            concrete: Some(*chain_forms_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides {
+                                            kind: Some(*random_kind),
+                                        },
+                                    )),
+                                    ..Default::default()
+                                },
+                            ),
+                            build_create_delivery_proof_case_payload(Default::default()),
+                        );
+                        assert!(result.is_ok());
+                    }
                 }
             }
         }
@@ -502,40 +506,42 @@ fn a_transfer_proof_the_adapter_returns_verifies() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_create_delivery_proof_case(
-                        &build_create_delivery_proof_case_deps(Consumer, Default::default()),
-                        build_create_delivery_proof_case_params(
-                            CreateDeliveryProofCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_to_scalar),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding.concrete),
-                                        identifier: Some(encoding.identifier),
-                                    },
-                                )),
-                                chain_forms: Some(build_create_chain_forms_params(
-                                    CreateChainFormsParamsOverrides {
-                                        concrete: Some(*chain_forms_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                ..Default::default()
-                            },
-                        ),
-                        build_create_delivery_proof_case_payload(Default::default()),
-                    );
-                    assert!(result.is_ok());
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_create_delivery_proof_case(
+                            &build_create_delivery_proof_case_deps(Consumer, Default::default()),
+                            build_create_delivery_proof_case_params(
+                                CreateDeliveryProofCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_to_scalar),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding.concrete),
+                                            identifier: Some(encoding.identifier),
+                                        },
+                                    )),
+                                    chain_forms: Some(build_create_chain_forms_params(
+                                        CreateChainFormsParamsOverrides {
+                                            concrete: Some(*chain_forms_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides {
+                                            kind: Some(*random_kind),
+                                        },
+                                    )),
+                                    ..Default::default()
+                                },
+                            ),
+                            build_create_delivery_proof_case_payload(Default::default()),
+                        );
+                        assert!(result.is_ok());
+                    }
                 }
             }
         }
@@ -693,40 +699,42 @@ fn a_proof_the_adapter_rebuilds_from_its_components_verifies() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_create_delivery_proof_case(
-                        &build_create_delivery_proof_case_deps(Consumer, Default::default()),
-                        build_create_delivery_proof_case_params(
-                            CreateDeliveryProofCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_to_scalar),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding.concrete),
-                                        identifier: Some(encoding.identifier),
-                                    },
-                                )),
-                                chain_forms: Some(build_create_chain_forms_params(
-                                    CreateChainFormsParamsOverrides {
-                                        concrete: Some(*chain_forms_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                ..Default::default()
-                            },
-                        ),
-                        build_create_delivery_proof_case_payload(Default::default()),
-                    );
-                    assert!(result.is_ok());
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_create_delivery_proof_case(
+                            &build_create_delivery_proof_case_deps(Consumer, Default::default()),
+                            build_create_delivery_proof_case_params(
+                                CreateDeliveryProofCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_to_scalar),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding.concrete),
+                                            identifier: Some(encoding.identifier),
+                                        },
+                                    )),
+                                    chain_forms: Some(build_create_chain_forms_params(
+                                        CreateChainFormsParamsOverrides {
+                                            concrete: Some(*chain_forms_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides {
+                                            kind: Some(*random_kind),
+                                        },
+                                    )),
+                                    ..Default::default()
+                                },
+                            ),
+                            build_create_delivery_proof_case_payload(Default::default()),
+                        );
+                        assert!(result.is_ok());
+                    }
                 }
             }
         }
@@ -885,40 +893,42 @@ fn components_of_the_other_verifier_form_are_refused_by_the_adapter() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_create_delivery_proof_case(
-                        &build_create_delivery_proof_case_deps(Consumer, Default::default()),
-                        build_create_delivery_proof_case_params(
-                            CreateDeliveryProofCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_to_scalar),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding.concrete),
-                                        identifier: Some(encoding.identifier),
-                                    },
-                                )),
-                                chain_forms: Some(build_create_chain_forms_params(
-                                    CreateChainFormsParamsOverrides {
-                                        concrete: Some(*chain_forms_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                ..Default::default()
-                            },
-                        ),
-                        build_create_delivery_proof_case_payload(Default::default()),
-                    );
-                    assert!(result.is_ok());
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_create_delivery_proof_case(
+                            &build_create_delivery_proof_case_deps(Consumer, Default::default()),
+                            build_create_delivery_proof_case_params(
+                                CreateDeliveryProofCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_to_scalar),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding.concrete),
+                                            identifier: Some(encoding.identifier),
+                                        },
+                                    )),
+                                    chain_forms: Some(build_create_chain_forms_params(
+                                        CreateChainFormsParamsOverrides {
+                                            concrete: Some(*chain_forms_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides {
+                                            kind: Some(*random_kind),
+                                        },
+                                    )),
+                                    ..Default::default()
+                                },
+                            ),
+                            build_create_delivery_proof_case_payload(Default::default()),
+                        );
+                        assert!(result.is_ok());
+                    }
                 }
             }
         }
@@ -1058,40 +1068,42 @@ fn a_proof_of_another_relation_is_refused_by_verify() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_create_delivery_proof_case(
-                        &build_create_delivery_proof_case_deps(Consumer, Default::default()),
-                        build_create_delivery_proof_case_params(
-                            CreateDeliveryProofCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_to_scalar),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding.concrete),
-                                        identifier: Some(encoding.identifier),
-                                    },
-                                )),
-                                chain_forms: Some(build_create_chain_forms_params(
-                                    CreateChainFormsParamsOverrides {
-                                        concrete: Some(*chain_forms_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                ..Default::default()
-                            },
-                        ),
-                        build_create_delivery_proof_case_payload(Default::default()),
-                    );
-                    assert!(result.is_ok());
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_create_delivery_proof_case(
+                            &build_create_delivery_proof_case_deps(Consumer, Default::default()),
+                            build_create_delivery_proof_case_params(
+                                CreateDeliveryProofCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_to_scalar),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding.concrete),
+                                            identifier: Some(encoding.identifier),
+                                        },
+                                    )),
+                                    chain_forms: Some(build_create_chain_forms_params(
+                                        CreateChainFormsParamsOverrides {
+                                            concrete: Some(*chain_forms_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides {
+                                            kind: Some(*random_kind),
+                                        },
+                                    )),
+                                    ..Default::default()
+                                },
+                            ),
+                            build_create_delivery_proof_case_payload(Default::default()),
+                        );
+                        assert!(result.is_ok());
+                    }
                 }
             }
         }
@@ -1649,40 +1661,42 @@ fn a_proof_against_a_statement_differing_in_one_field_is_refused() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_create_delivery_proof_case(
-                        &build_create_delivery_proof_case_deps(Consumer, Default::default()),
-                        build_create_delivery_proof_case_params(
-                            CreateDeliveryProofCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_to_scalar),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding.concrete),
-                                        identifier: Some(encoding.identifier),
-                                    },
-                                )),
-                                chain_forms: Some(build_create_chain_forms_params(
-                                    CreateChainFormsParamsOverrides {
-                                        concrete: Some(*chain_forms_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                ..Default::default()
-                            },
-                        ),
-                        build_create_delivery_proof_case_payload(Default::default()),
-                    );
-                    assert!(result.is_ok());
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_create_delivery_proof_case(
+                            &build_create_delivery_proof_case_deps(Consumer, Default::default()),
+                            build_create_delivery_proof_case_params(
+                                CreateDeliveryProofCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_to_scalar),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding.concrete),
+                                            identifier: Some(encoding.identifier),
+                                        },
+                                    )),
+                                    chain_forms: Some(build_create_chain_forms_params(
+                                        CreateChainFormsParamsOverrides {
+                                            concrete: Some(*chain_forms_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides {
+                                            kind: Some(*random_kind),
+                                        },
+                                    )),
+                                    ..Default::default()
+                                },
+                            ),
+                            build_create_delivery_proof_case_payload(Default::default()),
+                        );
+                        assert!(result.is_ok());
+                    }
                 }
             }
         }
@@ -1961,40 +1975,42 @@ fn a_proof_with_a_changed_response_or_challenge_is_refused() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_create_delivery_proof_case(
-                        &build_create_delivery_proof_case_deps(Consumer, Default::default()),
-                        build_create_delivery_proof_case_params(
-                            CreateDeliveryProofCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_to_scalar),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding.concrete),
-                                        identifier: Some(encoding.identifier),
-                                    },
-                                )),
-                                chain_forms: Some(build_create_chain_forms_params(
-                                    CreateChainFormsParamsOverrides {
-                                        concrete: Some(*chain_forms_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                ..Default::default()
-                            },
-                        ),
-                        build_create_delivery_proof_case_payload(Default::default()),
-                    );
-                    assert!(result.is_ok());
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_create_delivery_proof_case(
+                            &build_create_delivery_proof_case_deps(Consumer, Default::default()),
+                            build_create_delivery_proof_case_params(
+                                CreateDeliveryProofCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_to_scalar),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding.concrete),
+                                            identifier: Some(encoding.identifier),
+                                        },
+                                    )),
+                                    chain_forms: Some(build_create_chain_forms_params(
+                                        CreateChainFormsParamsOverrides {
+                                            concrete: Some(*chain_forms_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides {
+                                            kind: Some(*random_kind),
+                                        },
+                                    )),
+                                    ..Default::default()
+                                },
+                            ),
+                            build_create_delivery_proof_case_payload(Default::default()),
+                        );
+                        assert!(result.is_ok());
+                    }
                 }
             }
         }
@@ -2226,40 +2242,42 @@ fn a_proof_from_a_witness_the_statement_does_not_hold_is_refused() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_create_delivery_proof_case(
-                        &build_create_delivery_proof_case_deps(Consumer, Default::default()),
-                        build_create_delivery_proof_case_params(
-                            CreateDeliveryProofCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_to_scalar),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding.concrete),
-                                        identifier: Some(encoding.identifier),
-                                    },
-                                )),
-                                chain_forms: Some(build_create_chain_forms_params(
-                                    CreateChainFormsParamsOverrides {
-                                        concrete: Some(*chain_forms_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                ..Default::default()
-                            },
-                        ),
-                        build_create_delivery_proof_case_payload(Default::default()),
-                    );
-                    assert!(result.is_ok());
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_create_delivery_proof_case(
+                            &build_create_delivery_proof_case_deps(Consumer, Default::default()),
+                            build_create_delivery_proof_case_params(
+                                CreateDeliveryProofCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_to_scalar),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding.concrete),
+                                            identifier: Some(encoding.identifier),
+                                        },
+                                    )),
+                                    chain_forms: Some(build_create_chain_forms_params(
+                                        CreateChainFormsParamsOverrides {
+                                            concrete: Some(*chain_forms_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides {
+                                            kind: Some(*random_kind),
+                                        },
+                                    )),
+                                    ..Default::default()
+                                },
+                            ),
+                            build_create_delivery_proof_case_payload(Default::default()),
+                        );
+                        assert!(result.is_ok());
+                    }
                 }
             }
         }
@@ -2391,40 +2409,42 @@ fn a_refused_nonce_draw_is_returned_by_each_prover() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_create_delivery_proof_case(
-                        &build_create_delivery_proof_case_deps(Consumer, Default::default()),
-                        build_create_delivery_proof_case_params(
-                            CreateDeliveryProofCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_to_scalar),
-                                encoding: Some(build_create_encoding_params(
-                                    CreateEncodingParamsOverrides {
-                                        concrete: Some(encoding.concrete),
-                                        identifier: Some(encoding.identifier),
-                                    },
-                                )),
-                                chain_forms: Some(build_create_chain_forms_params(
-                                    CreateChainFormsParamsOverrides {
-                                        concrete: Some(*chain_forms_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                                ..Default::default()
-                            },
-                        ),
-                        build_create_delivery_proof_case_payload(Default::default()),
-                    );
-                    assert!(result.is_ok());
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_create_delivery_proof_case(
+                            &build_create_delivery_proof_case_deps(Consumer, Default::default()),
+                            build_create_delivery_proof_case_params(
+                                CreateDeliveryProofCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_to_scalar),
+                                    encoding: Some(build_create_encoding_params(
+                                        CreateEncodingParamsOverrides {
+                                            concrete: Some(encoding.concrete),
+                                            identifier: Some(encoding.identifier),
+                                        },
+                                    )),
+                                    chain_forms: Some(build_create_chain_forms_params(
+                                        CreateChainFormsParamsOverrides {
+                                            concrete: Some(*chain_forms_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides {
+                                            kind: Some(*random_kind),
+                                        },
+                                    )),
+                                    ..Default::default()
+                                },
+                            ),
+                            build_create_delivery_proof_case_payload(Default::default()),
+                        );
+                        assert!(result.is_ok());
+                    }
                 }
             }
         }

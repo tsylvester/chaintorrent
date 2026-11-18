@@ -10,7 +10,7 @@ use pairing::{
     PairingConcrete, VerifierGroupArithmetic, build_create_pairing_params,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
+    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RANDOM_SOURCE_KINDS, RandomSourceKind,
     build_create_random_source_params,
 };
 
@@ -38,7 +38,10 @@ use super::mock::{
     run_group_vectors_case,
 };
 
-fn case_params(pairing_concrete: &PairingConcrete) -> GroupVectorsCaseParams {
+fn case_params(
+    pairing_concrete: &PairingConcrete,
+    random_source_kind: &RandomSourceKind,
+) -> GroupVectorsCaseParams {
     build_group_vectors_case_params(GroupVectorsCaseParamsOverrides {
         pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
             concrete: Some(*pairing_concrete),
@@ -46,7 +49,7 @@ fn case_params(pairing_concrete: &PairingConcrete) -> GroupVectorsCaseParams {
         })),
         random_source: Some(build_create_random_source_params(
             CreateRandomSourceParamsOverrides {
-                kind: Some(RandomSourceKind::OperatingSystem),
+                kind: Some(*random_source_kind),
             },
         )),
     })
@@ -186,7 +189,7 @@ fn member_names_declare_one_name_per_field() {
 ///   `FirstGroupOnly` the result is `Ok` whose `second_group` is `None`.
 /// Boundary: `create_pairing`, the arm's real concrete's declaration, and
 ///   `group_vectors`.
-/// Mocked:  nothing, because the operating system's generator is the outer edge
+/// Mocked:  nothing, because each declared member's generator is the outer edge
 ///   and runs real.
 #[test]
 fn a_both_groups_pairing_requires_its_second_group_settings() {
@@ -235,14 +238,16 @@ fn a_both_groups_pairing_requires_its_second_group_settings() {
         }
     }
 
-    // Act — over the declared set
+    // Act — over the declared sets
     for pairing_concrete in PAIRING_CONCRETES {
-        run_group_vectors_case(
-            &build_group_vectors_case_deps(Consumer, Default::default()),
-            case_params(pairing_concrete),
-            build_group_vectors_case_payload(Default::default()),
-        )
-        .expect("every factory ran");
+        for random_source_kind in RANDOM_SOURCE_KINDS {
+            run_group_vectors_case(
+                &build_group_vectors_case_deps(Consumer, Default::default()),
+                case_params(pairing_concrete, random_source_kind),
+                build_group_vectors_case_payload(Default::default()),
+            )
+            .expect("every factory ran");
+        }
     }
 }
 // a_both_groups_pairing_requires_its_second_group_settings
@@ -268,7 +273,7 @@ fn a_both_groups_pairing_requires_its_second_group_settings() {
 ///   `None`.
 /// Boundary: `create_pairing`, the arm's real concrete's operations, and
 ///   `group_vectors`.
-/// Mocked:  nothing, because the operating system's generator is the outer edge
+/// Mocked:  nothing, because each declared member's generator is the outer edge
 ///   and runs real.
 #[test]
 fn a_both_groups_pairing_emits_the_second_group_kinds_at_their_configured_counts() {
@@ -385,19 +390,21 @@ fn a_both_groups_pairing_emits_the_second_group_kinds_at_their_configured_counts
         }),
     };
 
-    // Act — over the declared set
+    // Act — over the declared sets
     for pairing_concrete in PAIRING_CONCRETES {
-        run_group_vectors_case(
-            &build_group_vectors_case_deps(
-                Consumer {
-                    settings: consumer.settings,
-                },
-                Default::default(),
-            ),
-            case_params(pairing_concrete),
-            build_group_vectors_case_payload(Default::default()),
-        )
-        .expect("every factory ran");
+        for random_source_kind in RANDOM_SOURCE_KINDS {
+            run_group_vectors_case(
+                &build_group_vectors_case_deps(
+                    Consumer {
+                        settings: consumer.settings,
+                    },
+                    Default::default(),
+                ),
+                case_params(pairing_concrete, random_source_kind),
+                build_group_vectors_case_payload(Default::default()),
+            )
+            .expect("every factory ran");
+        }
     }
 }
 // a_both_groups_pairing_emits_the_second_group_kinds_at_their_configured_counts
@@ -420,7 +427,7 @@ fn a_both_groups_pairing_emits_the_second_group_kinds_at_their_configured_counts
 ///   expected output.
 /// Boundary: `create_pairing`, the arm's real concrete's operations, and
 ///   `group_vectors`.
-/// Mocked:  nothing, because the operating system's generator is the outer edge
+/// Mocked:  nothing, because each declared member's generator is the outer edge
 ///   and runs real.
 #[test]
 fn each_first_group_output_is_the_references_result_for_its_drawn_operands() {
@@ -527,20 +534,22 @@ fn each_first_group_output_is_the_references_result_for_its_drawn_operands() {
         settings: build_second_group_vector_counts(Default::default()),
     };
 
-    // Act — over the declared set
+    // Act — over the declared sets
     for pairing_concrete in PAIRING_CONCRETES {
-        run_group_vectors_case(
-            &build_group_vectors_case_deps(
-                Consumer {
-                    first_group: consumer.first_group,
-                    settings: consumer.settings,
-                },
-                Default::default(),
-            ),
-            case_params(pairing_concrete),
-            build_group_vectors_case_payload(Default::default()),
-        )
-        .expect("every factory ran");
+        for random_source_kind in RANDOM_SOURCE_KINDS {
+            run_group_vectors_case(
+                &build_group_vectors_case_deps(
+                    Consumer {
+                        first_group: consumer.first_group,
+                        settings: consumer.settings,
+                    },
+                    Default::default(),
+                ),
+                case_params(pairing_concrete, random_source_kind),
+                build_group_vectors_case_payload(Default::default()),
+            )
+            .expect("every factory ran");
+        }
     }
 }
 // each_first_group_output_is_the_references_result_for_its_drawn_operands
@@ -560,7 +569,7 @@ fn each_first_group_output_is_the_references_result_for_its_drawn_operands() {
 ///   output.
 /// Boundary: `create_pairing`, the arm's real concrete's operations, and
 ///   `group_vectors`.
-/// Mocked:  nothing, because the operating system's generator is the outer edge
+/// Mocked:  nothing, because each declared member's generator is the outer edge
 ///   and runs real.
 #[test]
 fn each_second_group_output_is_the_references_result_for_its_drawn_operands() {
@@ -743,19 +752,21 @@ fn each_second_group_output_is_the_references_result_for_its_drawn_operands() {
         }),
     };
 
-    // Act — over the declared set
+    // Act — over the declared sets
     for pairing_concrete in PAIRING_CONCRETES {
-        run_group_vectors_case(
-            &build_group_vectors_case_deps(
-                Consumer {
-                    settings: consumer.settings,
-                },
-                Default::default(),
-            ),
-            case_params(pairing_concrete),
-            build_group_vectors_case_payload(Default::default()),
-        )
-        .expect("every factory ran");
+        for random_source_kind in RANDOM_SOURCE_KINDS {
+            run_group_vectors_case(
+                &build_group_vectors_case_deps(
+                    Consumer {
+                        settings: consumer.settings,
+                    },
+                    Default::default(),
+                ),
+                case_params(pairing_concrete, random_source_kind),
+                build_group_vectors_case_payload(Default::default()),
+            )
+            .expect("every factory ran");
+        }
     }
 }
 // each_second_group_output_is_the_references_result_for_its_drawn_operands
@@ -775,7 +786,7 @@ fn each_second_group_output_is_the_references_result_for_its_drawn_operands() {
 ///   term's first draw.
 /// Boundary: `create_pairing`, the arm's real concrete's operations, and
 ///   `group_vectors`.
-/// Mocked:  nothing, because the operating system's generator is the outer edge
+/// Mocked:  nothing, because each declared member's generator is the outer edge
 ///   and runs real.
 #[test]
 fn each_msm_term_carries_its_multiplier_in_its_input() {
@@ -889,19 +900,21 @@ fn each_msm_term_carries_its_multiplier_in_its_input() {
         }),
     };
 
-    // Act — over the declared set
+    // Act — over the declared sets
     for pairing_concrete in PAIRING_CONCRETES {
-        run_group_vectors_case(
-            &build_group_vectors_case_deps(
-                Consumer {
-                    settings: consumer.settings,
-                },
-                Default::default(),
-            ),
-            case_params(pairing_concrete),
-            build_group_vectors_case_payload(Default::default()),
-        )
-        .expect("every factory ran");
+        for random_source_kind in RANDOM_SOURCE_KINDS {
+            run_group_vectors_case(
+                &build_group_vectors_case_deps(
+                    Consumer {
+                        settings: consumer.settings,
+                    },
+                    Default::default(),
+                ),
+                case_params(pairing_concrete, random_source_kind),
+                build_group_vectors_case_payload(Default::default()),
+            )
+            .expect("every factory ran");
+        }
     }
 }
 // each_msm_term_carries_its_multiplier_in_its_input

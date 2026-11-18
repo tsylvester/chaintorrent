@@ -5,7 +5,8 @@ use chain::{
     build_create_chain_forms_params,
 };
 use encoding::{
-    CreateEncodingParams, DECLARED_ENCODING_SELECTIONS, IDecoderAdapter, IEncoderAdapter,
+    CanonicalFieldKind, CreateEncodingParams, DECLARED_ENCODING_SELECTIONS, IDecoderAdapter,
+    IEncoderAdapter,
 };
 use envelope::{KeyAgreementDeclarationOverrides, build_key_agreement_declaration};
 use kem::{KemDeclarationOverrides, build_kem_declaration};
@@ -638,7 +639,13 @@ fn the_record_carries_the_verifier_form_the_pairing_declares() {
 ///   entry names, in order, are `IDENTITY_TAG`, `POSSESSION_G1_TAG`,
 ///   `POSSESSION_G2_TAG`, `CHALLENGE_TAG`, `WEIGHT_TAG`, `DELIVERY_STATEMENT_VERSION`,
 ///   `PURPOSE_MINT`, `PURPOSE_TRANSFER`, `PURPOSE_GRANT`, `PURPOSE_REPLACEMENT`,
-///   `MINT_FIELDS`, and `TRANSFER_FIELDS`.
+///   `MINT_FIELDS`, `TRANSFER_FIELDS`, `KEY_IDENTIFIER_DOMAIN_TAG`,
+///   `INTENT_DOMAIN_NAME`, `INTENT_DOMAIN_VERSION`, `INTENT_STRUCT_NAME`,
+///   `INTENT_MEMBER_IDENTITY`, `INTENT_MEMBER_NONCE`, `INTENT_MEMBER_EXPIRY`,
+///   `INTENT_MEMBER_CALL`, `NONCE_KIND_TYPE_NAME`, `EXPIRY_KIND_TYPE_NAME`,
+///   `FIXED_BYTES32_TYPE_NAME`, `UNSIGNED16_TYPE_NAME`, `UNSIGNED32_TYPE_NAME`,
+///   `UNSIGNED64_TYPE_NAME`, `TEXT_TYPE_NAME`, `BYTES_TYPE_NAME`,
+///   `FIXED_BYTES20_TYPE_NAME`, and `UNSIGNED256_TYPE_NAME`.
 /// Arrange: the defaults; every concrete of both declared sets is the variation.
 /// Act:    `run_constants_case` per member of each declared set, the consumer's
 ///   method calling `constants::<P, E, F>` and returning the entries as its output.
@@ -707,6 +714,24 @@ fn the_entries_are_listed_in_declared_order() {
                 "PURPOSE_REPLACEMENT",
                 "MINT_FIELDS",
                 "TRANSFER_FIELDS",
+                "KEY_IDENTIFIER_DOMAIN_TAG",
+                "INTENT_DOMAIN_NAME",
+                "INTENT_DOMAIN_VERSION",
+                "INTENT_STRUCT_NAME",
+                "INTENT_MEMBER_IDENTITY",
+                "INTENT_MEMBER_NONCE",
+                "INTENT_MEMBER_EXPIRY",
+                "INTENT_MEMBER_CALL",
+                "NONCE_KIND_TYPE_NAME",
+                "EXPIRY_KIND_TYPE_NAME",
+                "FIXED_BYTES32_TYPE_NAME",
+                "UNSIGNED16_TYPE_NAME",
+                "UNSIGNED32_TYPE_NAME",
+                "UNSIGNED64_TYPE_NAME",
+                "TEXT_TYPE_NAME",
+                "BYTES_TYPE_NAME",
+                "FIXED_BYTES20_TYPE_NAME",
+                "UNSIGNED256_TYPE_NAME",
             ]
             .iter()
             .map(|text| {
@@ -803,3 +828,263 @@ fn libraries_sharing_an_identifier_carry_the_same_scalar_field_order() {
     }
 }
 // libraries_sharing_an_identifier_carry_the_same_scalar_field_order
+
+/// Contract: given the forms the chain family hands the consumer, `constants`
+///   returns `Ok` whose entry `KEY_IDENTIFIER_DOMAIN_TAG` is `Bytes` holding
+///   `F::DECLARATION.key_identifier_domain_tag`, and whose entries
+///   `INTENT_DOMAIN_NAME`, `INTENT_DOMAIN_VERSION`, `INTENT_STRUCT_NAME`,
+///   `INTENT_MEMBER_IDENTITY`, `INTENT_MEMBER_NONCE`, `INTENT_MEMBER_EXPIRY`,
+///   and `INTENT_MEMBER_CALL` are `String` holding the declaration's
+///   `intent_domain_name`, `intent_domain_version`, `intent_struct_name`, and
+///   `intent_member_names`' `identity`, `nonce`, `expiry`, and `call`, each
+///   equal to the field of the same name of the handed forms' `DECLARATION`.
+/// Arrange: the defaults; every concrete of both declared sets is the
+///   variation, each expectation read from the received forms' `DECLARATION`,
+///   so a literal or another field's value fails.
+/// Act:    `run_constants_case` per member of each declared set, the consumer's
+///   method calling `constants::<P, E, F>`.
+/// Assert: in place in the consumer's method, for each name the contract lists,
+///   the entry read by its name equals `build_solidity_library_entry` over that
+///   name and `SolidityConstantValue::Bytes` of
+///   `F::DECLARATION.key_identifier_domain_tag` or `SolidityConstantValue::String`
+///   of `build_solidity_string_literal` over the field of the same name of
+///   `F::DECLARATION`.
+/// Boundary: `constants` over the real forms concrete and the real
+///   `SolidityStringLiteral::try_new`.
+/// Mocked:  nothing.
+#[test]
+fn the_entries_carry_the_signed_intent_values_the_forms_declare() {
+    struct Consumer;
+
+    impl IConstantsCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_constants_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            encoder: &E,
+            _forms: &F,
+            _payload: &ConstantsCasePayload,
+        ) -> Self::Output {
+            // Arrange
+            let kem = build_kem_declaration(Default::default());
+            let key_agreement = build_key_agreement_declaration(Default::default());
+            let delivery_proof = build_delivery_proof_declaration(Default::default());
+
+            // Act
+            let result = constants::<P, E, F>(
+                &build_constants_deps(pairing, encoder, Default::default()),
+                build_constants_params(Default::default()),
+                build_constants_payload(&kem, &key_agreement, &delivery_proof, Default::default()),
+            );
+
+            // Assert
+            let entries = result.expect("a supported version admits").entries;
+            assert_eq!(
+                entry_named(&entries, "KEY_IDENTIFIER_DOMAIN_TAG"),
+                &build_solidity_library_entry(SolidityLibraryEntryOverrides {
+                    name: Some(build_solidity_constant_name(
+                        SolidityConstantNameConstructorParamsOverrides {
+                            text: Some("KEY_IDENTIFIER_DOMAIN_TAG".to_string()),
+                        }
+                    )),
+                    value: Some(SolidityConstantValue::Bytes(
+                        F::DECLARATION.key_identifier_domain_tag.to_vec(),
+                    )),
+                })
+            );
+            for (text, field) in [
+                ("INTENT_DOMAIN_NAME", F::DECLARATION.intent_domain_name),
+                (
+                    "INTENT_DOMAIN_VERSION",
+                    F::DECLARATION.intent_domain_version,
+                ),
+                ("INTENT_STRUCT_NAME", F::DECLARATION.intent_struct_name),
+                (
+                    "INTENT_MEMBER_IDENTITY",
+                    F::DECLARATION.intent_member_names.identity,
+                ),
+                (
+                    "INTENT_MEMBER_NONCE",
+                    F::DECLARATION.intent_member_names.nonce,
+                ),
+                (
+                    "INTENT_MEMBER_EXPIRY",
+                    F::DECLARATION.intent_member_names.expiry,
+                ),
+                (
+                    "INTENT_MEMBER_CALL",
+                    F::DECLARATION.intent_member_names.call,
+                ),
+            ] {
+                assert_eq!(
+                    entry_named(&entries, text),
+                    &build_solidity_library_entry(SolidityLibraryEntryOverrides {
+                        name: Some(build_solidity_constant_name(
+                            SolidityConstantNameConstructorParamsOverrides {
+                                text: Some(text.to_string()),
+                            }
+                        )),
+                        value: Some(SolidityConstantValue::String(
+                            build_solidity_string_literal(
+                                SolidityStringLiteralConstructorParamsOverrides {
+                                    text: Some(field.to_string()),
+                                }
+                            )
+                        )),
+                    })
+                );
+            }
+        }
+    }
+
+    // Act — over the declared sets
+    for pairing_concrete in PAIRING_CONCRETES {
+        for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
+            run_constants_case(
+                &build_constants_case_deps(Consumer, Default::default()),
+                case_params(*pairing_concrete, *chain_forms_concrete),
+                build_constants_case_payload(Default::default()),
+            )
+            .expect("every factory ran");
+        }
+    }
+}
+// the_entries_carry_the_signed_intent_values_the_forms_declare
+
+/// Contract: given the forms the chain family hands the consumer and the ABI
+///   concrete the encoding family hands it, `constants` returns `Ok` whose
+///   entries `NONCE_KIND_TYPE_NAME` and `EXPIRY_KIND_TYPE_NAME` are `String` of
+///   the name the ABI concrete returns for `F::DECLARATION.nonce_kind` and
+///   `F::DECLARATION.expiry_kind`, and `FIXED_BYTES32_TYPE_NAME`,
+///   `UNSIGNED16_TYPE_NAME`, `UNSIGNED32_TYPE_NAME`, `UNSIGNED64_TYPE_NAME`,
+///   `TEXT_TYPE_NAME`, `BYTES_TYPE_NAME`, `FIXED_BYTES20_TYPE_NAME`, and
+///   `UNSIGNED256_TYPE_NAME` are `String` of the name the ABI concrete returns
+///   for each `CanonicalFieldKind` variant in declaration order, the fixed
+///   twenty-byte kind `bytes20` and never `address`.
+/// Arrange: the defaults; every concrete of both declared sets is the
+///   variation, the literals assembled from the ABI table `encoding/abi` states
+///   and the received forms' declared kinds.
+/// Act:    `run_constants_case` per member of each declared set, the consumer's
+///   method calling `constants::<P, E, F>`.
+/// Assert: in place in the consumer's method, for each name the contract lists,
+///   the entry read by its name equals `build_solidity_library_entry` over that
+///   name and `SolidityConstantValue::String` of `build_solidity_string_literal`
+///   over the literal the ABI table `encoding/abi` states for the kind, the
+///   nonce and expiry names keyed on `F::DECLARATION`.
+/// Boundary: `constants` over the real encoder's `type_name`,
+///   `SolidityAbiType::try_new` and `as_str`, and `SolidityStringLiteral::try_new`.
+/// Mocked:  nothing.
+#[test]
+fn the_entries_carry_the_nonce_expiry_and_each_kinds_type_names() {
+    struct Consumer;
+
+    impl IConstantsCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_constants_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            encoder: &E,
+            _forms: &F,
+            _payload: &ConstantsCasePayload,
+        ) -> Self::Output {
+            // Arrange
+            let kem = build_kem_declaration(Default::default());
+            let key_agreement = build_key_agreement_declaration(Default::default());
+            let delivery_proof = build_delivery_proof_declaration(Default::default());
+
+            // Act
+            let result = constants::<P, E, F>(
+                &build_constants_deps(pairing, encoder, Default::default()),
+                build_constants_params(Default::default()),
+                build_constants_payload(&kem, &key_agreement, &delivery_proof, Default::default()),
+            );
+
+            // Assert
+            let abi_name = |kind: CanonicalFieldKind| match kind {
+                CanonicalFieldKind::FixedBytes32 => "bytes32",
+                CanonicalFieldKind::Unsigned16 => "uint16",
+                CanonicalFieldKind::Unsigned32 => "uint32",
+                CanonicalFieldKind::Unsigned64 => "uint64",
+                CanonicalFieldKind::Text => "string",
+                CanonicalFieldKind::Bytes => "bytes",
+                CanonicalFieldKind::FixedBytes20 => "bytes20",
+                CanonicalFieldKind::Unsigned256 => "uint256",
+            };
+            let entries = result.expect("a supported version admits").entries;
+            for (text, type_name) in [
+                ("NONCE_KIND_TYPE_NAME", abi_name(F::DECLARATION.nonce_kind)),
+                (
+                    "EXPIRY_KIND_TYPE_NAME",
+                    abi_name(F::DECLARATION.expiry_kind),
+                ),
+                (
+                    "FIXED_BYTES32_TYPE_NAME",
+                    abi_name(CanonicalFieldKind::FixedBytes32),
+                ),
+                (
+                    "UNSIGNED16_TYPE_NAME",
+                    abi_name(CanonicalFieldKind::Unsigned16),
+                ),
+                (
+                    "UNSIGNED32_TYPE_NAME",
+                    abi_name(CanonicalFieldKind::Unsigned32),
+                ),
+                (
+                    "UNSIGNED64_TYPE_NAME",
+                    abi_name(CanonicalFieldKind::Unsigned64),
+                ),
+                ("TEXT_TYPE_NAME", abi_name(CanonicalFieldKind::Text)),
+                ("BYTES_TYPE_NAME", abi_name(CanonicalFieldKind::Bytes)),
+                (
+                    "FIXED_BYTES20_TYPE_NAME",
+                    abi_name(CanonicalFieldKind::FixedBytes20),
+                ),
+                (
+                    "UNSIGNED256_TYPE_NAME",
+                    abi_name(CanonicalFieldKind::Unsigned256),
+                ),
+            ] {
+                assert_eq!(
+                    entry_named(&entries, text),
+                    &build_solidity_library_entry(SolidityLibraryEntryOverrides {
+                        name: Some(build_solidity_constant_name(
+                            SolidityConstantNameConstructorParamsOverrides {
+                                text: Some(text.to_string()),
+                            }
+                        )),
+                        value: Some(SolidityConstantValue::String(
+                            build_solidity_string_literal(
+                                SolidityStringLiteralConstructorParamsOverrides {
+                                    text: Some(type_name.to_string()),
+                                }
+                            )
+                        )),
+                    })
+                );
+            }
+        }
+    }
+
+    // Act — over the declared sets
+    for pairing_concrete in PAIRING_CONCRETES {
+        for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
+            run_constants_case(
+                &build_constants_case_deps(Consumer, Default::default()),
+                case_params(*pairing_concrete, *chain_forms_concrete),
+                build_constants_case_payload(Default::default()),
+            )
+            .expect("every factory ran");
+        }
+    }
+}
+// the_entries_carry_the_nonce_expiry_and_each_kinds_type_names

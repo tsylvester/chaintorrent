@@ -386,16 +386,16 @@ fn expected_signed_intent_bytes(intent_type_string: &str, call_type_string: &str
 ///   `signed_intent` over inputs whose call holds one field of each
 ///   canonical field kind → the intent equals the EIP-712 digest
 ///   assembled from the names that selection's concrete returns.
-/// Arrange: for the Ethereum ABI selection, the member of
-///   `DECLARED_ENCODING_SELECTIONS` that declares
-///   `EncodingIdentifier::EthereumAbiV1`, the expected digest assembled
-///   in the block from the literal type strings written from the ABI
-///   specification and not read from the arrangement; for the mock
-///   selection, `build_create_encoding_params` at its defaults and the
-///   type strings written with the eight `mock…` names; the inputs from
-///   `build_signed_intent_inputs` at their defaults; a subject that
-///   names a type itself, reads another encoder's names, or names the
-///   fixed twenty-byte kind `address` fails.
+/// Arrange: for each member of `DECLARED_ENCODING_SELECTIONS` that
+///   declares `EncodingIdentifier::EthereumAbiV1`, the expected digest
+///   assembled in the block from the literal type strings written from
+///   the ABI specification and not read from the arrangement; for the
+///   mock selection, `build_create_encoding_params` at its defaults and
+///   the type strings written with the eight `mock…` names; the inputs
+///   from `build_signed_intent_inputs` at their defaults, whose call
+///   holds the eight fields; a subject that names a type itself, reads
+///   another encoder's names, or names the fixed twenty-byte kind
+///   `address` fails.
 /// Act:     `create_encoding(&deps, selection, payload)` over
 ///   `EvmFormsBuildingConsumer`, then `signed_intent` over the forms it
 ///   built.
@@ -407,8 +407,8 @@ fn expected_signed_intent_bytes(intent_type_string: &str, call_type_string: &str
 ///   `try_new`.
 /// Mocked:  the encoding family's mock concrete under the mock selection
 ///   stands for no real concrete, so that run proves only that the forms
-///   read the names an encoder returns; the Ethereum ABI run uses the
-///   real concrete.
+///   read the names an encoder returns; each run over a member declaring
+///   `EncodingIdentifier::EthereumAbiV1` uses its real concrete.
 #[test]
 fn evm_signed_intent_types_its_members_by_the_names_its_encoder_returns() {
     // Arrange

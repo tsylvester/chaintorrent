@@ -18,7 +18,8 @@ use domain::{
 };
 use encoding::{
     CanonicalFieldKind, CanonicalFieldValue, CreateEncodingParams, DECLARED_ENCODING_SELECTIONS,
-    ICanonicalField, IEncoderAdapter, build_from_field_params, build_to_field_params,
+    EncodingIdentifier, ICanonicalField, IEncoderAdapter, build_from_field_params,
+    build_to_field_params,
 };
 
 /// Contract: the own entry
@@ -36,8 +37,9 @@ use encoding::{
 ///   identifier at its default, and `build_create_chain_forms_payload`;
 ///   each selection of `CHAIN_FORMS_CONCRETES` and the `Mock` selection is
 ///   the variation, paired with the encoding selection its declaration
-///   requires — `Evm` with the member of `DECLARED_ENCODING_SELECTIONS`
-///   and `Mock` with the builder's default, the mock encoding concrete.
+///   requires — `Evm` with each member of `DECLARED_ENCODING_SELECTIONS`
+///   that declares `EncodingIdentifier::EthereumAbiV1` and `Mock` with the
+///   builder's default, the mock encoding concrete.
 /// Act:     `create_chain_forms_case(&deps, case_params, case_payload)`
 ///   per selection and required encoding.
 /// Assert:  for each selection the case result is `Ok`, the inner result
@@ -48,9 +50,10 @@ use encoding::{
 ///   `create_encoding`, `create_chain_forms`, the selected concrete's
 ///   producer, and `consume_chain_forms`.
 /// Mocked:  the encoding family's concrete is the outer-edge collaborator,
-///   the real ABI concrete for the `Evm` selection; the `Mock` selection
-///   and the mock encoding concrete stand for no real concrete, so that
-///   run proves only that the mock concrete answers the entry.
+///   each real concrete declaring `EncodingIdentifier::EthereumAbiV1` for
+///   the `Evm` selection; the `Mock` selection and the mock encoding
+///   concrete stand for no real concrete, so its run proves only that the
+///   mock concrete answers the entry.
 #[test]
 fn chain_forms_handed_to_the_consumer_declare_the_required_identifier() {
     #[derive(Clone, Copy)]
@@ -109,6 +112,7 @@ fn chain_forms_handed_to_the_consumer_declare_the_required_identifier() {
         let encodings: Vec<Option<CreateEncodingParams>> = match concrete {
             ChainFormsConcrete::Evm => DECLARED_ENCODING_SELECTIONS
                 .iter()
+                .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
                 .map(|selection| {
                     Some(CreateEncodingParams {
                         concrete: selection.concrete,
@@ -171,8 +175,9 @@ fn chain_forms_handed_to_the_consumer_declare_the_required_identifier() {
 ///   producer, `consume_chain_forms`, and the identity form's `from_field`,
 ///   `to_field`, and `try_new`.
 /// Mocked:  the encoding family's concrete is the outer-edge collaborator,
-///   the real ABI concrete for the `Evm` selection; the `Mock` selection
-///   and the mock encoding concrete stand for no real concrete.
+///   each real concrete declaring `EncodingIdentifier::EthereumAbiV1` for
+///   the `Evm` selection; the `Mock` selection and the mock encoding
+///   concrete stand for no real concrete.
 #[test]
 fn chain_forms_identity_survives_its_field_round_trip() {
     #[derive(Clone, Copy)]
@@ -246,6 +251,7 @@ fn chain_forms_identity_survives_its_field_round_trip() {
         let encodings: Vec<Option<CreateEncodingParams>> = match concrete {
             ChainFormsConcrete::Evm => DECLARED_ENCODING_SELECTIONS
                 .iter()
+                .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
                 .map(|selection| {
                     Some(CreateEncodingParams {
                         concrete: selection.concrete,
@@ -293,8 +299,9 @@ fn chain_forms_identity_survives_its_field_round_trip() {
 ///   producer, `consume_chain_forms`, and the entitlement form's
 ///   `from_field`, `to_field`, and `try_new`.
 /// Mocked:  the encoding family's concrete is the outer-edge collaborator,
-///   the real ABI concrete for the `Evm` selection; the `Mock` selection
-///   and the mock encoding concrete stand for no real concrete.
+///   each real concrete declaring `EncodingIdentifier::EthereumAbiV1` for
+///   the `Evm` selection; the `Mock` selection and the mock encoding
+///   concrete stand for no real concrete.
 #[test]
 fn chain_forms_entitlement_survives_its_field_round_trip() {
     #[derive(Clone, Copy)]
@@ -369,6 +376,7 @@ fn chain_forms_entitlement_survives_its_field_round_trip() {
         let encodings: Vec<Option<CreateEncodingParams>> = match concrete {
             ChainFormsConcrete::Evm => DECLARED_ENCODING_SELECTIONS
                 .iter()
+                .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
                 .map(|selection| {
                     Some(CreateEncodingParams {
                         concrete: selection.concrete,
@@ -417,8 +425,9 @@ fn chain_forms_entitlement_survives_its_field_round_trip() {
 ///   producer, `consume_chain_forms`, and the interval form's `from_field`,
 ///   `to_field`, and `try_new`.
 /// Mocked:  the encoding family's concrete is the outer-edge collaborator,
-///   the real ABI concrete for the `Evm` selection; the `Mock` selection
-///   and the mock encoding concrete stand for no real concrete.
+///   each real concrete declaring `EncodingIdentifier::EthereumAbiV1` for
+///   the `Evm` selection; the `Mock` selection and the mock encoding
+///   concrete stand for no real concrete.
 #[test]
 fn chain_forms_interval_survives_its_field_round_trip() {
     #[derive(Clone, Copy)]
@@ -489,6 +498,7 @@ fn chain_forms_interval_survives_its_field_round_trip() {
         let encodings: Vec<Option<CreateEncodingParams>> = match concrete {
             ChainFormsConcrete::Evm => DECLARED_ENCODING_SELECTIONS
                 .iter()
+                .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
                 .map(|selection| {
                     Some(CreateEncodingParams {
                         concrete: selection.concrete,
@@ -536,8 +546,9 @@ fn chain_forms_interval_survives_its_field_round_trip() {
 ///   producer, `consume_chain_forms`, and the chain-identifier form's
 ///   `from_field`, `to_field`, and `try_new`.
 /// Mocked:  the encoding family's concrete is the outer-edge collaborator,
-///   the real ABI concrete for the `Evm` selection; the `Mock` selection
-///   and the mock encoding concrete stand for no real concrete.
+///   each real concrete declaring `EncodingIdentifier::EthereumAbiV1` for
+///   the `Evm` selection; the `Mock` selection and the mock encoding
+///   concrete stand for no real concrete.
 #[test]
 fn chain_forms_chain_identifier_survives_its_field_round_trip() {
     #[derive(Clone, Copy)]
@@ -615,6 +626,7 @@ fn chain_forms_chain_identifier_survives_its_field_round_trip() {
         let encodings: Vec<Option<CreateEncodingParams>> = match concrete {
             ChainFormsConcrete::Evm => DECLARED_ENCODING_SELECTIONS
                 .iter()
+                .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
                 .map(|selection| {
                     Some(CreateEncodingParams {
                         concrete: selection.concrete,
@@ -672,8 +684,9 @@ fn chain_forms_chain_identifier_survives_its_field_round_trip() {
 ///   producer, `consume_chain_forms`, `derive_key_identifier`, and the key
 ///   identifier form's `to_field` and `from_field`.
 /// Mocked:  the encoding family's concrete is the outer-edge collaborator,
-///   the real ABI concrete for the `Evm` selection; the `Mock` selection
-///   and the mock encoding concrete stand for no real concrete.
+///   each real concrete declaring `EncodingIdentifier::EthereumAbiV1` for
+///   the `Evm` selection; the `Mock` selection and the mock encoding
+///   concrete stand for no real concrete.
 #[test]
 fn chain_forms_key_identifier_survives_its_field_round_trip() {
     #[derive(Clone, Copy)]
@@ -771,6 +784,7 @@ fn chain_forms_key_identifier_survives_its_field_round_trip() {
         let encodings: Vec<Option<CreateEncodingParams>> = match concrete {
             ChainFormsConcrete::Evm => DECLARED_ENCODING_SELECTIONS
                 .iter()
+                .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
                 .map(|selection| {
                     Some(CreateEncodingParams {
                         concrete: selection.concrete,
@@ -833,8 +847,9 @@ fn chain_forms_key_identifier_survives_its_field_round_trip() {
 ///   producer, `consume_chain_forms`, `signed_intent`, and the intent
 ///   form's `to_field` and `from_field`.
 /// Mocked:  the encoding family's concrete is the outer-edge collaborator,
-///   the real ABI concrete for the `Evm` selection; the `Mock` selection
-///   and the mock encoding concrete stand for no real concrete.
+///   each real concrete declaring `EncodingIdentifier::EthereumAbiV1` for
+///   the `Evm` selection; the `Mock` selection and the mock encoding
+///   concrete stand for no real concrete.
 #[test]
 fn chain_forms_signed_intent_survives_its_field_round_trip() {
     #[derive(Clone, Copy)]
@@ -962,6 +977,7 @@ fn chain_forms_signed_intent_survives_its_field_round_trip() {
         let encodings: Vec<Option<CreateEncodingParams>> = match concrete {
             ChainFormsConcrete::Evm => DECLARED_ENCODING_SELECTIONS
                 .iter()
+                .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
                 .map(|selection| {
                     Some(CreateEncodingParams {
                         concrete: selection.concrete,
@@ -1000,8 +1016,9 @@ fn chain_forms_signed_intent_survives_its_field_round_trip() {
 ///   case consumer as in the declaration block, over the `Evm` selection
 ///   with the case params at their defaults, which lend the mock encoding
 ///   concrete, and over the `Mock` selection with the case params
-///   overriding `encoding` with the member of
-///   `DECLARED_ENCODING_SELECTIONS`, which lends the real ABI concrete;
+///   overriding `encoding` with each member of
+///   `DECLARED_ENCODING_SELECTIONS` that declares `EthereumAbiV1`, which
+///   lends its real concrete;
 ///   the two pairings are the variation, so an admission that ignores the
 ///   encoder, compares with a constant, or compares the wrong direction
 ///   admits one of them.
@@ -1014,8 +1031,8 @@ fn chain_forms_signed_intent_survives_its_field_round_trip() {
 ///   `create_encoding`, and `create_chain_forms` up to its encoding
 ///   identifier check.
 /// Mocked:  the encoding family's concrete is the outer-edge collaborator,
-///   the real ABI concrete in one pairing and the mock encoding concrete
-///   in the other.
+///   each real concrete declaring `EthereumAbiV1` in one pairing and the
+///   mock encoding concrete in the other.
 #[test]
 fn chain_forms_refuse_an_encoder_declaring_another_encoding_identifier() {
     #[derive(Clone, Copy)]
@@ -1057,15 +1074,20 @@ fn chain_forms_refuse_an_encoder_declaring_another_encoding_identifier() {
     // Arrange
     let pairings: Vec<(ChainFormsConcrete, Option<CreateEncodingParams>)> =
         core::iter::once((ChainFormsConcrete::Evm, None))
-            .chain(DECLARED_ENCODING_SELECTIONS.iter().map(|selection| {
-                (
-                    ChainFormsConcrete::Mock,
-                    Some(CreateEncodingParams {
-                        concrete: selection.concrete,
-                        identifier: selection.identifier,
+            .chain(
+                DECLARED_ENCODING_SELECTIONS
+                    .iter()
+                    .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
+                    .map(|selection| {
+                        (
+                            ChainFormsConcrete::Mock,
+                            Some(CreateEncodingParams {
+                                concrete: selection.concrete,
+                                identifier: selection.identifier,
+                            }),
+                        )
                     }),
-                )
-            }))
+            )
             .collect();
     for (concrete, encoding) in pairings {
         let params = build_create_chain_forms_params(CreateChainFormsParamsOverrides {

@@ -22,7 +22,7 @@ use proof::{
     DeliveryProofDeclaration, DeliveryProofDeclarationOverrides, build_delivery_proof_declaration,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
+    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RANDOM_SOURCE_KINDS,
     build_create_random_source_params,
 };
 
@@ -46,7 +46,7 @@ use super::mock::{
 use crate::delivery::provides::AdmittedKemIdentity;
 
 /// Contract: own entry `each_hash_to_scalar_record_is_the_references_mapping_of_its_message_under_its_tag`;
-///   `mapping_vectors` over the operating-system source → each `hash_to_scalar` record's
+///   `mapping_vectors` over each member of `RANDOM_SOURCE_KINDS` → each `hash_to_scalar` record's
 ///   `tag` is the declared bytes of its position and its `scalar` is the reference's
 ///   encoding over its own `tag` and `message`.
 /// Arrange: `hash_to_scalar_count` from `build_vector_count` with `count` `2`, so more
@@ -60,8 +60,8 @@ use crate::delivery::provides::AdmittedKemIdentity;
 ///   equals the reference's encoded bytes by `assert_eq!`.
 /// Boundary: `create_pairing`, the arm's real concrete, `create_hash_to_scalar`,
 ///   `create_kem`, the selected KEM concrete, and `mapping_vectors`.
-/// Mocked:  nothing; the operating system's generator is the outer edge and runs real,
-///   so this block does not prove the generator's quality.
+/// Mocked:  nothing; each declared member's generator is the outer edge and runs real,
+///   so this block does not prove a generator's quality.
 #[test]
 fn each_hash_to_scalar_record_is_the_references_mapping_of_its_message_under_its_tag() {
     // Arrange
@@ -184,47 +184,51 @@ fn each_hash_to_scalar_record_is_the_references_mapping_of_its_message_under_its
             }
             for kem_selection in DECLARED_KEM_SELECTIONS {
                 let kem: CreateKemParams = *kem_selection;
-                let result = run_mapping_vectors_case(
-                    &build_mapping_vectors_case_deps(
-                        Consumer {
-                            key_agreement: consumer.key_agreement,
-                            delivery_proof: consumer.delivery_proof,
-                            params_overrides: MappingVectorsParamsOverrides {
-                                hash_to_scalar_count: consumer
-                                    .params_overrides
-                                    .hash_to_scalar_count,
-                                message_length: consumer.params_overrides.message_length,
+                for random_source_kind in RANDOM_SOURCE_KINDS {
+                    let result = run_mapping_vectors_case(
+                        &build_mapping_vectors_case_deps(
+                            Consumer {
+                                key_agreement: consumer.key_agreement,
+                                delivery_proof: consumer.delivery_proof,
+                                params_overrides: MappingVectorsParamsOverrides {
+                                    hash_to_scalar_count: consumer
+                                        .params_overrides
+                                        .hash_to_scalar_count,
+                                    message_length: consumer.params_overrides.message_length,
+                                },
                             },
-                        },
-                        Default::default(),
-                    ),
-                    build_mapping_vectors_case_params(MappingVectorsCaseParamsOverrides {
-                        pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
-                            concrete: Some(*pairing_concrete),
-                            ..Default::default()
-                        })),
-                        hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                            CreateHashToScalarParamsOverrides {
-                                concrete: Some(hash_selection.concrete),
-                                identifier: Some(hash_selection.identifier),
-                            },
-                        )),
-                        kem_hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                            CreateHashToScalarParamsOverrides {
-                                concrete: Some(hash_selection.concrete),
-                                identifier: Some(hash_selection.identifier),
-                            },
-                        )),
-                        kem: Some(kem),
-                        random_source: Some(build_create_random_source_params(
-                            CreateRandomSourceParamsOverrides {
-                                kind: Some(RandomSourceKind::OperatingSystem),
-                            },
-                        )),
-                    }),
-                    build_mapping_vectors_case_payload(&canonicals, &roots, Default::default()),
-                );
-                assert!(result.is_ok());
+                            Default::default(),
+                        ),
+                        build_mapping_vectors_case_params(MappingVectorsCaseParamsOverrides {
+                            pairing: Some(build_create_pairing_params(
+                                CreatePairingParamsOverrides {
+                                    concrete: Some(*pairing_concrete),
+                                    ..Default::default()
+                                },
+                            )),
+                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                CreateHashToScalarParamsOverrides {
+                                    concrete: Some(hash_selection.concrete),
+                                    identifier: Some(hash_selection.identifier),
+                                },
+                            )),
+                            kem_hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                CreateHashToScalarParamsOverrides {
+                                    concrete: Some(hash_selection.concrete),
+                                    identifier: Some(hash_selection.identifier),
+                                },
+                            )),
+                            kem: Some(kem),
+                            random_source: Some(build_create_random_source_params(
+                                CreateRandomSourceParamsOverrides {
+                                    kind: Some(*random_source_kind),
+                                },
+                            )),
+                        }),
+                        build_mapping_vectors_case_payload(&canonicals, &roots, Default::default()),
+                    );
+                    assert!(result.is_ok());
+                }
             }
         }
     }
@@ -250,7 +254,7 @@ fn each_hash_to_scalar_record_is_the_references_mapping_of_its_message_under_its
 /// Boundary: `create_pairing`, the arm's real concrete, `create_hash_to_scalar`,
 ///   `create_kem`, the selected KEM concrete's `setup`, `derive_identity`, and
 ///   `identity_element_components`, and `mapping_vectors`.
-/// Mocked:  nothing; the operating system's generator is the outer edge and runs real.
+/// Mocked:  nothing; each declared member's generator is the outer edge and runs real.
 #[test]
 fn each_identity_record_is_the_references_mapping_of_its_identity_under_the_identity_tag() {
     // Arrange
@@ -374,47 +378,51 @@ fn each_identity_record_is_the_references_mapping_of_its_identity_under_the_iden
             }
             for kem_selection in DECLARED_KEM_SELECTIONS {
                 let kem: CreateKemParams = *kem_selection;
-                let result = run_mapping_vectors_case(
-                    &build_mapping_vectors_case_deps(
-                        Consumer {
-                            key_agreement: consumer.key_agreement,
-                            delivery_proof: consumer.delivery_proof,
-                            params_overrides: MappingVectorsParamsOverrides {
-                                hash_to_scalar_count: consumer
-                                    .params_overrides
-                                    .hash_to_scalar_count,
-                                message_length: consumer.params_overrides.message_length,
+                for random_source_kind in RANDOM_SOURCE_KINDS {
+                    let result = run_mapping_vectors_case(
+                        &build_mapping_vectors_case_deps(
+                            Consumer {
+                                key_agreement: consumer.key_agreement,
+                                delivery_proof: consumer.delivery_proof,
+                                params_overrides: MappingVectorsParamsOverrides {
+                                    hash_to_scalar_count: consumer
+                                        .params_overrides
+                                        .hash_to_scalar_count,
+                                    message_length: consumer.params_overrides.message_length,
+                                },
                             },
-                        },
-                        Default::default(),
-                    ),
-                    build_mapping_vectors_case_params(MappingVectorsCaseParamsOverrides {
-                        pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
-                            concrete: Some(*pairing_concrete),
-                            ..Default::default()
-                        })),
-                        hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                            CreateHashToScalarParamsOverrides {
-                                concrete: Some(hash_selection.concrete),
-                                identifier: Some(hash_selection.identifier),
-                            },
-                        )),
-                        kem_hash_to_scalar: Some(build_create_hash_to_scalar_params(
-                            CreateHashToScalarParamsOverrides {
-                                concrete: Some(hash_selection.concrete),
-                                identifier: Some(hash_selection.identifier),
-                            },
-                        )),
-                        kem: Some(kem),
-                        random_source: Some(build_create_random_source_params(
-                            CreateRandomSourceParamsOverrides {
-                                kind: Some(RandomSourceKind::OperatingSystem),
-                            },
-                        )),
-                    }),
-                    build_mapping_vectors_case_payload(&canonicals, &roots, Default::default()),
-                );
-                assert!(result.is_ok());
+                            Default::default(),
+                        ),
+                        build_mapping_vectors_case_params(MappingVectorsCaseParamsOverrides {
+                            pairing: Some(build_create_pairing_params(
+                                CreatePairingParamsOverrides {
+                                    concrete: Some(*pairing_concrete),
+                                    ..Default::default()
+                                },
+                            )),
+                            hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                CreateHashToScalarParamsOverrides {
+                                    concrete: Some(hash_selection.concrete),
+                                    identifier: Some(hash_selection.identifier),
+                                },
+                            )),
+                            kem_hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                CreateHashToScalarParamsOverrides {
+                                    concrete: Some(hash_selection.concrete),
+                                    identifier: Some(hash_selection.identifier),
+                                },
+                            )),
+                            kem: Some(kem),
+                            random_source: Some(build_create_random_source_params(
+                                CreateRandomSourceParamsOverrides {
+                                    kind: Some(*random_source_kind),
+                                },
+                            )),
+                        }),
+                        build_mapping_vectors_case_payload(&canonicals, &roots, Default::default()),
+                    );
+                    assert!(result.is_ok());
+                }
             }
         }
     }

@@ -38,7 +38,8 @@ use proof::{
 };
 use random::{
     CreateRandomSourceParamsOverrides, FillBytesErrorReturn, IRandomSourceAdapter,
-    MockIRandomSourceAdapterFailureMode, RandomSourceKind, build_create_random_source_params,
+    MockIRandomSourceAdapterFailureMode, RANDOM_SOURCE_KINDS, RandomSourceKind,
+    build_create_random_source_params,
 };
 
 use harness_crypto::{
@@ -50,13 +51,15 @@ use harness_crypto::{
 
 /// Contract: own entry
 ///   `every_mint_delivery_is_a_statement_and_proof_the_delivery_proof_verifies`;
-///   `mint` over a case, every adapter real and the operating-system source
-///   real, returns a delivery `verify` accepts over `AlgebraicStatement::
-///   Mint(&delivery.statement)` and `&delivery.proof`.
+///   `mint` over a case, every adapter real and each member of
+///   `RANDOM_SOURCE_KINDS` real, returns a delivery `verify` accepts over
+///   `AlgebraicStatement::Mint(&delivery.statement)` and `&delivery.proof`.
 /// Arrange: every case of the public surface — every member of
-///   `PAIRING_CONCRETES` crossed with the selections
-///   `DECLARED_HASH_TO_SCALAR_SELECTIONS`, `DECLARED_ENCODING_SELECTIONS`,
-///   `CHAIN_FORMS_CONCRETES`, `DECLARED_KEM_SELECTIONS` with each scope,
+///   `PAIRING_CONCRETES` crossed with the members of
+///   `DECLARED_HASH_TO_SCALAR_SELECTIONS` that declare
+///   `HashToScalarIdentifier::Keccak256V1`, the selections
+///   `DECLARED_ENCODING_SELECTIONS`, `CHAIN_FORMS_CONCRETES`,
+///   `DECLARED_KEM_SELECTIONS` with each scope,
 ///   `DECLARED_KEY_AGREEMENT_SELECTIONS`, and `DELIVERY_PROOF_CONCRETES`, so
 ///   both curves, both verifier forms, and both scopes run; the identity
 ///   `b"pkg@1.0.0#1"` under the entitlement scope and `vec![0x44; 32]`
@@ -66,12 +69,12 @@ use harness_crypto::{
 /// Assert:  the verdict is `is_valid` `true`; each case's `run_mint_case`
 ///   result `is_ok()`, proving the consumers ran.
 /// Boundary: `mint` invoked through the crate root and the chain of real
-///   functions the public surface names — `create_random_source` for the
-///   operating-system kind, `create_pairing`, `create_hash_to_scalar`,
+///   functions the public surface names — `create_random_source` for each
+///   member of `RANDOM_SOURCE_KINDS`, `create_pairing`, `create_hash_to_scalar`,
 ///   `create_encoding`, `create_chain_forms`, `create_kem`,
 ///   `create_key_agreement`, `create_delivery_proof`, and every adapter
 ///   method the block calls, all running for real.
-/// Mocked:  nothing; the operating-system generator runs real.
+/// Mocked:  nothing; each declared member's generator runs real.
 #[test]
 fn every_mint_delivery_is_a_statement_and_proof_the_delivery_proof_verifies() {
     struct Consumer;
@@ -136,55 +139,62 @@ fn every_mint_delivery_is_a_statement_and_proof_the_delivery_proof_verifies() {
         bytes: Some([0x44; 32]),
     });
     for pairing_concrete in PAIRING_CONCRETES {
-        for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS
+            .iter()
+            .filter(|selection| selection.identifier == HashToScalarIdentifier::Keccak256V1)
+        {
             for encoding_selection in DECLARED_ENCODING_SELECTIONS {
                 for forms_concrete in CHAIN_FORMS_CONCRETES {
                     for kem_selection in DECLARED_KEM_SELECTIONS {
                         for key_agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
                             for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                // Act
-                                let returned = run_mint_case(
-                                    &build_mint_case_deps(Consumer, Default::default()),
-                                    build_mint_case_params(MintCaseParamsOverrides {
-                                        pairing: Some(build_create_pairing_params(
-                                            CreatePairingParamsOverrides {
-                                                concrete: Some(*pairing_concrete),
-                                                ..Default::default()
-                                            },
-                                        )),
-                                        hash_to_scalar: Some(*h2s_selection),
-                                        encoding: Some(CreateEncodingParams {
-                                            concrete: encoding_selection.concrete,
-                                            identifier: encoding_selection.identifier,
+                                for random_kind in RANDOM_SOURCE_KINDS {
+                                    // Act
+                                    let returned = run_mint_case(
+                                        &build_mint_case_deps(Consumer, Default::default()),
+                                        build_mint_case_params(MintCaseParamsOverrides {
+                                            pairing: Some(build_create_pairing_params(
+                                                CreatePairingParamsOverrides {
+                                                    concrete: Some(*pairing_concrete),
+                                                    ..Default::default()
+                                                },
+                                            )),
+                                            hash_to_scalar: Some(*h2s_selection),
+                                            encoding: Some(CreateEncodingParams {
+                                                concrete: encoding_selection.concrete,
+                                                identifier: encoding_selection.identifier,
+                                            }),
+                                            chain_forms: Some(build_create_chain_forms_params(
+                                                CreateChainFormsParamsOverrides {
+                                                    concrete: Some(*forms_concrete),
+                                                    ..Default::default()
+                                                },
+                                            )),
+                                            kem: Some(*kem_selection),
+                                            key_agreement: Some(*key_agreement_selection),
+                                            delivery_proof: Some(
+                                                build_create_delivery_proof_params(
+                                                    CreateDeliveryProofParamsOverrides {
+                                                        concrete: Some(*proof_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                ),
+                                            ),
+                                            random_source: Some(build_create_random_source_params(
+                                                CreateRandomSourceParamsOverrides {
+                                                    kind: Some(*random_kind),
+                                                },
+                                            )),
                                         }),
-                                        chain_forms: Some(build_create_chain_forms_params(
-                                            CreateChainFormsParamsOverrides {
-                                                concrete: Some(*forms_concrete),
-                                                ..Default::default()
-                                            },
-                                        )),
-                                        kem: Some(*kem_selection),
-                                        key_agreement: Some(*key_agreement_selection),
-                                        delivery_proof: Some(build_create_delivery_proof_params(
-                                            CreateDeliveryProofParamsOverrides {
-                                                concrete: Some(*proof_concrete),
-                                                ..Default::default()
-                                            },
-                                        )),
-                                        random_source: Some(build_create_random_source_params(
-                                            CreateRandomSourceParamsOverrides {
-                                                kind: Some(RandomSourceKind::OperatingSystem),
-                                            },
-                                        )),
-                                    }),
-                                    build_mint_case_payload(
-                                        b"pkg@1.0.0#1",
-                                        &root,
-                                        Default::default(),
-                                    ),
-                                );
-                                // Assert
-                                assert!(returned.is_ok());
+                                        build_mint_case_payload(
+                                            b"pkg@1.0.0#1",
+                                            &root,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    // Assert
+                                    assert!(returned.is_ok());
+                                }
                             }
                         }
                     }
@@ -207,7 +217,7 @@ fn every_mint_delivery_is_a_statement_and_proof_the_delivery_proof_verifies() {
 /// Assert:  the second proof's verdict is `is_valid` `true`.
 /// Boundary: `mint` invoked through the crate root and the chain of real
 ///   functions the public surface names, all running for real.
-/// Mocked:  nothing; the operating-system generator runs real.
+/// Mocked:  nothing; each declared member's generator runs real.
 #[test]
 fn the_witnesses_prove_the_statement_again() {
     struct Consumer;
@@ -300,55 +310,62 @@ fn the_witnesses_prove_the_statement_again() {
         bytes: Some([0x44; 32]),
     });
     for pairing_concrete in PAIRING_CONCRETES {
-        for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS
+            .iter()
+            .filter(|selection| selection.identifier == HashToScalarIdentifier::Keccak256V1)
+        {
             for encoding_selection in DECLARED_ENCODING_SELECTIONS {
                 for forms_concrete in CHAIN_FORMS_CONCRETES {
                     for kem_selection in DECLARED_KEM_SELECTIONS {
                         for key_agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
                             for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                // Act
-                                let returned = run_mint_case(
-                                    &build_mint_case_deps(Consumer, Default::default()),
-                                    build_mint_case_params(MintCaseParamsOverrides {
-                                        pairing: Some(build_create_pairing_params(
-                                            CreatePairingParamsOverrides {
-                                                concrete: Some(*pairing_concrete),
-                                                ..Default::default()
-                                            },
-                                        )),
-                                        hash_to_scalar: Some(*h2s_selection),
-                                        encoding: Some(CreateEncodingParams {
-                                            concrete: encoding_selection.concrete,
-                                            identifier: encoding_selection.identifier,
+                                for random_kind in RANDOM_SOURCE_KINDS {
+                                    // Act
+                                    let returned = run_mint_case(
+                                        &build_mint_case_deps(Consumer, Default::default()),
+                                        build_mint_case_params(MintCaseParamsOverrides {
+                                            pairing: Some(build_create_pairing_params(
+                                                CreatePairingParamsOverrides {
+                                                    concrete: Some(*pairing_concrete),
+                                                    ..Default::default()
+                                                },
+                                            )),
+                                            hash_to_scalar: Some(*h2s_selection),
+                                            encoding: Some(CreateEncodingParams {
+                                                concrete: encoding_selection.concrete,
+                                                identifier: encoding_selection.identifier,
+                                            }),
+                                            chain_forms: Some(build_create_chain_forms_params(
+                                                CreateChainFormsParamsOverrides {
+                                                    concrete: Some(*forms_concrete),
+                                                    ..Default::default()
+                                                },
+                                            )),
+                                            kem: Some(*kem_selection),
+                                            key_agreement: Some(*key_agreement_selection),
+                                            delivery_proof: Some(
+                                                build_create_delivery_proof_params(
+                                                    CreateDeliveryProofParamsOverrides {
+                                                        concrete: Some(*proof_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                ),
+                                            ),
+                                            random_source: Some(build_create_random_source_params(
+                                                CreateRandomSourceParamsOverrides {
+                                                    kind: Some(*random_kind),
+                                                },
+                                            )),
                                         }),
-                                        chain_forms: Some(build_create_chain_forms_params(
-                                            CreateChainFormsParamsOverrides {
-                                                concrete: Some(*forms_concrete),
-                                                ..Default::default()
-                                            },
-                                        )),
-                                        kem: Some(*kem_selection),
-                                        key_agreement: Some(*key_agreement_selection),
-                                        delivery_proof: Some(build_create_delivery_proof_params(
-                                            CreateDeliveryProofParamsOverrides {
-                                                concrete: Some(*proof_concrete),
-                                                ..Default::default()
-                                            },
-                                        )),
-                                        random_source: Some(build_create_random_source_params(
-                                            CreateRandomSourceParamsOverrides {
-                                                kind: Some(RandomSourceKind::OperatingSystem),
-                                            },
-                                        )),
-                                    }),
-                                    build_mint_case_payload(
-                                        b"pkg@1.0.0#1",
-                                        &root,
-                                        Default::default(),
-                                    ),
-                                );
-                                // Assert
-                                assert!(returned.is_ok());
+                                        build_mint_case_payload(
+                                            b"pkg@1.0.0#1",
+                                            &root,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    // Assert
+                                    assert!(returned.is_ok());
+                                }
                             }
                         }
                     }
@@ -374,7 +391,7 @@ fn the_witnesses_prove_the_statement_again() {
 ///   to the delivered credential's components.
 /// Boundary: `mint` invoked through the crate root and the chain of real
 ///   functions the public surface names, all running for real.
-/// Mocked:  nothing; the operating-system generator runs real.
+/// Mocked:  nothing; each declared member's generator runs real.
 #[test]
 fn the_recipient_opens_its_envelope_to_a_credential_valid_for_the_identity() {
     struct Consumer;
@@ -500,55 +517,62 @@ fn the_recipient_opens_its_envelope_to_a_credential_valid_for_the_identity() {
         bytes: Some([0x44; 32]),
     });
     for pairing_concrete in PAIRING_CONCRETES {
-        for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS
+            .iter()
+            .filter(|selection| selection.identifier == HashToScalarIdentifier::Keccak256V1)
+        {
             for encoding_selection in DECLARED_ENCODING_SELECTIONS {
                 for forms_concrete in CHAIN_FORMS_CONCRETES {
                     for kem_selection in DECLARED_KEM_SELECTIONS {
                         for key_agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
                             for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                // Act
-                                let returned = run_mint_case(
-                                    &build_mint_case_deps(Consumer, Default::default()),
-                                    build_mint_case_params(MintCaseParamsOverrides {
-                                        pairing: Some(build_create_pairing_params(
-                                            CreatePairingParamsOverrides {
-                                                concrete: Some(*pairing_concrete),
-                                                ..Default::default()
-                                            },
-                                        )),
-                                        hash_to_scalar: Some(*h2s_selection),
-                                        encoding: Some(CreateEncodingParams {
-                                            concrete: encoding_selection.concrete,
-                                            identifier: encoding_selection.identifier,
+                                for random_kind in RANDOM_SOURCE_KINDS {
+                                    // Act
+                                    let returned = run_mint_case(
+                                        &build_mint_case_deps(Consumer, Default::default()),
+                                        build_mint_case_params(MintCaseParamsOverrides {
+                                            pairing: Some(build_create_pairing_params(
+                                                CreatePairingParamsOverrides {
+                                                    concrete: Some(*pairing_concrete),
+                                                    ..Default::default()
+                                                },
+                                            )),
+                                            hash_to_scalar: Some(*h2s_selection),
+                                            encoding: Some(CreateEncodingParams {
+                                                concrete: encoding_selection.concrete,
+                                                identifier: encoding_selection.identifier,
+                                            }),
+                                            chain_forms: Some(build_create_chain_forms_params(
+                                                CreateChainFormsParamsOverrides {
+                                                    concrete: Some(*forms_concrete),
+                                                    ..Default::default()
+                                                },
+                                            )),
+                                            kem: Some(*kem_selection),
+                                            key_agreement: Some(*key_agreement_selection),
+                                            delivery_proof: Some(
+                                                build_create_delivery_proof_params(
+                                                    CreateDeliveryProofParamsOverrides {
+                                                        concrete: Some(*proof_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                ),
+                                            ),
+                                            random_source: Some(build_create_random_source_params(
+                                                CreateRandomSourceParamsOverrides {
+                                                    kind: Some(*random_kind),
+                                                },
+                                            )),
                                         }),
-                                        chain_forms: Some(build_create_chain_forms_params(
-                                            CreateChainFormsParamsOverrides {
-                                                concrete: Some(*forms_concrete),
-                                                ..Default::default()
-                                            },
-                                        )),
-                                        kem: Some(*kem_selection),
-                                        key_agreement: Some(*key_agreement_selection),
-                                        delivery_proof: Some(build_create_delivery_proof_params(
-                                            CreateDeliveryProofParamsOverrides {
-                                                concrete: Some(*proof_concrete),
-                                                ..Default::default()
-                                            },
-                                        )),
-                                        random_source: Some(build_create_random_source_params(
-                                            CreateRandomSourceParamsOverrides {
-                                                kind: Some(RandomSourceKind::OperatingSystem),
-                                            },
-                                        )),
-                                    }),
-                                    build_mint_case_payload(
-                                        b"pkg@1.0.0#1",
-                                        &root,
-                                        Default::default(),
-                                    ),
-                                );
-                                // Assert
-                                assert!(returned.is_ok());
+                                        build_mint_case_payload(
+                                            b"pkg@1.0.0#1",
+                                            &root,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    // Assert
+                                    assert!(returned.is_ok());
+                                }
                             }
                         }
                     }
@@ -579,7 +603,7 @@ fn the_recipient_opens_its_envelope_to_a_credential_valid_for_the_identity() {
 ///   statement's.
 /// Boundary: `mint` invoked through the crate root and the chain of real
 ///   functions the public surface names, all running for real.
-/// Mocked:  nothing; the operating-system generator runs real.
+/// Mocked:  nothing; each declared member's generator runs real.
 #[test]
 fn every_draw_replays_to_the_objects_it_produced() {
     struct Consumer<'a> {
@@ -763,61 +787,68 @@ fn every_draw_replays_to_the_objects_it_produced() {
         bytes: Some([0x45; 32]),
     });
     for pairing_concrete in PAIRING_CONCRETES {
-        for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for h2s_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS
+            .iter()
+            .filter(|selection| selection.identifier == HashToScalarIdentifier::Keccak256V1)
+        {
             for encoding_selection in DECLARED_ENCODING_SELECTIONS {
                 for forms_concrete in CHAIN_FORMS_CONCRETES {
                     for kem_selection in DECLARED_KEM_SELECTIONS {
                         for key_agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
                             for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                // Act
-                                let returned = run_mint_case(
-                                    &build_mint_case_deps(
-                                        Consumer {
-                                            other_canonical,
-                                            other_root: &other_root,
-                                        },
-                                        Default::default(),
-                                    ),
-                                    build_mint_case_params(MintCaseParamsOverrides {
-                                        pairing: Some(build_create_pairing_params(
-                                            CreatePairingParamsOverrides {
-                                                concrete: Some(*pairing_concrete),
-                                                ..Default::default()
+                                for random_kind in RANDOM_SOURCE_KINDS {
+                                    // Act
+                                    let returned = run_mint_case(
+                                        &build_mint_case_deps(
+                                            Consumer {
+                                                other_canonical,
+                                                other_root: &other_root,
                                             },
-                                        )),
-                                        hash_to_scalar: Some(*h2s_selection),
-                                        encoding: Some(CreateEncodingParams {
-                                            concrete: encoding_selection.concrete,
-                                            identifier: encoding_selection.identifier,
+                                            Default::default(),
+                                        ),
+                                        build_mint_case_params(MintCaseParamsOverrides {
+                                            pairing: Some(build_create_pairing_params(
+                                                CreatePairingParamsOverrides {
+                                                    concrete: Some(*pairing_concrete),
+                                                    ..Default::default()
+                                                },
+                                            )),
+                                            hash_to_scalar: Some(*h2s_selection),
+                                            encoding: Some(CreateEncodingParams {
+                                                concrete: encoding_selection.concrete,
+                                                identifier: encoding_selection.identifier,
+                                            }),
+                                            chain_forms: Some(build_create_chain_forms_params(
+                                                CreateChainFormsParamsOverrides {
+                                                    concrete: Some(*forms_concrete),
+                                                    ..Default::default()
+                                                },
+                                            )),
+                                            kem: Some(*kem_selection),
+                                            key_agreement: Some(*key_agreement_selection),
+                                            delivery_proof: Some(
+                                                build_create_delivery_proof_params(
+                                                    CreateDeliveryProofParamsOverrides {
+                                                        concrete: Some(*proof_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                ),
+                                            ),
+                                            random_source: Some(build_create_random_source_params(
+                                                CreateRandomSourceParamsOverrides {
+                                                    kind: Some(*random_kind),
+                                                },
+                                            )),
                                         }),
-                                        chain_forms: Some(build_create_chain_forms_params(
-                                            CreateChainFormsParamsOverrides {
-                                                concrete: Some(*forms_concrete),
-                                                ..Default::default()
-                                            },
-                                        )),
-                                        kem: Some(*kem_selection),
-                                        key_agreement: Some(*key_agreement_selection),
-                                        delivery_proof: Some(build_create_delivery_proof_params(
-                                            CreateDeliveryProofParamsOverrides {
-                                                concrete: Some(*proof_concrete),
-                                                ..Default::default()
-                                            },
-                                        )),
-                                        random_source: Some(build_create_random_source_params(
-                                            CreateRandomSourceParamsOverrides {
-                                                kind: Some(RandomSourceKind::OperatingSystem),
-                                            },
-                                        )),
-                                    }),
-                                    build_mint_case_payload(
-                                        b"pkg@1.0.0#1",
-                                        &root,
-                                        Default::default(),
-                                    ),
-                                );
-                                // Assert
-                                assert!(returned.is_ok());
+                                        build_mint_case_payload(
+                                            b"pkg@1.0.0#1",
+                                            &root,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    // Assert
+                                    assert!(returned.is_ok());
+                                }
                             }
                         }
                     }
@@ -953,7 +984,7 @@ fn a_refused_draw_reaches_the_caller_whole() {
 ///   `expected_uniform_bytes(&tag, canonical, UNIFORM_BYTES_LENGTH)`.
 /// Boundary: `mint` invoked through the crate root and the chain of real
 ///   functions the public surface names, all running for real.
-/// Mocked:  nothing; the operating-system generator runs real.
+/// Mocked:  nothing; each declared member's generator runs real.
 #[test]
 fn every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_encoding_factory_encodes_to_the_oracle()
  {
@@ -1069,49 +1100,53 @@ fn every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_enco
                     {
                         for key_agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
                             for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                // Act
-                                let returned = run_mint_case(
-                                    &build_mint_case_deps(Consumer, Default::default()),
-                                    build_mint_case_params(MintCaseParamsOverrides {
-                                        pairing: Some(build_create_pairing_params(
-                                            CreatePairingParamsOverrides {
-                                                concrete: Some(*pairing_concrete),
-                                                ..Default::default()
-                                            },
-                                        )),
-                                        hash_to_scalar: Some(*h2s_selection),
-                                        encoding: Some(CreateEncodingParams {
-                                            concrete: encoding_selection.concrete,
-                                            identifier: encoding_selection.identifier,
+                                for random_kind in RANDOM_SOURCE_KINDS {
+                                    // Act
+                                    let returned = run_mint_case(
+                                        &build_mint_case_deps(Consumer, Default::default()),
+                                        build_mint_case_params(MintCaseParamsOverrides {
+                                            pairing: Some(build_create_pairing_params(
+                                                CreatePairingParamsOverrides {
+                                                    concrete: Some(*pairing_concrete),
+                                                    ..Default::default()
+                                                },
+                                            )),
+                                            hash_to_scalar: Some(*h2s_selection),
+                                            encoding: Some(CreateEncodingParams {
+                                                concrete: encoding_selection.concrete,
+                                                identifier: encoding_selection.identifier,
+                                            }),
+                                            chain_forms: Some(build_create_chain_forms_params(
+                                                CreateChainFormsParamsOverrides {
+                                                    concrete: Some(*forms_concrete),
+                                                    ..Default::default()
+                                                },
+                                            )),
+                                            kem: Some(*kem_selection),
+                                            key_agreement: Some(*key_agreement_selection),
+                                            delivery_proof: Some(
+                                                build_create_delivery_proof_params(
+                                                    CreateDeliveryProofParamsOverrides {
+                                                        concrete: Some(*proof_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                ),
+                                            ),
+                                            random_source: Some(build_create_random_source_params(
+                                                CreateRandomSourceParamsOverrides {
+                                                    kind: Some(*random_kind),
+                                                },
+                                            )),
                                         }),
-                                        chain_forms: Some(build_create_chain_forms_params(
-                                            CreateChainFormsParamsOverrides {
-                                                concrete: Some(*forms_concrete),
-                                                ..Default::default()
-                                            },
-                                        )),
-                                        kem: Some(*kem_selection),
-                                        key_agreement: Some(*key_agreement_selection),
-                                        delivery_proof: Some(build_create_delivery_proof_params(
-                                            CreateDeliveryProofParamsOverrides {
-                                                concrete: Some(*proof_concrete),
-                                                ..Default::default()
-                                            },
-                                        )),
-                                        random_source: Some(build_create_random_source_params(
-                                            CreateRandomSourceParamsOverrides {
-                                                kind: Some(RandomSourceKind::OperatingSystem),
-                                            },
-                                        )),
-                                    }),
-                                    build_mint_case_payload(
-                                        b"pkg@1.0.0#1",
-                                        &root,
-                                        Default::default(),
-                                    ),
-                                );
-                                // Assert
-                                assert!(returned.is_ok());
+                                        build_mint_case_payload(
+                                            b"pkg@1.0.0#1",
+                                            &root,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    // Assert
+                                    assert!(returned.is_ok());
+                                }
                             }
                         }
                     }

@@ -94,7 +94,13 @@ fn constants_refuse_a_statement_version_no_description_serves() {
 /// Contract: a supported statement version → `Ok` whose entries are named, in order,
 ///   `IDENTITY_TAG`, `POSSESSION_G1_TAG`, `POSSESSION_G2_TAG`, `CHALLENGE_TAG`,
 ///   `WEIGHT_TAG`, `DELIVERY_STATEMENT_VERSION`, `PURPOSE_MINT`, `PURPOSE_TRANSFER`,
-///   `PURPOSE_GRANT`, `PURPOSE_REPLACEMENT`, `MINT_FIELDS`, and `TRANSFER_FIELDS`.
+///   `PURPOSE_GRANT`, `PURPOSE_REPLACEMENT`, `MINT_FIELDS`, `TRANSFER_FIELDS`,
+///   `KEY_IDENTIFIER_DOMAIN_TAG`, `INTENT_DOMAIN_NAME`, `INTENT_DOMAIN_VERSION`,
+///   `INTENT_STRUCT_NAME`, `INTENT_MEMBER_IDENTITY`, `INTENT_MEMBER_NONCE`,
+///   `INTENT_MEMBER_EXPIRY`, `INTENT_MEMBER_CALL`, `NONCE_KIND_TYPE_NAME`,
+///   `EXPIRY_KIND_TYPE_NAME`, `FIXED_BYTES32_TYPE_NAME`, `UNSIGNED16_TYPE_NAME`,
+///   `UNSIGNED32_TYPE_NAME`, `UNSIGNED64_TYPE_NAME`, `TEXT_TYPE_NAME`,
+///   `BYTES_TYPE_NAME`, `FIXED_BYTES20_TYPE_NAME`, and `UNSIGNED256_TYPE_NAME`.
 /// Arrange: every collaborator at its defaults, `build_constants_params` at its
 ///   default `DELIVERY_STATEMENT_VERSION_ONE`; the entry names are distinct, so a
 ///   reordered, dropped, or renamed entry fails.
@@ -162,6 +168,24 @@ fn constants_return_the_entries_in_declared_order() {
         "PURPOSE_REPLACEMENT",
         "MINT_FIELDS",
         "TRANSFER_FIELDS",
+        "KEY_IDENTIFIER_DOMAIN_TAG",
+        "INTENT_DOMAIN_NAME",
+        "INTENT_DOMAIN_VERSION",
+        "INTENT_STRUCT_NAME",
+        "INTENT_MEMBER_IDENTITY",
+        "INTENT_MEMBER_NONCE",
+        "INTENT_MEMBER_EXPIRY",
+        "INTENT_MEMBER_CALL",
+        "NONCE_KIND_TYPE_NAME",
+        "EXPIRY_KIND_TYPE_NAME",
+        "FIXED_BYTES32_TYPE_NAME",
+        "UNSIGNED16_TYPE_NAME",
+        "UNSIGNED32_TYPE_NAME",
+        "UNSIGNED64_TYPE_NAME",
+        "TEXT_TYPE_NAME",
+        "BYTES_TYPE_NAME",
+        "FIXED_BYTES20_TYPE_NAME",
+        "UNSIGNED256_TYPE_NAME",
     ]
     .iter()
     .map(|text| {
@@ -736,3 +760,223 @@ fn cell_values_description_declares_the_records_member_names() {
     );
 }
 // cell_values_description_declares_the_records_member_names
+
+/// Contract: each signed-intent value is read from the handed forms' `DECLARATION`
+///   → `KEY_IDENTIFIER_DOMAIN_TAG` holds `SolidityConstantValue::Bytes` of the
+///   declaration's `key_identifier_domain_tag`, and `INTENT_DOMAIN_NAME`,
+///   `INTENT_DOMAIN_VERSION`, `INTENT_STRUCT_NAME`, `INTENT_MEMBER_IDENTITY`,
+///   `INTENT_MEMBER_NONCE`, `INTENT_MEMBER_EXPIRY`, and `INTENT_MEMBER_CALL`
+///   hold `SolidityConstantValue::String` of the declaration's
+///   `intent_domain_name`, `intent_domain_version`, `intent_struct_name`, and
+///   `intent_member_names`' `identity`, `nonce`, `expiry`, and `call`.
+/// Arrange: every collaborator at its defaults, the chain forms the family's
+///   mock concrete, whose declaration carries
+///   `b"chaintorrent/evm/key-identifier/v1"`, `"ChainTorrent"`, `"1"`,
+///   `"Intent"`, and the member names `identity`, `nonce`, `expiry`, and `call`,
+///   each differing from the domain tags, the purpose names, and every type
+///   name, so an entry read from another field or a literal fails.
+/// Act:    `constants::<P, E, F>` over the deps, params, and payload, inside
+///   the consumer's method.
+/// Assert: for each name the contract lists, the entry read by its name equals
+///   `build_solidity_library_entry` over that name and
+///   `SolidityConstantValue::Bytes` of `F::DECLARATION.key_identifier_domain_tag`
+///   or `SolidityConstantValue::String` of `build_solidity_string_literal` over
+///   the field of the same name of `F::DECLARATION`, by `assert_eq!`; the asserts
+///   run inside the consumer's method, where `F::DECLARATION` is in scope.
+#[test]
+fn constants_carry_the_signed_intent_values_the_forms_declare() {
+    struct Consumer;
+
+    impl IConstantsCaseConsumer for Consumer {
+        type Output = ConstantsReturn;
+
+        fn consume_constants_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            encoder: &E,
+            _forms: &F,
+            _payload: &ConstantsCasePayload,
+        ) -> Self::Output {
+            let kem = build_kem_declaration(Default::default());
+            let key_agreement = build_key_agreement_declaration(Default::default());
+            let delivery_proof = build_delivery_proof_declaration(Default::default());
+            let result = constants::<P, E, F>(
+                &build_constants_deps(pairing, encoder, Default::default()),
+                build_constants_params(Default::default()),
+                build_constants_payload(&kem, &key_agreement, &delivery_proof, Default::default()),
+            );
+
+            // Assert — inside the method, where `F::DECLARATION` is in scope
+            let entries = &result.as_ref().expect("a supported version admits").entries;
+            assert_eq!(
+                entry_named(entries, "KEY_IDENTIFIER_DOMAIN_TAG"),
+                &build_solidity_library_entry(SolidityLibraryEntryOverrides {
+                    name: Some(build_solidity_constant_name(
+                        SolidityConstantNameConstructorParamsOverrides {
+                            text: Some("KEY_IDENTIFIER_DOMAIN_TAG".to_string()),
+                        }
+                    )),
+                    value: Some(SolidityConstantValue::Bytes(
+                        F::DECLARATION.key_identifier_domain_tag.to_vec(),
+                    )),
+                })
+            );
+            for (text, field) in [
+                ("INTENT_DOMAIN_NAME", F::DECLARATION.intent_domain_name),
+                (
+                    "INTENT_DOMAIN_VERSION",
+                    F::DECLARATION.intent_domain_version,
+                ),
+                ("INTENT_STRUCT_NAME", F::DECLARATION.intent_struct_name),
+                (
+                    "INTENT_MEMBER_IDENTITY",
+                    F::DECLARATION.intent_member_names.identity,
+                ),
+                (
+                    "INTENT_MEMBER_NONCE",
+                    F::DECLARATION.intent_member_names.nonce,
+                ),
+                (
+                    "INTENT_MEMBER_EXPIRY",
+                    F::DECLARATION.intent_member_names.expiry,
+                ),
+                (
+                    "INTENT_MEMBER_CALL",
+                    F::DECLARATION.intent_member_names.call,
+                ),
+            ] {
+                assert_eq!(
+                    entry_named(entries, text),
+                    &build_solidity_library_entry(SolidityLibraryEntryOverrides {
+                        name: Some(build_solidity_constant_name(
+                            SolidityConstantNameConstructorParamsOverrides {
+                                text: Some(text.to_string()),
+                            }
+                        )),
+                        value: Some(SolidityConstantValue::String(
+                            build_solidity_string_literal(
+                                SolidityStringLiteralConstructorParamsOverrides {
+                                    text: Some(field.to_string()),
+                                }
+                            )
+                        )),
+                    })
+                );
+            }
+            result
+        }
+    }
+
+    // Act
+    let created = run_constants_case(
+        &build_constants_case_deps(Consumer, Default::default()),
+        build_constants_case_params(Default::default()),
+        build_constants_case_payload(Default::default()),
+    );
+
+    // Assert
+    created
+        .expect("every factory ran")
+        .output
+        .expect("a supported version admits");
+}
+// constants_carry_the_signed_intent_values_the_forms_declare
+
+/// Contract: each kind's type name is the encoder's → `NONCE_KIND_TYPE_NAME` and
+///   `EXPIRY_KIND_TYPE_NAME` hold `SolidityConstantValue::String` of the
+///   encoder's type name for `F::DECLARATION.nonce_kind` and
+///   `F::DECLARATION.expiry_kind`, and `FIXED_BYTES32_TYPE_NAME`,
+///   `UNSIGNED16_TYPE_NAME`, `UNSIGNED32_TYPE_NAME`, `UNSIGNED64_TYPE_NAME`,
+///   `TEXT_TYPE_NAME`, `BYTES_TYPE_NAME`, `FIXED_BYTES20_TYPE_NAME`, and
+///   `UNSIGNED256_TYPE_NAME` hold `String` of the encoder's type name for each
+///   `CanonicalFieldKind` variant in declaration order.
+/// Arrange: every collaborator at its defaults, the encoder the family's mock
+///   concrete, whose declared names are `mockFixedBytes32`, `mockUnsigned16`,
+///   `mockUnsigned32`, `mockUnsigned64`, `mockText`, `mockBytes`,
+///   `mockFixedBytes20`, and `mockUnsigned256`, and the chain forms the family's
+///   mock concrete, whose `nonce_kind` and `expiry_kind` are `Unsigned64`; the
+///   mock names differ from every tag, member name, and ABI name, so a literal
+///   or another kind's name fails.
+/// Act:    `constants::<P, E, F>` over the deps, params, and payload, inside
+///   the consumer's method.
+/// Assert: for each name the contract lists, the entry read by its name equals
+///   `build_solidity_library_entry` over that name and
+///   `SolidityConstantValue::String` of `build_solidity_string_literal` over the
+///   mock encoder's name for the kind the contract states, by `assert_eq!`.
+#[test]
+fn constants_carry_the_nonce_expiry_and_each_kinds_type_names() {
+    struct Consumer;
+
+    impl IConstantsCaseConsumer for Consumer {
+        type Output = ConstantsReturn;
+
+        fn consume_constants_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+        >(
+            &self,
+            pairing: &P,
+            encoder: &E,
+            _forms: &F,
+            _payload: &ConstantsCasePayload,
+        ) -> Self::Output {
+            let kem = build_kem_declaration(Default::default());
+            let key_agreement = build_key_agreement_declaration(Default::default());
+            let delivery_proof = build_delivery_proof_declaration(Default::default());
+            constants::<P, E, F>(
+                &build_constants_deps(pairing, encoder, Default::default()),
+                build_constants_params(Default::default()),
+                build_constants_payload(&kem, &key_agreement, &delivery_proof, Default::default()),
+            )
+        }
+    }
+
+    // Act
+    let created = run_constants_case(
+        &build_constants_case_deps(Consumer, Default::default()),
+        build_constants_case_params(Default::default()),
+        build_constants_case_payload(Default::default()),
+    );
+
+    // Assert
+    let result = created
+        .expect("every factory ran")
+        .output
+        .expect("a supported version admits");
+    for (text, type_name) in [
+        ("NONCE_KIND_TYPE_NAME", "mockUnsigned64"),
+        ("EXPIRY_KIND_TYPE_NAME", "mockUnsigned64"),
+        ("FIXED_BYTES32_TYPE_NAME", "mockFixedBytes32"),
+        ("UNSIGNED16_TYPE_NAME", "mockUnsigned16"),
+        ("UNSIGNED32_TYPE_NAME", "mockUnsigned32"),
+        ("UNSIGNED64_TYPE_NAME", "mockUnsigned64"),
+        ("TEXT_TYPE_NAME", "mockText"),
+        ("BYTES_TYPE_NAME", "mockBytes"),
+        ("FIXED_BYTES20_TYPE_NAME", "mockFixedBytes20"),
+        ("UNSIGNED256_TYPE_NAME", "mockUnsigned256"),
+    ] {
+        assert_eq!(
+            entry_named(&result.entries, text),
+            &build_solidity_library_entry(SolidityLibraryEntryOverrides {
+                name: Some(build_solidity_constant_name(
+                    SolidityConstantNameConstructorParamsOverrides {
+                        text: Some(text.to_string()),
+                    }
+                )),
+                value: Some(SolidityConstantValue::String(
+                    build_solidity_string_literal(
+                        SolidityStringLiteralConstructorParamsOverrides {
+                            text: Some(type_name.to_string()),
+                        }
+                    )
+                )),
+            })
+        );
+    }
+}
+// constants_carry_the_nonce_expiry_and_each_kinds_type_names

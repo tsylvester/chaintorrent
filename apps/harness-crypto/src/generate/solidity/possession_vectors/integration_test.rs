@@ -20,7 +20,7 @@ use pairing::{
     build_create_pairing_params,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
+    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RANDOM_SOURCE_KINDS,
     build_create_random_source_params,
 };
 
@@ -51,9 +51,9 @@ use super::possession_vectors;
 ///   `x` and no two share a `y`.
 /// Boundary: the chain of real functions the private surface lists, ending at
 ///   `possession_vectors`.
-/// Mocked:  nothing; the operating system's generator behind `create_random_source`
-///   runs real, so the block proves the generator's draws reach the records and does
-///   not prove the generator's quality.
+/// Mocked:  nothing; each declared member's generator behind `create_random_source`
+///   runs real, so the block proves the draws reach the records and does not prove
+///   a generator's quality.
 #[test]
 fn every_run_emits_the_configured_count_of_records_with_distinct_secrets() {
     // Arrange
@@ -106,32 +106,37 @@ fn every_run_emits_the_configured_count_of_records_with_distinct_secrets() {
         for key_agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
             for encoding_selection in DECLARED_ENCODING_SELECTIONS {
                 for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                    let result = run_possession_vectors_case(
-                        &build_possession_vectors_case_deps(Consumer { count }, Default::default()),
-                        build_possession_vectors_case_params(
-                            PossessionVectorsCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_selection),
-                                encoding: Some(CreateEncodingParams {
-                                    concrete: encoding_selection.concrete,
-                                    identifier: encoding_selection.identifier,
-                                }),
-                                key_agreement: Some(*key_agreement_selection),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                            },
-                        ),
-                        build_possession_vectors_case_payload(Default::default()),
-                    );
-                    assert!(result.is_ok());
+                    for random_source_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_possession_vectors_case(
+                            &build_possession_vectors_case_deps(
+                                Consumer { count },
+                                Default::default(),
+                            ),
+                            build_possession_vectors_case_params(
+                                PossessionVectorsCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_selection),
+                                    encoding: Some(CreateEncodingParams {
+                                        concrete: encoding_selection.concrete,
+                                        identifier: encoding_selection.identifier,
+                                    }),
+                                    key_agreement: Some(*key_agreement_selection),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides {
+                                            kind: Some(*random_source_kind),
+                                        },
+                                    )),
+                                },
+                            ),
+                            build_possession_vectors_case_payload(Default::default()),
+                        );
+                        assert!(result.is_ok());
+                    }
                 }
             }
         }
@@ -153,7 +158,7 @@ fn every_run_emits_the_configured_count_of_records_with_distinct_secrets() {
 ///   `decode_g1` and `decode_g2` admit each record's keys and commitments.
 /// Boundary: the chain of real functions the private surface lists, ending at
 ///   `possession_vectors`.
-/// Mocked:  nothing; the operating system's generator runs real.
+/// Mocked:  nothing; each declared member's generator runs real.
 #[test]
 fn every_record_encodes_its_scalars_in_32_bytes_and_its_points_in_the_pairings_widths() {
     // Arrange
@@ -247,32 +252,37 @@ fn every_record_encodes_its_scalars_in_32_bytes_and_its_points_in_the_pairings_w
         for key_agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
             for encoding_selection in DECLARED_ENCODING_SELECTIONS {
                 for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                    let result = run_possession_vectors_case(
-                        &build_possession_vectors_case_deps(Consumer { count }, Default::default()),
-                        build_possession_vectors_case_params(
-                            PossessionVectorsCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_selection),
-                                encoding: Some(CreateEncodingParams {
-                                    concrete: encoding_selection.concrete,
-                                    identifier: encoding_selection.identifier,
-                                }),
-                                key_agreement: Some(*key_agreement_selection),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                            },
-                        ),
-                        build_possession_vectors_case_payload(Default::default()),
-                    );
-                    assert!(result.is_ok());
+                    for random_source_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_possession_vectors_case(
+                            &build_possession_vectors_case_deps(
+                                Consumer { count },
+                                Default::default(),
+                            ),
+                            build_possession_vectors_case_params(
+                                PossessionVectorsCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_selection),
+                                    encoding: Some(CreateEncodingParams {
+                                        concrete: encoding_selection.concrete,
+                                        identifier: encoding_selection.identifier,
+                                    }),
+                                    key_agreement: Some(*key_agreement_selection),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides {
+                                            kind: Some(*random_source_kind),
+                                        },
+                                    )),
+                                },
+                            ),
+                            build_possession_vectors_case_payload(Default::default()),
+                        );
+                        assert!(result.is_ok());
+                    }
                 }
             }
         }
@@ -294,7 +304,7 @@ fn every_record_encodes_its_scalars_in_32_bytes_and_its_points_in_the_pairings_w
 ///   the scalar `decode_scalar` returns for `y`.
 /// Boundary: the chain of real functions the private surface lists, ending at
 ///   `possession_vectors`.
-/// Mocked:  nothing; the operating system's generator runs real.
+/// Mocked:  nothing; each declared member's generator runs real.
 #[test]
 fn every_record_carries_public_keys_that_are_the_generators_times_their_secrets() {
     // Arrange
@@ -400,32 +410,37 @@ fn every_record_carries_public_keys_that_are_the_generators_times_their_secrets(
         for key_agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
             for encoding_selection in DECLARED_ENCODING_SELECTIONS {
                 for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                    let result = run_possession_vectors_case(
-                        &build_possession_vectors_case_deps(Consumer { count }, Default::default()),
-                        build_possession_vectors_case_params(
-                            PossessionVectorsCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_selection),
-                                encoding: Some(CreateEncodingParams {
-                                    concrete: encoding_selection.concrete,
-                                    identifier: encoding_selection.identifier,
-                                }),
-                                key_agreement: Some(*key_agreement_selection),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                            },
-                        ),
-                        build_possession_vectors_case_payload(Default::default()),
-                    );
-                    assert!(result.is_ok());
+                    for random_source_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_possession_vectors_case(
+                            &build_possession_vectors_case_deps(
+                                Consumer { count },
+                                Default::default(),
+                            ),
+                            build_possession_vectors_case_params(
+                                PossessionVectorsCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_selection),
+                                    encoding: Some(CreateEncodingParams {
+                                        concrete: encoding_selection.concrete,
+                                        identifier: encoding_selection.identifier,
+                                    }),
+                                    key_agreement: Some(*key_agreement_selection),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides {
+                                            kind: Some(*random_source_kind),
+                                        },
+                                    )),
+                                },
+                            ),
+                            build_possession_vectors_case_payload(Default::default()),
+                        );
+                        assert!(result.is_ok());
+                    }
                 }
             }
         }
@@ -451,7 +466,7 @@ fn every_record_carries_public_keys_that_are_the_generators_times_their_secrets(
 /// Boundary: the chain of real functions the private surface lists, ending at
 ///   `possession_vectors` and the key agreement's `public_keys_from_components` and
 ///   `possession_from_components`.
-/// Mocked:  nothing; the operating system's generator runs real.
+/// Mocked:  nothing; each declared member's generator runs real.
 #[test]
 fn every_record_carries_proofs_the_key_agreement_admits() {
     // Arrange
@@ -562,32 +577,37 @@ fn every_record_carries_proofs_the_key_agreement_admits() {
         for key_agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
             for encoding_selection in DECLARED_ENCODING_SELECTIONS {
                 for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-                    let result = run_possession_vectors_case(
-                        &build_possession_vectors_case_deps(Consumer { count }, Default::default()),
-                        build_possession_vectors_case_params(
-                            PossessionVectorsCaseParamsOverrides {
-                                pairing: Some(build_create_pairing_params(
-                                    CreatePairingParamsOverrides {
-                                        concrete: Some(*pairing_concrete),
-                                        ..Default::default()
-                                    },
-                                )),
-                                hash_to_scalar: Some(*hash_selection),
-                                encoding: Some(CreateEncodingParams {
-                                    concrete: encoding_selection.concrete,
-                                    identifier: encoding_selection.identifier,
-                                }),
-                                key_agreement: Some(*key_agreement_selection),
-                                random_source: Some(build_create_random_source_params(
-                                    CreateRandomSourceParamsOverrides {
-                                        kind: Some(RandomSourceKind::OperatingSystem),
-                                    },
-                                )),
-                            },
-                        ),
-                        build_possession_vectors_case_payload(Default::default()),
-                    );
-                    assert!(result.is_ok());
+                    for random_source_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_possession_vectors_case(
+                            &build_possession_vectors_case_deps(
+                                Consumer { count },
+                                Default::default(),
+                            ),
+                            build_possession_vectors_case_params(
+                                PossessionVectorsCaseParamsOverrides {
+                                    pairing: Some(build_create_pairing_params(
+                                        CreatePairingParamsOverrides {
+                                            concrete: Some(*pairing_concrete),
+                                            ..Default::default()
+                                        },
+                                    )),
+                                    hash_to_scalar: Some(*hash_selection),
+                                    encoding: Some(CreateEncodingParams {
+                                        concrete: encoding_selection.concrete,
+                                        identifier: encoding_selection.identifier,
+                                    }),
+                                    key_agreement: Some(*key_agreement_selection),
+                                    random_source: Some(build_create_random_source_params(
+                                        CreateRandomSourceParamsOverrides {
+                                            kind: Some(*random_source_kind),
+                                        },
+                                    )),
+                                },
+                            ),
+                            build_possession_vectors_case_payload(Default::default()),
+                        );
+                        assert!(result.is_ok());
+                    }
                 }
             }
         }

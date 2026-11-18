@@ -34,7 +34,7 @@ use pairing::{
     build_create_pairing_params,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
+    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RANDOM_SOURCE_KINDS,
     build_create_random_source_params,
 };
 
@@ -154,37 +154,39 @@ fn a_mint_proof_verifies_in_both_forms() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_schnorr_fs_case(
-                        &build_schnorr_fs_case_deps(Consumer, Default::default()),
-                        build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*pairing_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            chain_forms: Some(build_create_chain_forms_params(
-                                CreateChainFormsParamsOverrides {
-                                    concrete: Some(*chain_forms_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding.concrete),
-                                    identifier: Some(encoding.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(*hash_to_scalar),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        }),
-                        build_schnorr_fs_case_payload(Default::default()),
-                    );
-                    assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_schnorr_fs_case(
+                            &build_schnorr_fs_case_deps(Consumer, Default::default()),
+                            build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*pairing_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                chain_forms: Some(build_create_chain_forms_params(
+                                    CreateChainFormsParamsOverrides {
+                                        concrete: Some(*chain_forms_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding.concrete),
+                                        identifier: Some(encoding.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(*hash_to_scalar),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides {
+                                        kind: Some(*random_kind),
+                                    },
+                                )),
+                            }),
+                            build_schnorr_fs_case_payload(Default::default()),
+                        );
+                        assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    }
                 }
             }
         }
@@ -281,37 +283,39 @@ fn a_transfer_proof_verifies_in_both_forms() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_schnorr_fs_case(
-                        &build_schnorr_fs_case_deps(Consumer, Default::default()),
-                        build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*pairing_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            chain_forms: Some(build_create_chain_forms_params(
-                                CreateChainFormsParamsOverrides {
-                                    concrete: Some(*chain_forms_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding.concrete),
-                                    identifier: Some(encoding.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(*hash_to_scalar),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        }),
-                        build_schnorr_fs_case_payload(Default::default()),
-                    );
-                    assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_schnorr_fs_case(
+                            &build_schnorr_fs_case_deps(Consumer, Default::default()),
+                            build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*pairing_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                chain_forms: Some(build_create_chain_forms_params(
+                                    CreateChainFormsParamsOverrides {
+                                        concrete: Some(*chain_forms_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding.concrete),
+                                        identifier: Some(encoding.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(*hash_to_scalar),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides {
+                                        kind: Some(*random_kind),
+                                    },
+                                )),
+                            }),
+                            build_schnorr_fs_case_payload(Default::default()),
+                        );
+                        assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    }
                 }
             }
         }
@@ -441,37 +445,39 @@ fn a_proof_rebuilt_from_its_components_verifies() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_schnorr_fs_case(
-                        &build_schnorr_fs_case_deps(Consumer, Default::default()),
-                        build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*pairing_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            chain_forms: Some(build_create_chain_forms_params(
-                                CreateChainFormsParamsOverrides {
-                                    concrete: Some(*chain_forms_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding.concrete),
-                                    identifier: Some(encoding.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(*hash_to_scalar),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        }),
-                        build_schnorr_fs_case_payload(Default::default()),
-                    );
-                    assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_schnorr_fs_case(
+                            &build_schnorr_fs_case_deps(Consumer, Default::default()),
+                            build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*pairing_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                chain_forms: Some(build_create_chain_forms_params(
+                                    CreateChainFormsParamsOverrides {
+                                        concrete: Some(*chain_forms_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding.concrete),
+                                        identifier: Some(encoding.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(*hash_to_scalar),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides {
+                                        kind: Some(*random_kind),
+                                    },
+                                )),
+                            }),
+                            build_schnorr_fs_case_payload(Default::default()),
+                        );
+                        assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    }
                 }
             }
         }
@@ -717,37 +723,39 @@ fn a_mint_proofs_challenge_is_the_tagged_hash_of_its_transcripts_encoding() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_schnorr_fs_case(
-                        &build_schnorr_fs_case_deps(Consumer, Default::default()),
-                        build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*pairing_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            chain_forms: Some(build_create_chain_forms_params(
-                                CreateChainFormsParamsOverrides {
-                                    concrete: Some(*chain_forms_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding.concrete),
-                                    identifier: Some(encoding.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(*hash_to_scalar),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        }),
-                        build_schnorr_fs_case_payload(Default::default()),
-                    );
-                    assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_schnorr_fs_case(
+                            &build_schnorr_fs_case_deps(Consumer, Default::default()),
+                            build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*pairing_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                chain_forms: Some(build_create_chain_forms_params(
+                                    CreateChainFormsParamsOverrides {
+                                        concrete: Some(*chain_forms_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding.concrete),
+                                        identifier: Some(encoding.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(*hash_to_scalar),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides {
+                                        kind: Some(*random_kind),
+                                    },
+                                )),
+                            }),
+                            build_schnorr_fs_case_payload(Default::default()),
+                        );
+                        assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    }
                 }
             }
         }
@@ -1042,37 +1050,39 @@ fn a_transfer_proofs_challenge_is_the_tagged_hash_of_its_transcripts_encoding() 
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_schnorr_fs_case(
-                        &build_schnorr_fs_case_deps(Consumer, Default::default()),
-                        build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*pairing_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            chain_forms: Some(build_create_chain_forms_params(
-                                CreateChainFormsParamsOverrides {
-                                    concrete: Some(*chain_forms_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding.concrete),
-                                    identifier: Some(encoding.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(*hash_to_scalar),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        }),
-                        build_schnorr_fs_case_payload(Default::default()),
-                    );
-                    assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_schnorr_fs_case(
+                            &build_schnorr_fs_case_deps(Consumer, Default::default()),
+                            build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*pairing_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                chain_forms: Some(build_create_chain_forms_params(
+                                    CreateChainFormsParamsOverrides {
+                                        concrete: Some(*chain_forms_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding.concrete),
+                                        identifier: Some(encoding.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(*hash_to_scalar),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides {
+                                        kind: Some(*random_kind),
+                                    },
+                                )),
+                            }),
+                            build_schnorr_fs_case_payload(Default::default()),
+                        );
+                        assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    }
                 }
             }
         }
@@ -1522,37 +1532,39 @@ fn a_proof_fails_against_a_statement_differing_in_one_field() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_schnorr_fs_case(
-                        &build_schnorr_fs_case_deps(Consumer, Default::default()),
-                        build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*pairing_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            chain_forms: Some(build_create_chain_forms_params(
-                                CreateChainFormsParamsOverrides {
-                                    concrete: Some(*chain_forms_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding.concrete),
-                                    identifier: Some(encoding.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(*hash_to_scalar),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        }),
-                        build_schnorr_fs_case_payload(Default::default()),
-                    );
-                    assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_schnorr_fs_case(
+                            &build_schnorr_fs_case_deps(Consumer, Default::default()),
+                            build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*pairing_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                chain_forms: Some(build_create_chain_forms_params(
+                                    CreateChainFormsParamsOverrides {
+                                        concrete: Some(*chain_forms_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding.concrete),
+                                        identifier: Some(encoding.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(*hash_to_scalar),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides {
+                                        kind: Some(*random_kind),
+                                    },
+                                )),
+                            }),
+                            build_schnorr_fs_case_payload(Default::default()),
+                        );
+                        assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    }
                 }
             }
         }
@@ -1764,37 +1776,39 @@ fn a_proof_with_a_changed_response_or_challenge_fails() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_schnorr_fs_case(
-                        &build_schnorr_fs_case_deps(Consumer, Default::default()),
-                        build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*pairing_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            chain_forms: Some(build_create_chain_forms_params(
-                                CreateChainFormsParamsOverrides {
-                                    concrete: Some(*chain_forms_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding.concrete),
-                                    identifier: Some(encoding.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(*hash_to_scalar),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        }),
-                        build_schnorr_fs_case_payload(Default::default()),
-                    );
-                    assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_schnorr_fs_case(
+                            &build_schnorr_fs_case_deps(Consumer, Default::default()),
+                            build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*pairing_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                chain_forms: Some(build_create_chain_forms_params(
+                                    CreateChainFormsParamsOverrides {
+                                        concrete: Some(*chain_forms_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding.concrete),
+                                        identifier: Some(encoding.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(*hash_to_scalar),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides {
+                                        kind: Some(*random_kind),
+                                    },
+                                )),
+                            }),
+                            build_schnorr_fs_case_payload(Default::default()),
+                        );
+                        assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    }
                 }
             }
         }
@@ -1972,37 +1986,39 @@ fn a_first_group_only_proof_with_a_changed_second_group_first_message_fails() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_schnorr_fs_case(
-                        &build_schnorr_fs_case_deps(Consumer, Default::default()),
-                        build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*pairing_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            chain_forms: Some(build_create_chain_forms_params(
-                                CreateChainFormsParamsOverrides {
-                                    concrete: Some(*chain_forms_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding.concrete),
-                                    identifier: Some(encoding.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(*hash_to_scalar),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        }),
-                        build_schnorr_fs_case_payload(Default::default()),
-                    );
-                    assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_schnorr_fs_case(
+                            &build_schnorr_fs_case_deps(Consumer, Default::default()),
+                            build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*pairing_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                chain_forms: Some(build_create_chain_forms_params(
+                                    CreateChainFormsParamsOverrides {
+                                        concrete: Some(*chain_forms_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding.concrete),
+                                        identifier: Some(encoding.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(*hash_to_scalar),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides {
+                                        kind: Some(*random_kind),
+                                    },
+                                )),
+                            }),
+                            build_schnorr_fs_case_payload(Default::default()),
+                        );
+                        assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    }
                 }
             }
         }
@@ -2230,37 +2246,39 @@ fn a_proof_from_a_witness_the_statement_does_not_hold_fails() {
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_schnorr_fs_case(
-                        &build_schnorr_fs_case_deps(Consumer, Default::default()),
-                        build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*pairing_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            chain_forms: Some(build_create_chain_forms_params(
-                                CreateChainFormsParamsOverrides {
-                                    concrete: Some(*chain_forms_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding.concrete),
-                                    identifier: Some(encoding.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(*hash_to_scalar),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        }),
-                        build_schnorr_fs_case_payload(Default::default()),
-                    );
-                    assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_schnorr_fs_case(
+                            &build_schnorr_fs_case_deps(Consumer, Default::default()),
+                            build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*pairing_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                chain_forms: Some(build_create_chain_forms_params(
+                                    CreateChainFormsParamsOverrides {
+                                        concrete: Some(*chain_forms_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding.concrete),
+                                        identifier: Some(encoding.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(*hash_to_scalar),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides {
+                                        kind: Some(*random_kind),
+                                    },
+                                )),
+                            }),
+                            build_schnorr_fs_case_payload(Default::default()),
+                        );
+                        assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    }
                 }
             }
         }
@@ -2563,37 +2581,39 @@ fn a_proof_whose_second_group_errors_cancel_unweighted_fails_the_weighted_produc
         for chain_forms_concrete in CHAIN_FORMS_CONCRETES {
             for encoding in DECLARED_ENCODING_SELECTIONS {
                 for hash_to_scalar in &keccak_cases {
-                    let result = run_schnorr_fs_case(
-                        &build_schnorr_fs_case_deps(Consumer, Default::default()),
-                        build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
-                            pairing: Some(build_create_pairing_params(
-                                CreatePairingParamsOverrides {
-                                    concrete: Some(*pairing_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            chain_forms: Some(build_create_chain_forms_params(
-                                CreateChainFormsParamsOverrides {
-                                    concrete: Some(*chain_forms_concrete),
-                                    ..Default::default()
-                                },
-                            )),
-                            encoding: Some(build_create_encoding_params(
-                                CreateEncodingParamsOverrides {
-                                    concrete: Some(encoding.concrete),
-                                    identifier: Some(encoding.identifier),
-                                },
-                            )),
-                            hash_to_scalar: Some(*hash_to_scalar),
-                            random_source: Some(build_create_random_source_params(
-                                CreateRandomSourceParamsOverrides {
-                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                },
-                            )),
-                        }),
-                        build_schnorr_fs_case_payload(Default::default()),
-                    );
-                    assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        let result = run_schnorr_fs_case(
+                            &build_schnorr_fs_case_deps(Consumer, Default::default()),
+                            build_schnorr_fs_case_params(SchnorrFsCaseParamsOverrides {
+                                pairing: Some(build_create_pairing_params(
+                                    CreatePairingParamsOverrides {
+                                        concrete: Some(*pairing_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                chain_forms: Some(build_create_chain_forms_params(
+                                    CreateChainFormsParamsOverrides {
+                                        concrete: Some(*chain_forms_concrete),
+                                        ..Default::default()
+                                    },
+                                )),
+                                encoding: Some(build_create_encoding_params(
+                                    CreateEncodingParamsOverrides {
+                                        concrete: Some(encoding.concrete),
+                                        identifier: Some(encoding.identifier),
+                                    },
+                                )),
+                                hash_to_scalar: Some(*hash_to_scalar),
+                                random_source: Some(build_create_random_source_params(
+                                    CreateRandomSourceParamsOverrides {
+                                        kind: Some(*random_kind),
+                                    },
+                                )),
+                            }),
+                            build_schnorr_fs_case_payload(Default::default()),
+                        );
+                        assert!(matches!(result, Ok(SchnorrFsCaseSuccessReturn { .. })));
+                    }
                 }
             }
         }

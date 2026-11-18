@@ -1,3 +1,5 @@
+Begin by reading `docs/agents/index.md`. For each workplan item, reference `index.md` and 
+
 Your cycle is: 
 
 Select the first incomplete item. Read everything necessary to understand the fix. Complete the fix. Review the completed work for accuracy. Correct if necessary. Mark it complete. Restart the cycle

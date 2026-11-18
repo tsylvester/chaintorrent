@@ -17,7 +17,8 @@ use domain::{
 };
 use encoding::{
     CanonicalFieldKind, CanonicalFieldValue, CreateEncodingParams, DECLARED_ENCODING_SELECTIONS,
-    ICanonicalField, IEncoderAdapter, build_from_field_params, build_to_field_params,
+    EncodingIdentifier, ICanonicalField, IEncoderAdapter, build_from_field_params,
+    build_to_field_params,
 };
 
 /// Contract: the own entry
@@ -36,7 +37,7 @@ use encoding::{
 ///   `build_create_chain_forms_params` overriding `concrete`, the
 ///   identifier at its default, and `build_create_chain_forms_payload`,
 ///   all from the crate's public surface under the `mocks` feature; each
-///   member of `CHAIN_FORMS_CONCRETES`, paired with the member of
+///   member of `CHAIN_FORMS_CONCRETES`, paired with each member of
 ///   `DECLARED_ENCODING_SELECTIONS` its declaration requires, is the
 ///   variation.
 /// Act:     `create_chain_forms_case(&deps, case_params, case_payload)`
@@ -46,8 +47,9 @@ use encoding::{
 ///   passed, and its `interface_version` equals
 ///   `CHAIN_FORMS_INTERFACE_VERSION`.
 /// Boundary: the public `create_chain_forms_case`; the real chain is
-///   `create_chain_forms_case`, `create_encoding`, the real ABI concrete,
-///   `create_chain_forms`, the concrete's producer, and
+///   `create_chain_forms_case`, `create_encoding`, the real concrete
+///   declaring `EthereumAbiV1`, `create_chain_forms`, the concrete's
+///   producer, and
 ///   `consume_chain_forms`.
 /// Mocked:  nothing.
 #[test]
@@ -101,7 +103,10 @@ fn create_chain_forms_hands_forms_declaring_the_required_identifier_to_an_outsid
             },
             Default::default(),
         );
-        for selection in DECLARED_ENCODING_SELECTIONS {
+        for selection in DECLARED_ENCODING_SELECTIONS
+            .iter()
+            .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
+        {
             let case_params =
                 build_create_chain_forms_case_params(CreateChainFormsCaseParamsOverrides {
                     encoding: Some(CreateEncodingParams {
@@ -143,7 +148,7 @@ fn create_chain_forms_hands_forms_declaring_the_required_identifier_to_an_outsid
 ///   returned field equals the arranged field and that `F::Identity::KIND`
 ///   is `CanonicalFieldKind::FixedBytes20`; the case consumer, case params,
 ///   and payloads as in the declaration block; each member of
-///   `CHAIN_FORMS_CONCRETES`, paired with the member of
+///   `CHAIN_FORMS_CONCRETES`, paired with each member of
 ///   `DECLARED_ENCODING_SELECTIONS` its declaration requires, is the
 ///   variation.
 /// Act:     `create_chain_forms_case(&deps, case_params, case_payload)`
@@ -152,8 +157,9 @@ fn create_chain_forms_hands_forms_declaring_the_required_identifier_to_an_outsid
 ///   `Ok`, the field `to_field` returns equals the arranged field, and the
 ///   form's `KIND` is the kind the contract states.
 /// Boundary: the public `create_chain_forms_case`; the real chain is
-///   `create_chain_forms_case`, `create_encoding`, the real ABI concrete,
-///   `create_chain_forms`, the concrete's producer, `consume_chain_forms`,
+///   `create_chain_forms_case`, `create_encoding`, the real concrete
+///   declaring `EthereumAbiV1`, `create_chain_forms`, the concrete's
+///   producer, `consume_chain_forms`,
 ///   and the identity form's `from_field`, `to_field`, and `try_new`.
 /// Mocked:  nothing.
 #[test]
@@ -223,7 +229,10 @@ fn create_chain_forms_hands_an_outside_consumer_an_identity_form_that_survives_i
             },
             Default::default(),
         );
-        for selection in DECLARED_ENCODING_SELECTIONS {
+        for selection in DECLARED_ENCODING_SELECTIONS
+            .iter()
+            .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
+        {
             let case_params =
                 build_create_chain_forms_case_params(CreateChainFormsCaseParamsOverrides {
                     encoding: Some(CreateEncodingParams {
@@ -259,8 +268,9 @@ fn create_chain_forms_hands_an_outside_consumer_an_identity_form_that_survives_i
 ///   `Ok`, the field `to_field` returns equals the arranged field, and the
 ///   form's `KIND` is the kind the contract states.
 /// Boundary: the public `create_chain_forms_case`; the real chain is
-///   `create_chain_forms_case`, `create_encoding`, the real ABI concrete,
-///   `create_chain_forms`, the concrete's producer, `consume_chain_forms`,
+///   `create_chain_forms_case`, `create_encoding`, the real concrete
+///   declaring `EthereumAbiV1`, `create_chain_forms`, the concrete's
+///   producer, `consume_chain_forms`,
 ///   and the entitlement form's `from_field`, `to_field`, and `try_new`.
 /// Mocked:  nothing.
 #[test]
@@ -331,7 +341,10 @@ fn create_chain_forms_hands_an_outside_consumer_an_entitlement_form_that_survive
             },
             Default::default(),
         );
-        for selection in DECLARED_ENCODING_SELECTIONS {
+        for selection in DECLARED_ENCODING_SELECTIONS
+            .iter()
+            .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
+        {
             let case_params =
                 build_create_chain_forms_case_params(CreateChainFormsCaseParamsOverrides {
                     encoding: Some(CreateEncodingParams {
@@ -367,8 +380,9 @@ fn create_chain_forms_hands_an_outside_consumer_an_entitlement_form_that_survive
 ///   `Ok`, the field `to_field` returns equals the arranged field, and the
 ///   form's `KIND` is the kind the contract states.
 /// Boundary: the public `create_chain_forms_case`; the real chain is
-///   `create_chain_forms_case`, `create_encoding`, the real ABI concrete,
-///   `create_chain_forms`, the concrete's producer, `consume_chain_forms`,
+///   `create_chain_forms_case`, `create_encoding`, the real concrete
+///   declaring `EthereumAbiV1`, `create_chain_forms`, the concrete's
+///   producer, `consume_chain_forms`,
 ///   and the interval form's `from_field`, `to_field`, and `try_new`.
 /// Mocked:  nothing.
 #[test]
@@ -435,7 +449,10 @@ fn create_chain_forms_hands_an_outside_consumer_an_interval_form_that_survives_i
             },
             Default::default(),
         );
-        for selection in DECLARED_ENCODING_SELECTIONS {
+        for selection in DECLARED_ENCODING_SELECTIONS
+            .iter()
+            .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
+        {
             let case_params =
                 build_create_chain_forms_case_params(CreateChainFormsCaseParamsOverrides {
                     encoding: Some(CreateEncodingParams {
@@ -471,8 +488,9 @@ fn create_chain_forms_hands_an_outside_consumer_an_interval_form_that_survives_i
 ///   `Ok`, the field `to_field` returns equals the arranged field, and the
 ///   form's `KIND` is the kind the contract states.
 /// Boundary: the public `create_chain_forms_case`; the real chain is
-///   `create_chain_forms_case`, `create_encoding`, the real ABI concrete,
-///   `create_chain_forms`, the concrete's producer, `consume_chain_forms`,
+///   `create_chain_forms_case`, `create_encoding`, the real concrete
+///   declaring `EthereumAbiV1`, `create_chain_forms`, the concrete's
+///   producer, `consume_chain_forms`,
 ///   and the chain-identifier form's `from_field`, `to_field`, and
 ///   `try_new`.
 /// Mocked:  nothing.
@@ -547,7 +565,10 @@ fn create_chain_forms_hands_an_outside_consumer_a_chain_identifier_form_that_sur
             },
             Default::default(),
         );
-        for selection in DECLARED_ENCODING_SELECTIONS {
+        for selection in DECLARED_ENCODING_SELECTIONS
+            .iter()
+            .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
+        {
             let case_params =
                 build_create_chain_forms_case_params(CreateChainFormsCaseParamsOverrides {
                     encoding: Some(CreateEncodingParams {
@@ -575,15 +596,16 @@ fn create_chain_forms_hands_an_outside_consumer_a_chain_identifier_form_that_sur
 ///   rebuilt by `from_field` → the rebuilt key identifier equals the
 ///   derived one, and its `KIND` is `CanonicalFieldKind::FixedBytes32`.
 /// Arrange: as the private integration test's key identifier block, over
-///   each member of `CHAIN_FORMS_CONCRETES` and the member of
+///   each member of `CHAIN_FORMS_CONCRETES` and each member of
 ///   `DECLARED_ENCODING_SELECTIONS` its declaration requires.
 /// Act:     `create_chain_forms_case(&deps, case_params, case_payload)`
 ///   per member and required encoding.
 /// Assert:  for each member the case result is `Ok`, the inner result is
 ///   `Ok`, and the in-place assertions of the forms consumer hold.
 /// Boundary: the public `create_chain_forms_case`; the real chain is
-///   `create_chain_forms_case`, `create_encoding`, the real ABI concrete,
-///   `create_chain_forms`, the concrete's producer, `consume_chain_forms`,
+///   `create_chain_forms_case`, `create_encoding`, the real concrete
+///   declaring `EthereumAbiV1`, `create_chain_forms`, the concrete's
+///   producer, `consume_chain_forms`,
 ///   `derive_key_identifier`, and the key identifier form's `to_field` and
 ///   `from_field`.
 /// Mocked:  nothing.
@@ -678,7 +700,10 @@ fn create_chain_forms_hands_an_outside_consumer_a_key_identifier_that_survives_i
             },
             Default::default(),
         );
-        for selection in DECLARED_ENCODING_SELECTIONS {
+        for selection in DECLARED_ENCODING_SELECTIONS
+            .iter()
+            .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
+        {
             let case_params =
                 build_create_chain_forms_case_params(CreateChainFormsCaseParamsOverrides {
                     encoding: Some(CreateEncodingParams {
@@ -707,15 +732,16 @@ fn create_chain_forms_hands_an_outside_consumer_a_key_identifier_that_survives_i
 ///   the one produced, and `F::SignedIntent::KIND` is
 ///   `CanonicalFieldKind::FixedBytes32`.
 /// Arrange: as the private integration test's signed intent block, over
-///   each member of `CHAIN_FORMS_CONCRETES` and the member of
+///   each member of `CHAIN_FORMS_CONCRETES` and each member of
 ///   `DECLARED_ENCODING_SELECTIONS` its declaration requires.
 /// Act:     `create_chain_forms_case(&deps, case_params, case_payload)`
 ///   per member and required encoding.
 /// Assert:  for each member the case result is `Ok`, the inner result is
 ///   `Ok`, and the in-place assertions of the forms consumer hold.
 /// Boundary: the public `create_chain_forms_case`; the real chain is
-///   `create_chain_forms_case`, `create_encoding`, the real ABI concrete,
-///   `create_chain_forms`, the concrete's producer, `consume_chain_forms`,
+///   `create_chain_forms_case`, `create_encoding`, the real concrete
+///   declaring `EthereumAbiV1`, `create_chain_forms`, the concrete's
+///   producer, `consume_chain_forms`,
 ///   `signed_intent`, and the intent form's `to_field` and `from_field`.
 /// Mocked:  nothing.
 #[test]
@@ -839,7 +865,10 @@ fn create_chain_forms_hands_an_outside_consumer_forms_that_produce_a_signed_inte
             },
             Default::default(),
         );
-        for selection in DECLARED_ENCODING_SELECTIONS {
+        for selection in DECLARED_ENCODING_SELECTIONS
+            .iter()
+            .filter(|selection| selection.identifier == EncodingIdentifier::EthereumAbiV1)
+        {
             let case_params =
                 build_create_chain_forms_case_params(CreateChainFormsCaseParamsOverrides {
                     encoding: Some(CreateEncodingParams {

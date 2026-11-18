@@ -214,6 +214,75 @@ pub fn constants<'a, P: IPairingReference, E: IEncoderAdapter, F: IChainForms>(
         entries.push(entry(name, SolidityConstantValue::String(literal))?);
     }
 
+    entries.push(entry(
+        "KEY_IDENTIFIER_DOMAIN_TAG",
+        SolidityConstantValue::Bytes(F::DECLARATION.key_identifier_domain_tag.to_vec()),
+    )?);
+    for (name, text) in [
+        ("INTENT_DOMAIN_NAME", F::DECLARATION.intent_domain_name),
+        (
+            "INTENT_DOMAIN_VERSION",
+            F::DECLARATION.intent_domain_version,
+        ),
+        ("INTENT_STRUCT_NAME", F::DECLARATION.intent_struct_name),
+        (
+            "INTENT_MEMBER_IDENTITY",
+            F::DECLARATION.intent_member_names.identity,
+        ),
+        (
+            "INTENT_MEMBER_NONCE",
+            F::DECLARATION.intent_member_names.nonce,
+        ),
+        (
+            "INTENT_MEMBER_EXPIRY",
+            F::DECLARATION.intent_member_names.expiry,
+        ),
+        (
+            "INTENT_MEMBER_CALL",
+            F::DECLARATION.intent_member_names.call,
+        ),
+    ] {
+        let literal = match SolidityStringLiteral::try_new(SolidityStringLiteralConstructorParams {
+            text: text.to_string(),
+        }) {
+            Err(error) => return Err(ConstantsErrorReturn::StringLiteral(error)),
+            Ok(literal) => literal,
+        };
+        entries.push(entry(name, SolidityConstantValue::String(literal))?);
+    }
+
+    let kind_type_name = |kind: CanonicalFieldKind| {
+        let Ok(success) = deps.encoder.type_name(TypeNameParams, kind);
+        let abi_type = match SolidityAbiType::try_new(SolidityAbiTypeConstructorParams {
+            name: success.name.as_str().to_string(),
+        }) {
+            Err(error) => return Err(ConstantsErrorReturn::AbiType(error)),
+            Ok(abi_type) => abi_type,
+        };
+        match SolidityStringLiteral::try_new(SolidityStringLiteralConstructorParams {
+            text: abi_type.as_str().to_string(),
+        }) {
+            Err(error) => Err(ConstantsErrorReturn::StringLiteral(error)),
+            Ok(literal) => Ok(literal),
+        }
+    };
+
+    for (name, kind) in [
+        ("NONCE_KIND_TYPE_NAME", F::DECLARATION.nonce_kind),
+        ("EXPIRY_KIND_TYPE_NAME", F::DECLARATION.expiry_kind),
+        ("FIXED_BYTES32_TYPE_NAME", CanonicalFieldKind::FixedBytes32),
+        ("UNSIGNED16_TYPE_NAME", CanonicalFieldKind::Unsigned16),
+        ("UNSIGNED32_TYPE_NAME", CanonicalFieldKind::Unsigned32),
+        ("UNSIGNED64_TYPE_NAME", CanonicalFieldKind::Unsigned64),
+        ("TEXT_TYPE_NAME", CanonicalFieldKind::Text),
+        ("BYTES_TYPE_NAME", CanonicalFieldKind::Bytes),
+        ("FIXED_BYTES20_TYPE_NAME", CanonicalFieldKind::FixedBytes20),
+        ("UNSIGNED256_TYPE_NAME", CanonicalFieldKind::Unsigned256),
+    ] {
+        let literal = kind_type_name(kind)?;
+        entries.push(entry(name, SolidityConstantValue::String(literal))?);
+    }
+
     let Ok(success) = deps
         .pairing
         .scalar_field_order(ScalarFieldOrderParams, ScalarFieldOrderPayload);
