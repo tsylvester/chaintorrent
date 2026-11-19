@@ -1,0 +1,217 @@
+[
+    {
+        "type": "function",
+        "name": "mint",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            { "name": "identity", "type": "address", "internalType": "address" },
+            { "name": "entitlement", "type": "uint256", "internalType": "uint256" },
+            { "name": "recipient", "type": "address", "internalType": "address" },
+            { "name": "envelope", "type": "bytes", "internalType": "bytes" },
+            { "name": "mintProof", "type": "bytes", "internalType": "bytes" },
+            {
+                "name": "intent",
+                "type": "tuple",
+                "internalType": "struct IIdentityAccount.SignedIntent",
+                "components": [
+                    { "name": "nonce", "type": "uint64", "internalType": "uint64" },
+                    { "name": "expiry", "type": "uint64", "internalType": "uint64" },
+                    { "name": "scheme", "type": "uint8", "internalType": "uint8" },
+                    { "name": "key", "type": "bytes", "internalType": "bytes" },
+                    { "name": "signature", "type": "bytes", "internalType": "bytes" }
+                ]
+            }
+        ],
+        "outputs": []
+    },
+    {
+        "type": "function",
+        "name": "deliver",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            { "name": "identity", "type": "address", "internalType": "address" },
+            { "name": "entitlement", "type": "uint256", "internalType": "uint256" },
+            { "name": "previousEnvelope", "type": "bytes", "internalType": "bytes" },
+            { "name": "newEnvelope", "type": "bytes", "internalType": "bytes" },
+            { "name": "transferProof", "type": "bytes", "internalType": "bytes" },
+            {
+                "name": "intent",
+                "type": "tuple",
+                "internalType": "struct IIdentityAccount.SignedIntent",
+                "components": [
+                    { "name": "nonce", "type": "uint64", "internalType": "uint64" },
+                    { "name": "expiry", "type": "uint64", "internalType": "uint64" },
+                    { "name": "scheme", "type": "uint8", "internalType": "uint8" },
+                    { "name": "key", "type": "bytes", "internalType": "bytes" },
+                    { "name": "signature", "type": "bytes", "internalType": "bytes" }
+                ]
+            }
+        ],
+        "outputs": []
+    },
+    {
+        "type": "function",
+        "name": "grant",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            { "name": "identity", "type": "address", "internalType": "address" },
+            { "name": "sourceEntitlement", "type": "uint256", "internalType": "uint256" },
+            { "name": "entitlement", "type": "uint256", "internalType": "uint256" },
+            { "name": "recipient", "type": "address", "internalType": "address" },
+            { "name": "authorEnvelope", "type": "bytes", "internalType": "bytes" },
+            { "name": "envelope", "type": "bytes", "internalType": "bytes" },
+            { "name": "transferProof", "type": "bytes", "internalType": "bytes" },
+            {
+                "name": "intent",
+                "type": "tuple",
+                "internalType": "struct IIdentityAccount.SignedIntent",
+                "components": [
+                    { "name": "nonce", "type": "uint64", "internalType": "uint64" },
+                    { "name": "expiry", "type": "uint64", "internalType": "uint64" },
+                    { "name": "scheme", "type": "uint8", "internalType": "uint8" },
+                    { "name": "key", "type": "bytes", "internalType": "bytes" },
+                    { "name": "signature", "type": "bytes", "internalType": "bytes" }
+                ]
+            }
+        ],
+        "outputs": []
+    },
+    {
+        "type": "function",
+        "name": "replace",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            { "name": "identity", "type": "address", "internalType": "address" },
+            { "name": "entitlement", "type": "uint256", "internalType": "uint256" },
+            { "name": "envelope", "type": "bytes", "internalType": "bytes" },
+            { "name": "mintProof", "type": "bytes", "internalType": "bytes" },
+            {
+                "name": "intent",
+                "type": "tuple",
+                "internalType": "struct IIdentityAccount.SignedIntent",
+                "components": [
+                    { "name": "nonce", "type": "uint64", "internalType": "uint64" },
+                    { "name": "expiry", "type": "uint64", "internalType": "uint64" },
+                    { "name": "scheme", "type": "uint8", "internalType": "uint8" },
+                    { "name": "key", "type": "bytes", "internalType": "bytes" },
+                    { "name": "signature", "type": "bytes", "internalType": "bytes" }
+                ]
+            }
+        ],
+        "outputs": []
+    },
+    {
+        "type": "function",
+        "name": "ownerOf",
+        "stateMutability": "view",
+        "inputs": [
+            { "name": "entitlement", "type": "uint256", "internalType": "uint256" }
+        ],
+        "outputs": [
+            { "name": "owner", "type": "address", "internalType": "address" }
+        ]
+    },
+    {
+        "type": "function",
+        "name": "intervalOf",
+        "stateMutability": "view",
+        "inputs": [
+            { "name": "entitlement", "type": "uint256", "internalType": "uint256" }
+        ],
+        "outputs": [
+            { "name": "interval", "type": "uint64", "internalType": "uint64" }
+        ]
+    },
+    {
+        "type": "function",
+        "name": "envelopeDigestOf",
+        "stateMutability": "view",
+        "inputs": [
+            { "name": "entitlement", "type": "uint256", "internalType": "uint256" }
+        ],
+        "outputs": [
+            { "name": "digest", "type": "bytes32", "internalType": "bytes32" }
+        ]
+    },
+    {
+        "type": "function",
+        "name": "assetOf",
+        "stateMutability": "view",
+        "inputs": [
+            { "name": "entitlement", "type": "uint256", "internalType": "uint256" }
+        ],
+        "outputs": [
+            { "name": "asset", "type": "bytes32", "internalType": "bytes32" }
+        ]
+    },
+    {
+        "type": "function",
+        "name": "parameterSetOf",
+        "stateMutability": "view",
+        "inputs": [
+            { "name": "entitlement", "type": "uint256", "internalType": "uint256" }
+        ],
+        "outputs": [
+            { "name": "parameterSetId", "type": "bytes32", "internalType": "bytes32" }
+        ]
+    },
+    {
+        "type": "function",
+        "name": "liveEntitlementCountOf",
+        "stateMutability": "view",
+        "inputs": [
+            { "name": "parameterSetId", "type": "bytes32", "internalType": "bytes32" }
+        ],
+        "outputs": [
+            { "name": "count", "type": "uint256", "internalType": "uint256" }
+        ]
+    },
+    {
+        "type": "event",
+        "name": "Minted",
+        "anonymous": false,
+        "inputs": [
+            { "name": "entitlement", "type": "uint256", "internalType": "uint256", "indexed": true },
+            { "name": "recipient", "type": "address", "internalType": "address", "indexed": true },
+            { "name": "interval", "type": "uint64", "internalType": "uint64", "indexed": false },
+            { "name": "envelope", "type": "bytes", "internalType": "bytes", "indexed": false },
+            { "name": "proof", "type": "bytes", "internalType": "bytes", "indexed": false }
+        ]
+    },
+    {
+        "type": "event",
+        "name": "Granted",
+        "anonymous": false,
+        "inputs": [
+            { "name": "sourceEntitlement", "type": "uint256", "internalType": "uint256", "indexed": true },
+            { "name": "entitlement", "type": "uint256", "internalType": "uint256", "indexed": true },
+            { "name": "recipient", "type": "address", "internalType": "address", "indexed": true },
+            { "name": "envelope", "type": "bytes", "internalType": "bytes", "indexed": false },
+            { "name": "proof", "type": "bytes", "internalType": "bytes", "indexed": false }
+        ]
+    },
+    {
+        "type": "event",
+        "name": "Delivered",
+        "anonymous": false,
+        "inputs": [
+            { "name": "entitlement", "type": "uint256", "internalType": "uint256", "indexed": true },
+            { "name": "from", "type": "address", "internalType": "address", "indexed": true },
+            { "name": "to", "type": "address", "internalType": "address", "indexed": true },
+            { "name": "interval", "type": "uint64", "internalType": "uint64", "indexed": false },
+            { "name": "envelope", "type": "bytes", "internalType": "bytes", "indexed": false },
+            { "name": "proof", "type": "bytes", "internalType": "bytes", "indexed": false }
+        ]
+    },
+    {
+        "type": "event",
+        "name": "Replaced",
+        "anonymous": false,
+        "inputs": [
+            { "name": "entitlement", "type": "uint256", "internalType": "uint256", "indexed": true },
+            { "name": "interval", "type": "uint64", "internalType": "uint64", "indexed": false },
+            { "name": "envelope", "type": "bytes", "internalType": "bytes", "indexed": false },
+            { "name": "proof", "type": "bytes", "internalType": "bytes", "indexed": false }
+        ]
+    }
+]

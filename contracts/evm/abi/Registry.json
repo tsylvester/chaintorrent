@@ -1,0 +1,341 @@
+[
+    {
+        "type": "function",
+        "name": "registerAsset",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            { "name": "root", "type": "bytes32", "internalType": "bytes32" },
+            { "name": "namespace", "type": "bytes32", "internalType": "bytes32" },
+            { "name": "key", "type": "bytes", "internalType": "bytes" },
+            { "name": "statement", "type": "bytes", "internalType": "bytes" },
+            { "name": "absent", "type": "bool", "internalType": "bool" },
+            { "name": "proofClass", "type": "uint8", "internalType": "uint8" }
+        ],
+        "outputs": []
+    },
+    {
+        "type": "function",
+        "name": "registerDeployment",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            { "name": "asset", "type": "bytes32", "internalType": "bytes32" },
+            {
+                "name": "record",
+                "type": "tuple",
+                "internalType": "struct IRegistry.DeploymentRecord",
+                "components": [
+                    { "name": "suiteId", "type": "bytes32", "internalType": "bytes32" },
+                    { "name": "cipherId", "type": "uint8", "internalType": "uint8" },
+                    { "name": "counterLayout", "type": "uint8", "internalType": "uint8" },
+                    { "name": "iv", "type": "bytes", "internalType": "bytes" },
+                    { "name": "pieceSize", "type": "uint32", "internalType": "uint32" },
+                    { "name": "pieceGroupSize", "type": "uint32", "internalType": "uint32" },
+                    { "name": "totalExtent", "type": "uint64", "internalType": "uint64" },
+                    { "name": "commitmentSchemeId", "type": "uint8", "internalType": "uint8" },
+                    {
+                        "name": "sidecars",
+                        "type": "tuple[]",
+                        "internalType": "struct IRegistry.Sidecar[]",
+                        "components": [
+                            { "name": "parameterSetId", "type": "bytes32", "internalType": "bytes32" },
+                            { "name": "root", "type": "bytes", "internalType": "bytes" },
+                            { "name": "locator", "type": "bytes", "internalType": "bytes" }
+                        ]
+                    },
+                    { "name": "kdfId", "type": "uint8", "internalType": "uint8" },
+                    { "name": "hashToScalarId", "type": "uint8", "internalType": "uint8" },
+                    { "name": "encodingId", "type": "uint8", "internalType": "uint8" },
+                    { "name": "targetGroupEncodingId", "type": "uint8", "internalType": "uint8" },
+                    { "name": "formsId", "type": "uint8", "internalType": "uint8" },
+                    { "name": "statementVersion", "type": "uint16", "internalType": "uint16" },
+                    { "name": "tauSoft", "type": "uint32", "internalType": "uint32" },
+                    { "name": "tauWallet", "type": "uint32", "internalType": "uint32" },
+                    { "name": "minSettlementTier", "type": "uint8", "internalType": "uint8" },
+                    { "name": "ciphertextRoot", "type": "bytes", "internalType": "bytes" },
+                    { "name": "plaintextRootMode", "type": "uint8", "internalType": "uint8" },
+                    { "name": "plaintextRoot", "type": "bytes", "internalType": "bytes" },
+                    { "name": "locators", "type": "bytes[]", "internalType": "bytes[]" },
+                    { "name": "advisoryRoot", "type": "bytes32", "internalType": "bytes32" }
+                ]
+            },
+            { "name": "attestation", "type": "bytes", "internalType": "bytes" },
+            { "name": "attestationAbsent", "type": "bool", "internalType": "bool" }
+        ],
+        "outputs": [
+            { "name": "deploymentId", "type": "bytes32", "internalType": "bytes32" }
+        ]
+    },
+    {
+        "type": "function",
+        "name": "addSidecar",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            { "name": "deployment", "type": "bytes32", "internalType": "bytes32" },
+            { "name": "parameterSetId", "type": "bytes32", "internalType": "bytes32" },
+            { "name": "root", "type": "bytes", "internalType": "bytes" },
+            { "name": "locator", "type": "bytes", "internalType": "bytes" }
+        ],
+        "outputs": []
+    },
+    {
+        "type": "function",
+        "name": "registerParameterSet",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            { "name": "id", "type": "bytes32", "internalType": "bytes32" },
+            { "name": "asset", "type": "bytes32", "internalType": "bytes32" },
+            { "name": "suiteId", "type": "bytes32", "internalType": "bytes32" },
+            { "name": "material", "type": "bytes", "internalType": "bytes" },
+            { "name": "identityScope", "type": "uint8", "internalType": "uint8" }
+        ],
+        "outputs": []
+    },
+    {
+        "type": "function",
+        "name": "retireParameterSet",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            { "name": "id", "type": "bytes32", "internalType": "bytes32" }
+        ],
+        "outputs": []
+    },
+    {
+        "type": "function",
+        "name": "rotateSourceKey",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            { "name": "sourceId", "type": "uint8", "internalType": "uint8" },
+            { "name": "keyId", "type": "bytes32", "internalType": "bytes32" },
+            { "name": "key", "type": "bytes", "internalType": "bytes" },
+            { "name": "activeFrom", "type": "uint64", "internalType": "uint64" }
+        ],
+        "outputs": []
+    },
+    {
+        "type": "function",
+        "name": "revokeSourceKey",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            { "name": "sourceId", "type": "uint8", "internalType": "uint8" },
+            { "name": "keyId", "type": "bytes32", "internalType": "bytes32" }
+        ],
+        "outputs": []
+    },
+    {
+        "type": "function",
+        "name": "resolve",
+        "stateMutability": "view",
+        "inputs": [
+            { "name": "namespace", "type": "bytes32", "internalType": "bytes32" },
+            { "name": "key", "type": "bytes", "internalType": "bytes" }
+        ],
+        "outputs": [
+            {
+                "name": "entries",
+                "type": "tuple[]",
+                "internalType": "struct IRegistry.AliasEntry[]",
+                "components": [
+                    { "name": "root", "type": "bytes32", "internalType": "bytes32" },
+                    { "name": "statement", "type": "bytes", "internalType": "bytes" },
+                    { "name": "absent", "type": "bool", "internalType": "bool" }
+                ]
+            }
+        ]
+    },
+    {
+        "type": "function",
+        "name": "resolveBatch",
+        "stateMutability": "view",
+        "inputs": [
+            { "name": "namespaces", "type": "bytes32[]", "internalType": "bytes32[]" },
+            { "name": "keys", "type": "bytes[]", "internalType": "bytes[]" }
+        ],
+        "outputs": [
+            {
+                "name": "entries",
+                "type": "tuple[][]",
+                "internalType": "struct IRegistry.AliasEntry[][]",
+                "components": [
+                    { "name": "root", "type": "bytes32", "internalType": "bytes32" },
+                    { "name": "statement", "type": "bytes", "internalType": "bytes" },
+                    { "name": "absent", "type": "bool", "internalType": "bool" }
+                ]
+            }
+        ]
+    },
+    {
+        "type": "function",
+        "name": "requestGrants",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            { "name": "identity", "type": "address", "internalType": "address" },
+            { "name": "assets", "type": "bytes32[]", "internalType": "bytes32[]" },
+            {
+                "name": "intent",
+                "type": "tuple",
+                "internalType": "struct IIdentityAccount.SignedIntent",
+                "components": [
+                    { "name": "nonce", "type": "uint64", "internalType": "uint64" },
+                    { "name": "expiry", "type": "uint64", "internalType": "uint64" },
+                    { "name": "scheme", "type": "uint8", "internalType": "uint8" },
+                    { "name": "key", "type": "bytes", "internalType": "bytes" },
+                    { "name": "signature", "type": "bytes", "internalType": "bytes" }
+                ]
+            }
+        ],
+        "outputs": []
+    },
+    {
+        "type": "function",
+        "name": "withdrawRequests",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            { "name": "identity", "type": "address", "internalType": "address" },
+            { "name": "assets", "type": "bytes32[]", "internalType": "bytes32[]" },
+            {
+                "name": "intent",
+                "type": "tuple",
+                "internalType": "struct IIdentityAccount.SignedIntent",
+                "components": [
+                    { "name": "nonce", "type": "uint64", "internalType": "uint64" },
+                    { "name": "expiry", "type": "uint64", "internalType": "uint64" },
+                    { "name": "scheme", "type": "uint8", "internalType": "uint8" },
+                    { "name": "key", "type": "bytes", "internalType": "bytes" },
+                    { "name": "signature", "type": "bytes", "internalType": "bytes" }
+                ]
+            }
+        ],
+        "outputs": []
+    },
+    {
+        "type": "function",
+        "name": "closeRequestByGrant",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            { "name": "identity", "type": "address", "internalType": "address" },
+            { "name": "asset", "type": "bytes32", "internalType": "bytes32" }
+        ],
+        "outputs": []
+    },
+    {
+        "type": "function",
+        "name": "openRequests",
+        "stateMutability": "view",
+        "inputs": [
+            { "name": "asset", "type": "bytes32", "internalType": "bytes32" },
+            { "name": "page", "type": "uint256", "internalType": "uint256" }
+        ],
+        "outputs": [
+            { "name": "identities", "type": "address[]", "internalType": "address[]" },
+            { "name": "nextPage", "type": "uint256", "internalType": "uint256" }
+        ]
+    },
+    {
+        "type": "function",
+        "name": "evaluateAuthorization",
+        "stateMutability": "view",
+        "inputs": [
+            {
+                "name": "context",
+                "type": "tuple",
+                "internalType": "struct IRegistry.AttemptContext",
+                "components": [
+                    { "name": "asset", "type": "bytes32", "internalType": "bytes32" },
+                    { "name": "deployment", "type": "bytes32", "internalType": "bytes32" },
+                    { "name": "entitlementContract", "type": "address", "internalType": "address" },
+                    { "name": "entitlement", "type": "uint256", "internalType": "uint256" },
+                    { "name": "identity", "type": "address", "internalType": "address" },
+                    { "name": "handshakeKeyScheme", "type": "uint8", "internalType": "uint8" },
+                    { "name": "handshakeKeyCommitment", "type": "bytes32", "internalType": "bytes32" },
+                    { "name": "interval", "type": "uint64", "internalType": "uint64" },
+                    { "name": "reference", "type": "uint64", "internalType": "uint64" }
+                ]
+            }
+        ],
+        "outputs": [
+            { "name": "result", "type": "uint8", "internalType": "uint8" }
+        ]
+    },
+    {
+        "type": "function",
+        "name": "evaluateAuthorizationBatch",
+        "stateMutability": "view",
+        "inputs": [
+            {
+                "name": "contexts",
+                "type": "tuple[]",
+                "internalType": "struct IRegistry.AttemptContext[]",
+                "components": [
+                    { "name": "asset", "type": "bytes32", "internalType": "bytes32" },
+                    { "name": "deployment", "type": "bytes32", "internalType": "bytes32" },
+                    { "name": "entitlementContract", "type": "address", "internalType": "address" },
+                    { "name": "entitlement", "type": "uint256", "internalType": "uint256" },
+                    { "name": "identity", "type": "address", "internalType": "address" },
+                    { "name": "handshakeKeyScheme", "type": "uint8", "internalType": "uint8" },
+                    { "name": "handshakeKeyCommitment", "type": "bytes32", "internalType": "bytes32" },
+                    { "name": "interval", "type": "uint64", "internalType": "uint64" },
+                    { "name": "reference", "type": "uint64", "internalType": "uint64" }
+                ]
+            },
+            { "name": "page", "type": "uint256", "internalType": "uint256" }
+        ],
+        "outputs": [
+            { "name": "results", "type": "uint8[]", "internalType": "uint8[]" },
+            { "name": "nextPage", "type": "uint256", "internalType": "uint256" }
+        ]
+    },
+    {
+        "type": "event",
+        "name": "AssetRegistered",
+        "anonymous": false,
+        "inputs": [
+            { "name": "root", "type": "bytes32", "internalType": "bytes32", "indexed": true },
+            { "name": "namespace", "type": "bytes32", "internalType": "bytes32", "indexed": true }
+        ]
+    },
+    {
+        "type": "event",
+        "name": "DeploymentRegistered",
+        "anonymous": false,
+        "inputs": [
+            { "name": "asset", "type": "bytes32", "internalType": "bytes32", "indexed": true },
+            { "name": "deployment", "type": "bytes32", "internalType": "bytes32", "indexed": true }
+        ]
+    },
+    {
+        "type": "event",
+        "name": "SidecarAdded",
+        "anonymous": false,
+        "inputs": [
+            { "name": "deployment", "type": "bytes32", "internalType": "bytes32", "indexed": true },
+            { "name": "parameterSetId", "type": "bytes32", "internalType": "bytes32", "indexed": true }
+        ]
+    },
+    {
+        "type": "event",
+        "name": "GrantsRequested",
+        "anonymous": false,
+        "inputs": [
+            { "name": "identity", "type": "address", "internalType": "address", "indexed": true },
+            { "name": "assets", "type": "bytes32[]", "internalType": "bytes32[]", "indexed": false }
+        ]
+    },
+    {
+        "type": "event",
+        "name": "RequestsWithdrawn",
+        "anonymous": false,
+        "inputs": [
+            { "name": "identity", "type": "address", "internalType": "address", "indexed": true },
+            { "name": "assets", "type": "bytes32[]", "internalType": "bytes32[]", "indexed": false }
+        ]
+    },
+    {
+        "type": "event",
+        "name": "RequestClosedByGrant",
+        "anonymous": false,
+        "inputs": [
+            { "name": "identity", "type": "address", "internalType": "address", "indexed": true },
+            { "name": "asset", "type": "bytes32", "internalType": "bytes32", "indexed": true }
+        ]
+    }
+]

@@ -1,3 +1,4 @@
+mod base;
 mod create_chain_forms;
 mod evm_forms;
 mod factory;
