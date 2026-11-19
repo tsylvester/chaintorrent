@@ -42,7 +42,7 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
 ## Delivery proof and on-chain verifier
 
-* `[ ]`   `contracts/evm/ParameterSets` **The suite's parameter-set records: each set's digest as its key, with its asset, suite identifier, suite-tagged material, identity scope, and liveness, registered live and retired only by the registry that deploys it, and read by the registry's sidecar-per-live-set rule; creates `contracts/evm`, its Foundry configuration, and its continuous-integration definition; authors its interface, its ABI description, and their interface test, mock, guard test, and unit test**
+* `[✅]`   `contracts/evm/ParameterSets` **The suite's parameter-set records: each set's digest as its key, with its asset, suite identifier, suite-tagged material, identity scope, and liveness, registered live and retired only by the registry that deploys it, and read by the registry's sidecar-per-live-set rule; creates `contracts/evm`, its Foundry configuration, and its continuous-integration definition; authors its interface, its ABI description, and their interface test, mock, guard test, and unit test**
 
   * `[✅]`   `objective`
     * `[✅]`   Problem: the registry rejects a deployment record that lacks a sidecar root for a set live at registration, and retires a set only when no live entitlement remains under it, so the sets and their liveness are held as records the registry registers, retires, and reads; every contract node of the suite builds, formats, and tests under one toolchain, so the contract that creates the suite creates that toolchain (LC-09 and LC-01; the dependency map's `contracts/evm/ParameterSets` row and its Tools and dependencies decision; the technical requirements' `ParameterSet` record and Registry paragraph, `registerParameterSet` and `retireParameterSet`; the Delivery proof and on-chain verifier milestone's scope for `contracts/evm/ParameterSets`; the tech stack's contract toolchain row; the research notebook's retirement rule, a set retired only when the registry shows no live entitlement under it)
@@ -186,152 +186,152 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Every unit block passes: registration marks the set live, retirement marks it not live and keeps its record, a retired id is never recorded again, the material and the identity scope are stored unread, and an unrecorded id reads as an empty record
     * `[✅]`   `contracts/evm/test/ParameterSetsMock.sol` carries the builder and the interface mock stated above
 
-* `[ ]`   `domain/handshake_key_commitment` **Handshake key commitment, the 32 bytes of the Binding record's `bytes32` commitment to an identity's bound handshake public key together with the scheme identifier the key is bound under, admitted only when the commitment can name a bound key**
+* `[✅]`   `domain/handshake_key_commitment` **Handshake key commitment, the 32 bytes of the Binding record's `bytes32` commitment to an identity's bound handshake public key together with the scheme identifier the key is bound under, admitted only when the commitment can name a bound key**
 
-  * `[ ]`   `objective`
-    * `[ ]`   Problem: the identity binding stores a commitment to the handshake public key and the scheme identifier the key is bound under, the key itself travelling in the binding transaction's calldata and in the anchored DID Document, so the stored width does not depend on the scheme; the chain family's attempt context carries the identity and this commitment, so a value naming no bound key must be refused before an attempt is built from it (the technical requirements' `Binding` schema, `handshakeKeyCommitment bytes32` and `scheme uint8`; the feature spec's identity binding criterion; the dependency map's `domain/handshake_key_commitment` row and its statement of the chain family's attempt context; the Delivery proof and on-chain verifier milestone's scope for `domain/handshake_key_commitment`)
-    * `[ ]`   Functional: one type holds the commitment's 32 bytes and the `SignatureSchemeIdentifier` the key is bound under, each reachable only through a read accessor, and its only producer is a fallible constructor
-    * `[ ]`   Functional: the constructor takes exactly 32 bytes, so the length is a fact of the params type and never a runtime check, and takes the scheme as the `SignatureSchemeIdentifier` `domain/signature_scheme_identifier` authors, which is admitted before this constructor runs, so the constructor checks no scheme
-    * `[ ]`   Functional: the constructor refuses the all-zero commitment, which is what an unassigned `bytes32` storage slot reads as, so it names no key the Binding record holds
-    * `[ ]`   Functional: every other 32-byte value is admitted with the scheme it is handed, and both are read back unchanged
-    * `[ ]`   Non-functional: the module depends on the standard library and on the `signature_scheme_identifier` module alone; the `domain` crate's dependencies are unchanged
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: the identity binding stores a commitment to the handshake public key and the scheme identifier the key is bound under, the key itself travelling in the binding transaction's calldata and in the anchored DID Document, so the stored width does not depend on the scheme; the chain family's attempt context carries the identity and this commitment, so a value naming no bound key must be refused before an attempt is built from it (the technical requirements' `Binding` schema, `handshakeKeyCommitment bytes32` and `scheme uint8`; the feature spec's identity binding criterion; the dependency map's `domain/handshake_key_commitment` row and its statement of the chain family's attempt context; the Delivery proof and on-chain verifier milestone's scope for `domain/handshake_key_commitment`)
+    * `[✅]`   Functional: one type holds the commitment's 32 bytes and the `SignatureSchemeIdentifier` the key is bound under, each reachable only through a read accessor, and its only producer is a fallible constructor
+    * `[✅]`   Functional: the constructor takes exactly 32 bytes, so the length is a fact of the params type and never a runtime check, and takes the scheme as the `SignatureSchemeIdentifier` `domain/signature_scheme_identifier` authors, which is admitted before this constructor runs, so the constructor checks no scheme
+    * `[✅]`   Functional: the constructor refuses the all-zero commitment, which is what an unassigned `bytes32` storage slot reads as, so it names no key the Binding record holds
+    * `[✅]`   Functional: every other 32-byte value is admitted with the scheme it is handed, and both are read back unchanged
+    * `[✅]`   Non-functional: the module depends on the standard library and on the `signature_scheme_identifier` module alone; the `domain` crate's dependencies are unchanged
 
-  * `[ ]`   `role`
-    * `[ ]`   Domain: an owned value type in the protocol and domain ring, the bound key every attempt context and the identity binding name
-    * `[ ]`   Does not compute, verify, or derive a commitment, and does not hold the handshake public key; the key travels in calldata and in the DID Document
-    * `[ ]`   Does not assign, map, or validate a scheme identifier; `domain/signature_scheme_identifier` owns the type and its refusal
-    * `[ ]`   Does not read the Binding record, compare a commitment with a key, or track whether a binding is current; the registry holds the record
-    * `[ ]`   Does not decode a commitment from wire bytes of unknown length; the encoding family decodes a `bytes32` into the 32 bytes this constructor takes
-    * `[ ]`   Does not create any other module of the `domain` crate
-    * `[ ]`   Does not carry a commit
+  * `[✅]`   `role`
+    * `[✅]`   Domain: an owned value type in the protocol and domain ring, the bound key every attempt context and the identity binding name
+    * `[✅]`   Does not compute, verify, or derive a commitment, and does not hold the handshake public key; the key travels in calldata and in the DID Document
+    * `[✅]`   Does not assign, map, or validate a scheme identifier; `domain/signature_scheme_identifier` owns the type and its refusal
+    * `[✅]`   Does not read the Binding record, compare a commitment with a key, or track whether a binding is current; the registry holds the record
+    * `[✅]`   Does not decode a commitment from wire bytes of unknown length; the encoding family decodes a `bytes32` into the 32 bytes this constructor takes
+    * `[✅]`   Does not create any other module of the `domain` crate
+    * `[✅]`   Does not carry a commit
 
-  * `[ ]`   `module`
-    * `[ ]`   Bounded context: the `handshake_key_commitment` module of the `domain` crate, holding `HandshakeKeyCommitment`, its length, its constructor params, and its constructor's error and return types, and its public integration test under `crates/domain/tests`
-    * `[ ]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's lines
-    * `[ ]`   Outside: the handshake key, the commitment's computation and verification, the scheme's assignment, the Binding record, and the encoding of the commitment on the wire
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the `handshake_key_commitment` module of the `domain` crate, holding `HandshakeKeyCommitment`, its length, its constructor params, and its constructor's error and return types, and its public integration test under `crates/domain/tests`
+    * `[✅]`   Adds the module to the existing `domain` crate at `crates/domain`; the crate's manifest is unchanged and its barrel gains this module's lines
+    * `[✅]`   Outside: the handshake key, the commitment's computation and verification, the scheme's assignment, the Binding record, and the encoding of the commitment on the wire
 
-  * `[ ]`   `deps`
-    * `[ ]`   `domain/signature_scheme_identifier`, authored in `ChainTorrent MVP 3.md`, provides `SignatureSchemeIdentifier`, `build_signature_scheme_identifier`, and `SignatureSchemeIdentifierConstructorParamsOverrides` through `crate::signature_scheme_identifier::provides`; direction inward, a module of the same innermost crate; purpose, the scheme the commitment's key is bound under, held as the admitted type and built through its owner's builder
-    * `[ ]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `deployment_identity`, `suite_identifier`, `parameter_set_identifier`, `group_index`, or `piece_geometry`
-    * `[ ]`   The standard library: `u8`, arrays, and `Iterator::all`, through the prelude
-    * `[ ]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
-    * `[ ]`   No reverse dependency; the chain family's attempt context is this module's first consumer
+  * `[✅]`   `deps`
+    * `[✅]`   `domain/signature_scheme_identifier`, authored in `ChainTorrent MVP 3.md`, provides `SignatureSchemeIdentifier`, `build_signature_scheme_identifier`, and `SignatureSchemeIdentifierConstructorParamsOverrides` through `crate::signature_scheme_identifier::provides`; direction inward, a module of the same innermost crate; purpose, the scheme the commitment's key is bound under, held as the admitted type and built through its owner's builder
+    * `[✅]`   `domain/secret` created the `domain` crate this module joins; this module imports nothing from `secret`, `deployment_identity`, `suite_identifier`, `parameter_set_identifier`, `group_index`, or `piece_geometry`
+    * `[✅]`   The standard library: `u8`, arrays, and `Iterator::all`, through the prelude
+    * `[✅]`   No external crate and no repository crate; `crates/domain/Cargo.toml` is unchanged; direction inward, `domain` is the innermost ring
+    * `[✅]`   No reverse dependency; the chain family's attempt context is this module's first consumer
 
-  * `[ ]`   `context_slice`
-    * `[ ]`   From `domain/signature_scheme_identifier`: the `SignatureSchemeIdentifier` type, which derives `Clone`, `Copy`, `Debug`, `PartialEq`, and `Eq`, and its `identifier(&self) -> u8` accessor
-    * `[ ]`   From the standard library: `<[u8]>::iter` and `Iterator::all`
+  * `[✅]`   `context_slice`
+    * `[✅]`   From `domain/signature_scheme_identifier`: the `SignatureSchemeIdentifier` type, which derives `Clone`, `Copy`, `Debug`, `PartialEq`, and `Eq`, and its `identifier(&self) -> u8` accessor
+    * `[✅]`   From the standard library: `<[u8]>::iter` and `Iterator::all`
 
-  * `[ ]`   `crates/domain/src/lib.rs`
-    * `[ ]`   The crate barrel reads `mod deployment_identity;`, `mod group_index;`, `mod handshake_key_commitment;`, `mod parameter_set_identifier;`, `mod piece_geometry;`, `mod secret;`, `mod signature_scheme_identifier;`, `mod suite_identifier;`, `pub use deployment_identity::provides::*;`, `pub use group_index::provides::*;`, `pub use handshake_key_commitment::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use piece_geometry::provides::*;`, `pub use secret::provides::*;`, `pub use signature_scheme_identifier::provides::*;`, and `pub use suite_identifier::provides::*;`
-    * `[ ]`   `mod handshake_key_commitment;` names the module whose implementation is `handshake_key_commitment/mod.rs`; `cargo check` reports it unresolved in every state in which that file does not exist, which is the RED state for every element below that precedes the implementation
+  * `[✅]`   `crates/domain/src/lib.rs`
+    * `[✅]`   The crate barrel reads `mod deployment_identity;`, `mod group_index;`, `mod handshake_key_commitment;`, `mod parameter_set_identifier;`, `mod piece_geometry;`, `mod secret;`, `mod signature_scheme_identifier;`, `mod suite_identifier;`, `pub use deployment_identity::provides::*;`, `pub use group_index::provides::*;`, `pub use handshake_key_commitment::provides::*;`, `pub use parameter_set_identifier::provides::*;`, `pub use piece_geometry::provides::*;`, `pub use secret::provides::*;`, `pub use signature_scheme_identifier::provides::*;`, and `pub use suite_identifier::provides::*;`
+    * `[✅]`   `mod handshake_key_commitment;` names the module whose implementation is `handshake_key_commitment/mod.rs`; `cargo check` reports it unresolved in every state in which that file does not exist, which is the RED state for every element below that precedes the implementation
 
-  * `[ ]`   `crates/domain/src/handshake_key_commitment/interface.rs`
-    * `[ ]`   Imports `SignatureSchemeIdentifier` from `crate::signature_scheme_identifier::provides`
-    * `[ ]`   `HANDSHAKE_KEY_COMMITMENT_LENGTH`, a `pub const` of type `usize` with value `32`, the width of the Binding record's `bytes32` commitment
-    * `[ ]`   `HandshakeKeyCommitment`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub(super) bytes: [u8; HANDSHAKE_KEY_COMMITMENT_LENGTH]` and `pub(super) scheme: SignatureSchemeIdentifier`, so only the `handshake_key_commitment` module and its children reach the fields
-    * `[ ]`   `HandshakeKeyCommitmentConstructorParams`, a struct with the fields `pub bytes: [u8; HANDSHAKE_KEY_COMMITMENT_LENGTH]` and `pub scheme: SignatureSchemeIdentifier`; no derives
-    * `[ ]`   `HandshakeKeyCommitmentTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `AllZero`
-    * `[ ]`   `HandshakeKeyCommitmentTryNewReturn`, the type alias `Result<HandshakeKeyCommitment, HandshakeKeyCommitmentTryNewErrorReturn>`
+  * `[✅]`   `crates/domain/src/handshake_key_commitment/interface.rs`
+    * `[✅]`   Imports `SignatureSchemeIdentifier` from `crate::signature_scheme_identifier::provides`
+    * `[✅]`   `HANDSHAKE_KEY_COMMITMENT_LENGTH`, a `pub const` of type `usize` with value `32`, the width of the Binding record's `bytes32` commitment
+    * `[✅]`   `HandshakeKeyCommitment`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and the fields `pub(super) bytes: [u8; HANDSHAKE_KEY_COMMITMENT_LENGTH]` and `pub(super) scheme: SignatureSchemeIdentifier`, so only the `handshake_key_commitment` module and its children reach the fields
+    * `[✅]`   `HandshakeKeyCommitmentConstructorParams`, a struct with the fields `pub bytes: [u8; HANDSHAKE_KEY_COMMITMENT_LENGTH]` and `pub scheme: SignatureSchemeIdentifier`; no derives
+    * `[✅]`   `HandshakeKeyCommitmentTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `AllZero`
+    * `[✅]`   `HandshakeKeyCommitmentTryNewReturn`, the type alias `Result<HandshakeKeyCommitment, HandshakeKeyCommitmentTryNewErrorReturn>`
 
-  * `[ ]`   `crates/domain/src/handshake_key_commitment/interaction.spec.md`
-    * `[ ]`   `HandshakeKeyCommitment::try_new(params: HandshakeKeyCommitmentConstructorParams) -> HandshakeKeyCommitmentTryNewReturn`, all zero: condition every byte of `params.bytes` is `0`; decision `params.bytes.iter().all(…)` over the byte equal to `0`; dependency call none; outcome `Err(HandshakeKeyCommitmentTryNewErrorReturn::AllZero)`
-    * `[ ]`   Admitted: condition some byte of `params.bytes` is nonzero; decision the same check; dependency call none; outcome `Ok(HandshakeKeyCommitment { bytes, scheme })`, the array and the scheme moved from the params, the scheme unexamined because `SignatureSchemeIdentifier` is admitted by its own constructor
-    * `[ ]`   `HandshakeKeyCommitment::as_bytes(&self) -> &[u8; HANDSHAKE_KEY_COMMITMENT_LENGTH]`: one branch; outcome a shared reference to the held array, no copy, no side effect
-    * `[ ]`   `HandshakeKeyCommitment::scheme(&self) -> SignatureSchemeIdentifier`: one branch; outcome the held scheme, copied because the type is `Copy`, no side effect
-    * `[ ]`   Invariants: every `HandshakeKeyCommitment` holds 32 bytes, not all zero, and one admitted `SignatureSchemeIdentifier`; its only producer is `try_new`
-    * `[ ]`   Own entry `the_all_zero_commitment_is_refused_whatever_its_scheme`: condition `HandshakeKeyCommitment::try_new` called through the crate's public surface with 32 zero bytes and a scheme admitted by its own constructor; outcome `Err(HandshakeKeyCommitmentTryNewErrorReturn::AllZero)`; the input variation is two schemes, so a refusal conditioned on the scheme passes for one and fails for the other; the edge that must survive composition is the refusal of the zero bytes under the smallest and the largest admitted scheme
-    * `[ ]`   Own entry `an_admitted_commitment_reads_back_its_bytes_and_its_scheme`: condition `HandshakeKeyCommitment::try_new` called through the crate's public surface with nonzero bytes and a scheme admitted by `SignatureSchemeIdentifier::try_new`; outcome `Ok` whose `as_bytes()` is the bytes handed and whose `scheme().identifier()` is the identifier the scheme was admitted with; the input variation is bytes of 32 distinct values and a scheme differing from the builder's default, so a copy that reorders the bytes or supplies its own scheme fails
-    * `[ ]`   Public surface: an outside caller invokes `HandshakeKeyCommitment::try_new` with a `HandshakeKeyCommitmentConstructorParams` built from the crate's public surface under the `mocks` feature, and observes the `Err` arm's `AllZero` or the `Ok` arm's `as_bytes()` and `scheme()`; the entries proven are `the_all_zero_commitment_is_refused_whatever_its_scheme` and `an_admitted_commitment_reads_back_its_bytes_and_its_scheme`
+  * `[✅]`   `crates/domain/src/handshake_key_commitment/interaction.spec.md`
+    * `[✅]`   `HandshakeKeyCommitment::try_new(params: HandshakeKeyCommitmentConstructorParams) -> HandshakeKeyCommitmentTryNewReturn`, all zero: condition every byte of `params.bytes` is `0`; decision `params.bytes.iter().all(…)` over the byte equal to `0`; dependency call none; outcome `Err(HandshakeKeyCommitmentTryNewErrorReturn::AllZero)`
+    * `[✅]`   Admitted: condition some byte of `params.bytes` is nonzero; decision the same check; dependency call none; outcome `Ok(HandshakeKeyCommitment { bytes, scheme })`, the array and the scheme moved from the params, the scheme unexamined because `SignatureSchemeIdentifier` is admitted by its own constructor
+    * `[✅]`   `HandshakeKeyCommitment::as_bytes(&self) -> &[u8; HANDSHAKE_KEY_COMMITMENT_LENGTH]`: one branch; outcome a shared reference to the held array, no copy, no side effect
+    * `[✅]`   `HandshakeKeyCommitment::scheme(&self) -> SignatureSchemeIdentifier`: one branch; outcome the held scheme, copied because the type is `Copy`, no side effect
+    * `[✅]`   Invariants: every `HandshakeKeyCommitment` holds 32 bytes, not all zero, and one admitted `SignatureSchemeIdentifier`; its only producer is `try_new`
+    * `[✅]`   Own entry `the_all_zero_commitment_is_refused_whatever_its_scheme`: condition `HandshakeKeyCommitment::try_new` called through the crate's public surface with 32 zero bytes and a scheme admitted by its own constructor; outcome `Err(HandshakeKeyCommitmentTryNewErrorReturn::AllZero)`; the input variation is two schemes, so a refusal conditioned on the scheme passes for one and fails for the other; the edge that must survive composition is the refusal of the zero bytes under the smallest and the largest admitted scheme
+    * `[✅]`   Own entry `an_admitted_commitment_reads_back_its_bytes_and_its_scheme`: condition `HandshakeKeyCommitment::try_new` called through the crate's public surface with nonzero bytes and a scheme admitted by `SignatureSchemeIdentifier::try_new`; outcome `Ok` whose `as_bytes()` is the bytes handed and whose `scheme().identifier()` is the identifier the scheme was admitted with; the input variation is bytes of 32 distinct values and a scheme differing from the builder's default, so a copy that reorders the bytes or supplies its own scheme fails
+    * `[✅]`   Public surface: an outside caller invokes `HandshakeKeyCommitment::try_new` with a `HandshakeKeyCommitmentConstructorParams` built from the crate's public surface under the `mocks` feature, and observes the `Err` arm's `AllZero` or the `Ok` arm's `as_bytes()` and `scheme()`; the entries proven are `the_all_zero_commitment_is_refused_whatever_its_scheme` and `an_admitted_commitment_reads_back_its_bytes_and_its_scheme`
 
-  * `[ ]`   `crates/domain/src/handshake_key_commitment/mock.rs`
-    * `[ ]`   Module-level `#![allow(dead_code, clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::too_many_arguments)]`
-    * `[ ]`   `HandshakeKeyCommitmentConstructorParamsOverrides`, `#[derive(Default)]`, the fields `pub bytes: Option<[u8; HANDSHAKE_KEY_COMMITMENT_LENGTH]>` and `pub scheme: Option<SignatureSchemeIdentifier>`
-    * `[ ]`   `build_handshake_key_commitment_constructor_params(overrides: HandshakeKeyCommitmentConstructorParamsOverrides) -> HandshakeKeyCommitmentConstructorParams`, the bytes defaulting to `[0x44; HANDSHAKE_KEY_COMMITMENT_LENGTH]` and the scheme defaulting to `build_signature_scheme_identifier(Default::default())`, the nested type's own builder
-    * `[ ]`   `build_handshake_key_commitment(overrides: HandshakeKeyCommitmentConstructorParamsOverrides) -> HandshakeKeyCommitment`, returning the real instance from `HandshakeKeyCommitment::try_new(build_handshake_key_commitment_constructor_params(overrides))` through `.expect("built handshake key commitment constructor params are admitted")`
-    * `[ ]`   No corruptions type and no invalidator: the constructor params hold a typed 32-byte array and an admitted `SignatureSchemeIdentifier`, neither of which has a rendering as data, and the one value the constructor refuses is an array the params builder's overrides carry; no `HandshakeKeyCommitment` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
-    * `[ ]`   Imports `HandshakeKeyCommitment`, `HandshakeKeyCommitmentConstructorParams`, and `HANDSHAKE_KEY_COMMITMENT_LENGTH` from `super::interface`, and `SignatureSchemeIdentifier` and `build_signature_scheme_identifier` from `crate::signature_scheme_identifier::provides`
+  * `[✅]`   `crates/domain/src/handshake_key_commitment/mock.rs`
+    * `[✅]`   Module-level `#![allow(dead_code, clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::too_many_arguments)]`
+    * `[✅]`   `HandshakeKeyCommitmentConstructorParamsOverrides`, `#[derive(Default)]`, the fields `pub bytes: Option<[u8; HANDSHAKE_KEY_COMMITMENT_LENGTH]>` and `pub scheme: Option<SignatureSchemeIdentifier>`
+    * `[✅]`   `build_handshake_key_commitment_constructor_params(overrides: HandshakeKeyCommitmentConstructorParamsOverrides) -> HandshakeKeyCommitmentConstructorParams`, the bytes defaulting to `[0x44; HANDSHAKE_KEY_COMMITMENT_LENGTH]` and the scheme defaulting to `build_signature_scheme_identifier(Default::default())`, the nested type's own builder
+    * `[✅]`   `build_handshake_key_commitment(overrides: HandshakeKeyCommitmentConstructorParamsOverrides) -> HandshakeKeyCommitment`, returning the real instance from `HandshakeKeyCommitment::try_new(build_handshake_key_commitment_constructor_params(overrides))` through `.expect("built handshake key commitment constructor params are admitted")`
+    * `[✅]`   No corruptions type and no invalidator: the constructor params hold a typed 32-byte array and an admitted `SignatureSchemeIdentifier`, neither of which has a rendering as data, and the one value the constructor refuses is an array the params builder's overrides carry; no `HandshakeKeyCommitment` overrides, invalidator, or mock function, since the type is built as a real instance and owns no free function
+    * `[✅]`   Imports `HandshakeKeyCommitment`, `HandshakeKeyCommitmentConstructorParams`, and `HANDSHAKE_KEY_COMMITMENT_LENGTH` from `super::interface`, and `SignatureSchemeIdentifier` and `build_signature_scheme_identifier` from `crate::signature_scheme_identifier::provides`
 
-  * `[ ]`   `crates/domain/src/handshake_key_commitment/test.rs`
-    * `[ ]`   Module-level `#![allow(clippy::expect_used)]`
-    * `[ ]`   Assertions on the held bytes and scheme read the `bytes` and `scheme` fields, which the `pub(super)` visibility admits to this child module
-    * `[ ]`   Imports `HandshakeKeyCommitment`, `HandshakeKeyCommitmentTryNewErrorReturn`, and `HANDSHAKE_KEY_COMMITMENT_LENGTH` from `super::interface`, `build_handshake_key_commitment`, `build_handshake_key_commitment_constructor_params`, and `HandshakeKeyCommitmentConstructorParamsOverrides` from `super::mock`, and `build_signature_scheme_identifier` and `SignatureSchemeIdentifierConstructorParamsOverrides` from `crate::signature_scheme_identifier::provides`
-    * `[ ]`   `try_new_rejects_the_all_zero_commitment`
-      * `[ ]`   Contract: every byte of `params.bytes` is `0` → `Err(HandshakeKeyCommitmentTryNewErrorReturn::AllZero)`
-      * `[ ]`   Arrange: `build_handshake_key_commitment_constructor_params` overriding the bytes with the array of `HANDSHAKE_KEY_COMMITMENT_LENGTH` zero bytes, the value an unassigned `bytes32` slot reads as; the builder's default array and scheme are admitted values, so the override establishes the refused value
-      * `[ ]`   Act: `HandshakeKeyCommitment::try_new(params)`
-      * `[ ]`   Assert: the result equals `Err(HandshakeKeyCommitmentTryNewErrorReturn::AllZero)` by `assert_eq!`
-    * `[ ]`   `try_new_admits_a_commitment_whose_only_nonzero_byte_is_the_last`
-      * `[ ]`   Contract: some byte of `params.bytes` is nonzero → `Ok(HandshakeKeyCommitment { bytes, scheme })`
-      * `[ ]`   Arrange: `build_handshake_key_commitment_constructor_params` overriding the bytes with an array of zeros whose last offset holds `0x01`, so a check of the first byte alone fails
-      * `[ ]`   Act: `HandshakeKeyCommitment::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the commitment's `bytes` field equals the array literal of zeros with `0x01` at the last offset
-    * `[ ]`   `try_new_admits_a_commitment_whose_only_nonzero_byte_is_the_first`
-      * `[ ]`   Contract: some byte of `params.bytes` is nonzero → `Ok(HandshakeKeyCommitment { bytes, scheme })`
-      * `[ ]`   Arrange: `build_handshake_key_commitment_constructor_params` overriding the bytes with an array of zeros whose first offset holds `0xFF`, so a check of the last byte alone fails
-      * `[ ]`   Act: `HandshakeKeyCommitment::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the commitment's `bytes` field equals the array literal of zeros with `0xFF` at the first offset
-    * `[ ]`   `try_new_admits_a_commitment_whose_only_nonzero_byte_is_interior`
-      * `[ ]`   Contract: some byte of `params.bytes` is nonzero → `Ok(HandshakeKeyCommitment { bytes, scheme })`
-      * `[ ]`   Arrange: `build_handshake_key_commitment_constructor_params` overriding the bytes with an array of zeros whose offset 16 holds `0x80`, so a check of the first and last bytes alone fails
-      * `[ ]`   Act: `HandshakeKeyCommitment::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the commitment's `bytes` field equals the array literal of zeros with `0x80` at offset 16
-    * `[ ]`   `try_new_holds_the_scheme_it_is_handed`
-      * `[ ]`   Contract: `params.bytes` is nonzero → `Ok(HandshakeKeyCommitment { bytes, scheme })` with `scheme` the params' scheme
-      * `[ ]`   Arrange: `build_handshake_key_commitment_constructor_params` overriding the scheme with `build_signature_scheme_identifier` overriding the identifier with `0x5A`, a value that differs from the builder's default scheme, so a constructor that supplies its own scheme fails
-      * `[ ]`   Act: `HandshakeKeyCommitment::try_new(params)`
-      * `[ ]`   Assert: the result is `Ok`; the commitment's `scheme` field, read through its `identifier()`, equals the literal `0x5A`
-    * `[ ]`   `as_bytes_returns_the_held_bytes`
-      * `[ ]`   Contract: `HandshakeKeyCommitment::as_bytes(&self) -> &[u8; HANDSHAKE_KEY_COMMITMENT_LENGTH]` → a shared reference to the held array
-      * `[ ]`   Arrange: `build_handshake_key_commitment` overriding the bytes with the array of `0x01` through `0x20` in ascending order, each offset holding a value different from every other offset, so a reversed, rotated, or partial copy fails
-      * `[ ]`   Act: `commitment.as_bytes()`
-      * `[ ]`   Assert: the returned array equals the array literal of `0x01` through `0x20` in ascending order by `assert_eq!`
-    * `[ ]`   `scheme_returns_the_held_scheme`
-      * `[ ]`   Contract: `HandshakeKeyCommitment::scheme(&self) -> SignatureSchemeIdentifier` → the held scheme
-      * `[ ]`   Arrange: `build_handshake_key_commitment` overriding the scheme with `build_signature_scheme_identifier` overriding the identifier with `0x5A`, a value that differs from the builder's default scheme
-      * `[ ]`   Act: `commitment.scheme()`
-      * `[ ]`   Assert: the returned scheme's `identifier()` equals the literal `0x5A` by `assert_eq!`
+  * `[✅]`   `crates/domain/src/handshake_key_commitment/test.rs`
+    * `[✅]`   Module-level `#![allow(clippy::expect_used)]`
+    * `[✅]`   Assertions on the held bytes and scheme read the `bytes` and `scheme` fields, which the `pub(super)` visibility admits to this child module
+    * `[✅]`   Imports `HandshakeKeyCommitment`, `HandshakeKeyCommitmentTryNewErrorReturn`, and `HANDSHAKE_KEY_COMMITMENT_LENGTH` from `super::interface`, `build_handshake_key_commitment`, `build_handshake_key_commitment_constructor_params`, and `HandshakeKeyCommitmentConstructorParamsOverrides` from `super::mock`, and `build_signature_scheme_identifier` and `SignatureSchemeIdentifierConstructorParamsOverrides` from `crate::signature_scheme_identifier::provides`
+    * `[✅]`   `try_new_rejects_the_all_zero_commitment`
+      * `[✅]`   Contract: every byte of `params.bytes` is `0` → `Err(HandshakeKeyCommitmentTryNewErrorReturn::AllZero)`
+      * `[✅]`   Arrange: `build_handshake_key_commitment_constructor_params` overriding the bytes with the array of `HANDSHAKE_KEY_COMMITMENT_LENGTH` zero bytes, the value an unassigned `bytes32` slot reads as; the builder's default array and scheme are admitted values, so the override establishes the refused value
+      * `[✅]`   Act: `HandshakeKeyCommitment::try_new(params)`
+      * `[✅]`   Assert: the result equals `Err(HandshakeKeyCommitmentTryNewErrorReturn::AllZero)` by `assert_eq!`
+    * `[✅]`   `try_new_admits_a_commitment_whose_only_nonzero_byte_is_the_last`
+      * `[✅]`   Contract: some byte of `params.bytes` is nonzero → `Ok(HandshakeKeyCommitment { bytes, scheme })`
+      * `[✅]`   Arrange: `build_handshake_key_commitment_constructor_params` overriding the bytes with an array of zeros whose last offset holds `0x01`, so a check of the first byte alone fails
+      * `[✅]`   Act: `HandshakeKeyCommitment::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the commitment's `bytes` field equals the array literal of zeros with `0x01` at the last offset
+    * `[✅]`   `try_new_admits_a_commitment_whose_only_nonzero_byte_is_the_first`
+      * `[✅]`   Contract: some byte of `params.bytes` is nonzero → `Ok(HandshakeKeyCommitment { bytes, scheme })`
+      * `[✅]`   Arrange: `build_handshake_key_commitment_constructor_params` overriding the bytes with an array of zeros whose first offset holds `0xFF`, so a check of the last byte alone fails
+      * `[✅]`   Act: `HandshakeKeyCommitment::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the commitment's `bytes` field equals the array literal of zeros with `0xFF` at the first offset
+    * `[✅]`   `try_new_admits_a_commitment_whose_only_nonzero_byte_is_interior`
+      * `[✅]`   Contract: some byte of `params.bytes` is nonzero → `Ok(HandshakeKeyCommitment { bytes, scheme })`
+      * `[✅]`   Arrange: `build_handshake_key_commitment_constructor_params` overriding the bytes with an array of zeros whose offset 16 holds `0x80`, so a check of the first and last bytes alone fails
+      * `[✅]`   Act: `HandshakeKeyCommitment::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the commitment's `bytes` field equals the array literal of zeros with `0x80` at offset 16
+    * `[✅]`   `try_new_holds_the_scheme_it_is_handed`
+      * `[✅]`   Contract: `params.bytes` is nonzero → `Ok(HandshakeKeyCommitment { bytes, scheme })` with `scheme` the params' scheme
+      * `[✅]`   Arrange: `build_handshake_key_commitment_constructor_params` overriding the scheme with `build_signature_scheme_identifier` overriding the identifier with `0x5A`, a value that differs from the builder's default scheme, so a constructor that supplies its own scheme fails
+      * `[✅]`   Act: `HandshakeKeyCommitment::try_new(params)`
+      * `[✅]`   Assert: the result is `Ok`; the commitment's `scheme` field, read through its `identifier()`, equals the literal `0x5A`
+    * `[✅]`   `as_bytes_returns_the_held_bytes`
+      * `[✅]`   Contract: `HandshakeKeyCommitment::as_bytes(&self) -> &[u8; HANDSHAKE_KEY_COMMITMENT_LENGTH]` → a shared reference to the held array
+      * `[✅]`   Arrange: `build_handshake_key_commitment` overriding the bytes with the array of `0x01` through `0x20` in ascending order, each offset holding a value different from every other offset, so a reversed, rotated, or partial copy fails
+      * `[✅]`   Act: `commitment.as_bytes()`
+      * `[✅]`   Assert: the returned array equals the array literal of `0x01` through `0x20` in ascending order by `assert_eq!`
+    * `[✅]`   `scheme_returns_the_held_scheme`
+      * `[✅]`   Contract: `HandshakeKeyCommitment::scheme(&self) -> SignatureSchemeIdentifier` → the held scheme
+      * `[✅]`   Arrange: `build_handshake_key_commitment` overriding the scheme with `build_signature_scheme_identifier` overriding the identifier with `0x5A`, a value that differs from the builder's default scheme
+      * `[✅]`   Act: `commitment.scheme()`
+      * `[✅]`   Assert: the returned scheme's `identifier()` equals the literal `0x5A` by `assert_eq!`
 
-  * `[ ]`   `construction`
-    * `[ ]`   `HandshakeKeyCommitment::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a decoded `bytes32` and an admitted `SignatureSchemeIdentifier` passes them as `HandshakeKeyCommitmentConstructorParams` and handles the refusal arm
+  * `[✅]`   `construction`
+    * `[✅]`   `HandshakeKeyCommitment::try_new` is the only producer; no `Default`, `From`, or other constructor exists; a caller holding a decoded `bytes32` and an admitted `SignatureSchemeIdentifier` passes them as `HandshakeKeyCommitmentConstructorParams` and handles the refusal arm
 
-  * `[ ]`   `crates/domain/src/handshake_key_commitment/mod.rs`
-    * `[ ]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
-    * `[ ]`   `impl HandshakeKeyCommitment` with `pub fn try_new(params: HandshakeKeyCommitmentConstructorParams) -> HandshakeKeyCommitmentTryNewReturn` realizing the branches of the interaction spec, `pub fn as_bytes(&self) -> &[u8; HANDSHAKE_KEY_COMMITMENT_LENGTH]` returning `&self.bytes`, and `pub fn scheme(&self) -> SignatureSchemeIdentifier` returning `self.scheme`
-    * `[ ]`   Imports `HandshakeKeyCommitment`, `HandshakeKeyCommitmentConstructorParams`, `HandshakeKeyCommitmentTryNewErrorReturn`, `HandshakeKeyCommitmentTryNewReturn`, and `HANDSHAKE_KEY_COMMITMENT_LENGTH` from `interface`, and `SignatureSchemeIdentifier` from `crate::signature_scheme_identifier::provides`
-    * `[ ]`   No `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+  * `[✅]`   `crates/domain/src/handshake_key_commitment/mod.rs`
+    * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[✅]`   `impl HandshakeKeyCommitment` with `pub fn try_new(params: HandshakeKeyCommitmentConstructorParams) -> HandshakeKeyCommitmentTryNewReturn` realizing the branches of the interaction spec, `pub fn as_bytes(&self) -> &[u8; HANDSHAKE_KEY_COMMITMENT_LENGTH]` returning `&self.bytes`, and `pub fn scheme(&self) -> SignatureSchemeIdentifier` returning `self.scheme`
+    * `[✅]`   Imports `HandshakeKeyCommitment`, `HandshakeKeyCommitmentConstructorParams`, `HandshakeKeyCommitmentTryNewErrorReturn`, `HandshakeKeyCommitmentTryNewReturn`, and `HANDSHAKE_KEY_COMMITMENT_LENGTH` from `interface`, and `SignatureSchemeIdentifier` from `crate::signature_scheme_identifier::provides`
+    * `[✅]`   No `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
-  * `[ ]`   `crates/domain/src/handshake_key_commitment/provides.rs`
-    * `[ ]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, so a sibling module's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature
+  * `[✅]`   `crates/domain/src/handshake_key_commitment/provides.rs`
+    * `[✅]`   `pub use super::interface::*;` and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, so a sibling module's test and mock reach this module's builders in the crate's own test build as well as under the `mocks` feature
 
-  * `[ ]`   `crates/domain/tests/handshake_key_commitment_integration_test.rs`
-    * `[ ]`   Consumes the crate's public surface and the official mocks under the `mocks` feature: `HandshakeKeyCommitment`, `HandshakeKeyCommitmentTryNewErrorReturn`, `HANDSHAKE_KEY_COMMITMENT_LENGTH`, `build_handshake_key_commitment_constructor_params`, `HandshakeKeyCommitmentConstructorParamsOverrides`, `build_signature_scheme_identifier`, and `SignatureSchemeIdentifierConstructorParamsOverrides`; module-level `#![allow(clippy::expect_used)]`
-    * `[ ]`   `the_all_zero_commitment_is_refused_whatever_its_scheme`
-      * `[ ]`   Contract: the own entry `the_all_zero_commitment_is_refused_whatever_its_scheme`: `HandshakeKeyCommitment::try_new` with `HANDSHAKE_KEY_COMMITMENT_LENGTH` zero bytes → `Err(HandshakeKeyCommitmentTryNewErrorReturn::AllZero)` for each scheme
-      * `[ ]`   Arrange: for each of the schemes `build_signature_scheme_identifier` builds with the identifier overridden to `1` and to `0xFF`, `build_handshake_key_commitment_constructor_params` overriding the bytes with the zero array and the scheme with that scheme; a refusal conditioned on the scheme passes for one and fails for the other
-      * `[ ]`   Act: `HandshakeKeyCommitment::try_new(params)` for each
-      * `[ ]`   Assert: each result equals `Err(HandshakeKeyCommitmentTryNewErrorReturn::AllZero)` by `assert_eq!`
-      * `[ ]`   Boundary: the public call `HandshakeKeyCommitment::try_new`; the route `try_new` over the params' bytes
-      * `[ ]`   Mocked: none; the types are the real ones and the builders only construct their fixtures
-    * `[ ]`   `an_admitted_commitment_reads_back_its_bytes_and_its_scheme`
-      * `[ ]`   Contract: the own entry `an_admitted_commitment_reads_back_its_bytes_and_its_scheme`: `HandshakeKeyCommitment::try_new` with nonzero bytes and an admitted scheme → `Ok` whose `as_bytes()` is the bytes and whose `scheme().identifier()` is the scheme's identifier
-      * `[ ]`   Arrange: `build_handshake_key_commitment_constructor_params` overriding the bytes with the array of `0x01` through `0x20` in ascending order and the scheme with `build_signature_scheme_identifier` overriding the identifier with `0x5A`, a value that differs from the builder's default scheme; a copy that reorders the bytes or supplies its own scheme fails
-      * `[ ]`   Act: `HandshakeKeyCommitment::try_new(params)`, then `as_bytes()` and `scheme()` on the `Ok` value
-      * `[ ]`   Assert: `as_bytes()` equals the array literal of `0x01` through `0x20` in ascending order by `assert_eq!`; `scheme().identifier()` equals the literal `0x5A` by `assert_eq!`
-      * `[ ]`   Boundary: the public call `HandshakeKeyCommitment::try_new` and the accessors the `Ok` value exposes; the route `try_new` moving the params' bytes and scheme into the value
-      * `[ ]`   Mocked: none; the types are the real ones and the builders only construct their fixtures
+  * `[✅]`   `crates/domain/tests/handshake_key_commitment_integration_test.rs`
+    * `[✅]`   Consumes the crate's public surface and the official mocks under the `mocks` feature: `HandshakeKeyCommitment`, `HandshakeKeyCommitmentTryNewErrorReturn`, `HANDSHAKE_KEY_COMMITMENT_LENGTH`, `build_handshake_key_commitment_constructor_params`, `HandshakeKeyCommitmentConstructorParamsOverrides`, `build_signature_scheme_identifier`, and `SignatureSchemeIdentifierConstructorParamsOverrides`; module-level `#![allow(clippy::expect_used)]`
+    * `[✅]`   `the_all_zero_commitment_is_refused_whatever_its_scheme`
+      * `[✅]`   Contract: the own entry `the_all_zero_commitment_is_refused_whatever_its_scheme`: `HandshakeKeyCommitment::try_new` with `HANDSHAKE_KEY_COMMITMENT_LENGTH` zero bytes → `Err(HandshakeKeyCommitmentTryNewErrorReturn::AllZero)` for each scheme
+      * `[✅]`   Arrange: for each of the schemes `build_signature_scheme_identifier` builds with the identifier overridden to `1` and to `0xFF`, `build_handshake_key_commitment_constructor_params` overriding the bytes with the zero array and the scheme with that scheme; a refusal conditioned on the scheme passes for one and fails for the other
+      * `[✅]`   Act: `HandshakeKeyCommitment::try_new(params)` for each
+      * `[✅]`   Assert: each result equals `Err(HandshakeKeyCommitmentTryNewErrorReturn::AllZero)` by `assert_eq!`
+      * `[✅]`   Boundary: the public call `HandshakeKeyCommitment::try_new`; the route `try_new` over the params' bytes
+      * `[✅]`   Mocked: none; the types are the real ones and the builders only construct their fixtures
+    * `[✅]`   `an_admitted_commitment_reads_back_its_bytes_and_its_scheme`
+      * `[✅]`   Contract: the own entry `an_admitted_commitment_reads_back_its_bytes_and_its_scheme`: `HandshakeKeyCommitment::try_new` with nonzero bytes and an admitted scheme → `Ok` whose `as_bytes()` is the bytes and whose `scheme().identifier()` is the scheme's identifier
+      * `[✅]`   Arrange: `build_handshake_key_commitment_constructor_params` overriding the bytes with the array of `0x01` through `0x20` in ascending order and the scheme with `build_signature_scheme_identifier` overriding the identifier with `0x5A`, a value that differs from the builder's default scheme; a copy that reorders the bytes or supplies its own scheme fails
+      * `[✅]`   Act: `HandshakeKeyCommitment::try_new(params)`, then `as_bytes()` and `scheme()` on the `Ok` value
+      * `[✅]`   Assert: `as_bytes()` equals the array literal of `0x01` through `0x20` in ascending order by `assert_eq!`; `scheme().identifier()` equals the literal `0x5A` by `assert_eq!`
+      * `[✅]`   Boundary: the public call `HandshakeKeyCommitment::try_new` and the accessors the `Ok` value exposes; the route `try_new` moving the params' bytes and scheme into the value
+      * `[✅]`   Mocked: none; the types are the real ones and the builders only construct their fixtures
 
-  * `[ ]`   `directionality`
-    * `[ ]`   `handshake_key_commitment` depends on the standard library and on the `signature_scheme_identifier` module's `provides`; `signature_scheme_identifier` depends on nothing in this module; `domain` depends on no repository crate; later consumers reach it through `lib.rs`'s re-export of `handshake_key_commitment::provides`; no cycle
+  * `[✅]`   `directionality`
+    * `[✅]`   `handshake_key_commitment` depends on the standard library and on the `signature_scheme_identifier` module's `provides`; `signature_scheme_identifier` depends on nothing in this module; `domain` depends on no repository crate; later consumers reach it through `lib.rs`'s re-export of `handshake_key_commitment::provides`; no cycle
 
-  * `[ ]`   `requirements`
-    * `[ ]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries the barrel stated above
-    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
-    * `[ ]`   `try_new_rejects_the_all_zero_commitment` passes
-    * `[ ]`   `try_new_admits_a_commitment_whose_only_nonzero_byte_is_the_last`, `try_new_admits_a_commitment_whose_only_nonzero_byte_is_the_first`, and `try_new_admits_a_commitment_whose_only_nonzero_byte_is_interior` pass
-    * `[ ]`   `try_new_holds_the_scheme_it_is_handed` passes
-    * `[ ]`   `as_bytes_returns_the_held_bytes` and `scheme_returns_the_held_scheme` pass
-    * `[ ]`   `the_all_zero_commitment_is_refused_whatever_its_scheme` and `an_admitted_commitment_reads_back_its_bytes_and_its_scheme` pass from `crates/domain/tests/handshake_key_commitment_integration_test.rs`
-    * `[ ]`   Code outside `crates/domain/src/handshake_key_commitment` reading the `bytes` or `scheme` field fails to compile
+  * `[✅]`   `requirements`
+    * `[✅]`   `crates/domain/Cargo.toml` is unchanged, and `crates/domain/src/lib.rs` carries the barrel stated above
+    * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, and `cargo fmt --all --check` complete without error or warning
+    * `[✅]`   `try_new_rejects_the_all_zero_commitment` passes
+    * `[✅]`   `try_new_admits_a_commitment_whose_only_nonzero_byte_is_the_last`, `try_new_admits_a_commitment_whose_only_nonzero_byte_is_the_first`, and `try_new_admits_a_commitment_whose_only_nonzero_byte_is_interior` pass
+    * `[✅]`   `try_new_holds_the_scheme_it_is_handed` passes
+    * `[✅]`   `as_bytes_returns_the_held_bytes` and `scheme_returns_the_held_scheme` pass
+    * `[✅]`   `the_all_zero_commitment_is_refused_whatever_its_scheme` and `an_admitted_commitment_reads_back_its_bytes_and_its_scheme` pass from `crates/domain/tests/handshake_key_commitment_integration_test.rs`
+    * `[✅]`   Code outside `crates/domain/src/handshake_key_commitment` reading the `bytes` or `scheme` field fails to compile
 
 * `[ ]`   `chain/base/settings` **The Base concrete's own settings and the chain family's member declaration: the admission, in the trusted form, of the concrete's settings over its narrowed settings document, refusing a document value for a setting the declaration fixes, refusing a settable value outside its declared bounds, and taking the declared default where the document supplies none, each refusal naming the setting; owns the settings type, the settings-document type, and the guard that narrows the untrusted document to it; authors, as its producers, in the chain family's `factory` module the family's interface version, member identifier, endpoint type, setting-bounds, setting-disposition, setting-statement, fee-entry declaration, and declaration types, and in the concrete's interface the concrete's declaration constant; creates the `base` module and the `settings` module beneath it**
 
