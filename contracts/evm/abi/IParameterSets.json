@@ -1,0 +1,125 @@
+[
+    {
+        "type": "function",
+        "name": "registerParameterSet",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            { "name": "id", "type": "bytes32", "internalType": "bytes32" },
+            { "name": "asset", "type": "bytes32", "internalType": "bytes32" },
+            { "name": "suiteId", "type": "bytes32", "internalType": "bytes32" },
+            { "name": "material", "type": "bytes", "internalType": "bytes" },
+            { "name": "identityScope", "type": "uint8", "internalType": "uint8" }
+        ],
+        "outputs": []
+    },
+    {
+        "type": "function",
+        "name": "retireParameterSet",
+        "stateMutability": "nonpayable",
+        "inputs": [
+            { "name": "id", "type": "bytes32", "internalType": "bytes32" }
+        ],
+        "outputs": []
+    },
+    {
+        "type": "function",
+        "name": "parameterSet",
+        "stateMutability": "view",
+        "inputs": [
+            { "name": "id", "type": "bytes32", "internalType": "bytes32" }
+        ],
+        "outputs": [
+            {
+                "name": "set",
+                "type": "tuple",
+                "internalType": "struct IParameterSets.ParameterSet",
+                "components": [
+                    { "name": "id", "type": "bytes32", "internalType": "bytes32" },
+                    { "name": "asset", "type": "bytes32", "internalType": "bytes32" },
+                    { "name": "suiteId", "type": "bytes32", "internalType": "bytes32" },
+                    { "name": "material", "type": "bytes", "internalType": "bytes" },
+                    { "name": "identityScope", "type": "uint8", "internalType": "uint8" },
+                    { "name": "live", "type": "bool", "internalType": "bool" }
+                ]
+            }
+        ]
+    },
+    {
+        "type": "function",
+        "name": "isParameterSetLive",
+        "stateMutability": "view",
+        "inputs": [
+            { "name": "id", "type": "bytes32", "internalType": "bytes32" }
+        ],
+        "outputs": [
+            { "name": "live", "type": "bool", "internalType": "bool" }
+        ]
+    },
+    {
+        "type": "event",
+        "name": "ParameterSetRegistered",
+        "anonymous": false,
+        "inputs": [
+            { "name": "id", "type": "bytes32", "internalType": "bytes32", "indexed": true },
+            { "name": "asset", "type": "bytes32", "internalType": "bytes32", "indexed": true },
+            { "name": "suiteId", "type": "bytes32", "internalType": "bytes32", "indexed": false },
+            { "name": "identityScope", "type": "uint8", "internalType": "uint8", "indexed": false }
+        ]
+    },
+    {
+        "type": "event",
+        "name": "ParameterSetRetired",
+        "anonymous": false,
+        "inputs": [
+            { "name": "id", "type": "bytes32", "internalType": "bytes32", "indexed": true }
+        ]
+    },
+    {
+        "type": "error",
+        "name": "CallerNotRegistry",
+        "inputs": [
+            { "name": "caller", "type": "address", "internalType": "address" }
+        ]
+    },
+    {
+        "type": "error",
+        "name": "ParameterSetIdUnset",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "AssetUnset",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "SuiteUnset",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "MaterialEmpty",
+        "inputs": []
+    },
+    {
+        "type": "error",
+        "name": "ParameterSetAlreadyRegistered",
+        "inputs": [
+            { "name": "id", "type": "bytes32", "internalType": "bytes32" }
+        ]
+    },
+    {
+        "type": "error",
+        "name": "ParameterSetNotRegistered",
+        "inputs": [
+            { "name": "id", "type": "bytes32", "internalType": "bytes32" }
+        ]
+    },
+    {
+        "type": "error",
+        "name": "ParameterSetAlreadyRetired",
+        "inputs": [
+            { "name": "id", "type": "bytes32", "internalType": "bytes32" }
+        ]
+    }
+]
