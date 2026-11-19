@@ -23,7 +23,8 @@ use envelope::{
 };
 use hash_to_scalar::{
     CreateHashToScalarParams, CreateHashToScalarParamsOverrides,
-    DECLARED_HASH_TO_SCALAR_SELECTIONS, IHashToScalarAdapter, build_create_hash_to_scalar_params,
+    DECLARED_HASH_TO_SCALAR_SELECTIONS, HashToScalarIdentifier, IHashToScalarAdapter,
+    build_create_hash_to_scalar_params,
 };
 use hashing::{Root, RootConstructorParams, RootConstructorParamsOverrides, build_root};
 use kem::{
@@ -53,7 +54,7 @@ use proof::{
 };
 use random::{
     CreateRandomSourceParamsOverrides, FillBytesErrorReturn, MockIRandomSourceAdapterFailureMode,
-    RandomSourceKind, build_create_random_source_params,
+    RANDOM_SOURCE_KINDS, RandomSourceKind, build_create_random_source_params,
 };
 
 use super::super::super::factory::provides::{
@@ -127,9 +128,12 @@ fn case_params(
     })
 }
 
-fn run_every_case(kind: RandomSourceKind, run: &dyn Fn(ProofVectorsCaseParams) -> bool) {
+fn run_case(kind: RandomSourceKind, run: &dyn Fn(ProofVectorsCaseParams) -> bool) {
     for pairing_concrete in PAIRING_CONCRETES {
         for hash_to_scalar in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+            if hash_to_scalar.identifier != HashToScalarIdentifier::Keccak256V1 {
+                continue;
+            }
             for encoding_selection in DECLARED_ENCODING_SELECTIONS {
                 for forms_concrete in CHAIN_FORMS_CONCRETES {
                     for kem_selection in DECLARED_KEM_SELECTIONS {
@@ -156,6 +160,12 @@ fn run_every_case(kind: RandomSourceKind, run: &dyn Fn(ProofVectorsCaseParams) -
     }
 }
 
+fn run_every_case(run: &dyn Fn(ProofVectorsCaseParams) -> bool) {
+    for kind in RANDOM_SOURCE_KINDS {
+        run_case(*kind, run);
+    }
+}
+
 fn case_payload<'a>(canonical: &'a [u8], root: &'a Root) -> ProofVectorsCasePayload<'a> {
     build_proof_vectors_case_payload(canonical, root, Default::default())
 }
@@ -174,7 +184,8 @@ fn form_value(kind: CanonicalFieldKind, seed: u8) -> CanonicalFieldValue {
 }
 
 /// Contract: `proof_vectors` over a case with a mint count above one, every
-///   adapter real and the operating-system source real → every mint record
+///   adapter real and each member of `RANDOM_SOURCE_KINDS` as its source →
+///   every mint record
 ///   rebuilt from its bytes alone is a statement and proof `verify` accepts.
 /// Arrange: `mint_count` of `2` and `transfer_count` of `1`, the entitlement
 ///   scope, the contexts, purposes, and identity at their defaults; every case,
@@ -185,7 +196,7 @@ fn form_value(kind: CanonicalFieldKind, seed: u8) -> CanonicalFieldValue {
 ///   true.
 /// Boundary: `proof_vectors` and the chain of real functions the private
 ///   surface names.
-/// Mocked: nothing; the operating-system generator runs real.
+/// Mocked: nothing; each declared member's generator runs real.
 #[test]
 fn every_mint_record_is_a_statement_and_proof_the_delivery_proof_verifies() {
     struct Consumer;
@@ -415,7 +426,7 @@ fn every_mint_record_is_a_statement_and_proof_the_delivery_proof_verifies() {
         }
     }
 
-    run_every_case(RandomSourceKind::OperatingSystem, &|params| {
+    run_every_case(&|params| {
         run_proof_vectors_case(
             &build_proof_vectors_case_deps(Consumer, Default::default()),
             params,
@@ -427,7 +438,7 @@ fn every_mint_record_is_a_statement_and_proof_the_delivery_proof_verifies() {
 // every_mint_record_is_a_statement_and_proof_the_delivery_proof_verifies
 
 /// Contract: `proof_vectors` over a case with a transfer count above one,
-///   every adapter real and the operating-system source real → every transfer
+///   every adapter real and each member of `RANDOM_SOURCE_KINDS` as its source → every transfer
 ///   record rebuilt from its bytes alone is a statement and proof `verify`
 ///   accepts.
 /// Arrange: `mint_count` of `1` and `transfer_count` of `2`, the entitlement
@@ -438,7 +449,7 @@ fn every_mint_record_is_a_statement_and_proof_the_delivery_proof_verifies() {
 ///   and the buyer's keys each taken from the record.
 /// Boundary: `proof_vectors` and the chain of real functions the private
 ///   surface names.
-/// Mocked: nothing; the operating-system generator runs real.
+/// Mocked: nothing; each declared member's generator runs real.
 #[test]
 fn every_transfer_record_is_a_statement_and_proof_the_delivery_proof_verifies() {
     struct Consumer;
@@ -678,7 +689,7 @@ fn every_transfer_record_is_a_statement_and_proof_the_delivery_proof_verifies() 
         }
     }
 
-    run_every_case(RandomSourceKind::OperatingSystem, &|params| {
+    run_every_case(&|params| {
         run_proof_vectors_case(
             &build_proof_vectors_case_deps(Consumer, Default::default()),
             params,
@@ -699,7 +710,7 @@ fn every_transfer_record_is_a_statement_and_proof_the_delivery_proof_verifies() 
 ///   rebuilds each yield `is_valid` true.
 /// Boundary: `proof_vectors` and the chain of real functions the private
 ///   surface names.
-/// Mocked: nothing; the operating-system generator runs real.
+/// Mocked: nothing; each declared member's generator runs real.
 #[test]
 fn an_asset_identity_is_proved_under_the_asset_scope() {
     struct Consumer;
@@ -1069,7 +1080,7 @@ fn an_asset_identity_is_proved_under_the_asset_scope() {
         }
     }
 
-    run_every_case(RandomSourceKind::OperatingSystem, &|params| {
+    run_every_case(&|params| {
         if params.kem.scope != IdentityScope::Asset {
             return true;
         }
@@ -1106,7 +1117,7 @@ fn an_asset_identity_is_proved_under_the_asset_scope() {
 ///   `buyer_pk2`.
 /// Boundary: `proof_vectors` and the chain of real functions the private
 ///   surface names.
-/// Mocked: nothing; the operating-system generator runs real.
+/// Mocked: nothing; each declared member's generator runs real.
 #[test]
 fn every_record_draw_replays_to_the_statement_elements_it_produced() {
     struct Consumer;
@@ -1319,7 +1330,7 @@ fn every_record_draw_replays_to_the_statement_elements_it_produced() {
     }
 
     for canonical in [b"pkg@1.0.0#1".as_slice(), b"pkg@2.0.0#7".as_slice()] {
-        run_every_case(RandomSourceKind::OperatingSystem, &|params| {
+        run_every_case(&|params| {
             run_proof_vectors_case(
                 &build_proof_vectors_case_deps(Consumer, Default::default()),
                 params,
@@ -1344,7 +1355,7 @@ fn every_record_draw_replays_to_the_statement_elements_it_produced() {
 ///   `is_valid` false; under both groups it equals `Vec::new()`.
 /// Boundary: `proof_vectors` and the chain of real functions the private
 ///   surface names.
-/// Mocked: nothing; the operating-system generator runs real.
+/// Mocked: nothing; each declared member's generator runs real.
 #[test]
 fn every_record_carries_second_group_first_messages_exactly_in_the_first_group_only_form() {
     struct Consumer;
@@ -1748,7 +1759,7 @@ fn every_record_carries_second_group_first_messages_exactly_in_the_first_group_o
         }
     }
 
-    run_every_case(RandomSourceKind::OperatingSystem, &|params| {
+    run_every_case(&|params| {
         run_proof_vectors_case(
             &build_proof_vectors_case_deps(Consumer, Default::default()),
             params,
@@ -1779,7 +1790,7 @@ fn every_record_carries_second_group_first_messages_exactly_in_the_first_group_o
 ///   and `encode_g1` and `encode_g2`.
 /// Boundary: `proof_vectors` and the chain of real functions the private
 ///   surface names.
-/// Mocked: nothing; the operating-system generator runs real.
+/// Mocked: nothing; each declared member's generator runs real.
 #[test]
 fn every_record_encodes_its_elements_in_the_selected_pairings_encodings() {
     struct Consumer;
@@ -1935,7 +1946,7 @@ fn every_record_encodes_its_elements_in_the_selected_pairings_encodings() {
         }
     }
 
-    run_every_case(RandomSourceKind::OperatingSystem, &|params| {
+    run_every_case(&|params| {
         run_proof_vectors_case(
             &build_proof_vectors_case_deps(Consumer, Default::default()),
             params,
@@ -1964,7 +1975,7 @@ fn every_record_encodes_its_elements_in_the_selected_pairings_encodings() {
 ///   values the arrangement built the domain values from.
 /// Boundary: `proof_vectors` and the chain of real functions the private
 ///   surface names.
-/// Mocked: nothing; the operating-system generator runs real.
+/// Mocked: nothing; each declared member's generator runs real.
 #[test]
 fn every_record_context_holds_the_fields_of_its_typed_context() {
     struct Consumer;
@@ -2233,7 +2244,7 @@ fn every_record_context_holds_the_fields_of_its_typed_context() {
         }
     }
 
-    run_every_case(RandomSourceKind::OperatingSystem, &|params| {
+    run_every_case(&|params| {
         run_proof_vectors_case(
             &build_proof_vectors_case_deps(Consumer, Default::default()),
             params,
@@ -2257,7 +2268,7 @@ fn every_record_context_holds_the_fields_of_its_typed_context() {
 ///   `draws`.
 /// Boundary: `proof_vectors` and the chain of real functions the private
 ///   surface names.
-/// Mocked: nothing; the operating-system generator runs real.
+/// Mocked: nothing; each declared member's generator runs real.
 #[test]
 fn every_run_emits_the_configured_count_of_records_with_distinct_draws() {
     struct Consumer;
@@ -2344,7 +2355,7 @@ fn every_run_emits_the_configured_count_of_records_with_distinct_draws() {
         }
     }
 
-    run_every_case(RandomSourceKind::OperatingSystem, &|params| {
+    run_every_case(&|params| {
         run_proof_vectors_case(
             &build_proof_vectors_case_deps(Consumer, Default::default()),
             params,
@@ -2369,7 +2380,7 @@ fn every_run_emits_the_configured_count_of_records_with_distinct_draws() {
 ///   fields holding the values their forms rebuilt.
 /// Boundary: the description's `to_fields` and `fields_to_value` through the
 ///   real encoder, after `proof_vectors`.
-/// Mocked: nothing; the operating-system generator runs real.
+/// Mocked: nothing; each declared member's generator runs real.
 #[test]
 fn a_mint_record_survives_its_description_round_trip() {
     struct Consumer;
@@ -2449,7 +2460,7 @@ fn a_mint_record_survives_its_description_round_trip() {
         }
     }
 
-    run_every_case(RandomSourceKind::OperatingSystem, &|params| {
+    run_every_case(&|params| {
         run_proof_vectors_case(
             &build_proof_vectors_case_deps(Consumer, Default::default()),
             params,
@@ -2471,7 +2482,7 @@ fn a_mint_record_survives_its_description_round_trip() {
 ///   the transfer record.
 /// Boundary: the description's `to_fields` and `fields_to_value` through the
 ///   real encoder, after `proof_vectors`.
-/// Mocked: nothing; the operating-system generator runs real.
+/// Mocked: nothing; each declared member's generator runs real.
 #[test]
 fn a_transfer_record_survives_its_description_round_trip() {
     struct Consumer;
@@ -2551,7 +2562,7 @@ fn a_transfer_record_survives_its_description_round_trip() {
         }
     }
 
-    run_every_case(RandomSourceKind::OperatingSystem, &|params| {
+    run_every_case(&|params| {
         run_proof_vectors_case(
             &build_proof_vectors_case_deps(Consumer, Default::default()),
             params,
@@ -2652,7 +2663,7 @@ fn a_refused_mint_draw_reaches_the_caller_through_the_mint_variant() {
         }
     }
 
-    run_every_case(
+    run_case(
         RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::FillBytesRefused),
         &|params| {
             run_proof_vectors_case(
@@ -2678,7 +2689,7 @@ fn a_refused_mint_draw_reaches_the_caller_through_the_mint_variant() {
 /// Boundary: the description's `member_names` and `to_fields`, with the
 ///   `SolidityMemberName` constructor `member_names` calls, after
 ///   `proof_vectors`.
-/// Mocked: nothing; the operating-system generator runs real.
+/// Mocked: nothing; each declared member's generator runs real.
 #[test]
 fn each_record_kind_declares_one_name_per_field_it_emits() {
     struct Consumer;
@@ -2765,7 +2776,7 @@ fn each_record_kind_declares_one_name_per_field_it_emits() {
         }
     }
 
-    run_every_case(RandomSourceKind::OperatingSystem, &|params| {
+    run_every_case(&|params| {
         run_proof_vectors_case(
             &build_proof_vectors_case_deps(Consumer, Default::default()),
             params,

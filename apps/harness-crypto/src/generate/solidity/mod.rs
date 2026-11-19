@@ -12,6 +12,7 @@ mod proof_vectors;
 pub mod provides;
 mod rejection_vectors;
 mod render;
+mod settings;
 #[cfg(test)]
 mod test;
 
@@ -45,11 +46,8 @@ use self::group_vectors::provides::{
     PairingCheckVectorDescriptionConstructorParams, SecondGroupVectorCounts,
 };
 use self::interface::{
-    GeneratedDirectory, GeneratedDirectoryConstructorParams, GeneratedDirectoryTryNewErrorReturn,
-    GeneratedDirectoryTryNewReturn, GeneratedFileName, GeneratedFileNameConstructorParams,
-    GeneratedFileNameTryNewErrorReturn, GeneratedFileNameTryNewReturn,
-    SOLIDITY_GENERATE_DECLARATION, SolidityGenerate, SolidityGenerateConstructorParams,
-    SolidityGenerateErrorReturn, SolidityGenerateTryNewReturn,
+    SolidityGenerate, SolidityGenerateConstructorParams, SolidityGenerateErrorReturn,
+    SolidityGenerateTryNewReturn,
 };
 use self::mapping_vectors::provides::{
     HashToScalarVectorDescription, HashToScalarVectorDescriptionConstructorParams,
@@ -77,39 +75,9 @@ use self::render::provides::{
     SolidityRecordMembersConstructorParams, SolidityStringLiteral,
     SolidityStringLiteralConstructorParams,
 };
-
-impl GeneratedFileName {
-    pub fn try_new(params: GeneratedFileNameConstructorParams) -> GeneratedFileNameTryNewReturn {
-        let bytes = params.text.as_bytes();
-        if bytes.is_empty() {
-            return Err(GeneratedFileNameTryNewErrorReturn::Empty);
-        }
-        for (index, &byte) in bytes.iter().enumerate() {
-            if !(byte.is_ascii_alphanumeric() || byte == b'.' || byte == b'_' || byte == b'-') {
-                return Err(GeneratedFileNameTryNewErrorReturn::InvalidCharacter { index, byte });
-            }
-        }
-        if params.text == "." || params.text == ".." {
-            return Err(GeneratedFileNameTryNewErrorReturn::Reserved);
-        }
-        Ok(GeneratedFileName { text: params.text })
-    }
-
-    pub fn as_str(&self) -> &str {
-        &self.text
-    }
-}
-
-impl GeneratedDirectory {
-    pub fn try_new(params: GeneratedDirectoryConstructorParams) -> GeneratedDirectoryTryNewReturn {
-        if params.segments.is_empty() {
-            return Err(GeneratedDirectoryTryNewErrorReturn::Empty);
-        }
-        Ok(GeneratedDirectory {
-            segments: params.segments,
-        })
-    }
-}
+use self::settings::provides::{
+    GeneratedFileName, GeneratedFileNameConstructorParams, SOLIDITY_GENERATE_DECLARATION,
+};
 
 impl<'a, P, E, K, A, D> SolidityGenerate<'a, P, E, K, A, D>
 where
@@ -158,7 +126,7 @@ where
     const DECLARATION: GenerateDeclaration = SOLIDITY_GENERATE_DECLARATION;
 
     fn emit(&self, _params: EmitParams, payload: EmitPayload<'_, Self::Forms>) -> EmitReturn {
-        let emitted: Vec<VectorKind> = Self::DECLARATION
+        let emitted: Vec<_> = Self::DECLARATION
             .kinds
             .iter()
             .filter(
@@ -169,24 +137,36 @@ where
                     VerifierGroupArithmetic::BothGroups => true,
                 },
             )
-            .map(|declaration| declaration.kind)
             .collect();
 
         let mut kind_settings = Vec::with_capacity(emitted.len());
-        for kind in &emitted {
-            let Some(names) = self.settings.kinds.iter().find(|entry| entry.kind == *kind) else {
+        for declaration in emitted {
+            let Some(names) = self
+                .settings
+                .kinds
+                .iter()
+                .find(|entry| entry.kind == declaration.kind)
+            else {
                 return Err(EmitErrorReturn::Solidity(
-                    SolidityGenerateErrorReturn::MissingKindSettings { kind: *kind },
+                    SolidityGenerateErrorReturn::MissingKindSettings {
+                        kind: declaration.kind,
+                    },
                 ));
             };
-            let Some(size) = self.sizes.iter().find(|entry| entry.kind == *kind) else {
-                return Err(EmitErrorReturn::MissingKindSize { kind: *kind });
+            let Some(size) = self
+                .sizes
+                .iter()
+                .find(|entry| entry.kind == declaration.kind)
+            else {
+                return Err(EmitErrorReturn::MissingKindSize {
+                    kind: declaration.kind,
+                });
             };
-            kind_settings.push((*kind, names, size));
+            kind_settings.push((names.kind, declaration.kind, names, size));
         }
 
         let size_of = |kind: VectorKind| -> Result<&VectorKindSize, EmitErrorReturn> {
-            let Some((_, _, size)) = kind_settings.iter().find(|entry| entry.0 == kind) else {
+            let Some((_, _, _, size)) = kind_settings.iter().find(|entry| entry.1 == kind) else {
                 return Err(EmitErrorReturn::MissingKindSize { kind });
             };
             Ok(&size.size)
@@ -481,8 +461,8 @@ where
             line
         };
 
-        let mut staged = Vec::with_capacity(emitted.len());
-        for (kind, settings, _size) in &kind_settings {
+        let mut staged = Vec::with_capacity(kind_settings.len());
+        for (kind, name, settings, _size) in &kind_settings {
             let (contents, members) = match kind {
                 VectorKind::G1Addition => {
                     let member_names = match group_operation.member_names() {
@@ -954,7 +934,7 @@ where
                     (contents, members)
                 }
             };
-            staged.push((*kind, *settings, contents, members));
+            staged.push((*name, *settings, contents, members));
         }
 
         let concrete_segment =
@@ -980,16 +960,17 @@ where
                 }
             };
         let mut generated_path = self.settings.foundry_root.clone();
-        for segment in &self.settings.generated_directory.segments {
+        for segment in self.settings.generated_directory.segments() {
             generated_path.push(segment.as_str());
         }
         let mut cell_path = generated_path.clone();
         cell_path.push(concrete_segment.as_str());
         cell_path.push(encoding_segment.as_str());
 
-        let mut declarations = Vec::with_capacity(emitted.len());
-        let mut writes: Vec<(VectorKind, String, PathBuf)> = Vec::with_capacity(emitted.len());
-        for (kind, settings, contents, members) in staged {
+        let mut declarations = Vec::with_capacity(kind_settings.len());
+        let mut writes: Vec<(VectorKind, String, PathBuf)> =
+            Vec::with_capacity(kind_settings.len());
+        for (name, settings, contents, members) in staged {
             let path =
                 match SolidityStringLiteral::try_new(SolidityStringLiteralConstructorParams {
                     text: settings.names.file_name.as_str().to_string(),
@@ -1009,7 +990,7 @@ where
                 path,
             });
             writes.push((
-                kind,
+                name,
                 contents,
                 cell_path.join(settings.names.file_name.as_str()),
             ));
@@ -1058,7 +1039,7 @@ where
             ));
         }
         let mut files = Vec::with_capacity(writes.len() + 2);
-        for (kind, contents, file_path) in writes {
+        for (name, contents, file_path) in writes {
             if let Err(error) = fs::write(&file_path, contents) {
                 return Err(EmitErrorReturn::Solidity(
                     SolidityGenerateErrorReturn::WriteFile {
@@ -1068,7 +1049,7 @@ where
                 ));
             }
             files.push(EmittedFile {
-                kind: Some(kind),
+                kind: Some(name),
                 path: file_path,
             });
         }

@@ -7,6 +7,7 @@ pub mod provides;
 #[cfg(test)]
 mod test;
 
+use chain::IChainForms;
 use core::num::NonZeroU32;
 use encoding::IEncoderAdapter;
 use envelope::IKeyAgreementAdapter;
@@ -14,6 +15,10 @@ use kem::ICredentialKemAdapter;
 use pairing::{IPairingArithmetic, IPairingReference};
 use proof::IDeliveryProofAdapter;
 
+use super::admit_generate_composition::provides::{
+    AdmitGenerateCompositionDeps, AdmitGenerateCompositionParams, AdmitGenerateCompositionPayload,
+};
+use super::lookup_generate_declaration::provides::lookup_generate_declaration;
 use super::solidity::provides::{
     SolidityGenerate, SolidityGenerateConstructorParams, challenge_vectors, constants,
     group_vectors, mapping_vectors, possession_vectors, proof_vectors, rejection_vectors, render,
@@ -78,10 +83,21 @@ pub fn create_generate<
             <MockIGenerateAdapter<D::Forms> as IGenerateAdapter>::DECLARATION
         }
     };
-    if E::DECLARATION.identifier != declaration.encoding_identifier {
-        return Err(CreateGenerateErrorReturn::UnsupportedEncodingIdentifier);
+    if let Err(error) = (deps.admit_generate_composition)(
+        &AdmitGenerateCompositionDeps {
+            lookup_generate_declaration,
+        },
+        AdmitGenerateCompositionParams {
+            identifier: declaration.identifier,
+        },
+        AdmitGenerateCompositionPayload {
+            chain_forms: &<D::Forms as IChainForms>::DECLARATION,
+            encoder: &E::DECLARATION,
+        },
+    ) {
+        return Err(CreateGenerateErrorReturn::Composition(error));
     }
-    let mut sizes = Vec::with_capacity(declaration.kinds.len());
+    let mut admitted = Vec::with_capacity(declaration.kinds.len());
     for (index, entry) in params.kinds.iter().enumerate() {
         let Some(declared) = declaration
             .kinds
@@ -189,17 +205,22 @@ pub fn create_generate<
                 }
             }
         };
-        sizes.push(VectorKindSettings {
+        admitted.push(VectorKindSettings {
             kind: entry.kind,
             size,
         });
     }
+    let mut sizes = Vec::with_capacity(declaration.kinds.len());
     for declared in declaration.kinds {
-        if !params.kinds.iter().any(|entry| entry.kind == declared.kind) {
+        let Some(settings) = admitted
+            .iter()
+            .find(|settings| settings.kind == declared.kind)
+        else {
             return Err(CreateGenerateErrorReturn::MissingKind {
                 kind: declared.kind,
             });
-        }
+        };
+        sizes.push(*settings);
     }
     let output = match params.concrete {
         GenerateConcrete::Solidity { settings } => {

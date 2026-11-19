@@ -20,21 +20,20 @@ use random::{
 
 use super::challenge_vectors;
 use super::interface::{
-    ChallengeVectorsCasePayload, ChallengeVectorsErrorReturn, ChallengeVectorsReturn,
-    IChallengeVectorsCaseConsumer,
+    CanonicalDeliveryContext, ChallengeVectorsCasePayload, ChallengeVectorsErrorReturn,
+    ChallengeVectorsReturn, IChallengeVectorsCaseConsumer,
 };
 use super::mock::{
-    ChallengeVectorsCaseParamsOverrides, ChallengeVectorsCasePayloadOverrides,
-    ChallengeVectorsParamsOverrides, build_challenge_vectors_case_deps,
+    CanonicalDeliveryContextOverrides, ChallengeVectorsCaseParamsOverrides,
+    ChallengeVectorsCasePayloadOverrides, ChallengeVectorsParamsOverrides,
+    build_canonical_delivery_context, build_challenge_vectors_case_deps,
     build_challenge_vectors_case_params, build_challenge_vectors_case_payload,
     build_challenge_vectors_deps, build_challenge_vectors_params, build_challenge_vectors_payload,
     run_challenge_vectors_case,
 };
-use crate::config::provides::{
-    CanonicalDeliveryContext, CanonicalDeliveryContextOverrides, build_canonical_delivery_context,
-};
 
 fn delivery_context_overrides<F: IChainForms>(
+    payload: &ChallengeVectorsCasePayload,
     context: &CanonicalDeliveryContext,
 ) -> DeliveryContextOverrides<F> {
     DeliveryContextOverrides {
@@ -42,7 +41,7 @@ fn delivery_context_overrides<F: IChainForms>(
         chain: Some(
             F::ChainIdentifier::from_field(
                 build_from_field_params(Default::default()),
-                context.chain.clone(),
+                payload.chain.clone(),
             )
             .expect("a canonical value of the declared kind is admitted")
             .value,
@@ -50,7 +49,7 @@ fn delivery_context_overrides<F: IChainForms>(
         entitlement_contract: Some(
             F::Identity::from_field(
                 build_from_field_params(Default::default()),
-                context.entitlement_contract.clone(),
+                payload.entitlement_contract.clone(),
             )
             .expect("a canonical value of the declared kind is admitted")
             .value,
@@ -146,11 +145,11 @@ fn challenge_vectors_refuse_a_statement_version_no_description_serves() {
             // Arrange
             let mint = build_delivery_context::<F, MintPurpose>(
                 payload.mint_purpose,
-                delivery_context_overrides(&payload.mint),
+                delivery_context_overrides(payload, &payload.mint),
             );
             let transfer = build_delivery_context::<F, TransferPurpose>(
                 payload.transfer_purpose,
-                delivery_context_overrides(&payload.transfer),
+                delivery_context_overrides(payload, &payload.transfer),
             );
 
             // Act
@@ -197,6 +196,8 @@ fn challenge_vectors_refuse_a_statement_version_no_description_serves() {
                         ..Default::default()
                     },
                 )),
+                chain: None,
+                entitlement_contract: None,
                 mint: Some(build_canonical_delivery_context(
                     CanonicalDeliveryContextOverrides::default(),
                 )),
@@ -251,11 +252,11 @@ fn challenge_vectors_return_the_domain_tag_refusal_whole() {
             // Arrange
             let mint = build_delivery_context::<F, MintPurpose>(
                 payload.mint_purpose,
-                delivery_context_overrides(&payload.mint),
+                delivery_context_overrides(payload, &payload.mint),
             );
             let transfer = build_delivery_context::<F, TransferPurpose>(
                 payload.transfer_purpose,
-                delivery_context_overrides(&payload.transfer),
+                delivery_context_overrides(payload, &payload.transfer),
             );
 
             // Act
@@ -299,6 +300,8 @@ fn challenge_vectors_return_the_domain_tag_refusal_whole() {
                         ..Default::default()
                     },
                 )),
+                chain: None,
+                entitlement_contract: None,
                 mint: Some(build_canonical_delivery_context(
                     CanonicalDeliveryContextOverrides::default(),
                 )),
@@ -351,11 +354,11 @@ fn challenge_vectors_return_the_draw_refusal_whole() {
             // Arrange
             let mint = build_delivery_context::<F, MintPurpose>(
                 payload.mint_purpose,
-                delivery_context_overrides(&payload.mint),
+                delivery_context_overrides(payload, &payload.mint),
             );
             let transfer = build_delivery_context::<F, TransferPurpose>(
                 payload.transfer_purpose,
-                delivery_context_overrides(&payload.transfer),
+                delivery_context_overrides(payload, &payload.transfer),
             );
 
             // Act
@@ -394,6 +397,8 @@ fn challenge_vectors_return_the_draw_refusal_whole() {
             }),
             build_challenge_vectors_case_payload(ChallengeVectorsCasePayloadOverrides {
                 delivery_proof: Some(build_delivery_proof_declaration(Default::default())),
+                chain: None,
+                entitlement_contract: None,
                 mint: Some(build_canonical_delivery_context(
                     CanonicalDeliveryContextOverrides::default(),
                 )),
@@ -447,11 +452,11 @@ fn challenge_vectors_return_the_sampling_refusal_whole() {
             // Arrange
             let mint = build_delivery_context::<F, MintPurpose>(
                 payload.mint_purpose,
-                delivery_context_overrides(&payload.mint),
+                delivery_context_overrides(payload, &payload.mint),
             );
             let transfer = build_delivery_context::<F, TransferPurpose>(
                 payload.transfer_purpose,
-                delivery_context_overrides(&payload.transfer),
+                delivery_context_overrides(payload, &payload.transfer),
             );
 
             // Act
@@ -489,6 +494,8 @@ fn challenge_vectors_return_the_sampling_refusal_whole() {
             }),
             build_challenge_vectors_case_payload(ChallengeVectorsCasePayloadOverrides {
                 delivery_proof: Some(build_delivery_proof_declaration(Default::default())),
+                chain: None,
+                entitlement_contract: None,
                 mint: Some(build_canonical_delivery_context(
                     CanonicalDeliveryContextOverrides::default(),
                 )),

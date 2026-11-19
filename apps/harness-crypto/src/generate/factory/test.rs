@@ -1,12 +1,18 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use chain::IChainForms;
-use encoding::{IDecoderAdapter, IEncoderAdapter};
+use encoding::{EncodingIdentifier, IDecoderAdapter, IEncoderAdapter};
 use envelope::IKeyAgreementAdapter;
 use kem::ICredentialKemAdapter;
 use pairing::{IPairingArithmetic, IPairingReference};
 use proof::IDeliveryProofAdapter;
 
+use super::super::admit_generate_composition::provides::{
+    AdmitGenerateCompositionDeps, AdmitGenerateCompositionErrorReturn, AdmitGenerateCompositionFn,
+    AdmitGenerateCompositionParams, AdmitGenerateCompositionPayload,
+    AdmitGenerateCompositionReturn, EncodingIdentifierDisagreementOverrides,
+    build_encoding_identifier_disagreement,
+};
 use super::create_generate;
 use super::interface::{
     ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload, CreateGenerateErrorReturn,
@@ -14,12 +20,12 @@ use super::interface::{
     VectorKindQuantity,
 };
 use super::mock::{
-    CreateGenerateParamsOverrides, MockIGenerateConsumer, VectorKindConfigurationOverrides,
-    VectorKindQuantitiesOverrides, build_create_generate_case_deps,
-    build_create_generate_case_params, build_create_generate_case_payload,
-    build_create_generate_deps, build_create_generate_params, build_create_generate_payload,
-    build_msm_term_count, build_vector_kind_configuration, build_vector_kind_quantities,
-    run_create_generate_case,
+    CreateGenerateDepsOverrides, CreateGenerateParamsOverrides, MockIGenerateConsumer,
+    VectorKindConfigurationOverrides, VectorKindQuantitiesOverrides,
+    build_create_generate_case_deps, build_create_generate_case_params,
+    build_create_generate_case_payload, build_create_generate_deps, build_create_generate_params,
+    build_create_generate_payload, build_msm_term_count, build_vector_kind_configuration,
+    build_vector_kind_quantities, run_create_generate_case,
 };
 
 /// Contract: every declared kind named exactly once by the entries, in any
@@ -1247,3 +1253,116 @@ fn create_generate_refuses_an_entrys_quantity_before_a_missing_kind() {
     );
 }
 // create_generate_refuses_an_entrys_quantity_before_a_missing_kind
+
+/// Contract: a refusal `deps.admit_generate_composition` returns reaches the
+///   caller whole in `CreateGenerateErrorReturn::Composition`, ahead of the
+///   refusal of the undeclared kind, no entry being read before the
+///   admission returns.
+/// Arrange: `kinds` an entry for `VectorKind::Possession` followed by the
+///   entries of every declared kind; `deps_overrides`
+///   `CreateGenerateDepsOverrides { admit_generate_composition:
+///   Some(refuse_generate_composition) }`, the block declaring
+///   `refuse_generate_composition` returning the `Incompatible` refusal.
+/// Act:    `create_generate`, the single call inside the block's case
+///   consumer, run once by `run_create_generate_case`.
+/// Assert: `result`'s `output` equals `Err(CreateGenerateErrorReturn::
+///   Composition(AdmitGenerateCompositionErrorReturn::Incompatible {
+///   chain_forms: None, encoding: Some(..) }))` by `assert_eq!`.
+#[test]
+fn create_generate_carries_the_composition_refusal_whole() {
+    // Arrange
+    fn refuse_generate_composition(
+        _deps: &AdmitGenerateCompositionDeps,
+        _params: AdmitGenerateCompositionParams,
+        _payload: AdmitGenerateCompositionPayload<'_>,
+    ) -> AdmitGenerateCompositionReturn {
+        let _: AdmitGenerateCompositionFn = refuse_generate_composition;
+        Err(AdmitGenerateCompositionErrorReturn::Incompatible {
+            chain_forms: None,
+            encoding: Some(build_encoding_identifier_disagreement(
+                EncodingIdentifierDisagreementOverrides {
+                    required: Some(EncodingIdentifier::Mock),
+                    declared: Some(EncodingIdentifier::EthereumAbiV1),
+                },
+            )),
+        })
+    }
+
+    struct Consumer {
+        params: CreateGenerateParams,
+    }
+
+    impl ICreateGenerateCaseConsumer for Consumer {
+        type Output = CreateGenerateReturn<()>;
+
+        fn consume_create_generate_case<P, E, F, K, A, D>(
+            &self,
+            _params: ConsumeCreateGenerateCaseParams,
+            payload: ConsumeCreateGenerateCasePayload<'_, P, E, K, A, D>,
+        ) -> Self::Output
+        where
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            F: IChainForms,
+            K: ICredentialKemAdapter<Pairing = P>,
+            A: IKeyAgreementAdapter<Pairing = P>,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+        {
+            create_generate(
+                &build_create_generate_deps(
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    payload.kem,
+                    payload.key_agreement,
+                    payload.delivery_proof,
+                    MockIGenerateConsumer,
+                    CreateGenerateDepsOverrides {
+                        admit_generate_composition: Some(refuse_generate_composition),
+                    },
+                ),
+                self.params.clone(),
+                build_create_generate_payload(Default::default()),
+            )
+        }
+    }
+
+    let mut entries = vec![build_vector_kind_configuration(
+        VectorKindConfigurationOverrides {
+            kind: Some(VectorKind::Possession),
+            ..Default::default()
+        },
+    )];
+    entries.extend(build_create_generate_params(Default::default()).kinds);
+    let consumer = Consumer {
+        params: build_create_generate_params(CreateGenerateParamsOverrides {
+            kinds: Some(entries),
+            ..Default::default()
+        }),
+    };
+
+    // Act
+    let result = run_create_generate_case(
+        &build_create_generate_case_deps(consumer, Default::default()),
+        build_create_generate_case_params(Default::default()),
+        build_create_generate_case_payload(&[], &[], Default::default()),
+    );
+
+    // Assert
+    assert_eq!(
+        result.unwrap().output.map(|_| ()),
+        Err(CreateGenerateErrorReturn::Composition(
+            AdmitGenerateCompositionErrorReturn::Incompatible {
+                chain_forms: None,
+                encoding: Some(build_encoding_identifier_disagreement(
+                    EncodingIdentifierDisagreementOverrides {
+                        required: Some(EncodingIdentifier::Mock),
+                        declared: Some(EncodingIdentifier::EthereumAbiV1),
+                    },
+                )),
+            }
+        ))
+    );
+}
+// create_generate_carries_the_composition_refusal_whole

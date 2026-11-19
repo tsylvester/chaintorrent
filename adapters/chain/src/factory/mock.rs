@@ -66,7 +66,7 @@ pub(crate) struct MockIChainForms;
 
 impl IChainForms for MockIChainForms {
     const DECLARATION: ChainFormsDeclaration = ChainFormsDeclaration {
-        identifier: ChainFormsIdentifier::Mock,
+        identifier: ChainFormsIdentifier::EvmV1,
         adapter_version: 1,
         interface_version: CHAIN_FORMS_INTERFACE_VERSION,
         encoding_identifier: EncodingIdentifier::Mock,

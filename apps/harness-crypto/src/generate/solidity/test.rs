@@ -2,8 +2,7 @@
 
 use chain::IChainForms;
 use encoding::{
-    CanonicalFieldKind, EncodingIdentifier, IDecoderAdapter, IEncoderAdapter, IEncodingContract,
-    build_decode_params,
+    CanonicalFieldKind, IDecoderAdapter, IEncoderAdapter, IEncodingContract, build_decode_params,
 };
 use envelope::IKeyAgreementAdapter;
 use kem::ICredentialKemAdapter;
@@ -16,11 +15,10 @@ use proof::{
 };
 
 use super::super::factory::provides::{
-    EmitErrorReturn, EmitPayloadOverrides, EmitReturn, EmittedFile, GENERATE_INTERFACE_VERSION,
-    IGenerateAdapter, VectorCountConstructorParamsOverrides, VectorKind,
-    VectorKindDeclarationOverrides, VectorKindSettings, VectorKindSettingsOverrides,
-    VectorKindSize, VectorKindSizing, build_emit_params, build_emit_payload, build_msm_term_count,
-    build_vector_count, build_vector_kind_declaration, build_vector_kind_settings,
+    EmitErrorReturn, EmitPayloadOverrides, EmitReturn, EmittedFile, IGenerateAdapter,
+    VectorCountConstructorParamsOverrides, VectorKind, VectorKindSettings,
+    VectorKindSettingsOverrides, VectorKindSize, VectorKindSizing, build_emit_params,
+    build_emit_payload, build_msm_term_count, build_vector_count, build_vector_kind_settings,
 };
 use super::challenge_vectors::provides::{
     ChallengeVectorDescription, ChallengeVectorsDeps, ChallengeVectorsErrorReturn,
@@ -42,10 +40,8 @@ use super::group_vectors::provides::{
     build_pairing_check_vector_description,
 };
 use super::interface::{
-    ConsumeSolidityGenerateCaseParams, ConsumeSolidityGenerateCasePayload, GeneratedDirectory,
-    GeneratedDirectoryTryNewErrorReturn, GeneratedFileName, GeneratedFileNameTryNewErrorReturn,
-    ISolidityGenerateCaseConsumer, SOLIDITY_GENERATE_DECLARATION, SolidityGenerateErrorReturn,
-    SolidityGenerateSettings, SolidityVectorKindNames,
+    ConsumeSolidityGenerateCaseParams, ConsumeSolidityGenerateCasePayload,
+    ISolidityGenerateCaseConsumer, SolidityGenerateErrorReturn,
 };
 use super::mapping_vectors::provides::{
     HashToScalarVectorDescription, HashToScalarVectorOverrides, IdentityMappingVectorDescription,
@@ -84,484 +80,13 @@ use super::render::provides::{
     build_solidity_abi_type, build_solidity_record_declaration, build_solidity_record_member,
     build_solidity_record_members, build_solidity_source_text, build_solidity_string_literal,
 };
-
-/// Contract: a text whose every byte is an ASCII letter, digit, `.`, `_`, or
-///   `-` is admitted.
-/// Arrange: `build_generated_file_name_constructor_params` with `text`
-///   overridden to `"AZaz09._-"`, holding the first and last letter of each
-///   case and the first and last digit.
-/// Act:    `GeneratedFileName::try_new`.
-/// Assert: `result.map(|name| name.text)` equals `Ok("AZaz09._-")` by
-///   `assert_eq!`.
-#[test]
-fn generated_file_name_admits_every_character_class_it_allows() {
-    // Arrange
-    let params =
-        build_generated_file_name_constructor_params(GeneratedFileNameConstructorParamsOverrides {
-            text: Some("AZaz09._-".to_string()),
-        });
-
-    // Act
-    let result = GeneratedFileName::try_new(params);
-
-    // Assert
-    assert_eq!(result.map(|name| name.text), Ok("AZaz09._-".to_string()));
-}
-// generated_file_name_admits_every_character_class_it_allows
-
-/// Contract: no byte is refused `Empty`.
-/// Arrange: `build_generated_file_name_constructor_params` with `text`
-///   overridden to `""`.
-/// Act:    `GeneratedFileName::try_new`.
-/// Assert: the result equals `Err(GeneratedFileNameTryNewErrorReturn::Empty)`
-///   by `assert_eq!`.
-#[test]
-fn generated_file_name_refuses_empty_text() {
-    // Arrange
-    let params =
-        build_generated_file_name_constructor_params(GeneratedFileNameConstructorParamsOverrides {
-            text: Some(String::new()),
-        });
-
-    // Act
-    let result = GeneratedFileName::try_new(params);
-
-    // Assert
-    assert_eq!(result, Err(GeneratedFileNameTryNewErrorReturn::Empty));
-}
-// generated_file_name_refuses_empty_text
-
-/// Contract: the text `.` is refused `Reserved`.
-/// Arrange: `build_generated_file_name_constructor_params` with `text`
-///   overridden to `"."`, a byte the character set admits, so only the
-///   reserved decision refuses.
-/// Act:    `GeneratedFileName::try_new`.
-/// Assert: the result equals `Err(GeneratedFileNameTryNewErrorReturn::Reserved)`
-///   by `assert_eq!`.
-#[test]
-fn generated_file_name_refuses_the_single_dot_text() {
-    // Arrange
-    let params =
-        build_generated_file_name_constructor_params(GeneratedFileNameConstructorParamsOverrides {
-            text: Some(".".to_string()),
-        });
-
-    // Act
-    let result = GeneratedFileName::try_new(params);
-
-    // Assert
-    assert_eq!(result, Err(GeneratedFileNameTryNewErrorReturn::Reserved));
-}
-// generated_file_name_refuses_the_single_dot_text
-
-/// Contract: the text `..` is refused `Reserved`.
-/// Arrange: `build_generated_file_name_constructor_params` with `text`
-///   overridden to `".."`, bytes the character set admits, so only the
-///   reserved decision refuses.
-/// Act:    `GeneratedFileName::try_new`.
-/// Assert: the result equals `Err(GeneratedFileNameTryNewErrorReturn::Reserved)`
-///   by `assert_eq!`.
-#[test]
-fn generated_file_name_refuses_the_double_dot_text() {
-    // Arrange
-    let params =
-        build_generated_file_name_constructor_params(GeneratedFileNameConstructorParamsOverrides {
-            text: Some("..".to_string()),
-        });
-
-    // Act
-    let result = GeneratedFileName::try_new(params);
-
-    // Assert
-    assert_eq!(result, Err(GeneratedFileNameTryNewErrorReturn::Reserved));
-}
-// generated_file_name_refuses_the_double_dot_text
-
-/// Contract: the lowest index whose byte is outside the admitted set is
-///   refused `InvalidCharacter` at that index.
-/// Arrange: `build_generated_file_name_constructor_params` with `text`
-///   overridden to `"ab/c?"`, holding two invalid bytes at different indexes.
-/// Act:    `GeneratedFileName::try_new`.
-/// Assert: the result equals
-///   `Err(GeneratedFileNameTryNewErrorReturn::InvalidCharacter { index: 2, byte: b'/' })`
-///   by `assert_eq!`.
-#[test]
-fn generated_file_name_refuses_the_lowest_invalid_byte_index() {
-    // Arrange
-    let params =
-        build_generated_file_name_constructor_params(GeneratedFileNameConstructorParamsOverrides {
-            text: Some("ab/c?".to_string()),
-        });
-
-    // Act
-    let result = GeneratedFileName::try_new(params);
-
-    // Assert
-    assert_eq!(
-        result,
-        Err(GeneratedFileNameTryNewErrorReturn::InvalidCharacter {
-            index: 2,
-            byte: b'/'
-        })
-    );
-}
-// generated_file_name_refuses_the_lowest_invalid_byte_index
-
-/// Contract: the byte below `b'A'` is refused `InvalidCharacter`.
-/// Arrange: `build_generated_file_name_constructor_params` with `text`
-///   overridden to `"@"`.
-/// Act:    `GeneratedFileName::try_new`.
-/// Assert: the result equals `Err(InvalidCharacter { index: 0, byte: b'@' })`
-///   by `assert_eq!`.
-#[test]
-fn generated_file_name_refuses_the_byte_before_the_uppercase_letters() {
-    // Arrange
-    let params =
-        build_generated_file_name_constructor_params(GeneratedFileNameConstructorParamsOverrides {
-            text: Some("@".to_string()),
-        });
-
-    // Act
-    let result = GeneratedFileName::try_new(params);
-
-    // Assert
-    assert_eq!(
-        result,
-        Err(GeneratedFileNameTryNewErrorReturn::InvalidCharacter {
-            index: 0,
-            byte: b'@'
-        })
-    );
-}
-// generated_file_name_refuses_the_byte_before_the_uppercase_letters
-
-/// Contract: the byte above `b'Z'` is refused `InvalidCharacter`.
-/// Arrange: `build_generated_file_name_constructor_params` with `text`
-///   overridden to `"["`.
-/// Act:    `GeneratedFileName::try_new`.
-/// Assert: the result equals `Err(InvalidCharacter { index: 0, byte: b'[' })`
-///   by `assert_eq!`.
-#[test]
-fn generated_file_name_refuses_the_byte_after_the_uppercase_letters() {
-    // Arrange
-    let params =
-        build_generated_file_name_constructor_params(GeneratedFileNameConstructorParamsOverrides {
-            text: Some("[".to_string()),
-        });
-
-    // Act
-    let result = GeneratedFileName::try_new(params);
-
-    // Assert
-    assert_eq!(
-        result,
-        Err(GeneratedFileNameTryNewErrorReturn::InvalidCharacter {
-            index: 0,
-            byte: b'['
-        })
-    );
-}
-// generated_file_name_refuses_the_byte_after_the_uppercase_letters
-
-/// Contract: the byte below `b'a'` is refused `InvalidCharacter`.
-/// Arrange: `build_generated_file_name_constructor_params` with `text`
-///   overridden to `"`"`.
-/// Act:    `GeneratedFileName::try_new`.
-/// Assert: the result equals `Err(InvalidCharacter { index: 0, byte: b'`' })`
-///   by `assert_eq!`.
-#[test]
-fn generated_file_name_refuses_the_byte_before_the_lowercase_letters() {
-    // Arrange
-    let params =
-        build_generated_file_name_constructor_params(GeneratedFileNameConstructorParamsOverrides {
-            text: Some("`".to_string()),
-        });
-
-    // Act
-    let result = GeneratedFileName::try_new(params);
-
-    // Assert
-    assert_eq!(
-        result,
-        Err(GeneratedFileNameTryNewErrorReturn::InvalidCharacter {
-            index: 0,
-            byte: b'`'
-        })
-    );
-}
-// generated_file_name_refuses_the_byte_before_the_lowercase_letters
-
-/// Contract: the byte above `b'z'` is refused `InvalidCharacter`.
-/// Arrange: `build_generated_file_name_constructor_params` with `text`
-///   overridden to `"{"`.
-/// Act:    `GeneratedFileName::try_new`.
-/// Assert: the result equals `Err(InvalidCharacter { index: 0, byte: b'{' })`
-///   by `assert_eq!`.
-#[test]
-fn generated_file_name_refuses_the_byte_after_the_lowercase_letters() {
-    // Arrange
-    let params =
-        build_generated_file_name_constructor_params(GeneratedFileNameConstructorParamsOverrides {
-            text: Some("{".to_string()),
-        });
-
-    // Act
-    let result = GeneratedFileName::try_new(params);
-
-    // Assert
-    assert_eq!(
-        result,
-        Err(GeneratedFileNameTryNewErrorReturn::InvalidCharacter {
-            index: 0,
-            byte: b'{'
-        })
-    );
-}
-// generated_file_name_refuses_the_byte_after_the_lowercase_letters
-
-/// Contract: the byte below `b'0'` is refused `InvalidCharacter`.
-/// Arrange: `build_generated_file_name_constructor_params` with `text`
-///   overridden to `"/"`.
-/// Act:    `GeneratedFileName::try_new`.
-/// Assert: the result equals `Err(InvalidCharacter { index: 0, byte: b'/' })`
-///   by `assert_eq!`.
-#[test]
-fn generated_file_name_refuses_the_byte_before_the_digits() {
-    // Arrange
-    let params =
-        build_generated_file_name_constructor_params(GeneratedFileNameConstructorParamsOverrides {
-            text: Some("/".to_string()),
-        });
-
-    // Act
-    let result = GeneratedFileName::try_new(params);
-
-    // Assert
-    assert_eq!(
-        result,
-        Err(GeneratedFileNameTryNewErrorReturn::InvalidCharacter {
-            index: 0,
-            byte: b'/'
-        })
-    );
-}
-// generated_file_name_refuses_the_byte_before_the_digits
-
-/// Contract: the byte above `b'9'` is refused `InvalidCharacter`.
-/// Arrange: `build_generated_file_name_constructor_params` with `text`
-///   overridden to `":"`.
-/// Act:    `GeneratedFileName::try_new`.
-/// Assert: the result equals `Err(InvalidCharacter { index: 0, byte: b':' })`
-///   by `assert_eq!`.
-#[test]
-fn generated_file_name_refuses_the_byte_after_the_digits() {
-    // Arrange
-    let params =
-        build_generated_file_name_constructor_params(GeneratedFileNameConstructorParamsOverrides {
-            text: Some(":".to_string()),
-        });
-
-    // Act
-    let result = GeneratedFileName::try_new(params);
-
-    // Assert
-    assert_eq!(
-        result,
-        Err(GeneratedFileNameTryNewErrorReturn::InvalidCharacter {
-            index: 0,
-            byte: b':'
-        })
-    );
-}
-// generated_file_name_refuses_the_byte_after_the_digits
-
-/// Contract: `as_str` returns the text the constructor held.
-/// Arrange: `build_generated_file_name` with `text` overridden to
-///   `"g1_add.vectors"`.
-/// Act:    `as_str`.
-/// Assert: the returned text equals `"g1_add.vectors"` by `assert_eq!`.
-#[test]
-fn generated_file_name_as_str_returns_its_text() {
-    // Arrange
-    let name = build_generated_file_name(GeneratedFileNameConstructorParamsOverrides {
-        text: Some("g1_add.vectors".to_string()),
-    });
-
-    // Act
-    let text = name.as_str();
-
-    // Assert
-    assert_eq!(text, "g1_add.vectors");
-}
-// generated_file_name_as_str_returns_its_text
-
-/// Contract: empty `segments` is refused `Empty`.
-/// Arrange: `build_generated_directory_constructor_params` with `segments`
-///   overridden to `Vec::new()`.
-/// Act:    `GeneratedDirectory::try_new`.
-/// Assert: the result equals `Err(GeneratedDirectoryTryNewErrorReturn::Empty)`
-///   by `assert_eq!`.
-#[test]
-fn generated_directory_refuses_no_segments() {
-    // Arrange
-    let params = build_generated_directory_constructor_params(
-        GeneratedDirectoryConstructorParamsOverrides {
-            segments: Some(Vec::new()),
-        },
-    );
-
-    // Act
-    let result = GeneratedDirectory::try_new(params);
-
-    // Assert
-    assert_eq!(result, Err(GeneratedDirectoryTryNewErrorReturn::Empty));
-}
-// generated_directory_refuses_no_segments
-
-/// Contract: `params.segments` not empty is admitted, the segments in the
-///   params' order.
-/// Arrange: `build_generated_directory_constructor_params` with `segments`
-///   overridden to two `build_generated_file_name` values over `"suite"` and
-///   then `"generated"`, an order that is neither sorted nor the builder's.
-/// Act:    `GeneratedDirectory::try_new`.
-/// Assert: `result.map(|directory| directory.segments)` equals `Ok` of the
-///   same two names in the same order by `assert_eq!`.
-#[test]
-fn generated_directory_admits_its_segments_in_order() {
-    // Arrange
-    let params = build_generated_directory_constructor_params(
-        GeneratedDirectoryConstructorParamsOverrides {
-            segments: Some(vec![
-                build_generated_file_name(GeneratedFileNameConstructorParamsOverrides {
-                    text: Some("suite".to_string()),
-                }),
-                build_generated_file_name(GeneratedFileNameConstructorParamsOverrides {
-                    text: Some("generated".to_string()),
-                }),
-            ]),
-        },
-    );
-
-    // Act
-    let result = GeneratedDirectory::try_new(params);
-
-    // Assert
-    assert_eq!(
-        result.map(|directory| directory.segments),
-        Ok(vec![
-            build_generated_file_name(GeneratedFileNameConstructorParamsOverrides {
-                text: Some("suite".to_string()),
-            }),
-            build_generated_file_name(GeneratedFileNameConstructorParamsOverrides {
-                text: Some("generated".to_string()),
-            }),
-        ])
-    );
-}
-// generated_directory_admits_its_segments_in_order
-
-/// Contract: `SOLIDITY_GENERATE_DECLARATION` holds, in order, the kinds,
-///   sizings, and second-group gates the interaction spec lists,
-///   `adapter_version` `1`, `interface_version` `GENERATE_INTERFACE_VERSION`,
-///   and `encoding_identifier` `EncodingIdentifier::EthereumAbiV1`.
-/// Arrange: none, the declaration depending on no type parameter of
-///   `SolidityGenerate`.
-/// Act:    read `SOLIDITY_GENERATE_DECLARATION`.
-/// Assert: its `kinds` equals, in the spec's order, one
-///   `build_vector_kind_declaration` per kind with `kind`, `sizing`, and
-///   `requires_second_group_arithmetic` overridden to the spec's values, and
-///   its `adapter_version` equals `1`, its `interface_version` equals
-///   `GENERATE_INTERFACE_VERSION`, and its `encoding_identifier` equals
-///   `EncodingIdentifier::EthereumAbiV1`, by `assert_eq!`.
-#[test]
-fn solidity_generate_declares_its_kinds_with_their_sizing_and_second_group_gates() {
-    // Arrange
-    let expected = [
-        build_vector_kind_declaration(VectorKindDeclarationOverrides {
-            kind: Some(VectorKind::G1Addition),
-            sizing: Some(VectorKindSizing::Drawn),
-            requires_second_group_arithmetic: Some(false),
-        }),
-        build_vector_kind_declaration(VectorKindDeclarationOverrides {
-            kind: Some(VectorKind::G1Multiplication),
-            sizing: Some(VectorKindSizing::Drawn),
-            requires_second_group_arithmetic: Some(false),
-        }),
-        build_vector_kind_declaration(VectorKindDeclarationOverrides {
-            kind: Some(VectorKind::PairingCheck),
-            sizing: Some(VectorKindSizing::Drawn),
-            requires_second_group_arithmetic: Some(false),
-        }),
-        build_vector_kind_declaration(VectorKindDeclarationOverrides {
-            kind: Some(VectorKind::G2Addition),
-            sizing: Some(VectorKindSizing::Drawn),
-            requires_second_group_arithmetic: Some(true),
-        }),
-        build_vector_kind_declaration(VectorKindDeclarationOverrides {
-            kind: Some(VectorKind::G1MultiScalarMultiplication),
-            sizing: Some(VectorKindSizing::DrawnTerms),
-            requires_second_group_arithmetic: Some(true),
-        }),
-        build_vector_kind_declaration(VectorKindDeclarationOverrides {
-            kind: Some(VectorKind::G2MultiScalarMultiplication),
-            sizing: Some(VectorKindSizing::DrawnTerms),
-            requires_second_group_arithmetic: Some(true),
-        }),
-        build_vector_kind_declaration(VectorKindDeclarationOverrides {
-            kind: Some(VectorKind::DecodeRejection),
-            sizing: Some(VectorKindSizing::Enumerated),
-            requires_second_group_arithmetic: Some(false),
-        }),
-        build_vector_kind_declaration(VectorKindDeclarationOverrides {
-            kind: Some(VectorKind::HashToScalar),
-            sizing: Some(VectorKindSizing::DrawnMessages),
-            requires_second_group_arithmetic: Some(false),
-        }),
-        build_vector_kind_declaration(VectorKindDeclarationOverrides {
-            kind: Some(VectorKind::IdentityMapping),
-            sizing: Some(VectorKindSizing::OverConfiguredInputs),
-            requires_second_group_arithmetic: Some(false),
-        }),
-        build_vector_kind_declaration(VectorKindDeclarationOverrides {
-            kind: Some(VectorKind::Possession),
-            sizing: Some(VectorKindSizing::Drawn),
-            requires_second_group_arithmetic: Some(false),
-        }),
-        build_vector_kind_declaration(VectorKindDeclarationOverrides {
-            kind: Some(VectorKind::Challenge),
-            sizing: Some(VectorKindSizing::Drawn),
-            requires_second_group_arithmetic: Some(false),
-        }),
-        build_vector_kind_declaration(VectorKindDeclarationOverrides {
-            kind: Some(VectorKind::MintProof),
-            sizing: Some(VectorKindSizing::Drawn),
-            requires_second_group_arithmetic: Some(false),
-        }),
-        build_vector_kind_declaration(VectorKindDeclarationOverrides {
-            kind: Some(VectorKind::TransferProof),
-            sizing: Some(VectorKindSizing::Drawn),
-            requires_second_group_arithmetic: Some(false),
-        }),
-        build_vector_kind_declaration(VectorKindDeclarationOverrides {
-            kind: Some(VectorKind::CellValues),
-            sizing: Some(VectorKindSizing::Enumerated),
-            requires_second_group_arithmetic: Some(false),
-        }),
-    ];
-
-    // Act
-    let declaration = SOLIDITY_GENERATE_DECLARATION;
-
-    // Assert
-    assert_eq!(declaration.kinds, expected.as_slice());
-    assert_eq!(declaration.adapter_version, 1);
-    assert_eq!(declaration.interface_version, GENERATE_INTERFACE_VERSION);
-    assert_eq!(
-        declaration.encoding_identifier,
-        EncodingIdentifier::EthereumAbiV1
-    );
-}
-// solidity_generate_declares_its_kinds_with_their_sizing_and_second_group_gates
+use super::settings::provides::{
+    GeneratedDirectoryConstructorParamsOverrides, GeneratedFileNameConstructorParamsOverrides,
+    SOLIDITY_GENERATE_DECLARATION, SolidityGenerateSettings, SolidityGenerateSettingsOverrides,
+    SolidityVectorKindNames, SolidityVectorKindSettingsOverrides, build_generated_directory,
+    build_generated_file_name, build_solidity_generate_settings,
+    build_solidity_vector_kind_settings,
+};
 
 /// Contract: an emitted kind with no entry in `self.settings.kinds` is
 ///   refused `Err(EmitErrorReturn::Solidity(SolidityGenerateErrorReturn::MissingKindSettings { kind }))`,
@@ -578,13 +103,26 @@ fn solidity_generate_declares_its_kinds_with_their_sizing_and_second_group_gates
 #[test]
 fn emit_refuses_settings_missing_an_emitted_kind() {
     // Arrange
-    let mut settings = build_solidity_generate_settings(Default::default());
-    settings.kinds.retain(|kind_settings| {
-        !matches!(
-            kind_settings.kind,
-            VectorKind::Possession | VectorKind::Challenge
-        )
+    let mut settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
     });
+    settings.kinds = settings
+        .kinds
+        .iter()
+        .filter(|kind_settings| {
+            !matches!(
+                kind_settings.kind,
+                VectorKind::Possession | VectorKind::Challenge
+            )
+        })
+        .map(|kind_settings| {
+            build_solidity_vector_kind_settings(SolidityVectorKindSettingsOverrides {
+                kind: Some(kind_settings.kind),
+                names: Some(kind_settings.names.clone()),
+            })
+        })
+        .collect();
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
@@ -656,7 +194,7 @@ fn emit_refuses_settings_missing_an_emitted_kind() {
         result,
         Err(EmitErrorReturn::Solidity(
             SolidityGenerateErrorReturn::MissingKindSettings {
-                kind: VectorKind::Possession,
+                kind: VectorKind::Possession
             }
         ))
     ));
@@ -708,7 +246,10 @@ fn emit_refuses_sizes_missing_an_emitted_kind() {
             })
         })
         .collect();
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
@@ -781,7 +322,7 @@ fn emit_refuses_sizes_missing_an_emitted_kind() {
     assert!(matches!(
         result,
         Err(EmitErrorReturn::MissingKindSize {
-            kind: VectorKind::Challenge,
+            kind: VectorKind::Challenge
         })
     ));
     assert!(!root.exists());
@@ -797,12 +338,19 @@ fn emit_refuses_sizes_missing_an_emitted_kind() {
 ///   declared in the block that refuses a `Some` `second_group`, every other
 ///   handle at its function mock.
 /// Act:    `emit`, once, in the case consumer's method.
-/// Assert: the result is `Ok` and the `kind` of each entry of `files` equals
-///   the emitted kinds in declared order, then `None`, `None`.
+/// Assert: the result is `Ok` and the `kind` of each entry of `files` equals,
+///   in order, `Some(VectorKind::G1Addition)`, `Some(VectorKind::G1Multiplication)`,
+///   `Some(VectorKind::PairingCheck)`, `Some(VectorKind::DecodeRejection)`, `Some(VectorKind::HashToScalar)`,
+///   `Some(VectorKind::IdentityMapping)`, `Some(VectorKind::Possession)`, `Some(VectorKind::Challenge)`,
+///   `Some(VectorKind::MintProof)`, `Some(VectorKind::TransferProof)`, `Some(VectorKind::CellValues)`,
+///   `None`, and `None`.
 #[test]
 fn emit_hands_second_group_settings_only_where_the_pairing_has_both_groups() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
@@ -969,7 +517,10 @@ fn emit_routes_each_kinds_admitted_size_to_its_function() {
             size: Some(VectorKindSize::Enumerated),
         }),
     ];
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
@@ -1254,7 +805,10 @@ fn emit_routes_each_kinds_admitted_size_to_its_function() {
 #[test]
 fn emit_returns_a_constants_refusal_unchanged_and_writes_nothing() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
@@ -1354,7 +908,10 @@ fn emit_returns_a_constants_refusal_unchanged_and_writes_nothing() {
 #[test]
 fn emit_returns_a_group_vectors_refusal_unchanged_and_writes_nothing() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
@@ -1454,7 +1011,10 @@ fn emit_returns_a_group_vectors_refusal_unchanged_and_writes_nothing() {
 #[test]
 fn emit_returns_a_rejection_vectors_refusal_unchanged_and_writes_nothing() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
@@ -1558,7 +1118,10 @@ fn emit_returns_a_rejection_vectors_refusal_unchanged_and_writes_nothing() {
 #[test]
 fn emit_returns_a_mapping_vectors_refusal_unchanged_and_writes_nothing() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
@@ -1662,7 +1225,10 @@ fn emit_returns_a_mapping_vectors_refusal_unchanged_and_writes_nothing() {
 #[test]
 fn emit_returns_a_possession_vectors_refusal_unchanged_and_writes_nothing() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
@@ -1766,7 +1332,10 @@ fn emit_returns_a_possession_vectors_refusal_unchanged_and_writes_nothing() {
 #[test]
 fn emit_returns_a_challenge_vectors_refusal_unchanged_and_writes_nothing() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
@@ -1871,7 +1440,10 @@ fn emit_returns_a_challenge_vectors_refusal_unchanged_and_writes_nothing() {
 #[test]
 fn emit_returns_a_proof_vectors_refusal_unchanged_and_writes_nothing() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
@@ -1978,7 +1550,10 @@ fn emit_returns_a_proof_vectors_refusal_unchanged_and_writes_nothing() {
 #[test]
 fn emit_refuses_a_repeated_struct_name_with_its_indexes_and_writes_nothing() {
     // Arrange
-    let mut settings = build_solidity_generate_settings(Default::default());
+    let mut settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     settings.kinds[1].names.struct_name = settings.kinds[0].names.struct_name.clone();
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
@@ -2082,6 +1657,7 @@ fn emit_refuses_a_repeated_struct_name_with_its_indexes_and_writes_nothing() {
 fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order() {
     // Arrange
     let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
         generated_directory: Some(build_generated_directory(
             GeneratedDirectoryConstructorParamsOverrides {
                 segments: Some(vec![
@@ -2111,47 +1687,47 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order() {
     let expected = vec![
         EmittedFile {
             kind: Some(VectorKind::G1Addition),
-            path: cell("g1_add.vectors"),
+            path: cell("g1_addition.txt"),
         },
         EmittedFile {
             kind: Some(VectorKind::G1Multiplication),
-            path: cell("g1_mul.vectors"),
+            path: cell("g1_multiplication.txt"),
         },
         EmittedFile {
             kind: Some(VectorKind::PairingCheck),
-            path: cell("pairing_check.vectors"),
+            path: cell("pairing_check.txt"),
         },
         EmittedFile {
             kind: Some(VectorKind::DecodeRejection),
-            path: cell("decode_rejection.vectors"),
+            path: cell("decode_rejection.txt"),
         },
         EmittedFile {
             kind: Some(VectorKind::HashToScalar),
-            path: cell("hash_to_scalar.vectors"),
+            path: cell("hash_to_scalar.txt"),
         },
         EmittedFile {
             kind: Some(VectorKind::IdentityMapping),
-            path: cell("identity_mapping.vectors"),
+            path: cell("identity_mapping.txt"),
         },
         EmittedFile {
             kind: Some(VectorKind::Possession),
-            path: cell("possession.vectors"),
+            path: cell("possession.txt"),
         },
         EmittedFile {
             kind: Some(VectorKind::Challenge),
-            path: cell("challenge.vectors"),
+            path: cell("challenge.txt"),
         },
         EmittedFile {
             kind: Some(VectorKind::MintProof),
-            path: cell("mint_proof.vectors"),
+            path: cell("mint_proof.txt"),
         },
         EmittedFile {
             kind: Some(VectorKind::TransferProof),
-            path: cell("transfer_proof.vectors"),
+            path: cell("transfer_proof.txt"),
         },
         EmittedFile {
             kind: Some(VectorKind::CellValues),
-            path: cell("cell_values.vectors"),
+            path: cell("cell_values.txt"),
         },
         EmittedFile {
             kind: None,
@@ -2252,7 +1828,10 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order() {
 #[test]
 fn emit_derives_the_cell_directory_from_the_received_declarations() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
@@ -2354,7 +1933,10 @@ fn emit_derives_the_cell_directory_from_the_received_declarations() {
 #[test]
 fn emit_returns_a_directory_creation_failure_with_its_path() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     std::fs::write(&root, b"not-a-directory").expect("the blocker file is written");
@@ -2453,14 +2035,17 @@ fn emit_returns_a_directory_creation_failure_with_its_path() {
 #[test]
 fn emit_returns_a_file_write_failure_with_its_path() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let blocked = root
         .join("generated")
         .join("mock_concrete")
         .join("mock")
-        .join("g1_add.vectors");
+        .join("g1_addition.txt");
     std::fs::create_dir_all(&blocked).expect("the blocker directory is created");
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
 
@@ -2560,7 +2145,10 @@ fn emit_returns_a_file_write_failure_with_its_path() {
 #[test]
 fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"canonical-one".as_slice(), b"canonical-two".as_slice()];
@@ -2645,7 +2233,11 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                     })
                 }
 
-                let settings = build_solidity_generate_settings(Default::default());
+                let settings =
+                    build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+                        foundry_root: Some(build_solidity_generate_root()),
+                        ..Default::default()
+                    });
                 let group = build_group_operation_vector_description(Default::default());
                 let group_names = group
                     .member_names()
@@ -2695,7 +2287,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             group_names.clone(),
                             <GroupOperationVectorDescription as IEncodingContract>::FIELDS,
                         ),
-                        "g1_add.vectors",
+                        "g1_addition.txt",
                     ),
                     declaration(
                         &settings.kinds[1].names,
@@ -2703,7 +2295,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             group_names,
                             <GroupOperationVectorDescription as IEncodingContract>::FIELDS,
                         ),
-                        "g1_mul.vectors",
+                        "g1_multiplication.txt",
                     ),
                     declaration(
                         &settings.kinds[2].names,
@@ -2711,7 +2303,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             pairing_check_names,
                             <PairingCheckVectorDescription as IEncodingContract>::FIELDS,
                         ),
-                        "pairing_check.vectors",
+                        "pairing_check.txt",
                     ),
                     declaration(
                         &settings.kinds[6].names,
@@ -2719,7 +2311,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             rejection_names,
                             <RejectionVectorDescription as IEncodingContract>::FIELDS,
                         ),
-                        "decode_rejection.vectors",
+                        "decode_rejection.txt",
                     ),
                     declaration(
                         &settings.kinds[7].names,
@@ -2727,7 +2319,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             scalar_names,
                             <HashToScalarVectorDescription as IEncodingContract>::FIELDS,
                         ),
-                        "hash_to_scalar.vectors",
+                        "hash_to_scalar.txt",
                     ),
                     declaration(
                         &settings.kinds[8].names,
@@ -2735,7 +2327,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             mapping_names,
                             <IdentityMappingVectorDescription as IEncodingContract>::FIELDS,
                         ),
-                        "identity_mapping.vectors",
+                        "identity_mapping.txt",
                     ),
                     declaration(
                         &settings.kinds[9].names,
@@ -2743,7 +2335,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             possession_names,
                             <PossessionVectorDescription as IEncodingContract>::FIELDS,
                         ),
-                        "possession.vectors",
+                        "possession.txt",
                     ),
                     declaration(
                         &settings.kinds[10].names,
@@ -2751,7 +2343,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             challenge_names,
                             <ChallengeVectorDescription as IEncodingContract>::FIELDS,
                         ),
-                        "challenge.vectors",
+                        "challenge.txt",
                     ),
                     declaration(
                         &settings.kinds[11].names,
@@ -2759,7 +2351,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             mint_proof_names,
                             <MintProofVectorDescription<F> as IEncodingContract>::FIELDS,
                         ),
-                        "mint_proof.vectors",
+                        "mint_proof.txt",
                     ),
                     declaration(
                         &settings.kinds[12].names,
@@ -2767,7 +2359,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             transfer_proof_names,
                             <TransferProofVectorDescription<F> as IEncodingContract>::FIELDS,
                         ),
-                        "transfer_proof.vectors",
+                        "transfer_proof.txt",
                     ),
                     declaration(
                         &settings.kinds[13].names,
@@ -2775,7 +2367,7 @@ fn each_record_member_carries_the_encoders_type_name_for_its_kind() {
                             cell_values_names,
                             <CellValuesDescription as IEncodingContract>::FIELDS,
                         ),
-                        "cell_values.vectors",
+                        "cell_values.txt",
                     ),
                 ];
                 let expected = SolidityRecordDeclarations::try_new(

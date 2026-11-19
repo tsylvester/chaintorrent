@@ -47,511 +47,40 @@ use random::{
     CreateRandomSourceDeps, CreateRandomSourceParams, CreateRandomSourcePayload,
     IRandomSourceAdapter, build_create_random_source_params, create_random_source,
 };
-use serde_json::{Map, Value};
 use std::path::PathBuf;
+use std::{env, process, thread};
 
 use super::super::factory::provides::{
-    IGenerateAdapter, VectorKind, VectorKindSettings, VectorKindSize, VectorKindSizing,
+    IGenerateAdapter, MsmTermCountConstructorParamsOverrides,
+    VectorCountConstructorParamsOverrides, VectorKindSettings, VectorKindSize, VectorKindSizing,
     build_msm_term_count, build_vector_count,
 };
 use super::challenge_vectors::provides::{ChallengeVectorsFn, mock_challenge_vectors};
 use super::constants::provides::{ConstantsFn, mock_constants};
 use super::group_vectors::provides::{GroupVectorsFn, mock_group_vectors};
 use super::interface::{
-    ConsumeSolidityGenerateCaseParams, ConsumeSolidityGenerateCasePayload, GeneratedDirectory,
-    GeneratedDirectoryConstructorParams, GeneratedFileName, GeneratedFileNameConstructorParams,
-    ISolidityGenerateCaseConsumer, RunSolidityGenerateCaseFn, SOLIDITY_GENERATE_DECLARATION,
-    SolidityGenerate, SolidityGenerateCaseDeps, SolidityGenerateCaseErrorReturn,
-    SolidityGenerateCaseParams, SolidityGenerateCasePayload, SolidityGenerateCaseReturn,
-    SolidityGenerateCaseSuccessReturn, SolidityGenerateConstructorParams, SolidityGenerateSettings,
-    SolidityLibraryNames, SolidityVectorKindNames, SolidityVectorKindSettings,
+    ConsumeSolidityGenerateCaseParams, ConsumeSolidityGenerateCasePayload,
+    ISolidityGenerateCaseConsumer, RunSolidityGenerateCaseFn, SolidityGenerate,
+    SolidityGenerateCaseDeps, SolidityGenerateCaseErrorReturn, SolidityGenerateCaseParams,
+    SolidityGenerateCasePayload, SolidityGenerateCaseReturn, SolidityGenerateCaseSuccessReturn,
+    SolidityGenerateConstructorParams,
 };
 use super::mapping_vectors::provides::{MappingVectorsFn, mock_mapping_vectors};
 use super::possession_vectors::provides::{PossessionVectorsFn, mock_possession_vectors};
 use super::proof_vectors::provides::{ProofVectorsFn, mock_proof_vectors};
 use super::rejection_vectors::provides::{RejectionVectorsFn, mock_rejection_vectors};
-use super::render::provides::{
-    RenderFn, SolidityCompilerVersion, SolidityConstantName,
-    SolidityConstantNameConstructorParamsOverrides, SolidityLibraryName,
-    SolidityLibraryNameConstructorParamsOverrides, SolidityMemberName,
-    SolidityMemberNameConstructorParamsOverrides, SolidityTypeName,
-    SolidityTypeNameConstructorParamsOverrides, SpdxLicenseIdentifier,
-    build_solidity_compiler_version, build_solidity_constant_name, build_solidity_library_name,
-    build_solidity_member_name, build_solidity_type_name, build_spdx_license_identifier,
-    mock_render,
+use super::render::provides::{RenderFn, mock_render};
+use super::settings::provides::{
+    SolidityGenerateSettings, SolidityGenerateSettingsOverrides, build_solidity_generate_settings,
 };
 use crate::delivery::provides::AdmittedKemIdentity;
 
-#[derive(Default)]
-pub struct GeneratedFileNameConstructorParamsOverrides {
-    pub text: Option<String>,
-}
-
-pub fn build_generated_file_name_constructor_params(
-    overrides: GeneratedFileNameConstructorParamsOverrides,
-) -> GeneratedFileNameConstructorParams {
-    GeneratedFileNameConstructorParams {
-        text: overrides.text.unwrap_or_else(|| "vectors.txt".to_string()),
-    }
-}
-
-#[derive(Default)]
-pub struct GeneratedFileNameConstructorParamsCorruptions {
-    pub text: Option<Value>,
-}
-
-pub fn invalidate_generated_file_name_constructor_params(
-    corruptions: GeneratedFileNameConstructorParamsCorruptions,
-) -> Value {
-    let params = build_generated_file_name_constructor_params(Default::default());
-    let mut fields = Map::new();
-    fields.insert("text".to_string(), Value::from(params.text));
-    if let Some(text) = corruptions.text {
-        fields.insert("text".to_string(), text);
-    }
-    Value::Object(fields)
-}
-
-pub fn build_generated_file_name(
-    overrides: GeneratedFileNameConstructorParamsOverrides,
-) -> GeneratedFileName {
-    GeneratedFileName::try_new(build_generated_file_name_constructor_params(overrides))
-        .expect("built params are valid")
-}
-
-#[derive(Default)]
-pub struct GeneratedDirectoryConstructorParamsOverrides {
-    pub segments: Option<Vec<GeneratedFileName>>,
-}
-
-pub fn build_generated_directory_constructor_params(
-    overrides: GeneratedDirectoryConstructorParamsOverrides,
-) -> GeneratedDirectoryConstructorParams {
-    GeneratedDirectoryConstructorParams {
-        segments: overrides.segments.unwrap_or_else(|| {
-            vec![build_generated_file_name(
-                GeneratedFileNameConstructorParamsOverrides {
-                    text: Some("generated".to_string()),
-                },
-            )]
-        }),
-    }
-}
-
-#[derive(Default)]
-pub struct GeneratedDirectoryConstructorParamsCorruptions {
-    pub segments: Option<Value>,
-}
-
-pub fn invalidate_generated_directory_constructor_params(
-    corruptions: GeneratedDirectoryConstructorParamsCorruptions,
-) -> Value {
-    let params = build_generated_directory_constructor_params(Default::default());
-    let mut fields = Map::new();
-    fields.insert(
-        "segments".to_string(),
-        Value::Array(
-            params
-                .segments
-                .iter()
-                .map(|segment| Value::from(segment.as_str()))
-                .collect(),
-        ),
-    );
-    if let Some(segments) = corruptions.segments {
-        fields.insert("segments".to_string(), segments);
-    }
-    Value::Object(fields)
-}
-
-pub fn build_generated_directory(
-    overrides: GeneratedDirectoryConstructorParamsOverrides,
-) -> GeneratedDirectory {
-    GeneratedDirectory::try_new(build_generated_directory_constructor_params(overrides))
-        .expect("built params are valid")
-}
-
-#[derive(Default)]
-pub struct SolidityVectorKindNamesOverrides {
-    pub file_name: Option<GeneratedFileName>,
-    pub struct_name: Option<SolidityTypeName>,
-    pub decode_function_name: Option<SolidityMemberName>,
-    pub path_constant_name: Option<SolidityConstantName>,
-}
-
-pub fn build_solidity_vector_kind_names(
-    overrides: SolidityVectorKindNamesOverrides,
-) -> SolidityVectorKindNames {
-    SolidityVectorKindNames {
-        file_name: overrides.file_name.unwrap_or_else(|| {
-            build_generated_file_name(GeneratedFileNameConstructorParamsOverrides {
-                text: Some("g1_add.vectors".to_string()),
-            })
-        }),
-        struct_name: overrides.struct_name.unwrap_or_else(|| {
-            build_solidity_type_name(SolidityTypeNameConstructorParamsOverrides {
-                text: Some("G1AddVector".to_string()),
-            })
-        }),
-        decode_function_name: overrides.decode_function_name.unwrap_or_else(|| {
-            build_solidity_member_name(SolidityMemberNameConstructorParamsOverrides {
-                text: Some("decodeG1Add".to_string()),
-            })
-        }),
-        path_constant_name: overrides.path_constant_name.unwrap_or_else(|| {
-            build_solidity_constant_name(SolidityConstantNameConstructorParamsOverrides {
-                text: Some("G1_ADD_PATH".to_string()),
-            })
-        }),
-    }
-}
-
-#[derive(Default)]
-pub struct SolidityVectorKindNamesCorruptions {
-    pub file_name: Option<Value>,
-    pub struct_name: Option<Value>,
-    pub decode_function_name: Option<Value>,
-    pub path_constant_name: Option<Value>,
-}
-
-pub fn invalidate_solidity_vector_kind_names(
-    corruptions: SolidityVectorKindNamesCorruptions,
-) -> Value {
-    let names = build_solidity_vector_kind_names(Default::default());
-    let mut fields = Map::new();
-    fields.insert(
-        "file_name".to_string(),
-        Value::from(names.file_name.as_str()),
-    );
-    fields.insert(
-        "struct_name".to_string(),
-        Value::from(names.struct_name.as_str().to_owned()),
-    );
-    fields.insert(
-        "decode_function_name".to_string(),
-        Value::from(names.decode_function_name.as_str().to_owned()),
-    );
-    fields.insert(
-        "path_constant_name".to_string(),
-        Value::from(names.path_constant_name.as_str().to_owned()),
-    );
-    if let Some(file_name) = corruptions.file_name {
-        fields.insert("file_name".to_string(), file_name);
-    }
-    if let Some(struct_name) = corruptions.struct_name {
-        fields.insert("struct_name".to_string(), struct_name);
-    }
-    if let Some(decode_function_name) = corruptions.decode_function_name {
-        fields.insert("decode_function_name".to_string(), decode_function_name);
-    }
-    if let Some(path_constant_name) = corruptions.path_constant_name {
-        fields.insert("path_constant_name".to_string(), path_constant_name);
-    }
-    Value::Object(fields)
-}
-
-fn vector_kind_value(kind: VectorKind) -> Value {
-    Value::from(match kind {
-        VectorKind::G1Addition => "G1Addition",
-        VectorKind::G1Multiplication => "G1Multiplication",
-        VectorKind::PairingCheck => "PairingCheck",
-        VectorKind::G2Addition => "G2Addition",
-        VectorKind::G1MultiScalarMultiplication => "G1MultiScalarMultiplication",
-        VectorKind::G2MultiScalarMultiplication => "G2MultiScalarMultiplication",
-        VectorKind::DecodeRejection => "DecodeRejection",
-        VectorKind::HashToScalar => "HashToScalar",
-        VectorKind::IdentityMapping => "IdentityMapping",
-        VectorKind::Possession => "Possession",
-        VectorKind::Challenge => "Challenge",
-        VectorKind::MintProof => "MintProof",
-        VectorKind::TransferProof => "TransferProof",
-        VectorKind::CellValues => "CellValues",
-    })
-}
-
-#[derive(Default)]
-pub struct SolidityVectorKindSettingsOverrides {
-    pub kind: Option<VectorKind>,
-    pub names: Option<SolidityVectorKindNames>,
-}
-
-pub fn build_solidity_vector_kind_settings(
-    overrides: SolidityVectorKindSettingsOverrides,
-) -> SolidityVectorKindSettings {
-    SolidityVectorKindSettings {
-        kind: overrides.kind.unwrap_or(VectorKind::G1Addition),
-        names: overrides
-            .names
-            .unwrap_or_else(|| build_solidity_vector_kind_names(Default::default())),
-    }
-}
-
-#[derive(Default)]
-pub struct SolidityVectorKindSettingsCorruptions {
-    pub kind: Option<Value>,
-    pub names: Option<Value>,
-}
-
-pub fn invalidate_solidity_vector_kind_settings(
-    corruptions: SolidityVectorKindSettingsCorruptions,
-) -> Value {
-    let settings = build_solidity_vector_kind_settings(Default::default());
-    let mut fields = Map::new();
-    fields.insert("kind".to_string(), vector_kind_value(settings.kind));
-    fields.insert(
-        "names".to_string(),
-        invalidate_solidity_vector_kind_names(Default::default()),
-    );
-    if let Some(kind) = corruptions.kind {
-        fields.insert("kind".to_string(), kind);
-    }
-    if let Some(names) = corruptions.names {
-        fields.insert("names".to_string(), names);
-    }
-    Value::Object(fields)
-}
-
-#[derive(Default)]
-pub struct SolidityLibraryNamesOverrides {
-    pub file_name: Option<GeneratedFileName>,
-    pub library_name: Option<SolidityLibraryName>,
-}
-
-pub fn build_solidity_library_names(
-    overrides: SolidityLibraryNamesOverrides,
-) -> SolidityLibraryNames {
-    SolidityLibraryNames {
-        file_name: overrides.file_name.unwrap_or_else(|| {
-            build_generated_file_name(GeneratedFileNameConstructorParamsOverrides {
-                text: Some("Constants.sol".to_string()),
-            })
-        }),
-        library_name: overrides.library_name.unwrap_or_else(|| {
-            build_solidity_library_name(SolidityLibraryNameConstructorParamsOverrides {
-                text: Some("Constants".to_string()),
-            })
-        }),
-    }
-}
-
-#[derive(Default)]
-pub struct SolidityLibraryNamesCorruptions {
-    pub file_name: Option<Value>,
-    pub library_name: Option<Value>,
-}
-
-pub fn invalidate_solidity_library_names(corruptions: SolidityLibraryNamesCorruptions) -> Value {
-    let names = build_solidity_library_names(Default::default());
-    let mut fields = Map::new();
-    fields.insert(
-        "file_name".to_string(),
-        Value::from(names.file_name.as_str()),
-    );
-    fields.insert(
-        "library_name".to_string(),
-        Value::from(names.library_name.as_str().to_owned()),
-    );
-    if let Some(file_name) = corruptions.file_name {
-        fields.insert("file_name".to_string(), file_name);
-    }
-    if let Some(library_name) = corruptions.library_name {
-        fields.insert("library_name".to_string(), library_name);
-    }
-    Value::Object(fields)
-}
-
-fn vector_kind_stems(kind: VectorKind) -> (&'static str, &'static str) {
-    match kind {
-        VectorKind::G1Addition => ("g1_add", "G1Add"),
-        VectorKind::G1Multiplication => ("g1_mul", "G1Mul"),
-        VectorKind::PairingCheck => ("pairing_check", "PairingCheck"),
-        VectorKind::G2Addition => ("g2_add", "G2Add"),
-        VectorKind::G1MultiScalarMultiplication => ("g1_msm", "G1Msm"),
-        VectorKind::G2MultiScalarMultiplication => ("g2_msm", "G2Msm"),
-        VectorKind::DecodeRejection => ("decode_rejection", "DecodeRejection"),
-        VectorKind::HashToScalar => ("hash_to_scalar", "HashToScalar"),
-        VectorKind::IdentityMapping => ("identity_mapping", "IdentityMapping"),
-        VectorKind::Possession => ("possession", "Possession"),
-        VectorKind::Challenge => ("challenge", "Challenge"),
-        VectorKind::MintProof => ("mint_proof", "MintProof"),
-        VectorKind::TransferProof => ("transfer_proof", "TransferProof"),
-        VectorKind::CellValues => ("cell_values", "CellValues"),
-    }
-}
-
-fn build_kind_vector_kind_settings(kind: VectorKind) -> SolidityVectorKindSettings {
-    let (stem, struct_stem) = vector_kind_stems(kind);
-    build_solidity_vector_kind_settings(SolidityVectorKindSettingsOverrides {
-        kind: Some(kind),
-        names: Some(build_solidity_vector_kind_names(
-            SolidityVectorKindNamesOverrides {
-                file_name: Some(build_generated_file_name(
-                    GeneratedFileNameConstructorParamsOverrides {
-                        text: Some(format!("{stem}.vectors")),
-                    },
-                )),
-                struct_name: Some(build_solidity_type_name(
-                    SolidityTypeNameConstructorParamsOverrides {
-                        text: Some(format!("{struct_stem}Vector")),
-                    },
-                )),
-                decode_function_name: Some(build_solidity_member_name(
-                    SolidityMemberNameConstructorParamsOverrides {
-                        text: Some(format!("decode{struct_stem}")),
-                    },
-                )),
-                path_constant_name: Some(build_solidity_constant_name(
-                    SolidityConstantNameConstructorParamsOverrides {
-                        text: Some(format!("{}_PATH", stem.to_uppercase())),
-                    },
-                )),
-            },
-        )),
-    })
-}
-
-#[derive(Default)]
-pub struct SolidityGenerateSettingsOverrides {
-    pub kinds: Option<Vec<SolidityVectorKindSettings>>,
-    pub constants_library: Option<SolidityLibraryNames>,
-    pub records_library: Option<SolidityLibraryNames>,
-    pub foundry_root: Option<PathBuf>,
-    pub generated_directory: Option<GeneratedDirectory>,
-    pub compiler_version: Option<SolidityCompilerVersion>,
-    pub license: Option<SpdxLicenseIdentifier>,
-}
-
-pub fn build_solidity_generate_settings(
-    overrides: SolidityGenerateSettingsOverrides,
-) -> SolidityGenerateSettings {
-    SolidityGenerateSettings {
-        kinds: overrides.kinds.unwrap_or_else(|| {
-            SOLIDITY_GENERATE_DECLARATION
-                .kinds
-                .iter()
-                .map(|declaration| build_kind_vector_kind_settings(declaration.kind))
-                .collect()
-        }),
-        constants_library: overrides
-            .constants_library
-            .unwrap_or_else(|| build_solidity_library_names(Default::default())),
-        records_library: overrides.records_library.unwrap_or_else(|| {
-            build_solidity_library_names(SolidityLibraryNamesOverrides {
-                file_name: Some(build_generated_file_name(
-                    GeneratedFileNameConstructorParamsOverrides {
-                        text: Some("VectorRecords.sol".to_string()),
-                    },
-                )),
-                library_name: Some(build_solidity_library_name(
-                    SolidityLibraryNameConstructorParamsOverrides {
-                        text: Some("VectorRecords".to_string()),
-                    },
-                )),
-            })
-        }),
-        foundry_root: overrides.foundry_root.unwrap_or_else(|| {
-            std::env::temp_dir().join(format!(
-                "chaintorrent-generate-{}-{:?}",
-                std::process::id(),
-                std::thread::current().id()
-            ))
-        }),
-        generated_directory: overrides
-            .generated_directory
-            .unwrap_or_else(|| build_generated_directory(Default::default())),
-        compiler_version: overrides
-            .compiler_version
-            .unwrap_or_else(|| build_solidity_compiler_version(Default::default())),
-        license: overrides
-            .license
-            .unwrap_or_else(|| build_spdx_license_identifier(Default::default())),
-    }
-}
-
-#[derive(Default)]
-pub struct SolidityGenerateSettingsCorruptions {
-    pub kinds: Option<Value>,
-    pub constants_library: Option<Value>,
-    pub records_library: Option<Value>,
-    pub foundry_root: Option<Value>,
-    pub generated_directory: Option<Value>,
-    pub compiler_version: Option<Value>,
-    pub license: Option<Value>,
-}
-
-pub fn invalidate_solidity_generate_settings(
-    corruptions: SolidityGenerateSettingsCorruptions,
-) -> Value {
-    let settings = build_solidity_generate_settings(Default::default());
-    let mut fields = Map::new();
-    fields.insert(
-        "kinds".to_string(),
-        Value::Array(
-            settings
-                .kinds
-                .iter()
-                .map(|_| invalidate_solidity_vector_kind_settings(Default::default()))
-                .collect(),
-        ),
-    );
-    fields.insert(
-        "constants_library".to_string(),
-        invalidate_solidity_library_names(Default::default()),
-    );
-    fields.insert(
-        "records_library".to_string(),
-        invalidate_solidity_library_names(Default::default()),
-    );
-    fields.insert(
-        "foundry_root".to_string(),
-        Value::from(settings.foundry_root.display().to_string()),
-    );
-    fields.insert(
-        "generated_directory".to_string(),
-        Value::Array(
-            settings
-                .generated_directory
-                .segments
-                .iter()
-                .map(|segment| Value::from(segment.as_str()))
-                .collect(),
-        ),
-    );
-    fields.insert(
-        "compiler_version".to_string(),
-        Value::from(format!(
-            "{}.{}.{}",
-            settings.compiler_version.major,
-            settings.compiler_version.minor,
-            settings.compiler_version.patch
-        )),
-    );
-    fields.insert(
-        "license".to_string(),
-        Value::from(settings.license.as_str().to_owned()),
-    );
-    if let Some(kinds) = corruptions.kinds {
-        fields.insert("kinds".to_string(), kinds);
-    }
-    if let Some(constants_library) = corruptions.constants_library {
-        fields.insert("constants_library".to_string(), constants_library);
-    }
-    if let Some(records_library) = corruptions.records_library {
-        fields.insert("records_library".to_string(), records_library);
-    }
-    if let Some(foundry_root) = corruptions.foundry_root {
-        fields.insert("foundry_root".to_string(), foundry_root);
-    }
-    if let Some(generated_directory) = corruptions.generated_directory {
-        fields.insert("generated_directory".to_string(), generated_directory);
-    }
-    if let Some(compiler_version) = corruptions.compiler_version {
-        fields.insert("compiler_version".to_string(), compiler_version);
-    }
-    if let Some(license) = corruptions.license {
-        fields.insert("license".to_string(), license);
-    }
-    Value::Object(fields)
+pub(crate) fn build_solidity_generate_root() -> PathBuf {
+    env::temp_dir().join(format!(
+        "chaintorrent-generate-{}-{:?}",
+        process::id(),
+        thread::current().id()
+    ))
 }
 
 pub struct SolidityGenerateConstructorParamsOverrides<
@@ -643,9 +172,12 @@ pub(crate) fn build_solidity_generate_constructor_params<
         statement_version: overrides
             .statement_version
             .unwrap_or(DELIVERY_STATEMENT_VERSION_ONE),
-        settings: overrides
-            .settings
-            .unwrap_or_else(|| build_solidity_generate_settings(Default::default())),
+        settings: overrides.settings.unwrap_or_else(|| {
+            build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+                foundry_root: Some(build_solidity_generate_root()),
+                ..Default::default()
+            })
+        }),
         sizes: overrides.sizes.unwrap_or_else(|| {
             <SolidityGenerate<'a, P, E, K, A, D> as IGenerateAdapter>::DECLARATION
                 .kinds
@@ -654,14 +186,22 @@ pub(crate) fn build_solidity_generate_constructor_params<
                     kind: declaration.kind,
                     size: match declaration.sizing {
                         VectorKindSizing::Drawn => VectorKindSize::Drawn {
-                            count: build_vector_count(Default::default()),
+                            count: build_vector_count(
+                                VectorCountConstructorParamsOverrides::default(),
+                            ),
                         },
                         VectorKindSizing::DrawnTerms => VectorKindSize::DrawnTerms {
-                            count: build_vector_count(Default::default()),
-                            terms: build_msm_term_count(Default::default()),
+                            count: build_vector_count(
+                                VectorCountConstructorParamsOverrides::default(),
+                            ),
+                            terms: build_msm_term_count(
+                                MsmTermCountConstructorParamsOverrides::default(),
+                            ),
                         },
                         VectorKindSizing::DrawnMessages => VectorKindSize::DrawnMessages {
-                            count: build_vector_count(Default::default()),
+                            count: build_vector_count(
+                                VectorCountConstructorParamsOverrides::default(),
+                            ),
                             message_length: 32,
                         },
                         VectorKindSizing::Enumerated => VectorKindSize::Enumerated,

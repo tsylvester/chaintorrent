@@ -28,7 +28,7 @@ use proof::{
     build_create_delivery_proof_params, build_delivery_context,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, RandomSourceKind, build_create_random_source_params,
+    CreateRandomSourceParamsOverrides, RANDOM_SOURCE_KINDS, build_create_random_source_params,
 };
 use std::cell::RefCell;
 
@@ -48,8 +48,7 @@ use super::group_vectors::provides::{
 };
 use super::interface::{
     ConsumeSolidityGenerateCaseParams, ConsumeSolidityGenerateCasePayload,
-    ISolidityGenerateCaseConsumer, SOLIDITY_GENERATE_DECLARATION, SolidityGenerateErrorReturn,
-    SolidityGenerateSettings,
+    ISolidityGenerateCaseConsumer, SolidityGenerateErrorReturn,
 };
 use super::mapping_vectors::provides::{
     MappingVectorsErrorReturn, build_hash_to_scalar_vector_description,
@@ -72,6 +71,12 @@ use super::render::provides::{
     build_solidity_constant_name, build_solidity_library_name, build_solidity_member_name,
     build_solidity_type_name, build_spdx_license_identifier, render,
 };
+use super::settings::provides::{
+    GeneratedDirectoryConstructorParamsOverrides, GeneratedFileNameConstructorParamsOverrides,
+    SOLIDITY_GENERATE_DECLARATION, SolidityGenerateSettings, SolidityGenerateSettingsOverrides,
+    SolidityLibraryNamesOverrides, build_generated_directory, build_generated_file_name,
+    build_solidity_generate_settings, build_solidity_library_names,
+};
 
 /// Contract: `emit` writes each emitted kind's file in declared order, then the
 ///   constants library's file, then the records library's, each vector file
@@ -84,7 +89,7 @@ use super::render::provides::{
 ///   `DECLARED_HASH_TO_SCALAR_SELECTIONS` that declare `Keccak256V1` ×
 ///   `DECLARED_ENCODING_SELECTIONS` × `CHAIN_FORMS_CONCRETES` ×
 ///   `DECLARED_KEM_SELECTIONS` × `DECLARED_KEY_AGREEMENT_SELECTIONS` ×
-///   `DELIVERY_PROOF_CONCRETES` over `RandomSourceKind::OperatingSystem`.
+///   `DELIVERY_PROOF_CONCRETES` over every member of `RANDOM_SOURCE_KINDS`.
 /// Act:    `emit(build_emit_params(Default::default()), payload)` in the case
 ///   consumer's method, once per case through `run_solidity_generate_case`.
 /// Assert: the runner's return `is_ok()`; `files` holds one entry per expected
@@ -103,6 +108,7 @@ use super::render::provides::{
 fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_cell_directory() {
     // Arrange
     let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
         generated_directory: Some(build_generated_directory(
             GeneratedDirectoryConstructorParamsOverrides {
                 segments: Some(vec![
@@ -220,131 +226,139 @@ fn emit_writes_each_emitted_kind_then_both_libraries_in_write_order_under_the_ce
     }
 
     // Act
-    for pairing_concrete in PAIRING_CONCRETES {
-        for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
-                continue;
-            }
-            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
-                for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    for kem_selection in DECLARED_KEM_SELECTIONS {
-                        for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                            for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                let deps = build_solidity_generate_case_deps(
-                                    Case {
-                                        settings: settings.clone(),
-                                        cell: RefCell::new(None),
-                                        arithmetic: RefCell::new(None),
-                                    },
-                                    Default::default(),
-                                );
-                                let result = run_solidity_generate_case(
-                                    &deps,
-                                    build_solidity_generate_case_params(
-                                        SolidityGenerateCaseParamsOverrides {
-                                            pairing: Some(build_create_pairing_params(
-                                                CreatePairingParamsOverrides {
-                                                    concrete: Some(*pairing_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            hash_to_scalar: Some(
-                                                build_create_hash_to_scalar_params(
-                                                    CreateHashToScalarParamsOverrides {
-                                                        concrete: Some(hash_selection.concrete),
-                                                        identifier: Some(hash_selection.identifier),
-                                                    },
-                                                ),
-                                            ),
-                                            encoding: Some(build_create_encoding_params(
-                                                CreateEncodingParamsOverrides {
-                                                    concrete: Some(encoding_selection.concrete),
-                                                    identifier: Some(encoding_selection.identifier),
-                                                },
-                                            )),
-                                            chain_forms: Some(build_create_chain_forms_params(
-                                                CreateChainFormsParamsOverrides {
-                                                    concrete: Some(*forms_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            kem: Some(*kem_selection),
-                                            key_agreement: Some(*agreement_selection),
-                                            delivery_proof: Some(
-                                                build_create_delivery_proof_params(
-                                                    CreateDeliveryProofParamsOverrides {
-                                                        concrete: Some(*proof_concrete),
+    for random_source_kind in RANDOM_SOURCE_KINDS {
+        for pairing_concrete in PAIRING_CONCRETES {
+            for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
+                    continue;
+                }
+                for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                    for forms_concrete in CHAIN_FORMS_CONCRETES {
+                        for kem_selection in DECLARED_KEM_SELECTIONS {
+                            for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                                for proof_concrete in DELIVERY_PROOF_CONCRETES {
+                                    let deps = build_solidity_generate_case_deps(
+                                        Case {
+                                            settings: settings.clone(),
+                                            cell: RefCell::new(None),
+                                            arithmetic: RefCell::new(None),
+                                        },
+                                        Default::default(),
+                                    );
+                                    let result = run_solidity_generate_case(
+                                        &deps,
+                                        build_solidity_generate_case_params(
+                                            SolidityGenerateCaseParamsOverrides {
+                                                pairing: Some(build_create_pairing_params(
+                                                    CreatePairingParamsOverrides {
+                                                        concrete: Some(*pairing_concrete),
                                                         ..Default::default()
                                                     },
+                                                )),
+                                                hash_to_scalar: Some(
+                                                    build_create_hash_to_scalar_params(
+                                                        CreateHashToScalarParamsOverrides {
+                                                            concrete: Some(hash_selection.concrete),
+                                                            identifier: Some(
+                                                                hash_selection.identifier,
+                                                            ),
+                                                        },
+                                                    ),
                                                 ),
-                                            ),
-                                            random_source: Some(build_create_random_source_params(
-                                                CreateRandomSourceParamsOverrides {
-                                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                                },
-                                            )),
-                                        },
-                                    ),
-                                    build_solidity_generate_case_payload(
-                                        canonicals,
-                                        roots,
-                                        Default::default(),
-                                    ),
-                                );
-                                assert!(result.is_ok());
+                                                encoding: Some(build_create_encoding_params(
+                                                    CreateEncodingParamsOverrides {
+                                                        concrete: Some(encoding_selection.concrete),
+                                                        identifier: Some(
+                                                            encoding_selection.identifier,
+                                                        ),
+                                                    },
+                                                )),
+                                                chain_forms: Some(build_create_chain_forms_params(
+                                                    CreateChainFormsParamsOverrides {
+                                                        concrete: Some(*forms_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                )),
+                                                kem: Some(*kem_selection),
+                                                key_agreement: Some(*agreement_selection),
+                                                delivery_proof: Some(
+                                                    build_create_delivery_proof_params(
+                                                        CreateDeliveryProofParamsOverrides {
+                                                            concrete: Some(*proof_concrete),
+                                                            ..Default::default()
+                                                        },
+                                                    ),
+                                                ),
+                                                random_source: Some(
+                                                    build_create_random_source_params(
+                                                        CreateRandomSourceParamsOverrides {
+                                                            kind: Some(*random_source_kind),
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        ),
+                                        build_solidity_generate_case_payload(
+                                            canonicals,
+                                            roots,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    assert!(result.is_ok());
 
-                                // Assert
-                                let (concrete_name, encoding_name) =
-                                    (*deps.consumer.cell.borrow()).expect("the case ran");
-                                let arithmetic =
-                                    (*deps.consumer.arithmetic.borrow()).expect("the case ran");
-                                let emitted: Vec<VectorKind> = SOLIDITY_GENERATE_DECLARATION
-                                    .kinds
-                                    .iter()
-                                    .filter(|declaration| match arithmetic {
-                                        VerifierGroupArithmetic::FirstGroupOnly => {
-                                            !declaration.requires_second_group_arithmetic
-                                        }
-                                        VerifierGroupArithmetic::BothGroups => true,
-                                    })
-                                    .map(|declaration| declaration.kind)
-                                    .collect();
-                                let result = result.expect("the case chain runs clean").output;
-                                let Ok(success) = result else {
-                                    panic!("emit admits the case's arrangement")
-                                };
-                                assert_eq!(success.files.len(), emitted.len() + 2);
-                                for (index, kind) in emitted.iter().enumerate() {
-                                    let names = settings
+                                    // Assert
+                                    let (concrete_name, encoding_name) =
+                                        (*deps.consumer.cell.borrow()).expect("the case ran");
+                                    let arithmetic =
+                                        (*deps.consumer.arithmetic.borrow()).expect("the case ran");
+                                    let emitted: Vec<VectorKind> = SOLIDITY_GENERATE_DECLARATION
                                         .kinds
                                         .iter()
-                                        .find(|entry| entry.kind == *kind)
-                                        .map(|entry| &entry.names)
-                                        .expect("the settings hold every emitted kind");
-                                    let expected = root
+                                        .filter(|declaration| match arithmetic {
+                                            VerifierGroupArithmetic::FirstGroupOnly => {
+                                                !declaration.requires_second_group_arithmetic
+                                            }
+                                            VerifierGroupArithmetic::BothGroups => true,
+                                        })
+                                        .map(|declaration| declaration.kind)
+                                        .collect();
+                                    let result = result.expect("the case chain runs clean").output;
+                                    let Ok(success) = result else {
+                                        panic!("emit admits the case's arrangement")
+                                    };
+                                    assert_eq!(success.files.len(), emitted.len() + 2);
+                                    for (index, kind) in emitted.iter().enumerate() {
+                                        let names = settings
+                                            .kinds
+                                            .iter()
+                                            .find(|entry| entry.kind == *kind)
+                                            .map(|entry| &entry.names)
+                                            .expect("the settings hold every emitted kind");
+                                        let expected = root
+                                            .join("alpha")
+                                            .join("beta")
+                                            .join(concrete_name)
+                                            .join(encoding_name)
+                                            .join(names.file_name.as_str());
+                                        assert_eq!(success.files[index].kind, Some(*kind));
+                                        assert_eq!(success.files[index].path, expected);
+                                        assert!(expected.exists());
+                                    }
+                                    let constants_path = root
                                         .join("alpha")
                                         .join("beta")
-                                        .join(concrete_name)
-                                        .join(encoding_name)
-                                        .join(names.file_name.as_str());
-                                    assert_eq!(success.files[index].kind, Some(*kind));
-                                    assert_eq!(success.files[index].path, expected);
-                                    assert!(expected.exists());
+                                        .join(settings.constants_library.file_name.as_str());
+                                    assert_eq!(success.files[emitted.len()].kind, None);
+                                    assert_eq!(success.files[emitted.len()].path, constants_path);
+                                    assert!(constants_path.exists());
+                                    let records_path = root
+                                        .join("alpha")
+                                        .join("beta")
+                                        .join(settings.records_library.file_name.as_str());
+                                    assert_eq!(success.files[emitted.len() + 1].kind, None);
+                                    assert_eq!(success.files[emitted.len() + 1].path, records_path);
+                                    assert!(records_path.exists());
                                 }
-                                let constants_path = root
-                                    .join("alpha")
-                                    .join("beta")
-                                    .join(settings.constants_library.file_name.as_str());
-                                assert_eq!(success.files[emitted.len()].kind, None);
-                                assert_eq!(success.files[emitted.len()].path, constants_path);
-                                assert!(constants_path.exists());
-                                let records_path = root
-                                    .join("alpha")
-                                    .join("beta")
-                                    .join(settings.records_library.file_name.as_str());
-                                assert_eq!(success.files[emitted.len() + 1].kind, None);
-                                assert_eq!(success.files[emitted.len() + 1].path, records_path);
-                                assert!(records_path.exists());
                             }
                         }
                     }
@@ -453,7 +467,10 @@ fn each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size() {
             VectorKind::CellValues => 1,
         }
     };
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"pkg@1.0.0#7".as_slice(), b"pkg@1.0.0#8".as_slice()];
@@ -532,108 +549,116 @@ fn each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size() {
     }
 
     // Act
-    for pairing_concrete in PAIRING_CONCRETES {
-        for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
-                continue;
-            }
-            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
-                for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    for kem_selection in DECLARED_KEM_SELECTIONS {
-                        for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                            for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                let deps = build_solidity_generate_case_deps(
-                                    Case {
-                                        sizes: sizes.clone(),
-                                        rejection_lines: RefCell::new(None),
-                                    },
-                                    Default::default(),
-                                );
-                                let result = run_solidity_generate_case(
-                                    &deps,
-                                    build_solidity_generate_case_params(
-                                        SolidityGenerateCaseParamsOverrides {
-                                            pairing: Some(build_create_pairing_params(
-                                                CreatePairingParamsOverrides {
-                                                    concrete: Some(*pairing_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            hash_to_scalar: Some(
-                                                build_create_hash_to_scalar_params(
-                                                    CreateHashToScalarParamsOverrides {
-                                                        concrete: Some(hash_selection.concrete),
-                                                        identifier: Some(hash_selection.identifier),
-                                                    },
-                                                ),
-                                            ),
-                                            encoding: Some(build_create_encoding_params(
-                                                CreateEncodingParamsOverrides {
-                                                    concrete: Some(encoding_selection.concrete),
-                                                    identifier: Some(encoding_selection.identifier),
-                                                },
-                                            )),
-                                            chain_forms: Some(build_create_chain_forms_params(
-                                                CreateChainFormsParamsOverrides {
-                                                    concrete: Some(*forms_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            kem: Some(*kem_selection),
-                                            key_agreement: Some(*agreement_selection),
-                                            delivery_proof: Some(
-                                                build_create_delivery_proof_params(
-                                                    CreateDeliveryProofParamsOverrides {
-                                                        concrete: Some(*proof_concrete),
+    for random_source_kind in RANDOM_SOURCE_KINDS {
+        for pairing_concrete in PAIRING_CONCRETES {
+            for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
+                    continue;
+                }
+                for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                    for forms_concrete in CHAIN_FORMS_CONCRETES {
+                        for kem_selection in DECLARED_KEM_SELECTIONS {
+                            for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                                for proof_concrete in DELIVERY_PROOF_CONCRETES {
+                                    let deps = build_solidity_generate_case_deps(
+                                        Case {
+                                            sizes: sizes.clone(),
+                                            rejection_lines: RefCell::new(None),
+                                        },
+                                        Default::default(),
+                                    );
+                                    let result = run_solidity_generate_case(
+                                        &deps,
+                                        build_solidity_generate_case_params(
+                                            SolidityGenerateCaseParamsOverrides {
+                                                pairing: Some(build_create_pairing_params(
+                                                    CreatePairingParamsOverrides {
+                                                        concrete: Some(*pairing_concrete),
                                                         ..Default::default()
                                                     },
+                                                )),
+                                                hash_to_scalar: Some(
+                                                    build_create_hash_to_scalar_params(
+                                                        CreateHashToScalarParamsOverrides {
+                                                            concrete: Some(hash_selection.concrete),
+                                                            identifier: Some(
+                                                                hash_selection.identifier,
+                                                            ),
+                                                        },
+                                                    ),
                                                 ),
-                                            ),
-                                            random_source: Some(build_create_random_source_params(
-                                                CreateRandomSourceParamsOverrides {
-                                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                                },
-                                            )),
-                                        },
-                                    ),
-                                    build_solidity_generate_case_payload(
-                                        canonicals,
-                                        roots,
-                                        Default::default(),
-                                    ),
-                                );
-                                assert!(result.is_ok());
+                                                encoding: Some(build_create_encoding_params(
+                                                    CreateEncodingParamsOverrides {
+                                                        concrete: Some(encoding_selection.concrete),
+                                                        identifier: Some(
+                                                            encoding_selection.identifier,
+                                                        ),
+                                                    },
+                                                )),
+                                                chain_forms: Some(build_create_chain_forms_params(
+                                                    CreateChainFormsParamsOverrides {
+                                                        concrete: Some(*forms_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                )),
+                                                kem: Some(*kem_selection),
+                                                key_agreement: Some(*agreement_selection),
+                                                delivery_proof: Some(
+                                                    build_create_delivery_proof_params(
+                                                        CreateDeliveryProofParamsOverrides {
+                                                            concrete: Some(*proof_concrete),
+                                                            ..Default::default()
+                                                        },
+                                                    ),
+                                                ),
+                                                random_source: Some(
+                                                    build_create_random_source_params(
+                                                        CreateRandomSourceParamsOverrides {
+                                                            kind: Some(*random_source_kind),
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        ),
+                                        build_solidity_generate_case_payload(
+                                            canonicals,
+                                            roots,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    assert!(result.is_ok());
 
-                                // Assert
-                                let rejection_lines = (*deps.consumer.rejection_lines.borrow())
-                                    .expect("the case ran");
-                                let result = result.expect("the case chain runs clean").output;
-                                let Ok(success) = result else {
-                                    panic!("emit admits the case's arrangement")
-                                };
-                                for file in &success.files {
-                                    let Some(kind) = file.kind else {
-                                        continue;
+                                    // Assert
+                                    let rejection_lines = (*deps.consumer.rejection_lines.borrow())
+                                        .expect("the case ran");
+                                    let result = result.expect("the case chain runs clean").output;
+                                    let Ok(success) = result else {
+                                        panic!("emit admits the case's arrangement")
                                     };
-                                    let text = std::fs::read_to_string(&file.path)
-                                        .expect("the kind's file was written");
-                                    let lines: Vec<&str> = text.lines().collect();
-                                    if kind == VectorKind::DecodeRejection {
-                                        assert_eq!(lines.len(), rejection_lines);
-                                    } else {
-                                        assert_eq!(lines.len(), expected_lines(kind));
+                                    for file in &success.files {
+                                        let Some(kind) = file.kind else {
+                                            continue;
+                                        };
+                                        let text = std::fs::read_to_string(&file.path)
+                                            .expect("the kind's file was written");
+                                        let lines: Vec<&str> = text.lines().collect();
+                                        if kind == VectorKind::DecodeRejection {
+                                            assert_eq!(lines.len(), rejection_lines);
+                                        } else {
+                                            assert_eq!(lines.len(), expected_lines(kind));
+                                        }
+                                        for line in &lines {
+                                            assert!(line.starts_with("0x"));
+                                            let hex = &line[2..];
+                                            assert!(hex.len() % 2 == 0);
+                                            assert!(hex.chars().all(|character| {
+                                                character.is_ascii_hexdigit()
+                                                    && !character.is_ascii_uppercase()
+                                            }));
+                                        }
+                                        assert!(text.ends_with('\n'));
+                                        assert!(lines.iter().all(|line| !line.is_empty()));
                                     }
-                                    for line in &lines {
-                                        assert!(line.starts_with("0x"));
-                                        let hex = &line[2..];
-                                        assert!(hex.len() % 2 == 0);
-                                        assert!(hex.chars().all(|character| {
-                                            character.is_ascii_hexdigit()
-                                                && !character.is_ascii_uppercase()
-                                        }));
-                                    }
-                                    assert!(text.ends_with('\n'));
-                                    assert!(lines.iter().all(|line| !line.is_empty()));
                                 }
                             }
                         }
@@ -659,7 +684,10 @@ fn each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size() {
 #[test]
 fn every_written_line_decodes_under_its_kinds_description() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"pkg@1.0.0#7".as_slice(), b"pkg@1.0.0#8".as_slice()];
@@ -947,74 +975,85 @@ fn every_written_line_decodes_under_its_kinds_description() {
     }
 
     // Act
-    for pairing_concrete in PAIRING_CONCRETES {
-        for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
-                continue;
-            }
-            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
-                for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    for kem_selection in DECLARED_KEM_SELECTIONS {
-                        for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                            for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                let result = run_solidity_generate_case(
-                                    &build_solidity_generate_case_deps(Case, Default::default()),
-                                    build_solidity_generate_case_params(
-                                        SolidityGenerateCaseParamsOverrides {
-                                            pairing: Some(build_create_pairing_params(
-                                                CreatePairingParamsOverrides {
-                                                    concrete: Some(*pairing_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            hash_to_scalar: Some(
-                                                build_create_hash_to_scalar_params(
-                                                    CreateHashToScalarParamsOverrides {
-                                                        concrete: Some(hash_selection.concrete),
-                                                        identifier: Some(hash_selection.identifier),
-                                                    },
-                                                ),
-                                            ),
-                                            encoding: Some(build_create_encoding_params(
-                                                CreateEncodingParamsOverrides {
-                                                    concrete: Some(encoding_selection.concrete),
-                                                    identifier: Some(encoding_selection.identifier),
-                                                },
-                                            )),
-                                            chain_forms: Some(build_create_chain_forms_params(
-                                                CreateChainFormsParamsOverrides {
-                                                    concrete: Some(*forms_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            kem: Some(*kem_selection),
-                                            key_agreement: Some(*agreement_selection),
-                                            delivery_proof: Some(
-                                                build_create_delivery_proof_params(
-                                                    CreateDeliveryProofParamsOverrides {
-                                                        concrete: Some(*proof_concrete),
+    for random_source_kind in RANDOM_SOURCE_KINDS {
+        for pairing_concrete in PAIRING_CONCRETES {
+            for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
+                    continue;
+                }
+                for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                    for forms_concrete in CHAIN_FORMS_CONCRETES {
+                        for kem_selection in DECLARED_KEM_SELECTIONS {
+                            for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                                for proof_concrete in DELIVERY_PROOF_CONCRETES {
+                                    let result = run_solidity_generate_case(
+                                        &build_solidity_generate_case_deps(
+                                            Case,
+                                            Default::default(),
+                                        ),
+                                        build_solidity_generate_case_params(
+                                            SolidityGenerateCaseParamsOverrides {
+                                                pairing: Some(build_create_pairing_params(
+                                                    CreatePairingParamsOverrides {
+                                                        concrete: Some(*pairing_concrete),
                                                         ..Default::default()
                                                     },
+                                                )),
+                                                hash_to_scalar: Some(
+                                                    build_create_hash_to_scalar_params(
+                                                        CreateHashToScalarParamsOverrides {
+                                                            concrete: Some(hash_selection.concrete),
+                                                            identifier: Some(
+                                                                hash_selection.identifier,
+                                                            ),
+                                                        },
+                                                    ),
                                                 ),
-                                            ),
-                                            random_source: Some(build_create_random_source_params(
-                                                CreateRandomSourceParamsOverrides {
-                                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                                },
-                                            )),
-                                        },
-                                    ),
-                                    build_solidity_generate_case_payload(
-                                        canonicals,
-                                        roots,
-                                        Default::default(),
-                                    ),
-                                );
-                                assert!(result.is_ok());
+                                                encoding: Some(build_create_encoding_params(
+                                                    CreateEncodingParamsOverrides {
+                                                        concrete: Some(encoding_selection.concrete),
+                                                        identifier: Some(
+                                                            encoding_selection.identifier,
+                                                        ),
+                                                    },
+                                                )),
+                                                chain_forms: Some(build_create_chain_forms_params(
+                                                    CreateChainFormsParamsOverrides {
+                                                        concrete: Some(*forms_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                )),
+                                                kem: Some(*kem_selection),
+                                                key_agreement: Some(*agreement_selection),
+                                                delivery_proof: Some(
+                                                    build_create_delivery_proof_params(
+                                                        CreateDeliveryProofParamsOverrides {
+                                                            concrete: Some(*proof_concrete),
+                                                            ..Default::default()
+                                                        },
+                                                    ),
+                                                ),
+                                                random_source: Some(
+                                                    build_create_random_source_params(
+                                                        CreateRandomSourceParamsOverrides {
+                                                            kind: Some(*random_source_kind),
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        ),
+                                        build_solidity_generate_case_payload(
+                                            canonicals,
+                                            roots,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    assert!(result.is_ok());
 
-                                // Assert
-                                let result = result.expect("the case chain runs clean").output;
-                                assert!(result.is_ok());
+                                    // Assert
+                                    let result = result.expect("the case chain runs clean").output;
+                                    assert!(result.is_ok());
+                                }
                             }
                         }
                     }
@@ -1054,6 +1093,7 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
         patch: Some(1),
     });
     let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
         license: Some(license.clone()),
         compiler_version: Some(compiler_version),
         constants_library: Some(build_solidity_library_names(
@@ -1145,91 +1185,98 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
     }
 
     // Act
-    for pairing_concrete in PAIRING_CONCRETES {
-        for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
-                continue;
-            }
-            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
-                for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    for kem_selection in DECLARED_KEM_SELECTIONS {
-                        for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                            for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                let deps = build_solidity_generate_case_deps(
-                                    Case {
-                                        settings: settings.clone(),
-                                        challenge_tag: RefCell::new(None),
-                                    },
-                                    Default::default(),
-                                );
-                                let result = run_solidity_generate_case(
-                                    &deps,
-                                    build_solidity_generate_case_params(
-                                        SolidityGenerateCaseParamsOverrides {
-                                            pairing: Some(build_create_pairing_params(
-                                                CreatePairingParamsOverrides {
-                                                    concrete: Some(*pairing_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            hash_to_scalar: Some(
-                                                build_create_hash_to_scalar_params(
-                                                    CreateHashToScalarParamsOverrides {
-                                                        concrete: Some(hash_selection.concrete),
-                                                        identifier: Some(hash_selection.identifier),
-                                                    },
-                                                ),
-                                            ),
-                                            encoding: Some(build_create_encoding_params(
-                                                CreateEncodingParamsOverrides {
-                                                    concrete: Some(encoding_selection.concrete),
-                                                    identifier: Some(encoding_selection.identifier),
-                                                },
-                                            )),
-                                            chain_forms: Some(build_create_chain_forms_params(
-                                                CreateChainFormsParamsOverrides {
-                                                    concrete: Some(*forms_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            kem: Some(*kem_selection),
-                                            key_agreement: Some(*agreement_selection),
-                                            delivery_proof: Some(
-                                                build_create_delivery_proof_params(
-                                                    CreateDeliveryProofParamsOverrides {
-                                                        concrete: Some(*proof_concrete),
+    for random_source_kind in RANDOM_SOURCE_KINDS {
+        for pairing_concrete in PAIRING_CONCRETES {
+            for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
+                    continue;
+                }
+                for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                    for forms_concrete in CHAIN_FORMS_CONCRETES {
+                        for kem_selection in DECLARED_KEM_SELECTIONS {
+                            for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                                for proof_concrete in DELIVERY_PROOF_CONCRETES {
+                                    let deps = build_solidity_generate_case_deps(
+                                        Case {
+                                            settings: settings.clone(),
+                                            challenge_tag: RefCell::new(None),
+                                        },
+                                        Default::default(),
+                                    );
+                                    let result = run_solidity_generate_case(
+                                        &deps,
+                                        build_solidity_generate_case_params(
+                                            SolidityGenerateCaseParamsOverrides {
+                                                pairing: Some(build_create_pairing_params(
+                                                    CreatePairingParamsOverrides {
+                                                        concrete: Some(*pairing_concrete),
                                                         ..Default::default()
                                                     },
+                                                )),
+                                                hash_to_scalar: Some(
+                                                    build_create_hash_to_scalar_params(
+                                                        CreateHashToScalarParamsOverrides {
+                                                            concrete: Some(hash_selection.concrete),
+                                                            identifier: Some(
+                                                                hash_selection.identifier,
+                                                            ),
+                                                        },
+                                                    ),
                                                 ),
-                                            ),
-                                            random_source: Some(build_create_random_source_params(
-                                                CreateRandomSourceParamsOverrides {
-                                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                                },
-                                            )),
-                                        },
-                                    ),
-                                    build_solidity_generate_case_payload(
-                                        canonicals,
-                                        roots,
-                                        Default::default(),
-                                    ),
-                                );
-                                assert!(result.is_ok());
+                                                encoding: Some(build_create_encoding_params(
+                                                    CreateEncodingParamsOverrides {
+                                                        concrete: Some(encoding_selection.concrete),
+                                                        identifier: Some(
+                                                            encoding_selection.identifier,
+                                                        ),
+                                                    },
+                                                )),
+                                                chain_forms: Some(build_create_chain_forms_params(
+                                                    CreateChainFormsParamsOverrides {
+                                                        concrete: Some(*forms_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                )),
+                                                kem: Some(*kem_selection),
+                                                key_agreement: Some(*agreement_selection),
+                                                delivery_proof: Some(
+                                                    build_create_delivery_proof_params(
+                                                        CreateDeliveryProofParamsOverrides {
+                                                            concrete: Some(*proof_concrete),
+                                                            ..Default::default()
+                                                        },
+                                                    ),
+                                                ),
+                                                random_source: Some(
+                                                    build_create_random_source_params(
+                                                        CreateRandomSourceParamsOverrides {
+                                                            kind: Some(*random_source_kind),
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        ),
+                                        build_solidity_generate_case_payload(
+                                            canonicals,
+                                            roots,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    assert!(result.is_ok());
 
-                                // Assert
-                                let challenge_tag =
-                                    (*deps.consumer.challenge_tag.borrow()).expect("the case ran");
-                                let result = result.expect("the case chain runs clean").output;
-                                let Ok(_success) = result else {
-                                    panic!("emit admits the case's arrangement")
-                                };
-                                let library_path = root
-                                    .join("generated")
-                                    .join(settings.constants_library.file_name.as_str());
-                                let text = std::fs::read_to_string(&library_path)
-                                    .expect("the constants library was written");
-                                assert!(text.starts_with(&format!(
+                                    // Assert
+                                    let challenge_tag = (*deps.consumer.challenge_tag.borrow())
+                                        .expect("the case ran");
+                                    let result = result.expect("the case chain runs clean").output;
+                                    let Ok(_success) = result else {
+                                        panic!("emit admits the case's arrangement")
+                                    };
+                                    let library_path = root
+                                        .join("generated")
+                                        .join(settings.constants_library.file_name.as_str());
+                                    let text = std::fs::read_to_string(&library_path)
+                                        .expect("the constants library was written");
+                                    assert!(text.starts_with(&format!(
                                     "// SPDX-License-Identifier: {}\npragma solidity {}.{}.{};\n\nlibrary {} {{\n",
                                     license.as_str(),
                                     compiler_version.major,
@@ -1237,14 +1284,15 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
                                     compiler_version.patch,
                                     settings.constants_library.library_name.as_str()
                                 )));
-                                let tag_hex = challenge_tag
-                                    .iter()
-                                    .map(|byte| format!("{byte:02x}"))
-                                    .collect::<String>();
-                                assert!(text.contains(&format!(
-                                    "    bytes internal constant CHALLENGE_TAG = hex\"{}\";",
-                                    tag_hex
-                                )));
+                                    let tag_hex = challenge_tag
+                                        .iter()
+                                        .map(|byte| format!("{byte:02x}"))
+                                        .collect::<String>();
+                                    assert!(text.contains(&format!(
+                                        "    bytes internal constant CHALLENGE_TAG = hex\"{}\";",
+                                        tag_hex
+                                    )));
+                                }
                             }
                         }
                     }
@@ -1271,7 +1319,7 @@ fn the_constants_library_opens_with_the_configured_license_version_and_name_and_
 ///   entry and its type the name assembled in the block from the ABI table
 ///   for the kind the description's `FIELDS` holds at its index,
 ///   `    string internal constant POSSESSION_PATH = "` followed by
-///   `possession.vectors` and `";`, and
+///   `possession.txt` and `";`, and
 ///   `    function decodePossession(bytes memory line) internal pure returns (PossessionVector memory) {`,
 ///   and holds `G2AddVector` only where the case's pairing declares
 ///   second-group arithmetic.
@@ -1294,6 +1342,7 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
     };
     let member_names = POSSESSION_VECTOR_MEMBER_NAMES;
     let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
         generated_directory: Some(build_generated_directory(
             GeneratedDirectoryConstructorParamsOverrides {
                 segments: Some(vec![
@@ -1391,117 +1440,125 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
     }
 
     // Act
-    for pairing_concrete in PAIRING_CONCRETES {
-        for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
-                continue;
-            }
-            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
-                for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    for kem_selection in DECLARED_KEM_SELECTIONS {
-                        for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                            for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                let deps = build_solidity_generate_case_deps(
-                                    Case {
-                                        settings: settings.clone(),
-                                        arithmetic: RefCell::new(None),
-                                    },
-                                    Default::default(),
-                                );
-                                let result = run_solidity_generate_case(
-                                    &deps,
-                                    build_solidity_generate_case_params(
-                                        SolidityGenerateCaseParamsOverrides {
-                                            pairing: Some(build_create_pairing_params(
-                                                CreatePairingParamsOverrides {
-                                                    concrete: Some(*pairing_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            hash_to_scalar: Some(
-                                                build_create_hash_to_scalar_params(
-                                                    CreateHashToScalarParamsOverrides {
-                                                        concrete: Some(hash_selection.concrete),
-                                                        identifier: Some(hash_selection.identifier),
-                                                    },
-                                                ),
-                                            ),
-                                            encoding: Some(build_create_encoding_params(
-                                                CreateEncodingParamsOverrides {
-                                                    concrete: Some(encoding_selection.concrete),
-                                                    identifier: Some(encoding_selection.identifier),
-                                                },
-                                            )),
-                                            chain_forms: Some(build_create_chain_forms_params(
-                                                CreateChainFormsParamsOverrides {
-                                                    concrete: Some(*forms_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            kem: Some(*kem_selection),
-                                            key_agreement: Some(*agreement_selection),
-                                            delivery_proof: Some(
-                                                build_create_delivery_proof_params(
-                                                    CreateDeliveryProofParamsOverrides {
-                                                        concrete: Some(*proof_concrete),
+    for random_source_kind in RANDOM_SOURCE_KINDS {
+        for pairing_concrete in PAIRING_CONCRETES {
+            for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
+                    continue;
+                }
+                for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                    for forms_concrete in CHAIN_FORMS_CONCRETES {
+                        for kem_selection in DECLARED_KEM_SELECTIONS {
+                            for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                                for proof_concrete in DELIVERY_PROOF_CONCRETES {
+                                    let deps = build_solidity_generate_case_deps(
+                                        Case {
+                                            settings: settings.clone(),
+                                            arithmetic: RefCell::new(None),
+                                        },
+                                        Default::default(),
+                                    );
+                                    let result = run_solidity_generate_case(
+                                        &deps,
+                                        build_solidity_generate_case_params(
+                                            SolidityGenerateCaseParamsOverrides {
+                                                pairing: Some(build_create_pairing_params(
+                                                    CreatePairingParamsOverrides {
+                                                        concrete: Some(*pairing_concrete),
                                                         ..Default::default()
                                                     },
+                                                )),
+                                                hash_to_scalar: Some(
+                                                    build_create_hash_to_scalar_params(
+                                                        CreateHashToScalarParamsOverrides {
+                                                            concrete: Some(hash_selection.concrete),
+                                                            identifier: Some(
+                                                                hash_selection.identifier,
+                                                            ),
+                                                        },
+                                                    ),
                                                 ),
-                                            ),
-                                            random_source: Some(build_create_random_source_params(
-                                                CreateRandomSourceParamsOverrides {
-                                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                                },
-                                            )),
-                                        },
-                                    ),
-                                    build_solidity_generate_case_payload(
-                                        canonicals,
-                                        roots,
-                                        Default::default(),
-                                    ),
-                                );
-                                assert!(result.is_ok());
+                                                encoding: Some(build_create_encoding_params(
+                                                    CreateEncodingParamsOverrides {
+                                                        concrete: Some(encoding_selection.concrete),
+                                                        identifier: Some(
+                                                            encoding_selection.identifier,
+                                                        ),
+                                                    },
+                                                )),
+                                                chain_forms: Some(build_create_chain_forms_params(
+                                                    CreateChainFormsParamsOverrides {
+                                                        concrete: Some(*forms_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                )),
+                                                kem: Some(*kem_selection),
+                                                key_agreement: Some(*agreement_selection),
+                                                delivery_proof: Some(
+                                                    build_create_delivery_proof_params(
+                                                        CreateDeliveryProofParamsOverrides {
+                                                            concrete: Some(*proof_concrete),
+                                                            ..Default::default()
+                                                        },
+                                                    ),
+                                                ),
+                                                random_source: Some(
+                                                    build_create_random_source_params(
+                                                        CreateRandomSourceParamsOverrides {
+                                                            kind: Some(*random_source_kind),
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        ),
+                                        build_solidity_generate_case_payload(
+                                            canonicals,
+                                            roots,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    assert!(result.is_ok());
 
-                                // Assert
-                                let arithmetic =
-                                    (*deps.consumer.arithmetic.borrow()).expect("the case ran");
-                                let result = result.expect("the case chain runs clean").output;
-                                let Ok(_success) = result else {
-                                    panic!("emit admits the case's arrangement")
-                                };
-                                let library_path = root
-                                    .join("suite")
-                                    .join("generated")
-                                    .join(settings.records_library.file_name.as_str());
-                                let text = std::fs::read_to_string(&library_path)
-                                    .expect("the records library was written");
-                                assert!(text.contains(&format!(
-                                    "library {} {{\n",
-                                    settings.records_library.library_name.as_str()
-                                )));
-                                assert!(text.contains("    struct PossessionVector {"));
-                                for (index, kind) in
-                                    <PossessionVectorDescription as IEncodingContract>::FIELDS
-                                        .iter()
-                                        .enumerate()
-                                {
+                                    // Assert
+                                    let arithmetic =
+                                        (*deps.consumer.arithmetic.borrow()).expect("the case ran");
+                                    let result = result.expect("the case chain runs clean").output;
+                                    let Ok(_success) = result else {
+                                        panic!("emit admits the case's arrangement")
+                                    };
+                                    let library_path = root
+                                        .join("suite")
+                                        .join("generated")
+                                        .join(settings.records_library.file_name.as_str());
+                                    let text = std::fs::read_to_string(&library_path)
+                                        .expect("the records library was written");
                                     assert!(text.contains(&format!(
-                                        "        {} {};",
-                                        abi_name(kind),
-                                        member_names[index]
+                                        "library {} {{\n",
+                                        settings.records_library.library_name.as_str()
                                     )));
-                                }
-                                assert!(text.contains(
-                                    "    string internal constant POSSESSION_PATH = \"possession.vectors\";"
+                                    assert!(text.contains("    struct PossessionVector {"));
+                                    for (index, kind) in
+                                        <PossessionVectorDescription as IEncodingContract>::FIELDS
+                                            .iter()
+                                            .enumerate()
+                                    {
+                                        assert!(text.contains(&format!(
+                                            "        {} {};",
+                                            abi_name(kind),
+                                            member_names[index]
+                                        )));
+                                    }
+                                    assert!(text.contains(
+                                    "    string internal constant POSSESSION_PATH = \"possession.txt\";"
                                 ));
-                                assert!(text.contains(
+                                    assert!(text.contains(
                                     "    function decodePossession(bytes memory line) internal pure returns (PossessionVector memory) {"
                                 ));
-                                assert_eq!(
-                                    text.contains("G2AddVector"),
-                                    matches!(arithmetic, VerifierGroupArithmetic::BothGroups)
-                                );
+                                    assert_eq!(
+                                        text.contains("G2AddVector"),
+                                        matches!(arithmetic, VerifierGroupArithmetic::BothGroups)
+                                    );
+                                }
                             }
                         }
                     }
@@ -1527,7 +1584,10 @@ fn the_records_library_declares_each_written_kinds_struct_decode_function_and_pa
 #[test]
 fn a_constants_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"pkg@1.0.0#7".as_slice(), b"pkg@1.0.0#8".as_slice()];
@@ -1597,84 +1657,95 @@ fn a_constants_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
     }
 
     // Act
-    for pairing_concrete in PAIRING_CONCRETES {
-        for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
-                continue;
-            }
-            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
-                for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    for kem_selection in DECLARED_KEM_SELECTIONS {
-                        for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                            for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                let result = run_solidity_generate_case(
-                                    &build_solidity_generate_case_deps(Case, Default::default()),
-                                    build_solidity_generate_case_params(
-                                        SolidityGenerateCaseParamsOverrides {
-                                            pairing: Some(build_create_pairing_params(
-                                                CreatePairingParamsOverrides {
-                                                    concrete: Some(*pairing_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            hash_to_scalar: Some(
-                                                build_create_hash_to_scalar_params(
-                                                    CreateHashToScalarParamsOverrides {
-                                                        concrete: Some(hash_selection.concrete),
-                                                        identifier: Some(hash_selection.identifier),
-                                                    },
-                                                ),
-                                            ),
-                                            encoding: Some(build_create_encoding_params(
-                                                CreateEncodingParamsOverrides {
-                                                    concrete: Some(encoding_selection.concrete),
-                                                    identifier: Some(encoding_selection.identifier),
-                                                },
-                                            )),
-                                            chain_forms: Some(build_create_chain_forms_params(
-                                                CreateChainFormsParamsOverrides {
-                                                    concrete: Some(*forms_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            kem: Some(*kem_selection),
-                                            key_agreement: Some(*agreement_selection),
-                                            delivery_proof: Some(
-                                                build_create_delivery_proof_params(
-                                                    CreateDeliveryProofParamsOverrides {
-                                                        concrete: Some(*proof_concrete),
+    for random_source_kind in RANDOM_SOURCE_KINDS {
+        for pairing_concrete in PAIRING_CONCRETES {
+            for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
+                    continue;
+                }
+                for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                    for forms_concrete in CHAIN_FORMS_CONCRETES {
+                        for kem_selection in DECLARED_KEM_SELECTIONS {
+                            for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                                for proof_concrete in DELIVERY_PROOF_CONCRETES {
+                                    let result = run_solidity_generate_case(
+                                        &build_solidity_generate_case_deps(
+                                            Case,
+                                            Default::default(),
+                                        ),
+                                        build_solidity_generate_case_params(
+                                            SolidityGenerateCaseParamsOverrides {
+                                                pairing: Some(build_create_pairing_params(
+                                                    CreatePairingParamsOverrides {
+                                                        concrete: Some(*pairing_concrete),
                                                         ..Default::default()
                                                     },
+                                                )),
+                                                hash_to_scalar: Some(
+                                                    build_create_hash_to_scalar_params(
+                                                        CreateHashToScalarParamsOverrides {
+                                                            concrete: Some(hash_selection.concrete),
+                                                            identifier: Some(
+                                                                hash_selection.identifier,
+                                                            ),
+                                                        },
+                                                    ),
                                                 ),
-                                            ),
-                                            random_source: Some(build_create_random_source_params(
-                                                CreateRandomSourceParamsOverrides {
-                                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                                },
-                                            )),
-                                        },
-                                    ),
-                                    build_solidity_generate_case_payload(
-                                        canonicals,
-                                        roots,
-                                        Default::default(),
-                                    ),
-                                );
-                                assert!(result.is_ok());
+                                                encoding: Some(build_create_encoding_params(
+                                                    CreateEncodingParamsOverrides {
+                                                        concrete: Some(encoding_selection.concrete),
+                                                        identifier: Some(
+                                                            encoding_selection.identifier,
+                                                        ),
+                                                    },
+                                                )),
+                                                chain_forms: Some(build_create_chain_forms_params(
+                                                    CreateChainFormsParamsOverrides {
+                                                        concrete: Some(*forms_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                )),
+                                                kem: Some(*kem_selection),
+                                                key_agreement: Some(*agreement_selection),
+                                                delivery_proof: Some(
+                                                    build_create_delivery_proof_params(
+                                                        CreateDeliveryProofParamsOverrides {
+                                                            concrete: Some(*proof_concrete),
+                                                            ..Default::default()
+                                                        },
+                                                    ),
+                                                ),
+                                                random_source: Some(
+                                                    build_create_random_source_params(
+                                                        CreateRandomSourceParamsOverrides {
+                                                            kind: Some(*random_source_kind),
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        ),
+                                        build_solidity_generate_case_payload(
+                                            canonicals,
+                                            roots,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    assert!(result.is_ok());
 
-                                // Assert
-                                let result = result.expect("the case chain runs clean").output;
-                                assert!(matches!(
-                                    result,
-                                    Err(EmitErrorReturn::Solidity(
-                                        SolidityGenerateErrorReturn::Constants(
-                                            ConstantsErrorReturn::UnsupportedStatementVersion {
-                                                version: 2
-                                            }
-                                        )
-                                    ))
-                                ));
-                                assert!(!root.exists());
+                                    // Assert
+                                    let result = result.expect("the case chain runs clean").output;
+                                    assert!(matches!(
+                                        result,
+                                        Err(EmitErrorReturn::Solidity(
+                                            SolidityGenerateErrorReturn::Constants(
+                                                ConstantsErrorReturn::UnsupportedStatementVersion {
+                                                    version: 2
+                                                }
+                                            )
+                                        ))
+                                    ));
+                                    assert!(!root.exists());
+                                }
                             }
                         }
                     }
@@ -1705,7 +1776,10 @@ fn a_constants_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
 #[test]
 fn a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"pkg@1.0.0#7".as_slice(), b"pkg@1.0.0#8".as_slice()];
@@ -1787,17 +1861,18 @@ fn a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
     }
 
     // Act
-    for pairing_concrete in PAIRING_CONCRETES {
-        for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
-                continue;
-            }
-            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
-                for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    for kem_selection in DECLARED_KEM_SELECTIONS {
-                        for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                            for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                let result = run_solidity_generate_case(
+    for random_source_kind in RANDOM_SOURCE_KINDS {
+        for pairing_concrete in PAIRING_CONCRETES {
+            for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
+                    continue;
+                }
+                for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                    for forms_concrete in CHAIN_FORMS_CONCRETES {
+                        for kem_selection in DECLARED_KEM_SELECTIONS {
+                            for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                                for proof_concrete in DELIVERY_PROOF_CONCRETES {
+                                    let result = run_solidity_generate_case(
                                     &build_solidity_generate_case_deps(Case, Default::default()),
                                     build_solidity_generate_case_params(
                                         SolidityGenerateCaseParamsOverrides {
@@ -1844,7 +1919,7 @@ fn a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
                                             random_source: Some(
                                                 build_create_random_source_params(
                                                     CreateRandomSourceParamsOverrides {
-                                                        kind: Some(RandomSourceKind::OperatingSystem),
+                                                        kind: Some(*random_source_kind),
                                                     },
                                                 ),
                                             ),
@@ -1856,11 +1931,11 @@ fn a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
                                         Default::default(),
                                     ),
                                 );
-                                assert!(result.is_ok());
+                                    assert!(result.is_ok());
 
-                                // Assert
-                                let result = result.expect("the case chain runs clean").output;
-                                assert!(matches!(
+                                    // Assert
+                                    let result = result.expect("the case chain runs clean").output;
+                                    assert!(matches!(
                                     result,
                                     Err(EmitErrorReturn::Solidity(
                                         SolidityGenerateErrorReturn::MappingVectors(
@@ -1872,7 +1947,8 @@ fn a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
                                         )
                                     ))
                                 ));
-                                assert!(!root.exists());
+                                    assert!(!root.exists());
+                                }
                             }
                         }
                     }
@@ -1899,7 +1975,10 @@ fn a_mapping_vectors_refusal_reaches_the_caller_unchanged_and_writes_nothing() {
 #[test]
 fn a_repeated_struct_name_is_refused_with_its_indexes_and_writes_nothing() {
     // Arrange
-    let mut settings = build_solidity_generate_settings(Default::default());
+    let mut settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let shared = build_solidity_type_name(SolidityTypeNameConstructorParamsOverrides {
         text: Some("SharedVector".to_string()),
     });
@@ -1976,79 +2055,86 @@ fn a_repeated_struct_name_is_refused_with_its_indexes_and_writes_nothing() {
     }
 
     // Act
-    for pairing_concrete in PAIRING_CONCRETES {
-        for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
-                continue;
-            }
-            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
-                for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    for kem_selection in DECLARED_KEM_SELECTIONS {
-                        for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                            for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                let result = run_solidity_generate_case(
-                                    &build_solidity_generate_case_deps(
-                                        Case {
-                                            settings: settings.clone(),
-                                        },
-                                        Default::default(),
-                                    ),
-                                    build_solidity_generate_case_params(
-                                        SolidityGenerateCaseParamsOverrides {
-                                            pairing: Some(build_create_pairing_params(
-                                                CreatePairingParamsOverrides {
-                                                    concrete: Some(*pairing_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            hash_to_scalar: Some(
-                                                build_create_hash_to_scalar_params(
-                                                    CreateHashToScalarParamsOverrides {
-                                                        concrete: Some(hash_selection.concrete),
-                                                        identifier: Some(hash_selection.identifier),
-                                                    },
-                                                ),
-                                            ),
-                                            encoding: Some(build_create_encoding_params(
-                                                CreateEncodingParamsOverrides {
-                                                    concrete: Some(encoding_selection.concrete),
-                                                    identifier: Some(encoding_selection.identifier),
-                                                },
-                                            )),
-                                            chain_forms: Some(build_create_chain_forms_params(
-                                                CreateChainFormsParamsOverrides {
-                                                    concrete: Some(*forms_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            kem: Some(*kem_selection),
-                                            key_agreement: Some(*agreement_selection),
-                                            delivery_proof: Some(
-                                                build_create_delivery_proof_params(
-                                                    CreateDeliveryProofParamsOverrides {
-                                                        concrete: Some(*proof_concrete),
+    for random_source_kind in RANDOM_SOURCE_KINDS {
+        for pairing_concrete in PAIRING_CONCRETES {
+            for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
+                    continue;
+                }
+                for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                    for forms_concrete in CHAIN_FORMS_CONCRETES {
+                        for kem_selection in DECLARED_KEM_SELECTIONS {
+                            for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                                for proof_concrete in DELIVERY_PROOF_CONCRETES {
+                                    let result = run_solidity_generate_case(
+                                        &build_solidity_generate_case_deps(
+                                            Case {
+                                                settings: settings.clone(),
+                                            },
+                                            Default::default(),
+                                        ),
+                                        build_solidity_generate_case_params(
+                                            SolidityGenerateCaseParamsOverrides {
+                                                pairing: Some(build_create_pairing_params(
+                                                    CreatePairingParamsOverrides {
+                                                        concrete: Some(*pairing_concrete),
                                                         ..Default::default()
                                                     },
+                                                )),
+                                                hash_to_scalar: Some(
+                                                    build_create_hash_to_scalar_params(
+                                                        CreateHashToScalarParamsOverrides {
+                                                            concrete: Some(hash_selection.concrete),
+                                                            identifier: Some(
+                                                                hash_selection.identifier,
+                                                            ),
+                                                        },
+                                                    ),
                                                 ),
-                                            ),
-                                            random_source: Some(build_create_random_source_params(
-                                                CreateRandomSourceParamsOverrides {
-                                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                                },
-                                            )),
-                                        },
-                                    ),
-                                    build_solidity_generate_case_payload(
-                                        canonicals,
-                                        roots,
-                                        Default::default(),
-                                    ),
-                                );
-                                assert!(result.is_ok());
+                                                encoding: Some(build_create_encoding_params(
+                                                    CreateEncodingParamsOverrides {
+                                                        concrete: Some(encoding_selection.concrete),
+                                                        identifier: Some(
+                                                            encoding_selection.identifier,
+                                                        ),
+                                                    },
+                                                )),
+                                                chain_forms: Some(build_create_chain_forms_params(
+                                                    CreateChainFormsParamsOverrides {
+                                                        concrete: Some(*forms_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                )),
+                                                kem: Some(*kem_selection),
+                                                key_agreement: Some(*agreement_selection),
+                                                delivery_proof: Some(
+                                                    build_create_delivery_proof_params(
+                                                        CreateDeliveryProofParamsOverrides {
+                                                            concrete: Some(*proof_concrete),
+                                                            ..Default::default()
+                                                        },
+                                                    ),
+                                                ),
+                                                random_source: Some(
+                                                    build_create_random_source_params(
+                                                        CreateRandomSourceParamsOverrides {
+                                                            kind: Some(*random_source_kind),
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        ),
+                                        build_solidity_generate_case_payload(
+                                            canonicals,
+                                            roots,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    assert!(result.is_ok());
 
-                                // Assert
-                                let result = result.expect("the case chain runs clean").output;
-                                assert!(matches!(
+                                    // Assert
+                                    let result = result.expect("the case chain runs clean").output;
+                                    assert!(matches!(
                                     result,
                                     Err(EmitErrorReturn::Solidity(
                                         SolidityGenerateErrorReturn::Declarations(
@@ -2059,7 +2145,8 @@ fn a_repeated_struct_name_is_refused_with_its_indexes_and_writes_nothing() {
                                         )
                                     ))
                                 ));
-                                assert!(!root.exists());
+                                    assert!(!root.exists());
+                                }
                             }
                         }
                     }
@@ -2087,7 +2174,10 @@ fn a_repeated_struct_name_is_refused_with_its_indexes_and_writes_nothing() {
 #[test]
 fn a_repeated_decode_function_name_is_refused_with_its_indexes_and_writes_nothing() {
     // Arrange
-    let mut settings = build_solidity_generate_settings(Default::default());
+    let mut settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let shared = build_solidity_member_name(SolidityMemberNameConstructorParamsOverrides {
         text: Some("decodeShared".to_string()),
     });
@@ -2164,79 +2254,86 @@ fn a_repeated_decode_function_name_is_refused_with_its_indexes_and_writes_nothin
     }
 
     // Act
-    for pairing_concrete in PAIRING_CONCRETES {
-        for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
-                continue;
-            }
-            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
-                for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    for kem_selection in DECLARED_KEM_SELECTIONS {
-                        for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                            for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                let result = run_solidity_generate_case(
-                                    &build_solidity_generate_case_deps(
-                                        Case {
-                                            settings: settings.clone(),
-                                        },
-                                        Default::default(),
-                                    ),
-                                    build_solidity_generate_case_params(
-                                        SolidityGenerateCaseParamsOverrides {
-                                            pairing: Some(build_create_pairing_params(
-                                                CreatePairingParamsOverrides {
-                                                    concrete: Some(*pairing_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            hash_to_scalar: Some(
-                                                build_create_hash_to_scalar_params(
-                                                    CreateHashToScalarParamsOverrides {
-                                                        concrete: Some(hash_selection.concrete),
-                                                        identifier: Some(hash_selection.identifier),
-                                                    },
-                                                ),
-                                            ),
-                                            encoding: Some(build_create_encoding_params(
-                                                CreateEncodingParamsOverrides {
-                                                    concrete: Some(encoding_selection.concrete),
-                                                    identifier: Some(encoding_selection.identifier),
-                                                },
-                                            )),
-                                            chain_forms: Some(build_create_chain_forms_params(
-                                                CreateChainFormsParamsOverrides {
-                                                    concrete: Some(*forms_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            kem: Some(*kem_selection),
-                                            key_agreement: Some(*agreement_selection),
-                                            delivery_proof: Some(
-                                                build_create_delivery_proof_params(
-                                                    CreateDeliveryProofParamsOverrides {
-                                                        concrete: Some(*proof_concrete),
+    for random_source_kind in RANDOM_SOURCE_KINDS {
+        for pairing_concrete in PAIRING_CONCRETES {
+            for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
+                    continue;
+                }
+                for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                    for forms_concrete in CHAIN_FORMS_CONCRETES {
+                        for kem_selection in DECLARED_KEM_SELECTIONS {
+                            for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                                for proof_concrete in DELIVERY_PROOF_CONCRETES {
+                                    let result = run_solidity_generate_case(
+                                        &build_solidity_generate_case_deps(
+                                            Case {
+                                                settings: settings.clone(),
+                                            },
+                                            Default::default(),
+                                        ),
+                                        build_solidity_generate_case_params(
+                                            SolidityGenerateCaseParamsOverrides {
+                                                pairing: Some(build_create_pairing_params(
+                                                    CreatePairingParamsOverrides {
+                                                        concrete: Some(*pairing_concrete),
                                                         ..Default::default()
                                                     },
+                                                )),
+                                                hash_to_scalar: Some(
+                                                    build_create_hash_to_scalar_params(
+                                                        CreateHashToScalarParamsOverrides {
+                                                            concrete: Some(hash_selection.concrete),
+                                                            identifier: Some(
+                                                                hash_selection.identifier,
+                                                            ),
+                                                        },
+                                                    ),
                                                 ),
-                                            ),
-                                            random_source: Some(build_create_random_source_params(
-                                                CreateRandomSourceParamsOverrides {
-                                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                                },
-                                            )),
-                                        },
-                                    ),
-                                    build_solidity_generate_case_payload(
-                                        canonicals,
-                                        roots,
-                                        Default::default(),
-                                    ),
-                                );
-                                assert!(result.is_ok());
+                                                encoding: Some(build_create_encoding_params(
+                                                    CreateEncodingParamsOverrides {
+                                                        concrete: Some(encoding_selection.concrete),
+                                                        identifier: Some(
+                                                            encoding_selection.identifier,
+                                                        ),
+                                                    },
+                                                )),
+                                                chain_forms: Some(build_create_chain_forms_params(
+                                                    CreateChainFormsParamsOverrides {
+                                                        concrete: Some(*forms_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                )),
+                                                kem: Some(*kem_selection),
+                                                key_agreement: Some(*agreement_selection),
+                                                delivery_proof: Some(
+                                                    build_create_delivery_proof_params(
+                                                        CreateDeliveryProofParamsOverrides {
+                                                            concrete: Some(*proof_concrete),
+                                                            ..Default::default()
+                                                        },
+                                                    ),
+                                                ),
+                                                random_source: Some(
+                                                    build_create_random_source_params(
+                                                        CreateRandomSourceParamsOverrides {
+                                                            kind: Some(*random_source_kind),
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        ),
+                                        build_solidity_generate_case_payload(
+                                            canonicals,
+                                            roots,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    assert!(result.is_ok());
 
-                                // Assert
-                                let result = result.expect("the case chain runs clean").output;
-                                assert!(matches!(
+                                    // Assert
+                                    let result = result.expect("the case chain runs clean").output;
+                                    assert!(matches!(
                                     result,
                                     Err(EmitErrorReturn::Solidity(
                                         SolidityGenerateErrorReturn::Declarations(
@@ -2247,7 +2344,8 @@ fn a_repeated_decode_function_name_is_refused_with_its_indexes_and_writes_nothin
                                         )
                                     ))
                                 ));
-                                assert!(!root.exists());
+                                    assert!(!root.exists());
+                                }
                             }
                         }
                     }
@@ -2275,7 +2373,10 @@ fn a_repeated_decode_function_name_is_refused_with_its_indexes_and_writes_nothin
 #[test]
 fn a_repeated_path_constant_name_is_refused_with_its_indexes_and_writes_nothing() {
     // Arrange
-    let mut settings = build_solidity_generate_settings(Default::default());
+    let mut settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let shared = build_solidity_constant_name(SolidityConstantNameConstructorParamsOverrides {
         text: Some("SHARED_PATH".to_string()),
     });
@@ -2352,79 +2453,86 @@ fn a_repeated_path_constant_name_is_refused_with_its_indexes_and_writes_nothing(
     }
 
     // Act
-    for pairing_concrete in PAIRING_CONCRETES {
-        for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
-                continue;
-            }
-            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
-                for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    for kem_selection in DECLARED_KEM_SELECTIONS {
-                        for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                            for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                let result = run_solidity_generate_case(
-                                    &build_solidity_generate_case_deps(
-                                        Case {
-                                            settings: settings.clone(),
-                                        },
-                                        Default::default(),
-                                    ),
-                                    build_solidity_generate_case_params(
-                                        SolidityGenerateCaseParamsOverrides {
-                                            pairing: Some(build_create_pairing_params(
-                                                CreatePairingParamsOverrides {
-                                                    concrete: Some(*pairing_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            hash_to_scalar: Some(
-                                                build_create_hash_to_scalar_params(
-                                                    CreateHashToScalarParamsOverrides {
-                                                        concrete: Some(hash_selection.concrete),
-                                                        identifier: Some(hash_selection.identifier),
-                                                    },
-                                                ),
-                                            ),
-                                            encoding: Some(build_create_encoding_params(
-                                                CreateEncodingParamsOverrides {
-                                                    concrete: Some(encoding_selection.concrete),
-                                                    identifier: Some(encoding_selection.identifier),
-                                                },
-                                            )),
-                                            chain_forms: Some(build_create_chain_forms_params(
-                                                CreateChainFormsParamsOverrides {
-                                                    concrete: Some(*forms_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            kem: Some(*kem_selection),
-                                            key_agreement: Some(*agreement_selection),
-                                            delivery_proof: Some(
-                                                build_create_delivery_proof_params(
-                                                    CreateDeliveryProofParamsOverrides {
-                                                        concrete: Some(*proof_concrete),
+    for random_source_kind in RANDOM_SOURCE_KINDS {
+        for pairing_concrete in PAIRING_CONCRETES {
+            for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
+                    continue;
+                }
+                for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                    for forms_concrete in CHAIN_FORMS_CONCRETES {
+                        for kem_selection in DECLARED_KEM_SELECTIONS {
+                            for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                                for proof_concrete in DELIVERY_PROOF_CONCRETES {
+                                    let result = run_solidity_generate_case(
+                                        &build_solidity_generate_case_deps(
+                                            Case {
+                                                settings: settings.clone(),
+                                            },
+                                            Default::default(),
+                                        ),
+                                        build_solidity_generate_case_params(
+                                            SolidityGenerateCaseParamsOverrides {
+                                                pairing: Some(build_create_pairing_params(
+                                                    CreatePairingParamsOverrides {
+                                                        concrete: Some(*pairing_concrete),
                                                         ..Default::default()
                                                     },
+                                                )),
+                                                hash_to_scalar: Some(
+                                                    build_create_hash_to_scalar_params(
+                                                        CreateHashToScalarParamsOverrides {
+                                                            concrete: Some(hash_selection.concrete),
+                                                            identifier: Some(
+                                                                hash_selection.identifier,
+                                                            ),
+                                                        },
+                                                    ),
                                                 ),
-                                            ),
-                                            random_source: Some(build_create_random_source_params(
-                                                CreateRandomSourceParamsOverrides {
-                                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                                },
-                                            )),
-                                        },
-                                    ),
-                                    build_solidity_generate_case_payload(
-                                        canonicals,
-                                        roots,
-                                        Default::default(),
-                                    ),
-                                );
-                                assert!(result.is_ok());
+                                                encoding: Some(build_create_encoding_params(
+                                                    CreateEncodingParamsOverrides {
+                                                        concrete: Some(encoding_selection.concrete),
+                                                        identifier: Some(
+                                                            encoding_selection.identifier,
+                                                        ),
+                                                    },
+                                                )),
+                                                chain_forms: Some(build_create_chain_forms_params(
+                                                    CreateChainFormsParamsOverrides {
+                                                        concrete: Some(*forms_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                )),
+                                                kem: Some(*kem_selection),
+                                                key_agreement: Some(*agreement_selection),
+                                                delivery_proof: Some(
+                                                    build_create_delivery_proof_params(
+                                                        CreateDeliveryProofParamsOverrides {
+                                                            concrete: Some(*proof_concrete),
+                                                            ..Default::default()
+                                                        },
+                                                    ),
+                                                ),
+                                                random_source: Some(
+                                                    build_create_random_source_params(
+                                                        CreateRandomSourceParamsOverrides {
+                                                            kind: Some(*random_source_kind),
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        ),
+                                        build_solidity_generate_case_payload(
+                                            canonicals,
+                                            roots,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    assert!(result.is_ok());
 
-                                // Assert
-                                let result = result.expect("the case chain runs clean").output;
-                                assert!(matches!(
+                                    // Assert
+                                    let result = result.expect("the case chain runs clean").output;
+                                    assert!(matches!(
                                     result,
                                     Err(EmitErrorReturn::Solidity(
                                         SolidityGenerateErrorReturn::Declarations(
@@ -2435,7 +2543,8 @@ fn a_repeated_path_constant_name_is_refused_with_its_indexes_and_writes_nothing(
                                         )
                                     ))
                                 ));
-                                assert!(!root.exists());
+                                    assert!(!root.exists());
+                                }
                             }
                         }
                     }
@@ -2464,7 +2573,10 @@ fn a_repeated_path_constant_name_is_refused_with_its_indexes_and_writes_nothing(
 #[test]
 fn a_repeated_struct_name_is_refused_before_a_repeated_decode_function_name() {
     // Arrange
-    let mut settings = build_solidity_generate_settings(Default::default());
+    let mut settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let shared_struct = build_solidity_type_name(SolidityTypeNameConstructorParamsOverrides {
         text: Some("SharedVector".to_string()),
     });
@@ -2546,79 +2658,86 @@ fn a_repeated_struct_name_is_refused_before_a_repeated_decode_function_name() {
     }
 
     // Act
-    for pairing_concrete in PAIRING_CONCRETES {
-        for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
-                continue;
-            }
-            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
-                for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    for kem_selection in DECLARED_KEM_SELECTIONS {
-                        for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                            for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                let result = run_solidity_generate_case(
-                                    &build_solidity_generate_case_deps(
-                                        Case {
-                                            settings: settings.clone(),
-                                        },
-                                        Default::default(),
-                                    ),
-                                    build_solidity_generate_case_params(
-                                        SolidityGenerateCaseParamsOverrides {
-                                            pairing: Some(build_create_pairing_params(
-                                                CreatePairingParamsOverrides {
-                                                    concrete: Some(*pairing_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            hash_to_scalar: Some(
-                                                build_create_hash_to_scalar_params(
-                                                    CreateHashToScalarParamsOverrides {
-                                                        concrete: Some(hash_selection.concrete),
-                                                        identifier: Some(hash_selection.identifier),
-                                                    },
-                                                ),
-                                            ),
-                                            encoding: Some(build_create_encoding_params(
-                                                CreateEncodingParamsOverrides {
-                                                    concrete: Some(encoding_selection.concrete),
-                                                    identifier: Some(encoding_selection.identifier),
-                                                },
-                                            )),
-                                            chain_forms: Some(build_create_chain_forms_params(
-                                                CreateChainFormsParamsOverrides {
-                                                    concrete: Some(*forms_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            kem: Some(*kem_selection),
-                                            key_agreement: Some(*agreement_selection),
-                                            delivery_proof: Some(
-                                                build_create_delivery_proof_params(
-                                                    CreateDeliveryProofParamsOverrides {
-                                                        concrete: Some(*proof_concrete),
+    for random_source_kind in RANDOM_SOURCE_KINDS {
+        for pairing_concrete in PAIRING_CONCRETES {
+            for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
+                    continue;
+                }
+                for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                    for forms_concrete in CHAIN_FORMS_CONCRETES {
+                        for kem_selection in DECLARED_KEM_SELECTIONS {
+                            for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                                for proof_concrete in DELIVERY_PROOF_CONCRETES {
+                                    let result = run_solidity_generate_case(
+                                        &build_solidity_generate_case_deps(
+                                            Case {
+                                                settings: settings.clone(),
+                                            },
+                                            Default::default(),
+                                        ),
+                                        build_solidity_generate_case_params(
+                                            SolidityGenerateCaseParamsOverrides {
+                                                pairing: Some(build_create_pairing_params(
+                                                    CreatePairingParamsOverrides {
+                                                        concrete: Some(*pairing_concrete),
                                                         ..Default::default()
                                                     },
+                                                )),
+                                                hash_to_scalar: Some(
+                                                    build_create_hash_to_scalar_params(
+                                                        CreateHashToScalarParamsOverrides {
+                                                            concrete: Some(hash_selection.concrete),
+                                                            identifier: Some(
+                                                                hash_selection.identifier,
+                                                            ),
+                                                        },
+                                                    ),
                                                 ),
-                                            ),
-                                            random_source: Some(build_create_random_source_params(
-                                                CreateRandomSourceParamsOverrides {
-                                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                                },
-                                            )),
-                                        },
-                                    ),
-                                    build_solidity_generate_case_payload(
-                                        canonicals,
-                                        roots,
-                                        Default::default(),
-                                    ),
-                                );
-                                assert!(result.is_ok());
+                                                encoding: Some(build_create_encoding_params(
+                                                    CreateEncodingParamsOverrides {
+                                                        concrete: Some(encoding_selection.concrete),
+                                                        identifier: Some(
+                                                            encoding_selection.identifier,
+                                                        ),
+                                                    },
+                                                )),
+                                                chain_forms: Some(build_create_chain_forms_params(
+                                                    CreateChainFormsParamsOverrides {
+                                                        concrete: Some(*forms_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                )),
+                                                kem: Some(*kem_selection),
+                                                key_agreement: Some(*agreement_selection),
+                                                delivery_proof: Some(
+                                                    build_create_delivery_proof_params(
+                                                        CreateDeliveryProofParamsOverrides {
+                                                            concrete: Some(*proof_concrete),
+                                                            ..Default::default()
+                                                        },
+                                                    ),
+                                                ),
+                                                random_source: Some(
+                                                    build_create_random_source_params(
+                                                        CreateRandomSourceParamsOverrides {
+                                                            kind: Some(*random_source_kind),
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        ),
+                                        build_solidity_generate_case_payload(
+                                            canonicals,
+                                            roots,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    assert!(result.is_ok());
 
-                                // Assert
-                                let result = result.expect("the case chain runs clean").output;
-                                assert!(matches!(
+                                    // Assert
+                                    let result = result.expect("the case chain runs clean").output;
+                                    assert!(matches!(
                                     result,
                                     Err(EmitErrorReturn::Solidity(
                                         SolidityGenerateErrorReturn::Declarations(
@@ -2629,7 +2748,8 @@ fn a_repeated_struct_name_is_refused_before_a_repeated_decode_function_name() {
                                         )
                                     ))
                                 ));
-                                assert!(!root.exists());
+                                    assert!(!root.exists());
+                                }
                             }
                         }
                     }
@@ -2657,7 +2777,10 @@ fn a_repeated_struct_name_is_refused_before_a_repeated_decode_function_name() {
 #[test]
 fn a_root_that_is_a_file_refuses_directory_creation_with_its_path() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     std::fs::write(&root, b"not a directory").expect("the root file is written");
@@ -2732,101 +2855,109 @@ fn a_root_that_is_a_file_refuses_directory_creation_with_its_path() {
     }
 
     // Act
-    for pairing_concrete in PAIRING_CONCRETES {
-        for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
-                continue;
-            }
-            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
-                for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    for kem_selection in DECLARED_KEM_SELECTIONS {
-                        for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                            for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                let deps = build_solidity_generate_case_deps(
-                                    Case {
-                                        settings: settings.clone(),
-                                        cell: RefCell::new(None),
-                                    },
-                                    Default::default(),
-                                );
-                                let result = run_solidity_generate_case(
-                                    &deps,
-                                    build_solidity_generate_case_params(
-                                        SolidityGenerateCaseParamsOverrides {
-                                            pairing: Some(build_create_pairing_params(
-                                                CreatePairingParamsOverrides {
-                                                    concrete: Some(*pairing_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            hash_to_scalar: Some(
-                                                build_create_hash_to_scalar_params(
-                                                    CreateHashToScalarParamsOverrides {
-                                                        concrete: Some(hash_selection.concrete),
-                                                        identifier: Some(hash_selection.identifier),
-                                                    },
-                                                ),
-                                            ),
-                                            encoding: Some(build_create_encoding_params(
-                                                CreateEncodingParamsOverrides {
-                                                    concrete: Some(encoding_selection.concrete),
-                                                    identifier: Some(encoding_selection.identifier),
-                                                },
-                                            )),
-                                            chain_forms: Some(build_create_chain_forms_params(
-                                                CreateChainFormsParamsOverrides {
-                                                    concrete: Some(*forms_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            kem: Some(*kem_selection),
-                                            key_agreement: Some(*agreement_selection),
-                                            delivery_proof: Some(
-                                                build_create_delivery_proof_params(
-                                                    CreateDeliveryProofParamsOverrides {
-                                                        concrete: Some(*proof_concrete),
+    for random_source_kind in RANDOM_SOURCE_KINDS {
+        for pairing_concrete in PAIRING_CONCRETES {
+            for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
+                    continue;
+                }
+                for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                    for forms_concrete in CHAIN_FORMS_CONCRETES {
+                        for kem_selection in DECLARED_KEM_SELECTIONS {
+                            for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                                for proof_concrete in DELIVERY_PROOF_CONCRETES {
+                                    let deps = build_solidity_generate_case_deps(
+                                        Case {
+                                            settings: settings.clone(),
+                                            cell: RefCell::new(None),
+                                        },
+                                        Default::default(),
+                                    );
+                                    let result = run_solidity_generate_case(
+                                        &deps,
+                                        build_solidity_generate_case_params(
+                                            SolidityGenerateCaseParamsOverrides {
+                                                pairing: Some(build_create_pairing_params(
+                                                    CreatePairingParamsOverrides {
+                                                        concrete: Some(*pairing_concrete),
                                                         ..Default::default()
                                                     },
+                                                )),
+                                                hash_to_scalar: Some(
+                                                    build_create_hash_to_scalar_params(
+                                                        CreateHashToScalarParamsOverrides {
+                                                            concrete: Some(hash_selection.concrete),
+                                                            identifier: Some(
+                                                                hash_selection.identifier,
+                                                            ),
+                                                        },
+                                                    ),
                                                 ),
-                                            ),
-                                            random_source: Some(build_create_random_source_params(
-                                                CreateRandomSourceParamsOverrides {
-                                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                                },
-                                            )),
-                                        },
-                                    ),
-                                    build_solidity_generate_case_payload(
-                                        canonicals,
-                                        roots,
-                                        Default::default(),
-                                    ),
-                                );
-                                assert!(result.is_ok());
+                                                encoding: Some(build_create_encoding_params(
+                                                    CreateEncodingParamsOverrides {
+                                                        concrete: Some(encoding_selection.concrete),
+                                                        identifier: Some(
+                                                            encoding_selection.identifier,
+                                                        ),
+                                                    },
+                                                )),
+                                                chain_forms: Some(build_create_chain_forms_params(
+                                                    CreateChainFormsParamsOverrides {
+                                                        concrete: Some(*forms_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                )),
+                                                kem: Some(*kem_selection),
+                                                key_agreement: Some(*agreement_selection),
+                                                delivery_proof: Some(
+                                                    build_create_delivery_proof_params(
+                                                        CreateDeliveryProofParamsOverrides {
+                                                            concrete: Some(*proof_concrete),
+                                                            ..Default::default()
+                                                        },
+                                                    ),
+                                                ),
+                                                random_source: Some(
+                                                    build_create_random_source_params(
+                                                        CreateRandomSourceParamsOverrides {
+                                                            kind: Some(*random_source_kind),
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        ),
+                                        build_solidity_generate_case_payload(
+                                            canonicals,
+                                            roots,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    assert!(result.is_ok());
 
-                                // Assert
-                                let (concrete_name, encoding_name) =
-                                    (*deps.consumer.cell.borrow()).expect("the case ran");
-                                let expected = root
-                                    .join("generated")
-                                    .join(concrete_name)
-                                    .join(encoding_name);
-                                let probe = std::fs::create_dir_all(&expected).expect_err(
-                                    "a regular file at the root refuses directory creation",
-                                );
-                                let result = result.expect("the case chain runs clean").output;
-                                assert!(matches!(
-                                    result,
-                                    Err(EmitErrorReturn::Solidity(
-                                        SolidityGenerateErrorReturn::CreateDirectory {
-                                            ref path,
-                                            ref error
-                                        }
-                                    )) if *path == expected
-                                        && error.kind() == probe.kind()
-                                        && error.raw_os_error() == probe.raw_os_error()
-                                        && error.to_string() == probe.to_string()
-                                ));
+                                    // Assert
+                                    let (concrete_name, encoding_name) =
+                                        (*deps.consumer.cell.borrow()).expect("the case ran");
+                                    let expected = root
+                                        .join("generated")
+                                        .join(concrete_name)
+                                        .join(encoding_name);
+                                    let probe = std::fs::create_dir_all(&expected).expect_err(
+                                        "a regular file at the root refuses directory creation",
+                                    );
+                                    let result = result.expect("the case chain runs clean").output;
+                                    assert!(matches!(
+                                        result,
+                                        Err(EmitErrorReturn::Solidity(
+                                            SolidityGenerateErrorReturn::CreateDirectory {
+                                                ref path,
+                                                ref error
+                                            }
+                                        )) if *path == expected
+                                            && error.kind() == probe.kind()
+                                            && error.raw_os_error() == probe.raw_os_error()
+                                            && error.to_string() == probe.to_string()
+                                    ));
+                                }
                             }
                         }
                     }
@@ -2853,7 +2984,10 @@ fn a_root_that_is_a_file_refuses_directory_creation_with_its_path() {
 #[test]
 fn a_directory_at_a_kinds_file_path_refuses_the_write_with_its_path() {
     // Arrange
-    let settings = build_solidity_generate_settings(Default::default());
+    let settings = build_solidity_generate_settings(SolidityGenerateSettingsOverrides {
+        foundry_root: Some(build_solidity_generate_root()),
+        ..Default::default()
+    });
     let root = settings.foundry_root.clone();
     let _ = std::fs::remove_dir_all(&root);
     let canonicals: &[&[u8]] = &[b"pkg@1.0.0#7".as_slice(), b"pkg@1.0.0#8".as_slice()];
@@ -2926,117 +3060,127 @@ fn a_directory_at_a_kinds_file_path_refuses_the_write_with_its_path() {
     }
 
     // Act
-    for pairing_concrete in PAIRING_CONCRETES {
-        for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
-                continue;
-            }
-            for encoding_selection in DECLARED_ENCODING_SELECTIONS {
-                for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    for kem_selection in DECLARED_KEM_SELECTIONS {
-                        for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                            for proof_concrete in DELIVERY_PROOF_CONCRETES {
-                                let concrete_name = match pairing_concrete {
-                                    PairingConcrete::Bn254Arkworks => "bn254_arkworks",
-                                    PairingConcrete::Bn254Halo2curves => "bn254_halo2curves",
-                                    PairingConcrete::Bls12381Arkworks => "bls12381_arkworks",
-                                    PairingConcrete::Bls12381Halo2curves => "bls12_381_halo2curves",
-                                    PairingConcrete::Mock(_)
-                                    | PairingConcrete::MockShortUniform(_) => "mock_concrete",
-                                };
-                                let encoding_name = match encoding_selection.concrete {
-                                    EncodingConcrete::Abi => "abi",
-                                    #[cfg(any(test, feature = "mocks"))]
-                                    EncodingConcrete::Mock => "mock",
-                                };
-                                let file_path = root
-                                    .join("generated")
-                                    .join(concrete_name)
-                                    .join(encoding_name)
-                                    .join(&first_file_name);
-                                std::fs::create_dir_all(&file_path)
-                                    .expect("a directory occupies the first kind's file path");
-                                let result = run_solidity_generate_case(
-                                    &build_solidity_generate_case_deps(
-                                        Case {
-                                            settings: settings.clone(),
-                                        },
-                                        Default::default(),
-                                    ),
-                                    build_solidity_generate_case_params(
-                                        SolidityGenerateCaseParamsOverrides {
-                                            pairing: Some(build_create_pairing_params(
-                                                CreatePairingParamsOverrides {
-                                                    concrete: Some(*pairing_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            hash_to_scalar: Some(
-                                                build_create_hash_to_scalar_params(
-                                                    CreateHashToScalarParamsOverrides {
-                                                        concrete: Some(hash_selection.concrete),
-                                                        identifier: Some(hash_selection.identifier),
-                                                    },
-                                                ),
-                                            ),
-                                            encoding: Some(build_create_encoding_params(
-                                                CreateEncodingParamsOverrides {
-                                                    concrete: Some(encoding_selection.concrete),
-                                                    identifier: Some(encoding_selection.identifier),
-                                                },
-                                            )),
-                                            chain_forms: Some(build_create_chain_forms_params(
-                                                CreateChainFormsParamsOverrides {
-                                                    concrete: Some(*forms_concrete),
-                                                    ..Default::default()
-                                                },
-                                            )),
-                                            kem: Some(*kem_selection),
-                                            key_agreement: Some(*agreement_selection),
-                                            delivery_proof: Some(
-                                                build_create_delivery_proof_params(
-                                                    CreateDeliveryProofParamsOverrides {
-                                                        concrete: Some(*proof_concrete),
+    for random_source_kind in RANDOM_SOURCE_KINDS {
+        for pairing_concrete in PAIRING_CONCRETES {
+            for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+                if hash_selection.identifier != HashToScalarIdentifier::Keccak256V1 {
+                    continue;
+                }
+                for encoding_selection in DECLARED_ENCODING_SELECTIONS {
+                    for forms_concrete in CHAIN_FORMS_CONCRETES {
+                        for kem_selection in DECLARED_KEM_SELECTIONS {
+                            for agreement_selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
+                                for proof_concrete in DELIVERY_PROOF_CONCRETES {
+                                    let concrete_name = match pairing_concrete {
+                                        PairingConcrete::Bn254Arkworks => "bn254_arkworks",
+                                        PairingConcrete::Bn254Halo2curves => "bn254_halo2curves",
+                                        PairingConcrete::Bls12381Arkworks => "bls12381_arkworks",
+                                        PairingConcrete::Bls12381Halo2curves => {
+                                            "bls12_381_halo2curves"
+                                        }
+                                        PairingConcrete::Mock(_)
+                                        | PairingConcrete::MockShortUniform(_) => "mock_concrete",
+                                    };
+                                    let encoding_name = match encoding_selection.concrete {
+                                        EncodingConcrete::Abi => "abi",
+                                        #[cfg(any(test, feature = "mocks"))]
+                                        EncodingConcrete::Mock => "mock",
+                                    };
+                                    let file_path = root
+                                        .join("generated")
+                                        .join(concrete_name)
+                                        .join(encoding_name)
+                                        .join(&first_file_name);
+                                    std::fs::create_dir_all(&file_path)
+                                        .expect("a directory occupies the first kind's file path");
+                                    let result = run_solidity_generate_case(
+                                        &build_solidity_generate_case_deps(
+                                            Case {
+                                                settings: settings.clone(),
+                                            },
+                                            Default::default(),
+                                        ),
+                                        build_solidity_generate_case_params(
+                                            SolidityGenerateCaseParamsOverrides {
+                                                pairing: Some(build_create_pairing_params(
+                                                    CreatePairingParamsOverrides {
+                                                        concrete: Some(*pairing_concrete),
                                                         ..Default::default()
                                                     },
+                                                )),
+                                                hash_to_scalar: Some(
+                                                    build_create_hash_to_scalar_params(
+                                                        CreateHashToScalarParamsOverrides {
+                                                            concrete: Some(hash_selection.concrete),
+                                                            identifier: Some(
+                                                                hash_selection.identifier,
+                                                            ),
+                                                        },
+                                                    ),
                                                 ),
-                                            ),
-                                            random_source: Some(build_create_random_source_params(
-                                                CreateRandomSourceParamsOverrides {
-                                                    kind: Some(RandomSourceKind::OperatingSystem),
-                                                },
-                                            )),
-                                        },
-                                    ),
-                                    build_solidity_generate_case_payload(
-                                        canonicals,
-                                        roots,
-                                        Default::default(),
-                                    ),
-                                );
-                                assert!(result.is_ok());
+                                                encoding: Some(build_create_encoding_params(
+                                                    CreateEncodingParamsOverrides {
+                                                        concrete: Some(encoding_selection.concrete),
+                                                        identifier: Some(
+                                                            encoding_selection.identifier,
+                                                        ),
+                                                    },
+                                                )),
+                                                chain_forms: Some(build_create_chain_forms_params(
+                                                    CreateChainFormsParamsOverrides {
+                                                        concrete: Some(*forms_concrete),
+                                                        ..Default::default()
+                                                    },
+                                                )),
+                                                kem: Some(*kem_selection),
+                                                key_agreement: Some(*agreement_selection),
+                                                delivery_proof: Some(
+                                                    build_create_delivery_proof_params(
+                                                        CreateDeliveryProofParamsOverrides {
+                                                            concrete: Some(*proof_concrete),
+                                                            ..Default::default()
+                                                        },
+                                                    ),
+                                                ),
+                                                random_source: Some(
+                                                    build_create_random_source_params(
+                                                        CreateRandomSourceParamsOverrides {
+                                                            kind: Some(*random_source_kind),
+                                                        },
+                                                    ),
+                                                ),
+                                            },
+                                        ),
+                                        build_solidity_generate_case_payload(
+                                            canonicals,
+                                            roots,
+                                            Default::default(),
+                                        ),
+                                    );
+                                    assert!(result.is_ok());
 
-                                // Assert
-                                let probe = std::fs::write(&file_path, b"")
-                                    .expect_err("a directory refuses the write");
-                                let result = result.expect("the case chain runs clean").output;
-                                assert!(matches!(
-                                    result,
-                                    Err(EmitErrorReturn::Solidity(
-                                        SolidityGenerateErrorReturn::WriteFile {
-                                            ref path,
-                                            ref error
-                                        }
-                                    )) if *path == file_path
-                                        && error.kind() == probe.kind()
-                                        && error.raw_os_error() == probe.raw_os_error()
-                                        && error.to_string() == probe.to_string()
-                                ));
-                                let constants_path = root
-                                    .join("generated")
-                                    .join(settings.constants_library.file_name.as_str());
-                                assert!(!constants_path.exists());
-                                let _ = std::fs::remove_dir_all(&root);
+                                    // Assert
+                                    let probe = std::fs::write(&file_path, b"")
+                                        .expect_err("a directory refuses the write");
+                                    let result = result.expect("the case chain runs clean").output;
+                                    assert!(matches!(
+                                        result,
+                                        Err(EmitErrorReturn::Solidity(
+                                            SolidityGenerateErrorReturn::WriteFile {
+                                                ref path,
+                                                ref error
+                                            }
+                                        )) if *path == file_path
+                                            && error.kind() == probe.kind()
+                                            && error.raw_os_error() == probe.raw_os_error()
+                                            && error.to_string() == probe.to_string()
+                                    ));
+                                    let constants_path = root
+                                        .join("generated")
+                                        .join(settings.constants_library.file_name.as_str());
+                                    assert!(!constants_path.exists());
+                                    let _ = std::fs::remove_dir_all(&root);
+                                }
                             }
                         }
                     }

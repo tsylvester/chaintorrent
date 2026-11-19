@@ -34,7 +34,7 @@ use proof::{
     build_delivery_context, build_delivery_proof_declaration,
 };
 use random::{
-    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RandomSourceKind,
+    CreateRandomSourceParamsOverrides, IRandomSourceAdapter, RANDOM_SOURCE_KINDS, RandomSourceKind,
     build_create_random_source_params,
 };
 
@@ -43,21 +43,20 @@ use super::super::super::factory::provides::{
 };
 use super::challenge_vectors;
 use super::interface::{
-    ChallengeVectorsCaseParams, ChallengeVectorsCasePayload, ChallengeVectorsErrorReturn,
-    IChallengeVectorsCaseConsumer,
+    CanonicalDeliveryContext, ChallengeVectorsCaseParams, ChallengeVectorsCasePayload,
+    ChallengeVectorsErrorReturn, IChallengeVectorsCaseConsumer,
 };
 use super::mock::{
-    ChallengeVectorsCaseParamsOverrides, ChallengeVectorsCasePayloadOverrides,
-    ChallengeVectorsParamsOverrides, build_challenge_vectors_case_deps,
+    CanonicalDeliveryContextOverrides, ChallengeVectorsCaseParamsOverrides,
+    ChallengeVectorsCasePayloadOverrides, ChallengeVectorsParamsOverrides,
+    build_canonical_delivery_context, build_challenge_vectors_case_deps,
     build_challenge_vectors_case_params, build_challenge_vectors_case_payload,
     build_challenge_vectors_deps, build_challenge_vectors_params, build_challenge_vectors_payload,
     run_challenge_vectors_case,
 };
-use crate::config::provides::{
-    CanonicalDeliveryContext, CanonicalDeliveryContextOverrides, build_canonical_delivery_context,
-};
 
 fn delivery_context_overrides<F: IChainForms>(
+    payload: &ChallengeVectorsCasePayload,
     context: &CanonicalDeliveryContext,
 ) -> DeliveryContextOverrides<F> {
     DeliveryContextOverrides {
@@ -65,7 +64,7 @@ fn delivery_context_overrides<F: IChainForms>(
         chain: Some(
             F::ChainIdentifier::from_field(
                 build_from_field_params(Default::default()),
-                context.chain.clone(),
+                payload.chain.clone(),
             )
             .expect("a canonical value of the declared kind is admitted")
             .value,
@@ -73,7 +72,7 @@ fn delivery_context_overrides<F: IChainForms>(
         entitlement_contract: Some(
             F::Identity::from_field(
                 build_from_field_params(Default::default()),
-                context.entitlement_contract.clone(),
+                payload.entitlement_contract.clone(),
             )
             .expect("a canonical value of the declared kind is admitted")
             .value,
@@ -137,6 +136,7 @@ fn case_params(
     hash_to_scalar: &CreateHashToScalarParams,
     encoding_selection: &CreateEncodingParams,
     forms_concrete: ChainFormsConcrete,
+    random_kind: RandomSourceKind,
 ) -> ChallengeVectorsCaseParams {
     build_challenge_vectors_case_params(ChallengeVectorsCaseParamsOverrides {
         pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
@@ -163,7 +163,7 @@ fn case_params(
         )),
         random_source: Some(build_create_random_source_params(
             CreateRandomSourceParamsOverrides {
-                kind: Some(RandomSourceKind::OperatingSystem),
+                kind: Some(random_kind),
             },
         )),
     })
@@ -182,6 +182,8 @@ fn case_payload(
                 ..Default::default()
             },
         )),
+        chain: None,
+        entitlement_contract: None,
         mint: Some(mint),
         mint_purpose: Some(mint_purpose),
         transfer: Some(transfer),
@@ -203,7 +205,7 @@ fn case_payload(
 ///   values are `4`, `3`, `4`, and `3` in that order and whose `draws` hold
 ///   `352`, `576`, `352`, and `576` bytes; no two records' `draws` are equal.
 /// Boundary: `challenge_vectors` over the real chain of the private surface.
-/// Mocked:  none; the operating-system generator runs real.
+/// Mocked:  nothing; each declared member's generator runs real.
 #[test]
 fn challenge_vectors_emit_a_mint_and_a_transfer_record_per_count_in_order() {
     struct Consumer;
@@ -228,11 +230,11 @@ fn challenge_vectors_emit_a_mint_and_a_transfer_record_per_count_in_order() {
             // Arrange
             let mint = build_delivery_context::<F, MintPurpose>(
                 payload.mint_purpose,
-                delivery_context_overrides(&payload.mint),
+                delivery_context_overrides(payload, &payload.mint),
             );
             let transfer = build_delivery_context::<F, TransferPurpose>(
                 payload.transfer_purpose,
-                delivery_context_overrides(&payload.transfer),
+                delivery_context_overrides(payload, &payload.transfer),
             );
 
             // Act
@@ -278,24 +280,27 @@ fn challenge_vectors_emit_a_mint_and_a_transfer_record_per_count_in_order() {
         for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
             for encoding_selection in DECLARED_ENCODING_SELECTIONS {
                 for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    assert!(
-                        run_challenge_vectors_case(
-                            &build_challenge_vectors_case_deps(Consumer, Default::default()),
-                            case_params(
-                                *pairing_concrete,
-                                hash_selection,
-                                encoding_selection,
-                                *forms_concrete,
-                            ),
-                            case_payload(
-                                build_canonical_delivery_context(Default::default()),
-                                DELIVERY_PURPOSE_REPLACEMENT,
-                                build_canonical_delivery_context(Default::default()),
-                                DELIVERY_PURPOSE_GRANT,
-                            ),
-                        )
-                        .is_ok()
-                    );
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        assert!(
+                            run_challenge_vectors_case(
+                                &build_challenge_vectors_case_deps(Consumer, Default::default()),
+                                case_params(
+                                    *pairing_concrete,
+                                    hash_selection,
+                                    encoding_selection,
+                                    *forms_concrete,
+                                    *random_kind,
+                                ),
+                                case_payload(
+                                    build_canonical_delivery_context(Default::default()),
+                                    DELIVERY_PURPOSE_REPLACEMENT,
+                                    build_canonical_delivery_context(Default::default()),
+                                    DELIVERY_PURPOSE_GRANT,
+                                ),
+                            )
+                            .is_ok()
+                        );
+                    }
                 }
             }
         }
@@ -307,9 +312,13 @@ fn challenge_vectors_emit_a_mint_and_a_transfer_record_per_count_in_order() {
 ///   `encoding`, decoded under its statement description and read through
 ///   `to_fields`, holds the context's configured values at the canonical field
 ///   indices.
-/// Arrange: `count` of `1`, the purposes `DELIVERY_PURPOSE_REPLACEMENT` and
-///   `DELIVERY_PURPOSE_GRANT`, and `mint` and `transfer` the
-///   `CanonicalDeliveryContext` values below.
+/// Arrange: `count` of `1`, the case payload's purposes
+///   `DELIVERY_PURPOSE_REPLACEMENT` and `DELIVERY_PURPOSE_GRANT`, its `chain`
+///   `Unsigned256([0x21; 32])` and `entitlement_contract`
+///   `FixedBytes20([0x31; 20])`, and its `mint` and `transfer` the
+///   `CanonicalDeliveryContext` values below, each context's canonical values
+///   differing field from field and from the `chain` and
+///   `entitlement_contract` the case payload carries.
 /// Act:    the case consumer's single call to `challenge_vectors`, once per
 ///   member of `PAIRING_CONCRETES` and each declared selection.
 /// Assert: the result is `Ok`; the mint record's decoded transcript holds at
@@ -319,7 +328,7 @@ fn challenge_vectors_emit_a_mint_and_a_transfer_record_per_count_in_order() {
 /// Boundary: `challenge_vectors`, the forms' `from_field` in the arrangement
 ///   and `to_field`, the description's `to_fields`, and the encoder's `encode`
 ///   and `decode`.
-/// Mocked:  none; the operating-system generator runs real.
+/// Mocked:  nothing; each declared member's generator runs real.
 #[test]
 fn challenge_vectors_place_each_contexts_configured_values_in_its_transcript() {
     struct Consumer;
@@ -344,11 +353,11 @@ fn challenge_vectors_place_each_contexts_configured_values_in_its_transcript() {
             // Arrange
             let mint = build_delivery_context::<F, MintPurpose>(
                 payload.mint_purpose,
-                delivery_context_overrides(&payload.mint),
+                delivery_context_overrides(payload, &payload.mint),
             );
             let transfer = build_delivery_context::<F, TransferPurpose>(
                 payload.transfer_purpose,
-                delivery_context_overrides(&payload.transfer),
+                delivery_context_overrides(payload, &payload.transfer),
             );
 
             // Act
@@ -430,7 +439,7 @@ fn challenge_vectors_place_each_contexts_configured_values_in_its_transcript() {
                 .fields;
             let transfer_expected: [(usize, CanonicalFieldValue); 10] = [
                 (2, CanonicalFieldValue::Unsigned256([0x21; 32])),
-                (3, CanonicalFieldValue::FixedBytes20([0x32; 20])),
+                (3, CanonicalFieldValue::FixedBytes20([0x31; 20])),
                 (6, CanonicalFieldValue::Unsigned256([0x43; 32])),
                 (7, CanonicalFieldValue::Unsigned256([0x43; 32])),
                 (8, CanonicalFieldValue::Unsigned64(6)),
@@ -451,66 +460,65 @@ fn challenge_vectors_place_each_contexts_configured_values_in_its_transcript() {
         for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
             for encoding_selection in DECLARED_ENCODING_SELECTIONS {
                 for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    assert!(
-                        run_challenge_vectors_case(
-                            &build_challenge_vectors_case_deps(Consumer, Default::default()),
-                            case_params(
-                                *pairing_concrete,
-                                hash_selection,
-                                encoding_selection,
-                                *forms_concrete,
-                            ),
-                            case_payload(
-                                build_canonical_delivery_context(
-                                    CanonicalDeliveryContextOverrides {
-                                        chain: Some(CanonicalFieldValue::Unsigned256([0x21; 32])),
-                                        entitlement_contract: Some(
-                                            CanonicalFieldValue::FixedBytes20([0x31; 20]),
-                                        ),
-                                        source_entitlement: Some(CanonicalFieldValue::Unsigned256(
-                                            [0x41; 32]
-                                        ),),
-                                        target_entitlement: Some(CanonicalFieldValue::Unsigned256(
-                                            [0x42; 32]
-                                        ),),
-                                        old_interval: Some(CanonicalFieldValue::Unsigned64(5)),
-                                        new_interval: Some(CanonicalFieldValue::Unsigned64(6)),
-                                        seller: Some(
-                                            CanonicalFieldValue::FixedBytes20([0x61; 20],)
-                                        ),
-                                        buyer: Some(CanonicalFieldValue::FixedBytes20([0x62; 20])),
-                                        expiry: Some(1_800_000_000),
-                                        ..Default::default()
-                                    },
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        assert!(
+                            run_challenge_vectors_case(
+                                &build_challenge_vectors_case_deps(Consumer, Default::default()),
+                                case_params(
+                                    *pairing_concrete,
+                                    hash_selection,
+                                    encoding_selection,
+                                    *forms_concrete,
+                                    *random_kind,
                                 ),
-                                DELIVERY_PURPOSE_REPLACEMENT,
-                                build_canonical_delivery_context(
-                                    CanonicalDeliveryContextOverrides {
-                                        chain: Some(CanonicalFieldValue::Unsigned256([0x21; 32])),
-                                        entitlement_contract: Some(
-                                            CanonicalFieldValue::FixedBytes20([0x32; 20]),
-                                        ),
-                                        source_entitlement: Some(CanonicalFieldValue::Unsigned256(
-                                            [0x43; 32]
-                                        ),),
-                                        target_entitlement: Some(CanonicalFieldValue::Unsigned256(
-                                            [0x43; 32]
-                                        ),),
-                                        old_interval: Some(CanonicalFieldValue::Unsigned64(6)),
-                                        new_interval: Some(CanonicalFieldValue::Unsigned64(7)),
-                                        seller: Some(
-                                            CanonicalFieldValue::FixedBytes20([0x62; 20],)
-                                        ),
-                                        buyer: Some(CanonicalFieldValue::FixedBytes20([0x63; 20])),
-                                        expiry: Some(1_900_000_000),
-                                        ..Default::default()
-                                    },
+                                case_payload(
+                                    build_canonical_delivery_context(
+                                        CanonicalDeliveryContextOverrides {
+                                            source_entitlement: Some(
+                                                CanonicalFieldValue::Unsigned256([0x41; 32]),
+                                            ),
+                                            target_entitlement: Some(
+                                                CanonicalFieldValue::Unsigned256([0x42; 32]),
+                                            ),
+                                            old_interval: Some(CanonicalFieldValue::Unsigned64(5)),
+                                            new_interval: Some(CanonicalFieldValue::Unsigned64(6)),
+                                            seller: Some(CanonicalFieldValue::FixedBytes20(
+                                                [0x61; 20],
+                                            )),
+                                            buyer: Some(CanonicalFieldValue::FixedBytes20(
+                                                [0x62; 20]
+                                            )),
+                                            expiry: Some(1_800_000_000),
+                                            ..Default::default()
+                                        },
+                                    ),
+                                    DELIVERY_PURPOSE_REPLACEMENT,
+                                    build_canonical_delivery_context(
+                                        CanonicalDeliveryContextOverrides {
+                                            source_entitlement: Some(
+                                                CanonicalFieldValue::Unsigned256([0x43; 32]),
+                                            ),
+                                            target_entitlement: Some(
+                                                CanonicalFieldValue::Unsigned256([0x43; 32]),
+                                            ),
+                                            old_interval: Some(CanonicalFieldValue::Unsigned64(6)),
+                                            new_interval: Some(CanonicalFieldValue::Unsigned64(7)),
+                                            seller: Some(CanonicalFieldValue::FixedBytes20(
+                                                [0x62; 20],
+                                            )),
+                                            buyer: Some(CanonicalFieldValue::FixedBytes20(
+                                                [0x63; 20]
+                                            )),
+                                            expiry: Some(1_900_000_000),
+                                            ..Default::default()
+                                        },
+                                    ),
+                                    DELIVERY_PURPOSE_GRANT,
                                 ),
-                                DELIVERY_PURPOSE_GRANT,
-                            ),
-                        )
-                        .is_ok()
-                    );
+                            )
+                            .is_ok()
+                        );
+                    }
                 }
             }
         }
@@ -538,7 +546,7 @@ fn challenge_vectors_place_each_contexts_configured_values_in_its_transcript() {
 /// Boundary: `challenge_vectors`, the pairing's `decode_scalar`,
 ///   `g1_generator`, `g2_generator`, `mul_g1`, `mul_g2`, `encode_g1`, and
 ///   `encode_g2`, and the encoder's `decode`.
-/// Mocked:  none; the operating-system generator runs real.
+/// Mocked:  nothing; each declared member's generator runs real.
 #[test]
 fn challenge_vectors_draw_every_transcript_point_from_its_recorded_scalar() {
     const MINT_GROUP_FIELDS: [usize; 11] = [13, 14, 15, 16, 17, 18, 20, 21, 22, 23, 24];
@@ -568,11 +576,11 @@ fn challenge_vectors_draw_every_transcript_point_from_its_recorded_scalar() {
             // Arrange
             let mint = build_delivery_context::<F, MintPurpose>(
                 payload.mint_purpose,
-                delivery_context_overrides(&payload.mint),
+                delivery_context_overrides(payload, &payload.mint),
             );
             let transfer = build_delivery_context::<F, TransferPurpose>(
                 payload.transfer_purpose,
-                delivery_context_overrides(&payload.transfer),
+                delivery_context_overrides(payload, &payload.transfer),
             );
 
             // Act
@@ -716,24 +724,27 @@ fn challenge_vectors_draw_every_transcript_point_from_its_recorded_scalar() {
         for hash_selection in DECLARED_HASH_TO_SCALAR_SELECTIONS {
             for encoding_selection in DECLARED_ENCODING_SELECTIONS {
                 for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    assert!(
-                        run_challenge_vectors_case(
-                            &build_challenge_vectors_case_deps(Consumer, Default::default()),
-                            case_params(
-                                *pairing_concrete,
-                                hash_selection,
-                                encoding_selection,
-                                *forms_concrete,
-                            ),
-                            case_payload(
-                                build_canonical_delivery_context(Default::default()),
-                                DELIVERY_PURPOSE_MINT,
-                                build_canonical_delivery_context(Default::default()),
-                                DELIVERY_PURPOSE_TRANSFER,
-                            ),
-                        )
-                        .is_ok()
-                    );
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        assert!(
+                            run_challenge_vectors_case(
+                                &build_challenge_vectors_case_deps(Consumer, Default::default()),
+                                case_params(
+                                    *pairing_concrete,
+                                    hash_selection,
+                                    encoding_selection,
+                                    *forms_concrete,
+                                    *random_kind,
+                                ),
+                                case_payload(
+                                    build_canonical_delivery_context(Default::default()),
+                                    DELIVERY_PURPOSE_MINT,
+                                    build_canonical_delivery_context(Default::default()),
+                                    DELIVERY_PURPOSE_TRANSFER,
+                                ),
+                            )
+                            .is_ok()
+                        );
+                    }
                 }
             }
         }
@@ -758,7 +769,7 @@ fn challenge_vectors_draw_every_transcript_point_from_its_recorded_scalar() {
 /// Boundary: `challenge_vectors`, the encoder's `encode`, the adapter's
 ///   `hash_to_scalar`, `DomainTag::try_new`, `DomainTag::as_bytes`, and the
 ///   pairing's `sample_from_uniform_bytes` and `encode_scalar`.
-/// Mocked:  none; the operating-system generator runs real.
+/// Mocked:  nothing; each declared member's generator runs real.
 #[test]
 fn challenge_vectors_record_the_challenge_the_declared_tag_maps_each_encoding_to() {
     struct Consumer;
@@ -783,11 +794,11 @@ fn challenge_vectors_record_the_challenge_the_declared_tag_maps_each_encoding_to
             // Arrange
             let mint = build_delivery_context::<F, MintPurpose>(
                 payload.mint_purpose,
-                delivery_context_overrides(&payload.mint),
+                delivery_context_overrides(payload, &payload.mint),
             );
             let transfer = build_delivery_context::<F, TransferPurpose>(
                 payload.transfer_purpose,
-                delivery_context_overrides(&payload.transfer),
+                delivery_context_overrides(payload, &payload.transfer),
             );
 
             // Act
@@ -859,24 +870,27 @@ fn challenge_vectors_record_the_challenge_the_declared_tag_maps_each_encoding_to
             }
             for encoding_selection in DECLARED_ENCODING_SELECTIONS {
                 for forms_concrete in CHAIN_FORMS_CONCRETES {
-                    assert!(
-                        run_challenge_vectors_case(
-                            &build_challenge_vectors_case_deps(Consumer, Default::default()),
-                            case_params(
-                                *pairing_concrete,
-                                hash_selection,
-                                encoding_selection,
-                                *forms_concrete,
-                            ),
-                            case_payload(
-                                build_canonical_delivery_context(Default::default()),
-                                DELIVERY_PURPOSE_MINT,
-                                build_canonical_delivery_context(Default::default()),
-                                DELIVERY_PURPOSE_TRANSFER,
-                            ),
-                        )
-                        .is_ok()
-                    );
+                    for random_kind in RANDOM_SOURCE_KINDS {
+                        assert!(
+                            run_challenge_vectors_case(
+                                &build_challenge_vectors_case_deps(Consumer, Default::default()),
+                                case_params(
+                                    *pairing_concrete,
+                                    hash_selection,
+                                    encoding_selection,
+                                    *forms_concrete,
+                                    *random_kind,
+                                ),
+                                case_payload(
+                                    build_canonical_delivery_context(Default::default()),
+                                    DELIVERY_PURPOSE_MINT,
+                                    build_canonical_delivery_context(Default::default()),
+                                    DELIVERY_PURPOSE_TRANSFER,
+                                ),
+                            )
+                            .is_ok()
+                        );
+                    }
                 }
             }
         }
@@ -928,11 +942,11 @@ fn challenge_vectors_return_the_hash_to_scalar_refusal_whole() {
             // Arrange
             let mint = build_delivery_context::<F, MintPurpose>(
                 payload.mint_purpose,
-                delivery_context_overrides(&payload.mint),
+                delivery_context_overrides(payload, &payload.mint),
             );
             let transfer = build_delivery_context::<F, TransferPurpose>(
                 payload.transfer_purpose,
-                delivery_context_overrides(&payload.transfer),
+                delivery_context_overrides(payload, &payload.transfer),
             );
 
             // Act
@@ -977,31 +991,34 @@ fn challenge_vectors_return_the_hash_to_scalar_refusal_whole() {
     for pairing_concrete in PAIRING_CONCRETES {
         for encoding_selection in DECLARED_ENCODING_SELECTIONS {
             for forms_concrete in CHAIN_FORMS_CONCRETES {
-                assert!(
-                    run_challenge_vectors_case(
-                        &build_challenge_vectors_case_deps(Consumer, Default::default()),
-                        case_params(
-                            *pairing_concrete,
-                            &build_create_hash_to_scalar_params(
-                                CreateHashToScalarParamsOverrides {
-                                    concrete: Some(HashToScalarConcrete::Mock(
-                                        MockIHashToScalarAdapterFailureMode::SamplingRefused,
-                                    )),
-                                    ..Default::default()
-                                },
+                for random_kind in RANDOM_SOURCE_KINDS {
+                    assert!(
+                        run_challenge_vectors_case(
+                            &build_challenge_vectors_case_deps(Consumer, Default::default()),
+                            case_params(
+                                *pairing_concrete,
+                                &build_create_hash_to_scalar_params(
+                                    CreateHashToScalarParamsOverrides {
+                                        concrete: Some(HashToScalarConcrete::Mock(
+                                            MockIHashToScalarAdapterFailureMode::SamplingRefused,
+                                        )),
+                                        ..Default::default()
+                                    },
+                                ),
+                                encoding_selection,
+                                *forms_concrete,
+                                *random_kind,
                             ),
-                            encoding_selection,
-                            *forms_concrete,
-                        ),
-                        case_payload(
-                            build_canonical_delivery_context(Default::default()),
-                            DELIVERY_PURPOSE_MINT,
-                            build_canonical_delivery_context(Default::default()),
-                            DELIVERY_PURPOSE_TRANSFER,
-                        ),
-                    )
-                    .is_ok()
-                );
+                            case_payload(
+                                build_canonical_delivery_context(Default::default()),
+                                DELIVERY_PURPOSE_MINT,
+                                build_canonical_delivery_context(Default::default()),
+                                DELIVERY_PURPOSE_TRANSFER,
+                            ),
+                        )
+                        .is_ok()
+                    );
+                }
             }
         }
     }

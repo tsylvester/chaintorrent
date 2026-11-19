@@ -4,7 +4,7 @@ use std::cell::Cell;
 use std::collections::HashSet;
 
 use chain::{
-    CHAIN_FORMS_CONCRETES, CreateChainFormsParamsOverrides, IChainForms,
+    CHAIN_FORMS_CONCRETES, ChainFormsConcrete, CreateChainFormsParamsOverrides, IChainForms,
     build_create_chain_forms_params,
 };
 use encoding::{
@@ -28,6 +28,10 @@ use random::{
     CreateRandomSourceParamsOverrides, RandomSourceKind, build_create_random_source_params,
 };
 
+use super::super::admit_generate_composition::provides::{
+    AdmitGenerateCompositionErrorReturn, EncodingIdentifierDisagreementOverrides,
+    admit_generate_composition, build_encoding_identifier_disagreement,
+};
 use super::create_generate;
 use super::interface::{
     ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload, ConsumeGenerateParams,
@@ -37,8 +41,8 @@ use super::interface::{
     MockIGenerateAdapterFailureMode,
 };
 use super::mock::{
-    CreateGenerateCaseParamsOverrides, CreateGenerateParamsOverrides, EmitPayloadOverrides,
-    GenerateConcreteOverrides, GenerateKindConfigurationsOverrides,
+    CreateGenerateCaseParamsOverrides, CreateGenerateDepsOverrides, CreateGenerateParamsOverrides,
+    EmitPayloadOverrides, GenerateConcreteOverrides, GenerateKindConfigurationsOverrides,
     build_create_generate_case_deps, build_create_generate_case_params,
     build_create_generate_case_payload, build_create_generate_deps, build_create_generate_params,
     build_create_generate_payload, build_emit_params, build_emit_payload, build_generate_concrete,
@@ -150,7 +154,9 @@ fn emit_returns_a_distinct_path_for_every_kind_the_declaration_does_not_gate() {
                         transfer: &transfer,
                         identities: &payload.identities,
                     },
-                    Default::default(),
+                    CreateGenerateDepsOverrides {
+                        admit_generate_composition: Some(admit_generate_composition),
+                    },
                 ),
                 self.params.clone(),
                 build_create_generate_payload(Default::default()),
@@ -341,7 +347,9 @@ fn a_refused_write_returns_the_mock_concretes_own_error() {
                         transfer: &transfer,
                         identities: &payload.identities,
                     },
-                    Default::default(),
+                    CreateGenerateDepsOverrides {
+                        admit_generate_composition: Some(admit_generate_composition),
+                    },
                 ),
                 self.params.clone(),
                 build_create_generate_payload(Default::default()),
@@ -426,20 +434,26 @@ fn a_refused_write_returns_the_mock_concretes_own_error() {
 
 /// Contract: `create_generate` over an encoder whose declared encoding
 ///   identifier is not the one the selected concrete's declaration requires
-///   returns `Err(CreateGenerateErrorReturn::UnsupportedEncodingIdentifier)`
-///   with the consumer never called.
-/// Arrange: every member of `GENERATE_CONCRETES` over `EncodingConcrete::Mock`,
-///   whose declared identifier is `EncodingIdentifier::Mock`, under the mock
-///   chain-forms default that admits it, and the mock selection over every
-///   member of `DECLARED_ENCODING_SELECTIONS` under `CHAIN_FORMS_CONCRETES`'
-///   selection, whose declaration admits each real encoder.
+///   returns `Err(CreateGenerateErrorReturn::Composition(
+///   AdmitGenerateCompositionErrorReturn::Incompatible { chain_forms: None,
+///   encoding: Some(..) }))` with the consumer never called.
+/// Arrange: every member of `GENERATE_CONCRETES` over `EncodingConcrete::
+///   Mock`, whose declared identifier is `EncodingIdentifier::Mock`, under
+///   the family's mock forms concrete, the one the encoder admits, its
+///   declaration carrying `ChainFormsIdentifier::EvmV1`, and the mock
+///   selection over every member of `DECLARED_ENCODING_SELECTIONS` under
+///   `CHAIN_FORMS_CONCRETES`' member requiring the encoder's identifier.
 /// Act:    `create_generate`, the single call inside the block's case
-///   consumer, run once per case by `run_create_generate_case`.
-/// Assert: `result`'s `output` equals `Err(
-///   CreateGenerateErrorReturn::UnsupportedEncodingIdentifier)` by
-///   `assert_eq!`, and the recording consumer's flag stays unset per case.
-/// Boundary: `create_generate`, the encoder's declaration, and the selected
-///   concrete's declaration, each real.
+///   consumer, run once per case by `run_create_generate_case`, with a
+///   consumer recording a call.
+/// Assert: `result`'s `output` equals `Err(CreateGenerateErrorReturn::
+///   Composition(AdmitGenerateCompositionErrorReturn::Incompatible {
+///   chain_forms: None, encoding: Some(..) }))` by `assert_eq!`, `required`
+///   the identifier the member's declaration requires and `declared` the
+///   encoder's own, and the recording consumer's flag stays unset per case.
+/// Boundary: `create_generate`, `admit_generate_composition` over the real
+///   `lookup_generate_declaration`, the encoder's declaration, and the
+///   selected concrete's declaration, each real.
 /// Mocked: the encoding family's mock concrete as the encoder for the real
 ///   generate concretes, and the family's mock concrete as the selection for
 ///   the real encoders, selected through their factories, nothing else.
@@ -495,7 +509,9 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
                     RecordingConsumer {
                         called: self.called,
                     },
-                    Default::default(),
+                    CreateGenerateDepsOverrides {
+                        admit_generate_composition: Some(admit_generate_composition),
+                    },
                 ),
                 self.params.clone(),
                 build_create_generate_payload(Default::default()),
@@ -531,6 +547,12 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
                 concrete: EncodingConcrete::Mock,
                 identifier: EncodingIdentifier::Mock,
             }),
+            chain_forms: Some(build_create_chain_forms_params(
+                CreateChainFormsParamsOverrides {
+                    concrete: Some(ChainFormsConcrete::Mock),
+                    ..Default::default()
+                },
+            )),
             random_source: Some(build_create_random_source_params(
                 CreateRandomSourceParamsOverrides {
                     kind: Some(RandomSourceKind::OperatingSystem),
@@ -547,7 +569,17 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
         // Assert
         assert_eq!(
             result.unwrap().output.map(|_| ()),
-            Err(CreateGenerateErrorReturn::UnsupportedEncodingIdentifier)
+            Err(CreateGenerateErrorReturn::Composition(
+                AdmitGenerateCompositionErrorReturn::Incompatible {
+                    chain_forms: None,
+                    encoding: Some(build_encoding_identifier_disagreement(
+                        EncodingIdentifierDisagreementOverrides {
+                            required: Some(EncodingIdentifier::EthereumAbiV1),
+                            declared: Some(EncodingIdentifier::Mock),
+                        },
+                    )),
+                }
+            ))
         );
         assert!(!called.get());
     }
@@ -589,7 +621,17 @@ fn create_generate_refuses_an_encoder_declaring_another_encoding_identifier() {
         // Assert
         assert_eq!(
             result.unwrap().output.map(|_| ()),
-            Err(CreateGenerateErrorReturn::UnsupportedEncodingIdentifier)
+            Err(CreateGenerateErrorReturn::Composition(
+                AdmitGenerateCompositionErrorReturn::Incompatible {
+                    chain_forms: None,
+                    encoding: Some(build_encoding_identifier_disagreement(
+                        EncodingIdentifierDisagreementOverrides {
+                            required: Some(EncodingIdentifier::Mock),
+                            declared: Some(encoding.identifier),
+                        },
+                    )),
+                }
+            ))
         );
         assert!(!called.get());
     }

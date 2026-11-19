@@ -3,7 +3,7 @@ use chain::{CreateChainFormsErrorReturn, CreateChainFormsParams, IChainForms};
 use core::convert::Infallible;
 #[cfg(any(test, feature = "mocks"))]
 use encoding::{CreateEncodingErrorReturn, CreateEncodingParams, IDecoderAdapter};
-use encoding::{EncodeErrorReturn, EncodingIdentifier, IEncoderAdapter};
+use encoding::{EncodeErrorReturn, IEncoderAdapter};
 use envelope::IKeyAgreementAdapter;
 #[cfg(any(test, feature = "mocks"))]
 use envelope::{CreateKeyAgreementErrorReturn, CreateKeyAgreementParams};
@@ -26,10 +26,7 @@ use random::IRandomSourceAdapter;
 use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 use std::path::PathBuf;
 
-use super::super::factory::provides::{
-    GENERATE_INTERFACE_VERSION, GenerateDeclaration, VectorKind, VectorKindDeclaration,
-    VectorKindSettings, VectorKindSizing,
-};
+use super::super::factory::provides::{VectorKind, VectorKindSettings};
 use super::challenge_vectors::provides::{
     ChallengeVectorMemberNamesErrorReturn, ChallengeVectorsErrorReturn, ChallengeVectorsFn,
 };
@@ -52,80 +49,14 @@ use super::rejection_vectors::provides::{
     RejectionVectorMemberNamesErrorReturn, RejectionVectorsErrorReturn, RejectionVectorsFn,
 };
 use super::render::provides::{
-    RenderFn, SolidityAbiTypeTryNewErrorReturn, SolidityCompilerVersion, SolidityConstantName,
-    SolidityLibraryEntriesTryNewErrorReturn, SolidityLibraryName, SolidityMemberName,
+    RenderFn, SolidityAbiTypeTryNewErrorReturn, SolidityLibraryEntriesTryNewErrorReturn,
     SolidityRecordDeclarationsTryNewErrorReturn, SolidityRecordMembersTryNewErrorReturn,
-    SolidityStringLiteralTryNewErrorReturn, SolidityTypeName, SpdxLicenseIdentifier,
+    SolidityStringLiteralTryNewErrorReturn,
 };
 #[cfg(any(test, feature = "mocks"))]
 use crate::delivery::provides::AdmittedKemIdentity;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct GeneratedFileName {
-    pub(super) text: String,
-}
-
-pub struct GeneratedFileNameConstructorParams {
-    pub text: String,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum GeneratedFileNameTryNewErrorReturn {
-    Empty,
-    Reserved,
-    InvalidCharacter { index: usize, byte: u8 },
-}
-
-pub type GeneratedFileNameTryNewReturn =
-    Result<GeneratedFileName, GeneratedFileNameTryNewErrorReturn>;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct GeneratedDirectory {
-    pub(super) segments: Vec<GeneratedFileName>,
-}
-
-pub struct GeneratedDirectoryConstructorParams {
-    pub segments: Vec<GeneratedFileName>,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum GeneratedDirectoryTryNewErrorReturn {
-    Empty,
-}
-
-pub type GeneratedDirectoryTryNewReturn =
-    Result<GeneratedDirectory, GeneratedDirectoryTryNewErrorReturn>;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SolidityVectorKindNames {
-    pub file_name: GeneratedFileName,
-    pub struct_name: SolidityTypeName,
-    pub decode_function_name: SolidityMemberName,
-    pub path_constant_name: SolidityConstantName,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SolidityVectorKindSettings {
-    pub kind: VectorKind,
-    pub names: SolidityVectorKindNames,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SolidityLibraryNames {
-    pub file_name: GeneratedFileName,
-    pub library_name: SolidityLibraryName,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SolidityGenerateSettings {
-    pub kinds: Vec<SolidityVectorKindSettings>,
-    pub constants_library: SolidityLibraryNames,
-    pub records_library: SolidityLibraryNames,
-    pub foundry_root: PathBuf,
-    pub generated_directory: GeneratedDirectory,
-    pub compiler_version: SolidityCompilerVersion,
-    pub license: SpdxLicenseIdentifier,
-}
+use super::settings::provides::{GeneratedFileNameTryNewErrorReturn, SolidityGenerateSettings};
 
 pub struct SolidityGenerateConstructorParams<
     'a,
@@ -185,84 +116,6 @@ pub struct SolidityGenerate<
 
 pub type SolidityGenerateTryNewReturn<'a, P, E, K, A, D> =
     Result<SolidityGenerate<'a, P, E, K, A, D>, Infallible>;
-
-pub const SOLIDITY_GENERATE_DECLARATION: GenerateDeclaration = GenerateDeclaration {
-    kinds: &[
-        VectorKindDeclaration {
-            kind: VectorKind::G1Addition,
-            sizing: VectorKindSizing::Drawn,
-            requires_second_group_arithmetic: false,
-        },
-        VectorKindDeclaration {
-            kind: VectorKind::G1Multiplication,
-            sizing: VectorKindSizing::Drawn,
-            requires_second_group_arithmetic: false,
-        },
-        VectorKindDeclaration {
-            kind: VectorKind::PairingCheck,
-            sizing: VectorKindSizing::Drawn,
-            requires_second_group_arithmetic: false,
-        },
-        VectorKindDeclaration {
-            kind: VectorKind::G2Addition,
-            sizing: VectorKindSizing::Drawn,
-            requires_second_group_arithmetic: true,
-        },
-        VectorKindDeclaration {
-            kind: VectorKind::G1MultiScalarMultiplication,
-            sizing: VectorKindSizing::DrawnTerms,
-            requires_second_group_arithmetic: true,
-        },
-        VectorKindDeclaration {
-            kind: VectorKind::G2MultiScalarMultiplication,
-            sizing: VectorKindSizing::DrawnTerms,
-            requires_second_group_arithmetic: true,
-        },
-        VectorKindDeclaration {
-            kind: VectorKind::DecodeRejection,
-            sizing: VectorKindSizing::Enumerated,
-            requires_second_group_arithmetic: false,
-        },
-        VectorKindDeclaration {
-            kind: VectorKind::HashToScalar,
-            sizing: VectorKindSizing::DrawnMessages,
-            requires_second_group_arithmetic: false,
-        },
-        VectorKindDeclaration {
-            kind: VectorKind::IdentityMapping,
-            sizing: VectorKindSizing::OverConfiguredInputs,
-            requires_second_group_arithmetic: false,
-        },
-        VectorKindDeclaration {
-            kind: VectorKind::Possession,
-            sizing: VectorKindSizing::Drawn,
-            requires_second_group_arithmetic: false,
-        },
-        VectorKindDeclaration {
-            kind: VectorKind::Challenge,
-            sizing: VectorKindSizing::Drawn,
-            requires_second_group_arithmetic: false,
-        },
-        VectorKindDeclaration {
-            kind: VectorKind::MintProof,
-            sizing: VectorKindSizing::Drawn,
-            requires_second_group_arithmetic: false,
-        },
-        VectorKindDeclaration {
-            kind: VectorKind::TransferProof,
-            sizing: VectorKindSizing::Drawn,
-            requires_second_group_arithmetic: false,
-        },
-        VectorKindDeclaration {
-            kind: VectorKind::CellValues,
-            sizing: VectorKindSizing::Enumerated,
-            requires_second_group_arithmetic: false,
-        },
-    ],
-    adapter_version: 1,
-    interface_version: GENERATE_INTERFACE_VERSION,
-    encoding_identifier: EncodingIdentifier::EthereumAbiV1,
-};
 
 #[derive(Debug)]
 pub enum SolidityGenerateErrorReturn {

@@ -7,9 +7,9 @@
 )]
 
 use chain::{
-    ConsumeChainFormsParams, ConsumeChainFormsPayload, CreateChainFormsParams, IChainForms,
-    IChainFormsConsumer, build_create_chain_forms_deps, build_create_chain_forms_params,
-    build_create_chain_forms_payload, create_chain_forms,
+    ChainFormsIdentifier, ConsumeChainFormsParams, ConsumeChainFormsPayload,
+    CreateChainFormsParams, IChainForms, IChainFormsConsumer, build_create_chain_forms_deps,
+    build_create_chain_forms_params, build_create_chain_forms_payload, create_chain_forms,
 };
 use core::convert::Infallible;
 use core::marker::PhantomData;
@@ -51,9 +51,12 @@ use random::{
 use serde_json::{Map, Value};
 use std::path::PathBuf;
 
+use super::super::admit_generate_composition::provides::{
+    AdmitGenerateCompositionFn, mock_admit_generate_composition,
+};
 use super::super::solidity::provides::{
     SOLIDITY_GENERATE_DECLARATION, build_solidity_generate_settings,
-    invalidate_solidity_generate_settings,
+    invalidate_solidity_generate_settings_document,
 };
 use super::interface::{
     ConsumeCreateGenerateCaseParams, ConsumeCreateGenerateCasePayload, ConsumeGenerateParams,
@@ -65,9 +68,10 @@ use super::interface::{
     GENERATE_INTERFACE_VERSION, GenerateConcrete, GenerateConcreteKind, GenerateDeclaration,
     ICreateGenerateCaseConsumer, IGenerateAdapter, IGenerateConsumer,
     MockIGenerateAdapterEmitErrorReturn, MockIGenerateAdapterFailureMode, MsmTermCount,
-    MsmTermCountConstructorParams, RunCreateGenerateCaseFn, VectorCount,
-    VectorCountConstructorParams, VectorKind, VectorKindConfiguration, VectorKindDeclaration,
-    VectorKindQuantities, VectorKindSettings, VectorKindSize, VectorKindSizing,
+    MsmTermCountConstructorParams, RunCreateGenerateCaseFn, SettingBounds, SettingDisposition,
+    SettingStatement, SettingVersion, VectorCount, VectorCountConstructorParams, VectorKind,
+    VectorKindConfiguration, VectorKindDeclaration, VectorKindQuantities, VectorKindSettings,
+    VectorKindSize, VectorKindSizing,
 };
 use crate::delivery::provides::{AdmittedKemIdentity, build_admitted_kem_identity};
 
@@ -213,55 +217,24 @@ fn vector_kind_size_value(size: &VectorKindSize) -> Value {
 }
 
 #[derive(Default)]
-pub struct VectorKindDeclarationCorruptions {
-    pub kind: Option<Value>,
-    pub sizing: Option<Value>,
-    pub requires_second_group_arithmetic: Option<Value>,
-}
-
-pub fn invalidate_vector_kind_declaration(corruptions: VectorKindDeclarationCorruptions) -> Value {
-    let declaration = build_vector_kind_declaration(Default::default());
-    let mut fields = Map::new();
-    fields.insert("kind".to_string(), vector_kind_value(declaration.kind));
-    fields.insert(
-        "sizing".to_string(),
-        Value::from(match declaration.sizing {
-            VectorKindSizing::Drawn => "Drawn",
-            VectorKindSizing::DrawnTerms => "DrawnTerms",
-            VectorKindSizing::DrawnMessages => "DrawnMessages",
-            VectorKindSizing::Enumerated => "Enumerated",
-            VectorKindSizing::OverConfiguredInputs => "OverConfiguredInputs",
-        }),
-    );
-    fields.insert(
-        "requires_second_group_arithmetic".to_string(),
-        Value::from(declaration.requires_second_group_arithmetic),
-    );
-    if let Some(kind) = corruptions.kind {
-        fields.insert("kind".to_string(), kind);
-    }
-    if let Some(sizing) = corruptions.sizing {
-        fields.insert("sizing".to_string(), sizing);
-    }
-    if let Some(requires_second_group_arithmetic) = corruptions.requires_second_group_arithmetic {
-        fields.insert(
-            "requires_second_group_arithmetic".to_string(),
-            requires_second_group_arithmetic,
-        );
-    }
-    Value::Object(fields)
-}
-
-#[derive(Default)]
 pub struct GenerateDeclarationOverrides {
+    pub identifier: Option<GenerateConcreteKind>,
+    pub name: Option<&'static str>,
     pub kinds: Option<&'static [VectorKindDeclaration]>,
     pub adapter_version: Option<u32>,
     pub interface_version: Option<u32>,
     pub encoding_identifier: Option<EncodingIdentifier>,
+    pub chain_forms_identifier: Option<ChainFormsIdentifier>,
+    pub contract_suite: Option<&'static str>,
+    pub settings: Option<&'static [SettingStatement]>,
 }
 
 pub fn build_generate_declaration(overrides: GenerateDeclarationOverrides) -> GenerateDeclaration {
     GenerateDeclaration {
+        identifier: overrides
+            .identifier
+            .unwrap_or(GenerateConcreteKind::Solidity),
+        name: overrides.name.unwrap_or("Solidity"),
         kinds: overrides.kinds.unwrap_or(&[]),
         adapter_version: overrides.adapter_version.unwrap_or(1),
         interface_version: overrides
@@ -270,58 +243,12 @@ pub fn build_generate_declaration(overrides: GenerateDeclarationOverrides) -> Ge
         encoding_identifier: overrides
             .encoding_identifier
             .unwrap_or(EncodingIdentifier::EthereumAbiV1),
+        chain_forms_identifier: overrides
+            .chain_forms_identifier
+            .unwrap_or(ChainFormsIdentifier::EvmV1),
+        contract_suite: overrides.contract_suite.unwrap_or("evm"),
+        settings: overrides.settings.unwrap_or(&[]),
     }
-}
-
-#[derive(Default)]
-pub struct GenerateDeclarationCorruptions {
-    pub kinds: Option<Value>,
-    pub adapter_version: Option<Value>,
-    pub interface_version: Option<Value>,
-    pub encoding_identifier: Option<Value>,
-}
-
-pub fn invalidate_generate_declaration(corruptions: GenerateDeclarationCorruptions) -> Value {
-    let declaration = build_generate_declaration(Default::default());
-    let mut fields = Map::new();
-    fields.insert(
-        "kinds".to_string(),
-        Value::Array(
-            declaration
-                .kinds
-                .iter()
-                .map(|_| invalidate_vector_kind_declaration(Default::default()))
-                .collect(),
-        ),
-    );
-    fields.insert(
-        "adapter_version".to_string(),
-        Value::from(declaration.adapter_version),
-    );
-    fields.insert(
-        "interface_version".to_string(),
-        Value::from(declaration.interface_version),
-    );
-    fields.insert(
-        "encoding_identifier".to_string(),
-        Value::from(match declaration.encoding_identifier {
-            EncodingIdentifier::EthereumAbiV1 => "EthereumAbiV1",
-            EncodingIdentifier::Mock => "Mock",
-        }),
-    );
-    if let Some(kinds) = corruptions.kinds {
-        fields.insert("kinds".to_string(), kinds);
-    }
-    if let Some(adapter_version) = corruptions.adapter_version {
-        fields.insert("adapter_version".to_string(), adapter_version);
-    }
-    if let Some(interface_version) = corruptions.interface_version {
-        fields.insert("interface_version".to_string(), interface_version);
-    }
-    if let Some(encoding_identifier) = corruptions.encoding_identifier {
-        fields.insert("encoding_identifier".to_string(), encoding_identifier);
-    }
-    Value::Object(fields)
 }
 
 #[derive(Default)]
@@ -432,7 +359,7 @@ pub fn build_emitted_file(overrides: EmittedFileOverrides) -> EmittedFile {
         kind: overrides.kind.unwrap_or(Some(VectorKind::G1Addition)),
         path: overrides
             .path
-            .unwrap_or_else(|| PathBuf::from("g1_add.vectors")),
+            .unwrap_or_else(|| PathBuf::from("g1_addition.txt")),
     }
 }
 
@@ -528,7 +455,111 @@ pub fn build_emit_payload<'a, F: IChainForms>(
     }
 }
 
+#[derive(Default)]
+pub struct SettingVersionOverrides {
+    pub major: Option<u16>,
+    pub minor: Option<u16>,
+    pub patch: Option<u16>,
+}
+
+pub fn build_setting_version(overrides: SettingVersionOverrides) -> SettingVersion {
+    SettingVersion {
+        major: overrides.major.unwrap_or(0),
+        minor: overrides.minor.unwrap_or(8),
+        patch: overrides.patch.unwrap_or(38),
+    }
+}
+
+#[derive(Default)]
+pub struct SettingStatementOverrides {
+    pub name: Option<&'static str>,
+    pub disposition: Option<SettingDisposition>,
+}
+
+pub fn build_setting_statement(overrides: SettingStatementOverrides) -> SettingStatement {
+    SettingStatement {
+        name: overrides.name.unwrap_or("license"),
+        disposition: overrides
+            .disposition
+            .unwrap_or(SettingDisposition::Settable {
+                bounds: SettingBounds::Unbounded,
+                default: "UNLICENSED",
+            }),
+    }
+}
+
+pub(crate) const MOCK_FIXED_LICENSE_SETTING_STATEMENTS: &[SettingStatement] = &[
+    SettingStatement {
+        name: "compiler_version",
+        disposition: SettingDisposition::Settable {
+            bounds: SettingBounds::VersionWithin {
+                at_least: SettingVersion {
+                    major: 0,
+                    minor: 8,
+                    patch: 38,
+                },
+                below: SettingVersion {
+                    major: 0,
+                    minor: 9,
+                    patch: 0,
+                },
+            },
+            default: "0.8.38",
+        },
+    },
+    SettingStatement {
+        name: "license",
+        disposition: SettingDisposition::Fixed {
+            value: "Apache-2.0",
+        },
+    },
+    SettingStatement {
+        name: "foundry_root",
+        disposition: SettingDisposition::Settable {
+            bounds: SettingBounds::Unbounded,
+            default: "contracts/evm",
+        },
+    },
+    SettingStatement {
+        name: "generated_directory",
+        disposition: SettingDisposition::Settable {
+            bounds: SettingBounds::Unbounded,
+            default: "generated",
+        },
+    },
+    SettingStatement {
+        name: "constants_library.file",
+        disposition: SettingDisposition::Settable {
+            bounds: SettingBounds::Unbounded,
+            default: "Constants.sol",
+        },
+    },
+    SettingStatement {
+        name: "constants_library.library",
+        disposition: SettingDisposition::Settable {
+            bounds: SettingBounds::Unbounded,
+            default: "Constants",
+        },
+    },
+    SettingStatement {
+        name: "records_library.file",
+        disposition: SettingDisposition::Settable {
+            bounds: SettingBounds::Unbounded,
+            default: "VectorRecords.sol",
+        },
+    },
+    SettingStatement {
+        name: "records_library.library",
+        disposition: SettingDisposition::Settable {
+            bounds: SettingBounds::Unbounded,
+            default: "VectorRecords",
+        },
+    },
+];
+
 pub(crate) const MOCK_I_GENERATE_ADAPTER_DECLARATION: GenerateDeclaration = GenerateDeclaration {
+    identifier: GenerateConcreteKind::Mock,
+    name: "Mock",
     kinds: &[
         VectorKindDeclaration {
             kind: VectorKind::G1Addition,
@@ -559,6 +590,9 @@ pub(crate) const MOCK_I_GENERATE_ADAPTER_DECLARATION: GenerateDeclaration = Gene
     adapter_version: 1,
     interface_version: GENERATE_INTERFACE_VERSION,
     encoding_identifier: EncodingIdentifier::Mock,
+    chain_forms_identifier: ChainFormsIdentifier::EvmV1,
+    contract_suite: "evm",
+    settings: &[],
 };
 
 pub(crate) struct MockIGenerateAdapterConstructorParams {
@@ -707,7 +741,7 @@ pub fn invalidate_create_generate_params(corruptions: CreateGenerateParamsCorrup
                 let mut variant = Map::new();
                 variant.insert(
                     "settings".to_string(),
-                    invalidate_solidity_generate_settings(Default::default()),
+                    invalidate_solidity_generate_settings_document(Default::default()),
                 );
                 let mut outer = Map::new();
                 outer.insert("Solidity".to_string(), Value::Object(variant));
@@ -798,13 +832,16 @@ pub fn invalidate_vector_kind_configuration(
 pub struct GenerateConcreteOverrides;
 
 pub fn build_generate_concrete(
-    kind: GenerateConcreteKind,
+    identifier: GenerateConcreteKind,
     _overrides: GenerateConcreteOverrides,
 ) -> GenerateConcrete {
-    match kind {
+    match identifier {
         GenerateConcreteKind::Solidity => GenerateConcrete::Solidity {
             settings: Box::new(build_solidity_generate_settings(Default::default())),
         },
+        GenerateConcreteKind::Mock => {
+            GenerateConcrete::Mock(MockIGenerateAdapterFailureMode::NoFailure)
+        }
     }
 }
 
@@ -817,6 +854,16 @@ pub fn build_generate_kind_configurations(
 ) -> Vec<VectorKindConfiguration> {
     match kind {
         GenerateConcreteKind::Solidity => SOLIDITY_GENERATE_DECLARATION
+            .kinds
+            .iter()
+            .map(|declaration| {
+                build_vector_kind_configuration(VectorKindConfigurationOverrides {
+                    kind: Some(declaration.kind),
+                    quantities: Some(build_quantities_for_sizing(declaration.sizing)),
+                })
+            })
+            .collect(),
+        GenerateConcreteKind::Mock => MOCK_I_GENERATE_ADAPTER_DECLARATION
             .kinds
             .iter()
             .map(|declaration| {
@@ -868,7 +915,9 @@ pub fn build_create_generate_payload(
 }
 
 #[derive(Default)]
-pub struct CreateGenerateDepsOverrides;
+pub struct CreateGenerateDepsOverrides {
+    pub admit_generate_composition: Option<AdmitGenerateCompositionFn>,
+}
 
 pub fn build_create_generate_deps<
     'a,
@@ -887,7 +936,7 @@ pub fn build_create_generate_deps<
     key_agreement: &'a A,
     delivery_proof: &'a D,
     consumer: C,
-    _overrides: CreateGenerateDepsOverrides,
+    overrides: CreateGenerateDepsOverrides,
 ) -> CreateGenerateDeps<'a, P, E, K, A, D, C> {
     CreateGenerateDeps {
         pairing,
@@ -897,6 +946,9 @@ pub fn build_create_generate_deps<
         kem,
         key_agreement,
         delivery_proof,
+        admit_generate_composition: overrides
+            .admit_generate_composition
+            .unwrap_or(mock_admit_generate_composition),
         consumer,
     }
 }

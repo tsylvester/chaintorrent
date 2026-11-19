@@ -1,4 +1,4 @@
-use chain::IChainForms;
+use chain::{ChainFormsIdentifier, IChainForms};
 #[cfg(any(test, feature = "mocks"))]
 use chain::{CreateChainFormsErrorReturn, CreateChainFormsParams};
 use core::convert::Infallible;
@@ -28,6 +28,9 @@ use random::IRandomSourceAdapter;
 use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 use std::path::PathBuf;
 
+use super::super::admit_generate_composition::provides::{
+    AdmitGenerateCompositionErrorReturn, AdmitGenerateCompositionFn,
+};
 use super::super::solidity::provides::{SolidityGenerateErrorReturn, SolidityGenerateSettings};
 use crate::delivery::provides::AdmittedKemIdentity;
 
@@ -100,11 +103,49 @@ pub struct VectorKindDeclaration {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SettingVersion {
+    pub major: u16,
+    pub minor: u16,
+    pub patch: u16,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SettingBounds {
+    Unbounded,
+    VersionWithin {
+        at_least: SettingVersion,
+        below: SettingVersion,
+    },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SettingDisposition {
+    Fixed {
+        value: &'static str,
+    },
+    Settable {
+        bounds: SettingBounds,
+        default: &'static str,
+    },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SettingStatement {
+    pub name: &'static str,
+    pub disposition: SettingDisposition,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GenerateDeclaration {
+    pub identifier: GenerateConcreteKind,
+    pub name: &'static str,
     pub kinds: &'static [VectorKindDeclaration],
     pub adapter_version: u32,
     pub interface_version: u32,
     pub encoding_identifier: EncodingIdentifier,
+    pub chain_forms_identifier: ChainFormsIdentifier,
+    pub contract_suite: &'static str,
+    pub settings: &'static [SettingStatement],
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -200,6 +241,8 @@ pub trait IGenerateAdapter {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GenerateConcreteKind {
     Solidity,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock,
 }
 
 pub const GENERATE_CONCRETES: &[GenerateConcreteKind] = &[GenerateConcreteKind::Solidity];
@@ -251,6 +294,7 @@ pub struct CreateGenerateDeps<
     pub kem: &'a K,
     pub key_agreement: &'a A,
     pub delivery_proof: &'a D,
+    pub admit_generate_composition: AdmitGenerateCompositionFn,
     pub consumer: C,
 }
 
@@ -286,7 +330,7 @@ pub enum CreateGenerateErrorReturn {
     MissingKind {
         kind: VectorKind,
     },
-    UnsupportedEncodingIdentifier,
+    Composition(AdmitGenerateCompositionErrorReturn),
     Solidity(Infallible),
 }
 

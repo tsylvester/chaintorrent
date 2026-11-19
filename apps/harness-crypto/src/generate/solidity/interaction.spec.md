@@ -2,37 +2,13 @@
 
 Branch contract for the `solidity` module of the `generate` module of `apps/harness-crypto`: `solidity` is the Solidity concrete of the harness's generate family — one adapter over the borrowed pairing, hash-to-scalar adapter, encoder, randomness source, credential KEM, key agreement, and delivery proof with its chain forms. It calls each function it owns with each kind's admitted size, encodes every vector record into one `0x`-prefixed hex line, renders the constants library and the vector-record library through `render`, writes every vector file under the cell directory the received pairing and encoder declarations name beneath the configured generated directory, and writes both libraries under the configured generated directory outside every cell directory. Each function's branches state condition, decision, dependency call, and the exact return outcome.
 
-## `GeneratedFileName::try_new`
-
-`try_new(params: GeneratedFileNameConstructorParams) -> GeneratedFileNameTryNewReturn`, decided over `params.text.as_bytes()`:
-
-| Branch | Condition | Decision | Dependency call | Outcome |
-|---|---|---|---|---|
-| empty | `params.text` has no byte | none | none | `Err(GeneratedFileNameTryNewErrorReturn::Empty)` |
-| invalid | the lowest index `i` whose byte is outside `b'A'..=b'Z'`, `b'a'..=b'z'`, `b'0'..=b'9'`, `b'.'`, `b'_'`, and `b'-'` | that byte | none | `Err(GeneratedFileNameTryNewErrorReturn::InvalidCharacter { index: i, byte })` |
-| reserved | the text is `.` or `..` | the text | none | `Err(GeneratedFileNameTryNewErrorReturn::Reserved)` |
-| admitted | every byte is in the set and the text is neither `.` nor `..` | none | none | `Ok(GeneratedFileName { text })`, the text moved from the params |
-
-## `GeneratedFileName::as_str`
-
-`as_str(&self) -> &str`: one branch; outcome the held text.
-
-## `GeneratedDirectory::try_new`
-
-`try_new(params: GeneratedDirectoryConstructorParams) -> GeneratedDirectoryTryNewReturn`:
-
-| Branch | Condition | Decision | Dependency call | Outcome |
-|---|---|---|---|---|
-| empty | `params.segments` is empty | the length | none | `Err(GeneratedDirectoryTryNewErrorReturn::Empty)` |
-| admitted | `params.segments` is not empty | none | none | `Ok(GeneratedDirectory { segments })`, the vector moved from the params in its order |
-
 ## `SolidityGenerate::try_new`
 
 `try_new(params: SolidityGenerateConstructorParams) -> SolidityGenerateTryNewReturn`: one branch; outcome `Ok` of the concrete holding every field of the params.
 
 ## `IGenerateAdapter for SolidityGenerate<'_, P, E, K, A, D>`
 
-`const DECLARATION: GenerateDeclaration` naming `SOLIDITY_GENERATE_DECLARATION`, which holds, in order, `G1Addition` `Drawn` `false`, `G1Multiplication` `Drawn` `false`, `PairingCheck` `Drawn` `false`, `G2Addition` `Drawn` `true`, `G1MultiScalarMultiplication` `DrawnTerms` `true`, `G2MultiScalarMultiplication` `DrawnTerms` `true`, `DecodeRejection` `Enumerated` `false`, `HashToScalar` `DrawnMessages` `false`, `IdentityMapping` `OverConfiguredInputs` `false`, `Possession` `Drawn` `false`, `Challenge` `Drawn` `false`, `MintProof` `Drawn` `false`, `TransferProof` `Drawn` `false`, and `CellValues` `Enumerated` `false`, each a `VectorKindDeclaration` of `kind`, `sizing`, and `requires_second_group_arithmetic`, with `adapter_version` `1`, `interface_version` `GENERATE_INTERFACE_VERSION`, and `encoding_identifier` `EncodingIdentifier::EthereumAbiV1`.
+`const DECLARATION: GenerateDeclaration` naming `SOLIDITY_GENERATE_DECLARATION`, which `harness-crypto/generate/solidity/settings` authors.
 
 `type Forms = D::Forms`; `emit(&self, params: EmitParams, payload: EmitPayload<'_, D::Forms>) -> EmitReturn`, the trusted form. Every error below is returned as `Err(EmitErrorReturn::Solidity(error))`; `F` below is `D::Forms`, which the return does not name. The payload's contexts and identities arrive typed and admitted and are handed on unchanged; every function the concrete owns is called through the handle `self` holds for it.
 
@@ -42,7 +18,7 @@ Decision an exhaustive `match` on `P::DECLARATION.verifier_group_arithmetic`; th
 
 ### Settings of an emitted kind
 
-Each emitted kind's names are the first entry of `self.settings.kinds` whose `kind` is the kind, and its size the first entry of `self.sizes` whose `kind` is the kind:
+Each emitted kind is an entry of `DECLARATION.kinds` and `kind` below its `name`: its names are the first entry of `self.settings.kinds` whose `kind` has the `Debug` text equal to `kind`, and its size the first entry of `self.sizes` whose `kind` equals `kind`; the emitted kind is that settings entry's `VectorKind`, which every branch below that decides by kind reads:
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
@@ -89,11 +65,11 @@ Each record, in record order: dependency call `self.encoder.encode(EncodeParams 
 
 ### Cell directory
 
-`GeneratedFileName::try_new(GeneratedFileNameConstructorParams { text })` over `P::DECLARATION.concrete_name`, the cell directory's first segment, and over `E::DECLARATION.name`, its second, each refusal returning `Err(SolidityGenerateErrorReturn::GeneratedFileName(error))`; the cell directory the two admitted names build is read once and used for every emitted kind's path and the directory the files are written under.
+`GeneratedFileName::try_new(GeneratedFileNameConstructorParams { text })` over `P::DECLARATION.concrete_name`, the cell directory's first segment, and over `E::DECLARATION.name`, its second, each refusal returning `Err(SolidityGenerateErrorReturn::GeneratedFileName(error))`, a refusal no declared name takes, every pairing declaration's `concrete_name`, `bn254_arkworks` and the mock's `mock_concrete` among them, and every encoding declaration's `name`, `abi` and `mock` among them, holding only bytes `GeneratedFileName` admits; the cell directory the two admitted names build is read once and used for every emitted kind's path and the directory the files are written under.
 
 ### Paths, per emitted kind
 
-The path constant's text is the kind's configured `file_name` alone; `SolidityStringLiteral::try_new(SolidityStringLiteralConstructorParams { text })` over it, a refusal returning `Err(SolidityGenerateErrorReturn::Path(error))`, every file-name byte being printable ASCII the literal admits, so no input takes it. The filesystem path is `self.settings.foundry_root` joined with `self.settings.generated_directory`'s segments, the cell directory's two segments, and the file name.
+The path constant's text is the kind's configured `file_name` alone; `SolidityStringLiteral::try_new(SolidityStringLiteralConstructorParams { text })` over it, a refusal returning `Err(SolidityGenerateErrorReturn::Path(error))`, every file-name byte being printable ASCII the literal admits, so no input takes it. The filesystem path is `self.settings.foundry_root` joined with each name `self.settings.generated_directory.segments()` returns, in order, the cell directory's two segments, and the file name.
 
 ### Declarations, per emitted kind in declared order
 
@@ -118,7 +94,7 @@ Dependency call `std::fs::create_dir_all` over the cell directory's filesystem p
 
 ### Computed
 
-Outcome `Ok(EmitSuccessReturn { files })`, one `EmittedFile` per file written in write order, a kind's vector file carrying `kind` `Some` of that kind and `path` the path written, each library's carrying `kind` `None` and its path.
+Outcome `Ok(EmitSuccessReturn { files })`, one `EmittedFile` per file written in write order, a kind's vector file carrying `kind` `Some` of the declared kind's `name` and `path` the path written, each library's carrying `kind` `None` and its path.
 
 ### Ordering
 
@@ -152,7 +128,11 @@ Each entry is proven by the private integration block of the same name in `integ
 - `pairing/factory` entries `libraries_sharing_an_identifier_return_the_same_scalar_field_order`, `libraries_sharing_an_identifier_return_the_same_first_group_reference_encoding`, and `libraries_sharing_an_identifier_return_the_same_second_group_reference_encoding`, carried through `rejection_vectors`: carried, restated in this node's terms as: the decode-rejection kind's file holds, per record in order, the line of the record's encoding, so its lines are equal across any two concretes whose declared target-group encoding identifiers are equal; route `create_pairing`, the arm's concrete through its `try_new`, `rejection_vectors`, then the encoder's `encode` and the write in `emit`; the route reaches no outer-edge collaborator other than the filesystem.
 - `kem/factory` entry `every_concrete_returns_a_hash_to_scalar_refusal_whole`, carried through `mapping_vectors`: carried, restated in this node's terms as: the refusal reaches the caller of `emit` whole as `Err(EmitErrorReturn::Solidity(SolidityGenerateErrorReturn::MappingVectors(MappingVectorsErrorReturn::Setup(SetupErrorReturn::HashToScalar(error)))))` under the asset scope and as `Err(EmitErrorReturn::Solidity(SolidityGenerateErrorReturn::MappingVectors(MappingVectorsErrorReturn::DeriveIdentity(DeriveIdentityErrorReturn::HashToScalar(error)))))` under the entitlement scope; route `create_pairing`, the arm's concrete through its `try_new`, `create_hash_to_scalar` selecting the mock concrete under `MockIHashToScalarAdapterFailureMode::SamplingRefused`, `create_kem`, the selected KEM concrete's `try_new`, `setup` or `derive_identity` inside `mapping_vectors`, then `emit`; the outer-edge collaborator on the route is the hash-to-scalar concrete, the family's mock concrete under its failure mode.
 - `proof_vectors` carried entry `every_concrete_declaring_the_keccak256_identifier_hashes_the_context_the_encoding_factory_encodes_to_the_oracle`: carried, restated where this node transforms it: each mint-proof and transfer-proof record's `identity_element` is written unchanged into its kind's line through the encoder's `encode` under its description, so the line decodes to the encoding the entry states for the admitted proof identity; route `create_encoding`, `create_pairing`, the arm's concrete through its `try_new`, `create_hash_to_scalar`, the selected concrete's `try_new`, `create_kem`, the selected concrete's `try_new`, `mint`, `derive_identity`, `transfer`, `identity_element_components`, `proof_vectors`, `encode_g1`, then the encoder's `encode` and the write in `emit`; the outer-edge collaborator on the route is the filesystem.
+- `group_vectors` entry `a_both_groups_pairing_emits_the_second_group_kinds_at_their_configured_counts`: absorbed, proven by `each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size` in the private integration test element `integration_test.rs`, restated in this node's terms as: where the case's pairing declares `BothGroups`, each second-group kind's file holds one line per record at its admitted count.
+- `challenge_vectors` entry `challenge_vectors_emit_a_mint_and_a_transfer_record_per_count_in_order`: absorbed, proven by `each_kinds_file_holds_one_hex_line_per_record_at_its_admitted_size` in the private integration test element `integration_test.rs`, restated in this node's terms as: the challenge kind's file holds a mint line and a transfer line per admitted count, in record order.
+- `possession_vectors` entry `every_run_emits_the_configured_count_of_records_with_distinct_secrets`: carried, restated in this node's terms as: the possession kind's file holds one line per record the function emitted, in record order, each line the encoding of a record whose secrets the source's draws made distinct; route `create_random_source`, the selected source's draw, `possession_vectors`, then the encoder's `encode` and the write in `emit`; the outer-edge collaborator on the route is the random source whose draw is each secret's input.
+- The `challenge_vectors` entry `challenge_vectors_return_the_hash_to_scalar_refusal_whole` and the `proof_vectors` entry `a_refused_mint_draw_reaches_the_caller_through_the_mint_variant` take no disposition: `mapping_vectors` and the earlier draws refuse before the inputs those arms read are reached, so no input reaches them through `emit`.
 
 ## Integration: private surface
 
-The chain of real functions `create_pairing`, the arm's concrete through its `try_new`, `create_hash_to_scalar`, the selected concrete's `try_new` and `hash_to_scalar`, `create_encoding`, the selected encoder's `encode` and `decode`, `create_chain_forms`, `create_kem`, `create_key_agreement`, `create_delivery_proof`, each selected concrete through its `try_new`, `create_random_source` for `RandomSourceKind::OperatingSystem`, `build_solidity_generate`'s `SolidityGenerate::try_new`, `emit`, `constants`, `group_vectors`, `rejection_vectors`, `mapping_vectors`, `possession_vectors`, `challenge_vectors`, `proof_vectors`, `mint`, `transfer`, `render`, each description's `try_new`, `to_fields`, `fields_to_value`, and `member_names`, the selected encoder's `type_name`, `SolidityLibraryEntries::try_new`, `SolidityAbiType::try_new`, `SolidityRecordMembers::try_new`, `SolidityRecordDeclarations::try_new`, and `SolidityStringLiteral::try_new`; the cases are every member of `PAIRING_CONCRETES` crossed with the selections `DECLARED_HASH_TO_SCALAR_SELECTIONS` that declare `HashToScalarIdentifier::Keccak256V1`, `DECLARED_ENCODING_SELECTIONS`, `CHAIN_FORMS_CONCRETES`, `DECLARED_KEM_SELECTIONS`, `DECLARED_KEY_AGREEMENT_SELECTIONS`, and `DELIVERY_PROOF_CONCRETES` hold; the outer-edge collaborators are the filesystem, a directory beneath the operating system's temporary directory removed before each act, the operating system's generator running real, and the hash-to-scalar family's mock concrete under `SamplingRefused` for the mapping refusal entry alone; the observable result is the `EmitReturn`, the files read back, and the encoder's decode results; the entries proven are every own entry above but `each_record_member_carries_the_encoders_type_name_for_its_kind`, which `test.rs` proves over the encoding family's mock encoder and a production-typed `RenderFn` declared in the block, and the absorbed entries; every block hands `build_solidity_generate` the real function of each module the concrete owns as that module's handle, so the chain the entries prove is real.
+The chain of real functions `create_pairing`, the arm's concrete through its `try_new`, `create_hash_to_scalar`, the selected concrete's `try_new` and `hash_to_scalar`, `create_encoding`, the selected encoder's `encode` and `decode`, `create_chain_forms`, `create_kem`, `create_key_agreement`, `create_delivery_proof`, each selected concrete through its `try_new`, `create_random_source` for each member of `RANDOM_SOURCE_KINDS`, `build_solidity_generate`'s `SolidityGenerate::try_new`, `emit`, `constants`, `group_vectors`, `rejection_vectors`, `mapping_vectors`, `possession_vectors`, `challenge_vectors`, `proof_vectors`, `mint`, `transfer`, `render`, each description's `try_new`, `to_fields`, `fields_to_value`, and `member_names`, the selected encoder's `type_name`, `SolidityLibraryEntries::try_new`, `SolidityAbiType::try_new`, `SolidityRecordMembers::try_new`, `SolidityRecordDeclarations::try_new`, and `SolidityStringLiteral::try_new`; the cases are every member of `PAIRING_CONCRETES` crossed with the selections `DECLARED_HASH_TO_SCALAR_SELECTIONS` that declare `HashToScalarIdentifier::Keccak256V1`, `DECLARED_ENCODING_SELECTIONS`, `CHAIN_FORMS_CONCRETES`, `DECLARED_KEM_SELECTIONS`, `DECLARED_KEY_AGREEMENT_SELECTIONS`, and `DELIVERY_PROOF_CONCRETES` hold, and each member of `RANDOM_SOURCE_KINDS`; the outer-edge collaborators are the filesystem, a directory beneath the operating system's temporary directory removed before each act, each declared member's generator behind `create_random_source` running real, and the hash-to-scalar family's mock concrete under `SamplingRefused` for the mapping refusal entry alone; the observable result is the `EmitReturn`, the files read back, and the encoder's decode results; the entries proven are every own entry above but `each_record_member_carries_the_encoders_type_name_for_its_kind`, which `test.rs` proves over the encoding family's mock encoder and a production-typed `RenderFn` declared in the block, and the absorbed entries; every block hands `build_solidity_generate` the real function of each module the concrete owns as that module's handle, so the chain the entries prove is real.
