@@ -70,6 +70,7 @@ pub enum AdmitBaseChainSettingsErrorReturn {
 pub type AdmitBaseChainSettingsReturn =
     Result<AdmitBaseChainSettingsSuccessReturn, AdmitBaseChainSettingsErrorReturn>;
 
+#[cfg(any(test, feature = "mocks"))]
 pub type AdmitBaseChainSettingsFn<'a> = fn(
     &AdmitBaseChainSettingsDeps<'a>,
     AdmitBaseChainSettingsParams,

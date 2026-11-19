@@ -33,7 +33,7 @@ use crate::factory::provides::{
     build_tier_of_params, build_tier_of_payload,
 };
 use alloy::primitives::{Address, B256, Bytes, U256};
-use alloy::sol_types::{SolCall, SolEvent, SolValue};
+use alloy::sol_types::{SolCall, SolEvent};
 use alloy::transports::mock::Asserter;
 use domain::{
     DeploymentIdentityConstructorParamsOverrides, HandshakeKeyCommitment,
@@ -589,7 +589,14 @@ fn batch_evaluation_agrees_with_individual_evaluation() {
             ];
             push_call_result(
                 &endpoint_transport,
-                Bytes::from((vec![0u8, 1, 2], U256::from(7)).abi_encode()),
+                Bytes::from(
+                    Registry::evaluateAuthorizationBatchCall::abi_encode_returns(
+                        &Registry::evaluateAuthorizationBatchReturn {
+                            results: vec![0u8, 1, 2],
+                            nextPage: U256::from(7),
+                        },
+                    ),
+                ),
             );
             push_call_result(
                 &endpoint_transport,

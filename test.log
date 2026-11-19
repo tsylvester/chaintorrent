@@ -3,121 +3,127 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
-   Compiling smallvec v1.16.2
-   Compiling percent-encoding v2.3.2
-   Compiling serde v1.0.229
-   Compiling zerofrom v0.1.8
-   Compiling ark-ff v0.6.0
-   Compiling yoke v0.8.3
-   Compiling form_urlencoded v1.2.2
-   Compiling zerovec v0.11.8
-   Compiling zerotrie v0.2.5
-   Compiling bytes v1.12.1
-   Compiling alloy-sol-type-parser v1.7.3
-   Compiling tinystr v0.8.4
-   Compiling potential_utf v0.1.6
-   Compiling icu_collections v2.3.0
-   Compiling icu_locale_core v2.3.0
-   Compiling alloy-primitives v1.7.3
-   Compiling icu_provider v2.3.1
-   Compiling icu_properties v2.3.0
-   Compiling icu_normalizer v2.3.0
-   Compiling alloy-sol-types v1.7.3
-   Compiling alloy-json-abi v1.7.3
-   Compiling idna_adapter v1.2.2
-   Compiling idna v1.1.0
-   Compiling url v2.5.8
-   Compiling alloy-dyn-abi v1.7.3
-   Compiling alloy-core v1.7.3
-   Compiling alloy v2.5.0
-   Compiling encoding v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\encoding)
-   Compiling ark-poly v0.6.0
-   Compiling ark-ec v0.6.0
-   Compiling ark-bn254 v0.6.0
-   Compiling ark-bls12-381 v0.6.0
-   Compiling pairing v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\pairing)
    Compiling chain v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\chain)
-warning: unused import: `super::admit_base_chain_settings`
- --> adapters\chain\src\base\settings\provides.rs:1:16
-  |
-1 | pub(crate) use super::admit_base_chain_settings;
-  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.96s
+     Running unittests src\lib.rs (target\debug\deps\chain-1a24215443d85508.exe)
 
-warning: unused import: `super::interface::*`
- --> adapters\chain\src\base\settings\provides.rs:2:9
-  |
-2 | pub use super::interface::*;
-  |         ^^^^^^^^^^^^^^^^^^^
-
-warning: unused import: `super::mock::*`
- --> adapters\chain\src\base\settings\provides.rs:4:9
-  |
-4 | pub use super::mock::*;
-  |         ^^^^^^^^^^^^^^
-
-warning: `chain` (lib) generated 3 warnings (run `cargo fix --lib -p chain` to apply 3 suggestions)
-warning: `chain` (lib test) generated 3 warnings (3 duplicates)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.48s
-     Running unittests src\lib.rs (target\debug\deps\chain-4b2a029e6b2240b2.exe)
-
-running 111 tests
+running 181 tests
+test admit_chain_composition::integration_test::every_declared_member_is_admitted_against_the_forms_identifier_it_lists ... ok
+test admit_chain_composition::integration_test::the_mock_member_is_admitted_against_the_forms_identifier_it_lists ... ok
+test admit_chain_composition::test::a_forms_declaration_at_the_identifier_the_member_lists_is_admitted ... ok
+test admit_chain_selection::test::the_mock_member_selects_the_mock_concrete_under_no_failure_without_reading_the_payload ... ok
+test admit_chain_selection::test::a_payload_that_is_not_a_table_is_refused_by_the_guard_in_the_document_variant ... ok
+test admit_chain_selection::test::an_admission_refusal_is_returned_whole_in_the_base_variant ... ok
+test admit_chain_selection::test::an_unknown_key_is_refused_by_the_guard_in_the_document_variant ... ok
+test admit_chain_selection::test::the_guard_refuses_before_the_admission_reads_the_document ... ok
+test admit_chain_selection::test::a_value_that_is_not_text_is_refused_by_the_guard_in_the_document_variant ... ok
+test admit_chain_selection::integration_test::an_endpoint_outside_its_declared_bounds_is_refused_by_the_admission_in_the_base_variant ... ok
 test base::settings::test::admission_refuses_a_setting_the_declaration_does_not_state ... ok
+test base::settings::test::admission_refuses_a_chain_identifier_wider_than_256_bits ... ok
+test base::settings::test::admission_refuses_a_settlement_endpoint_outside_its_bounds ... ok
+test base::settings::test::admission_refuses_a_chain_identifier_that_is_not_decimal ... ok
+test base::settings::test::admission_refuses_a_chain_identifier_outside_its_declared_bounds ... ok
+test base::settings::test::admission_refuses_a_registry_of_the_wrong_length ... ok
+test admit_chain_selection::integration_test::a_value_for_the_fixed_oracle_is_refused_by_the_admission_in_the_base_variant ... ok
+test base::settings::test::admission_refuses_a_batch_page_limit_that_is_not_decimal ... ok
+test base::settings::test::admission_admits_the_largest_256_bit_chain_identifier ... ok
+test base::settings::test::admission_admits_an_endpoint_text_under_an_unbounded_statement ... ok
+test base::settings::test::admission_refuses_a_batch_page_limit_wider_than_64_bits ... ok
+test base::settings::test::admission_admits_an_address_in_upper_case_digits ... ok
+test base::settings::integration_test::the_declared_settings_are_admitted_through_the_real_constructors ... ok
+test base::settings::test::admission_refuses_a_batch_page_limit_of_zero ... ok
+test admit_chain_selection::integration_test::a_document_supplying_nothing_selects_the_declared_defaults_admitted_by_the_real_constructors ... ok
+test admit_chain_selection::test::the_admitted_settings_are_carried_in_the_base_selection ... ok
+test admit_chain_selection::integration_test::a_value_the_document_supplies_replaces_its_declared_default_in_the_selected_settings ... ok
+test base::settings::test::admission_refuses_a_value_for_the_fixed_oracle ... ok
+test base::settings::test::admission_refuses_an_address_of_the_wrong_length ... ok
+test base::settings::test::admission_refuses_an_address_with_a_non_hexadecimal_digit ... ok
+test base::settings::test::admission_refuses_an_address_without_the_hexadecimal_prefix ... ok
+test base::settings::test::admission_refuses_an_anchor_state_registry_of_the_wrong_length ... ok
+test base::settings::test::admission_refuses_an_empty_batch_page_limit ... ok
+test base::settings::test::admission_refuses_an_empty_chain_identifier ... ok
 test base::settings::test::admission_refuses_an_endpoint_outside_its_bounds ... ok
 test base::settings::test::admission_refuses_an_unparsable_endpoint ... ok
+test base::settings::test::admission_refuses_an_unparsable_settlement_endpoint ... ok
+test base::settings::test::admission_replaces_a_default_with_the_supplied_value ... ok
 test base::settings::test::admission_returns_the_first_refusal_in_reading_order ... ok
+test base::settings::test::admission_takes_every_declared_default_when_the_document_supplies_nothing ... ok
 test base::settings::test::the_declaration_names_the_base_member_and_its_bound_forms ... ok
-test base::settings::test::admission_refuses_a_settlement_endpoint_outside_its_bounds ... ok
 test base::settings::test::the_declaration_states_a_statement_for_every_setting_in_reading_order ... ok
 test base::settings::test::the_declared_precompile_encodings_are_members_of_the_pairing_declared_set ... ok
-test base::settings::test::admission_refuses_an_unparsable_settlement_endpoint ... ok
-test base::settings::test::admission_refuses_an_address_with_a_non_hexadecimal_digit ... ok
-test base::settings::test::admission_refuses_a_chain_identifier_outside_its_declared_bounds ... ok
-test base::settings::test::admission_refuses_a_value_for_the_fixed_oracle ... ok
-test base::settings::integration_test::the_declared_settings_are_admitted_through_the_real_constructors ... ok
-test base::settings::test::admission_refuses_a_registry_of_the_wrong_length ... ok
 test base::settings::test::the_document_guard_admits_an_object_without_keys ... ok
-test base::settings::test::admission_refuses_an_empty_batch_page_limit ... ok
 test base::settings::test::the_document_guard_refuses_a_value_that_is_not_a_table ... ok
-test base::settings::test::admission_refuses_a_chain_identifier_that_is_not_decimal ... ok
-test base::settings::test::admission_takes_every_declared_default_when_the_document_supplies_nothing ... ok
-test base::settings::test::admission_refuses_a_batch_page_limit_wider_than_64_bits ... ok
-test base::settings::test::admission_refuses_a_batch_page_limit_that_is_not_decimal ... ok
-test base::settings::test::admission_refuses_an_empty_chain_identifier ... ok
-test base::settings::test::admission_refuses_a_chain_identifier_wider_than_256_bits ... ok
-test base::settings::test::admission_refuses_an_address_of_the_wrong_length ... ok
-test base::settings::test::admission_refuses_a_batch_page_limit_of_zero ... ok
-test base::settings::test::admission_admits_an_address_in_upper_case_digits ... ok
-test base::settings::test::admission_refuses_an_address_without_the_hexadecimal_prefix ... ok
-test base::settings::test::admission_admits_the_largest_256_bit_chain_identifier ... ok
-test base::settings::test::admission_refuses_an_anchor_state_registry_of_the_wrong_length ... ok
-test base::settings::test::admission_admits_an_endpoint_text_under_an_unbounded_statement ... ok
-test base::settings::test::admission_replaces_a_default_with_the_supplied_value ... ok
-test base::settings::test::the_document_guard_refuses_a_value_that_is_not_text ... ok
 test base::settings::test::the_document_guard_admits_every_key_it_declares ... ok
+test base::settings::test::the_document_guard_refuses_a_value_that_is_not_text ... ok
 test base::settings::test::the_document_guard_refuses_an_unknown_key ... ok
 test base::settings::test::the_document_guard_refuses_an_unknown_key_before_a_value_that_is_not_text ... ok
 test base::settings::test::the_document_guard_reports_the_lowest_key_holding_a_value_that_is_not_text ... ok
 test base::settings::test::the_document_guard_reports_the_lowest_unknown_key ... ok
-test create_chain_forms::integration_test::chain_forms_chain_identifier_survives_its_field_round_trip ... ok
+test base::test::batch_page_limit_endpoint_chain_identifier_and_entitlement_contract_return_the_settings_values ... ok
+test base::test::current_reference_at_refuses_an_anchor_return_that_does_not_decode ... ok
+test base::test::current_reference_at_refuses_a_tier_the_chain_has_not_attained ... ok
+test base::integration_test::a_handshake_commitment_reaches_the_call_data_unchanged ... ok
+test base::integration_test::chain_forms_survive_their_field_round_trip_through_the_call_data ... ok
+test base::integration_test::a_context_reaches_the_registry_with_every_field ... ok
+test base::test::current_reference_at_returns_a_transport_failure_whole ... ok
+test base::integration_test::batch_evaluation_agrees_with_individual_evaluation ... ok
+test base::integration_test::an_estimated_fee_carries_its_execution_gas_and_its_l1_data_fee_in_the_declared_order ... ok
+test base::test::current_reference_at_reads_the_anchor_state_from_the_settlement_endpoint_for_settled ... ok
+test base::test::estimate_fee_refuses_a_fee_above_u128 ... ok
+test base::test::estimate_fee_returns_a_transport_failure_whole ... ok
+test base::test::current_reference_at_returns_the_latest_head_for_included ... ok
+test base::test::current_reference_at_returns_the_finalized_head_for_hard ... ok
+test base::integration_test::each_tier_reads_its_own_head_and_orders_the_references ... ok
+test base::test::estimate_fee_refuses_an_oracle_return_that_does_not_decode ... ok
+test base::test::evaluate_authorization_batch_refuses_a_page_above_the_limit ... ok
+test base::test::current_reference_at_returns_the_safe_head_for_soft ... ok
+test base::test::estimate_fee_returns_the_declared_entries_in_order ... ok
+test base::integration_test::a_reorganized_reference_is_refused_whatever_its_number ... ok
+test base::test::evaluate_authorization_batch_refuses_a_result_count_that_differs ... ok
+test base::test::evaluate_authorization_batch_returns_the_next_page ... ok
+test base::test::evaluate_authorization_reads_at_the_block_of_the_reference ... ok
+test base::test::evaluate_authorization_batch_returns_one_result_per_context_in_order ... ok
+test base::test::evaluate_authorization_refuses_a_reference_that_is_not_canonical ... ok
+test base::test::evaluate_authorization_refuses_a_return_that_does_not_decode ... ok
+test base::test::evaluate_authorization_returns_denied_for_two ... ok
+test base::test::evaluate_authorization_returns_authorized_for_zero ... ok
+test base::test::evaluate_authorization_returns_pending_settlement_for_one ... ok
+test base::test::evaluate_authorization_refuses_a_state_outside_the_three ... ok
+test base::test::the_abi_descriptions_state_the_selector_text_of_every_function ... ok
+test base::test::the_abi_descriptions_state_the_signature_text_of_every_event ... ok
+test base::test::recover_envelope_refuses_a_log_that_does_not_decode ... ok
+test base::test::recover_envelope_refuses_a_history_without_the_interval ... ok
+test base::test::reference_age_refuses_a_reference_past_the_latest_head ... ok
+test base::test::recover_envelope_reads_a_grant_as_interval_zero ... ok
+test base::test::tier_of_refuses_a_reference_past_the_latest_head ... ok
+test base::test::recover_envelope_returns_the_event_envelope_confirmed_by_the_calldata ... ok
+test base::test::reference_age_is_the_latest_timestamp_less_the_reference_timestamp ... ok
+test base::test::recover_envelope_refuses_calldata_that_disagrees ... ok
 test create_chain_forms::integration_test::chain_forms_entitlement_survives_its_field_round_trip ... ok
+test base::test::reference_age_is_zero_when_the_endpoint_answers_a_reference_block_later_than_the_latest ... ok
+test create_chain_forms::integration_test::chain_forms_chain_identifier_survives_its_field_round_trip ... ok
 test create_chain_forms::integration_test::chain_forms_handed_to_the_consumer_declare_the_required_identifier ... ok
+test base::test::try_new_refuses_an_endpoint_text_the_transport_refuses ... ok
 test create_chain_forms::integration_test::chain_forms_identity_survives_its_field_round_trip ... ok
 test create_chain_forms::integration_test::chain_forms_interval_survives_its_field_round_trip ... ok
-test create_chain_forms::integration_test::chain_forms_key_identifier_survives_its_field_round_trip ... ok
+test base::test::tier_of_refuses_a_reference_whose_hash_differs ... ok
 test create_chain_forms::integration_test::chain_forms_refuse_an_encoder_declaring_another_encoding_identifier ... ok
+test create_chain_forms::integration_test::chain_forms_key_identifier_survives_its_field_round_trip ... ok
 test create_chain_forms::test::create_chain_forms_admits_and_constructs_the_evm_forms ... ok
 test create_chain_forms::test::create_chain_forms_admits_and_constructs_the_mock_concrete ... ok
 test create_chain_forms::test::create_chain_forms_refuses_an_encoder_declaring_another_encoding_identifier_for_the_evm_forms ... ok
 test create_chain_forms::test::create_chain_forms_refuses_an_encoder_declaring_another_encoding_identifier_for_the_mock_concrete ... ok
 test evm_forms::integration_test::evm_chain_identifier_form_survives_its_field_round_trip ... ok
+test base::test::tier_of_skips_a_tier_the_chain_has_not_attained ... ok
 test evm_forms::integration_test::evm_entitlement_form_survives_its_field_round_trip ... ok
 test evm_forms::integration_test::evm_identity_form_survives_its_field_round_trip ... ok
+test base::test::try_new_refuses_a_settlement_endpoint_text_the_transport_refuses ... ok
+test base::test::tier_of_returns_the_highest_tier_a_reference_has_attained ... ok
 test evm_forms::integration_test::evm_interval_form_survives_its_field_round_trip ... ok
-test evm_forms::integration_test::evm_key_identifier_derived_through_the_identity_form_survives_its_field_round_trip ... ok
-test evm_forms::test::evm_chain_identifier_form_is_rebuilt_from_a_256_bit_unsigned_field ... ok
 test create_chain_forms::integration_test::chain_forms_signed_intent_survives_its_field_round_trip ... ok
+test evm_forms::integration_test::evm_key_identifier_derived_through_the_identity_form_survives_its_field_round_trip ... ok
+test base::integration_test::a_delivered_envelope_is_recovered_from_the_settlement_that_created_the_interval ... ok
+test evm_forms::test::evm_chain_identifier_form_is_rebuilt_from_a_256_bit_unsigned_field ... ok
 test evm_forms::test::evm_chain_identifier_form_refuses_a_field_of_another_kind ... ok
 test evm_forms::test::evm_chain_identifier_form_try_new_moves_the_bytes_of_its_params_into_the_form ... ok
 test evm_forms::test::evm_chain_identifier_form_yields_its_bytes_as_a_256_bit_unsigned_field ... ok
@@ -130,12 +136,12 @@ test evm_forms::test::evm_forms_bind_the_entitlement_to_the_256_bit_unsigned_kin
 test evm_forms::test::evm_forms_bind_the_identity_to_the_fixed_twenty_byte_kind ... ok
 test evm_forms::test::evm_forms_bind_the_interval_to_the_64_bit_unsigned_kind ... ok
 test evm_forms::test::evm_forms_bind_the_key_identifier_to_the_fixed_32_byte_kind ... ok
-test evm_forms::test::evm_forms_bind_the_signed_intent_to_the_fixed_32_byte_kind ... ok
 test evm_forms::integration_test::evm_signed_intent_survives_its_field_round_trip ... ok
+test evm_forms::test::evm_forms_bind_the_signed_intent_to_the_fixed_32_byte_kind ... ok
 test evm_forms::test::evm_forms_declares_its_identifier_versions_and_intent_values ... ok
 test evm_forms::test::evm_forms_implement_the_chain_forms_interface_with_their_declaration ... ok
-test evm_forms::test::evm_forms_signed_intent_refuses_a_field_name_that_is_not_an_identifier ... ok
 test evm_forms::test::evm_forms_signed_intent_decides_the_operation_before_the_fields_and_the_fields_before_the_nonce ... ok
+test evm_forms::test::evm_forms_signed_intent_refuses_a_field_name_that_is_not_an_identifier ... ok
 test evm_forms::test::evm_forms_signed_intent_refuses_a_nonce_of_another_kind ... ok
 test evm_forms::test::evm_forms_signed_intent_refuses_a_repeated_field_name ... ok
 test evm_forms::test::evm_forms_signed_intent_refuses_an_expiry_of_another_kind ... ok
@@ -146,50 +152,92 @@ test evm_forms::test::evm_forms_try_new_reads_the_type_name_of_every_kind_from_i
 test evm_forms::test::evm_forms_try_new_returns_the_forms ... ok
 test evm_forms::test::evm_identity_form_derives_another_key_identifier_for_another_key ... ok
 test evm_forms::test::evm_identity_form_derives_another_key_identifier_under_another_scheme ... ok
-test evm_forms::test::evm_identity_form_is_rebuilt_from_a_fixed_twenty_byte_field ... ok
-test evm_forms::test::evm_identity_form_refuses_a_field_of_another_kind ... ok
 test evm_forms::test::evm_identity_form_derives_the_keccak_digest_of_the_tag_the_scheme_byte_and_the_key ... ok
 test evm_forms::test::evm_identity_form_derives_the_same_key_identifier_for_the_same_key_and_scheme ... ok
+test evm_forms::test::evm_identity_form_is_rebuilt_from_a_fixed_twenty_byte_field ... ok
+test evm_forms::test::evm_identity_form_refuses_a_field_of_another_kind ... ok
 test evm_forms::test::evm_identity_form_try_new_moves_the_bytes_of_its_params_into_the_form ... ok
 test evm_forms::test::evm_identity_form_yields_its_bytes_as_a_fixed_twenty_byte_field ... ok
+test evm_forms::test::evm_forms_signed_intent_changes_with_a_call_field_name ... ok
+test evm_forms::test::evm_forms_signed_intent_changes_with_a_call_field_value ... ok
 test evm_forms::test::evm_interval_form_is_rebuilt_from_a_64_bit_unsigned_field ... ok
 test evm_forms::test::evm_interval_form_refuses_a_field_of_another_kind ... ok
-test evm_forms::test::evm_interval_form_try_new_moves_the_value_of_its_params_into_the_form ... ok
-test evm_forms::test::evm_forms_signed_intent_changes_with_a_call_field_value ... ok
-test evm_forms::test::evm_interval_form_yields_its_value_as_a_64_bit_unsigned_field ... ok
-test evm_forms::test::evm_key_identifier_form_is_rebuilt_from_a_fixed_32_byte_field ... ok
-test evm_forms::test::evm_forms_signed_intent_changes_with_the_chain ... ok
-test evm_forms::test::evm_key_identifier_form_refuses_a_field_of_another_kind ... ok
-test evm_forms::test::evm_forms_signed_intent_changes_with_the_contract ... ok
-test evm_forms::test::evm_forms_signed_intent_changes_with_a_call_field_name ... ok
-test evm_forms::test::evm_key_identifier_form_try_new_moves_the_bytes_of_its_params_into_the_form ... ok
 test evm_forms::test::evm_forms_signed_intent_changes_with_the_acting_identity ... ok
-test evm_forms::test::evm_forms_signed_intent_changes_with_the_nonce ... ok
-test evm_forms::test::evm_forms_signed_intent_changes_with_the_operation ... ok
+test evm_forms::test::evm_interval_form_try_new_moves_the_value_of_its_params_into_the_form ... ok
+test evm_forms::test::evm_forms_signed_intent_changes_with_the_contract ... ok
+test evm_forms::test::evm_forms_signed_intent_changes_with_the_chain ... ok
+test evm_forms::test::evm_interval_form_yields_its_value_as_a_64_bit_unsigned_field ... ok
 test evm_forms::test::evm_forms_signed_intent_changes_with_the_expiry ... ok
+test evm_forms::test::evm_forms_signed_intent_changes_with_the_nonce ... ok
+test evm_forms::test::evm_key_identifier_form_is_rebuilt_from_a_fixed_32_byte_field ... ok
+test evm_forms::test::evm_forms_signed_intent_changes_with_the_operation ... ok
+test evm_forms::integration_test::evm_signed_intent_types_its_members_by_the_names_its_encoder_returns ... ok
+test evm_forms::test::evm_key_identifier_form_refuses_a_field_of_another_kind ... ok
+test evm_forms::test::evm_key_identifier_form_try_new_moves_the_bytes_of_its_params_into_the_form ... ok
 test evm_forms::test::evm_key_identifier_form_yields_its_bytes_as_a_fixed_32_byte_field ... ok
 test evm_forms::test::evm_signed_intent_form_is_rebuilt_from_a_fixed_32_byte_field ... ok
 test evm_forms::test::evm_signed_intent_form_refuses_a_field_of_another_kind ... ok
 test evm_forms::test::evm_signed_intent_form_try_new_moves_the_bytes_of_its_params_into_the_form ... ok
 test evm_forms::test::evm_signed_intent_form_yields_its_bytes_as_a_fixed_32_byte_field ... ok
-test evm_forms::integration_test::evm_signed_intent_types_its_members_by_the_names_its_encoder_returns ... ok
 test evm_forms::test::evm_forms_signed_intent_returns_the_eip712_digest_of_its_inputs ... ok
+test factory::integration_test::the_failure_mode_a_mock_selection_names_is_the_failure_mode_of_the_chain_constructed ... ok
+test factory::test::create_chain_hands_the_mock_concrete_to_the_consumer_exactly_once ... ok
+test factory::test::create_chain_returns_the_composition_refusal_whole_and_constructs_nothing ... ok
+test lookup_chain_declaration::test::the_base_member_returns_the_declaration_its_member_owns ... ok
+test factory::integration_test::a_value_the_selection_admission_returned_reaches_the_chain_the_factory_constructs ... ok
+test factory::integration_test::every_declared_member_is_constructed_under_the_declaration_it_owns ... ok
+test lookup_chain_declaration::test::the_mock_member_returns_the_declaration_its_member_owns ... ok
+test factory::test::create_chain_returns_a_base_constructor_refusal_whole_and_does_not_call_the_consumer ... ok
+test factory::test::create_chain_constructs_the_base_concrete_over_the_settings_the_selection_carries ... ok
 
-test result: ok. 111 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 181 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
 
-     Running tests\create_chain_forms_integration_test.rs (target\debug\deps\create_chain_forms_integration_test-bb55e61445871fb5.exe)
+     Running tests\admit_chain_selection_integration_test.rs (target\debug\deps\admit_chain_selection_integration_test-043774ee4251f55d.exe)
+
+running 9 tests
+test admit_chain_selection_refuses_a_payload_that_is_not_a_table_for_an_outside_caller ... ok
+test admit_chain_selection_refuses_an_unknown_key_for_an_outside_caller ... ok
+test admit_chain_selection_refuses_a_value_that_is_not_text_for_an_outside_caller ... ok
+test admit_chain_selection_refuses_before_the_admission_reads_the_document_for_an_outside_caller ... ok
+test admit_chain_selection_refuses_an_endpoint_outside_its_declared_bounds_for_an_outside_caller ... ok
+test admit_chain_selection_selects_the_mock_member_whatever_the_payload_for_an_outside_caller ... ok
+test admit_chain_selection_refuses_a_value_for_the_fixed_oracle_for_an_outside_caller ... ok
+test admit_chain_selection_replaces_a_declared_default_with_the_supplied_value_for_an_outside_caller ... ok
+test admit_chain_selection_selects_the_declared_defaults_for_an_outside_caller ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\create_chain_forms_integration_test.rs (target\debug\deps\create_chain_forms_integration_test-35063a46cf1301f0.exe)
 
 running 8 tests
+test create_chain_forms_hands_an_outside_consumer_an_interval_form_that_survives_its_field_round_trip ... ok
 test create_chain_forms_hands_forms_declaring_the_required_identifier_to_an_outside_consumer ... ok
+test create_chain_forms_hands_an_outside_consumer_a_key_identifier_that_survives_its_field_round_trip ... ok
 test create_chain_forms_hands_an_outside_consumer_an_identity_form_that_survives_its_field_round_trip ... ok
+test create_chain_forms_refuses_an_encoder_declaring_another_encoding_identifier_for_an_outside_consumer ... ok
 test create_chain_forms_hands_an_outside_consumer_an_entitlement_form_that_survives_its_field_round_trip ... ok
 test create_chain_forms_hands_an_outside_consumer_a_chain_identifier_form_that_survives_its_field_round_trip ... ok
-test create_chain_forms_hands_an_outside_consumer_an_interval_form_that_survives_its_field_round_trip ... ok
-test create_chain_forms_refuses_an_encoder_declaring_another_encoding_identifier_for_an_outside_consumer ... ok
-test create_chain_forms_hands_an_outside_consumer_a_key_identifier_that_survives_its_field_round_trip ... ok
 test create_chain_forms_hands_an_outside_consumer_forms_that_produce_a_signed_intent_that_survives_its_field_round_trip ... ok
 
 test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\factory_integration_test.rs (target\debug\deps\factory_integration_test-c7eb6428c45365ca.exe)
+
+running 4 tests
+test create_chain_runs_the_mock_concrete_under_the_failure_mode_the_selection_names_for_an_outside_caller ... ok
+test create_chain_constructs_over_the_value_the_selection_admission_returns_for_an_outside_caller ... ok
+test create_chain_constructs_over_the_declared_defaults_the_selection_admission_returns_for_an_outside_caller ... ok
+test create_chain_hands_each_declared_member_to_the_consumer_under_its_declaration_for_an_outside_caller ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\lookup_chain_declaration_integration_test.rs (target\debug\deps\lookup_chain_declaration_integration_test-9d48e5f7aaedb184.exe)
+
+running 2 tests
+test lookup_chain_declaration_returns_each_declared_member_its_own_declaration_for_an_outside_caller ... ok
+test lookup_chain_declaration_returns_the_mock_member_its_own_declaration_for_an_outside_caller ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
    Doc-tests chain
 

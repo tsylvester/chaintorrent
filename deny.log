@@ -1,173 +1,8 @@
 warning[unmatched-source]: allowed source was not encountered
-   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:34:15
+   ΓöîΓöÇ C:\Users\Tim\ChainTorrent\deny.toml:35:15
    Γöé
-34 Γöé allow-git = ["https://github.com/tsylvester/rqbit", "https://github.com/tsylvester/halo2curves"]
+35 Γöé allow-git = ["https://github.com/tsylvester/rqbit", "https://github.com/tsylvester/halo2curves"]
    Γöé               ΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöüΓöü no crate source matched these criteria
-
-error[rejected]: failed to satisfy license requirements
-   ΓöîΓöÇ C:\Users\Tim\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\foldhash-0.2.0\Cargo.toml:40:12
-   Γöé
-40 Γöé license = "Zlib"
-   Γöé            ΓöüΓöüΓöüΓöü
-   Γöé            Γöé
-   Γöé            rejected: license is not explicitly allowed
-   Γöé
-   Γö£ Zlib - zlib License:
-   Γö£   - OSI approved
-   Γö£   - FSF Free/Libre
-   Γö£ foldhash v0.2.0
-     Γö£ΓöÇΓöÇ alloy-primitives v1.7.3
-     Γöé   Γö£ΓöÇΓöÇ alloy-chains v0.2.39
-     Γöé   Γöé   ΓööΓöÇΓöÇ alloy-provider v2.5.0
-     Γöé   Γöé       ΓööΓöÇΓöÇ alloy v2.5.0
-     Γöé   Γöé           Γö£ΓöÇΓöÇ chain v0.0.0
-     Γöé   Γöé           Γöé   Γö£ΓöÇΓöÇ harness-crypto v0.0.0
-     Γöé   Γöé           Γöé   ΓööΓöÇΓöÇ proof v0.0.0
-     Γöé   Γöé           Γöé       ΓööΓöÇΓöÇ harness-crypto v0.0.0 (*)
-     Γöé   Γöé           Γö£ΓöÇΓöÇ encoding v0.0.0
-     Γöé   Γöé           Γöé   Γö£ΓöÇΓöÇ chain v0.0.0 (*)
-     Γöé   Γöé           Γöé   Γö£ΓöÇΓöÇ envelope v0.0.0
-     Γöé   Γöé           Γöé   Γöé   Γö£ΓöÇΓöÇ harness-crypto v0.0.0 (*)
-     Γöé   Γöé           Γöé   Γöé   ΓööΓöÇΓöÇ proof v0.0.0 (*)
-     Γöé   Γöé           Γöé   Γö£ΓöÇΓöÇ harness-crypto v0.0.0 (*)
-     Γöé   Γöé           Γöé   Γö£ΓöÇΓöÇ (dev) hash-to-scalar v0.0.0
-     Γöé   Γöé           Γöé   Γöé   Γö£ΓöÇΓöÇ envelope v0.0.0 (*)
-     Γöé   Γöé           Γöé   Γöé   Γö£ΓöÇΓöÇ harness-crypto v0.0.0 (*)
-     Γöé   Γöé           Γöé   Γöé   Γö£ΓöÇΓöÇ kem v0.0.0
-     Γöé   Γöé           Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ envelope v0.0.0 (*)
-     Γöé   Γöé           Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ harness-crypto v0.0.0 (*)
-     Γöé   Γöé           Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ proof v0.0.0 (*)
-     Γöé   Γöé           Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ workflows v0.0.0
-     Γöé   Γöé           Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ harness-crypto v0.0.0 (*)
-     Γöé   Γöé           Γöé   Γöé   Γö£ΓöÇΓöÇ proof v0.0.0 (*)
-     Γöé   Γöé           Γöé   Γöé   ΓööΓöÇΓöÇ workflows v0.0.0 (*)
-     Γöé   Γöé           Γöé   Γö£ΓöÇΓöÇ (dev) kdf v0.0.0
-     Γöé   Γöé           Γöé   Γöé   Γö£ΓöÇΓöÇ harness-crypto v0.0.0 (*)
-     Γöé   Γöé           Γöé   Γöé   ΓööΓöÇΓöÇ workflows v0.0.0 (*)
-     Γöé   Γöé           Γöé   Γö£ΓöÇΓöÇ (dev) kem v0.0.0 (*)
-     Γöé   Γöé           Γöé   Γö£ΓöÇΓöÇ proof v0.0.0 (*)
-     Γöé   Γöé           Γöé   ΓööΓöÇΓöÇ workflows v0.0.0 (*)
-     Γöé   Γöé           ΓööΓöÇΓöÇ harness-crypto v0.0.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-consensus v2.5.0
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy v2.5.0 (*)
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-consensus-any v2.5.0
-     Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-network v2.5.0
-     Γöé   Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ alloy v2.5.0 (*)
-     Γöé   Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ alloy-provider v2.5.0 (*)
-     Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-rpc-types-any v2.5.0
-     Γöé   Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ alloy-network v2.5.0 (*)
-     Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ alloy-rpc-types-eth v2.5.0
-     Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ alloy-network v2.5.0 (*)
-     Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ alloy-provider v2.5.0 (*)
-     Γöé   Γöé   Γöé       Γö£ΓöÇΓöÇ alloy-rpc-types v2.5.0
-     Γöé   Γöé   Γöé       Γöé   ΓööΓöÇΓöÇ alloy v2.5.0 (*)
-     Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ alloy-rpc-types-any v2.5.0 (*)
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-network v2.5.0 (*)
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-network-primitives v2.5.0
-     Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-network v2.5.0 (*)
-     Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-provider v2.5.0 (*)
-     Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-rpc-types-any v2.5.0 (*)
-     Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ alloy-rpc-types-eth v2.5.0 (*)
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-provider v2.5.0 (*)
-     Γöé   Γöé   ΓööΓöÇΓöÇ alloy-rpc-types-eth v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-consensus-any v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-core v1.7.3
-     Γöé   Γöé   ΓööΓöÇΓöÇ alloy v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-dyn-abi v1.7.3
-     Γöé   Γöé   ΓööΓöÇΓöÇ alloy-core v1.7.3 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-eip2124 v0.2.0
-     Γöé   Γöé   ΓööΓöÇΓöÇ alloy-eips v2.5.0
-     Γöé   Γöé       Γö£ΓöÇΓöÇ alloy v2.5.0 (*)
-     Γöé   Γöé       Γö£ΓöÇΓöÇ alloy-consensus v2.5.0 (*)
-     Γöé   Γöé       Γö£ΓöÇΓöÇ alloy-consensus-any v2.5.0 (*)
-     Γöé   Γöé       Γö£ΓöÇΓöÇ alloy-network v2.5.0 (*)
-     Γöé   Γöé       Γö£ΓöÇΓöÇ alloy-network-primitives v2.5.0 (*)
-     Γöé   Γöé       Γö£ΓöÇΓöÇ alloy-provider v2.5.0 (*)
-     Γöé   Γöé       ΓööΓöÇΓöÇ alloy-rpc-types-eth v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-eip2930 v0.2.4
-     Γöé   Γöé   ΓööΓöÇΓöÇ alloy-eips v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-eip7702 v0.6.3
-     Γöé   Γöé   ΓööΓöÇΓöÇ alloy-eips v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-eip7928 v0.4.11
-     Γöé   Γöé   ΓööΓöÇΓöÇ alloy-eips v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-eip8141 v0.1.1
-     Γöé   Γöé   ΓööΓöÇΓöÇ alloy-eips v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-eips v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-json-abi v1.7.3
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-dyn-abi v1.7.3 (*)
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-sol-macro-expander v1.7.3
-     Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ alloy-sol-macro v1.7.3
-     Γöé   Γöé   Γöé       ΓööΓöÇΓöÇ alloy-sol-types v1.7.3
-     Γöé   Γöé   Γöé           Γö£ΓöÇΓöÇ alloy-core v1.7.3 (*)
-     Γöé   Γöé   Γöé           Γö£ΓöÇΓöÇ alloy-dyn-abi v1.7.3 (*)
-     Γöé   Γöé   Γöé           Γö£ΓöÇΓöÇ alloy-json-rpc v2.5.0
-     Γöé   Γöé   Γöé           Γöé   Γö£ΓöÇΓöÇ alloy v2.5.0 (*)
-     Γöé   Γöé   Γöé           Γöé   Γö£ΓöÇΓöÇ alloy-network v2.5.0 (*)
-     Γöé   Γöé   Γöé           Γöé   Γö£ΓöÇΓöÇ alloy-provider v2.5.0 (*)
-     Γöé   Γöé   Γöé           Γöé   Γö£ΓöÇΓöÇ alloy-rpc-client v2.5.0
-     Γöé   Γöé   Γöé           Γöé   Γöé   Γö£ΓöÇΓöÇ alloy v2.5.0 (*)
-     Γöé   Γöé   Γöé           Γöé   Γöé   ΓööΓöÇΓöÇ alloy-provider v2.5.0 (*)
-     Γöé   Γöé   Γöé           Γöé   Γö£ΓöÇΓöÇ alloy-transport v2.5.0
-     Γöé   Γöé   Γöé           Γöé   Γöé   Γö£ΓöÇΓöÇ alloy v2.5.0 (*)
-     Γöé   Γöé   Γöé           Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-provider v2.5.0 (*)
-     Γöé   Γöé   Γöé           Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-rpc-client v2.5.0 (*)
-     Γöé   Γöé   Γöé           Γöé   Γöé   ΓööΓöÇΓöÇ alloy-transport-http v2.5.0
-     Γöé   Γöé   Γöé           Γöé   Γöé       Γö£ΓöÇΓöÇ alloy v2.5.0 (*)
-     Γöé   Γöé   Γöé           Γöé   Γöé       Γö£ΓöÇΓöÇ alloy-provider v2.5.0 (*)
-     Γöé   Γöé   Γöé           Γöé   Γöé       ΓööΓöÇΓöÇ alloy-rpc-client v2.5.0 (*)
-     Γöé   Γöé   Γöé           Γöé   ΓööΓöÇΓöÇ alloy-transport-http v2.5.0 (*)
-     Γöé   Γöé   Γöé           Γö£ΓöÇΓöÇ alloy-network v2.5.0 (*)
-     Γöé   Γöé   Γöé           Γö£ΓöÇΓöÇ alloy-provider v2.5.0 (*)
-     Γöé   Γöé   Γöé           ΓööΓöÇΓöÇ alloy-rpc-types-eth v2.5.0 (*)
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-sol-macro-input v1.7.3
-     Γöé   Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-sol-macro v1.7.3 (*)
-     Γöé   Γöé   Γöé   ΓööΓöÇΓöÇ alloy-sol-macro-expander v1.7.3 (*)
-     Γöé   Γöé   ΓööΓöÇΓöÇ alloy-sol-types v1.7.3 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-json-rpc v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-network v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-network-primitives v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-provider v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-rpc-client v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-rpc-types v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-rpc-types-any v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-rpc-types-eth v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-serde v2.5.0
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy v2.5.0 (*)
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-consensus v2.5.0 (*)
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-consensus-any v2.5.0 (*)
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-eips v2.5.0 (*)
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-network v2.5.0 (*)
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-network-primitives v2.5.0 (*)
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-rpc-types v2.5.0 (*)
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-rpc-types-any v2.5.0 (*)
-     Γöé   Γöé   ΓööΓöÇΓöÇ alloy-rpc-types-eth v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-signer v2.5.0
-     Γöé   Γöé   Γö£ΓöÇΓöÇ alloy-network v2.5.0 (*)
-     Γöé   Γöé   ΓööΓöÇΓöÇ alloy-provider v2.5.0 (*)
-     Γöé   Γö£ΓöÇΓöÇ alloy-sol-types v1.7.3 (*)
-     Γöé   ΓööΓöÇΓöÇ alloy-trie v0.9.8
-     Γöé       ΓööΓöÇΓöÇ alloy-consensus v2.5.0 (*)
-     ΓööΓöÇΓöÇ hashbrown v0.17.1
-         Γö£ΓöÇΓöÇ alloy-primitives v1.7.3 (*)
-         Γö£ΓöÇΓöÇ ark-ec v0.6.0
-         Γöé   Γö£ΓöÇΓöÇ ark-bls12-381 v0.6.0
-         Γöé   Γöé   ΓööΓöÇΓöÇ pairing v0.0.0
-         Γöé   Γöé       Γö£ΓöÇΓöÇ chain v0.0.0 (*)
-         Γöé   Γöé       Γö£ΓöÇΓöÇ envelope v0.0.0 (*)
-         Γöé   Γöé       Γö£ΓöÇΓöÇ harness-crypto v0.0.0 (*)
-         Γöé   Γöé       Γö£ΓöÇΓöÇ hash-to-scalar v0.0.0 (*)
-         Γöé   Γöé       Γö£ΓöÇΓöÇ kem v0.0.0 (*)
-         Γöé   Γöé       Γö£ΓöÇΓöÇ proof v0.0.0 (*)
-         Γöé   Γöé       ΓööΓöÇΓöÇ workflows v0.0.0 (*)
-         Γöé   Γö£ΓöÇΓöÇ ark-bn254 v0.6.0
-         Γöé   Γöé   ΓööΓöÇΓöÇ pairing v0.0.0 (*)
-         Γöé   ΓööΓöÇΓöÇ pairing v0.0.0 (*)
-         Γö£ΓöÇΓöÇ ark-poly v0.6.0
-         Γöé   ΓööΓöÇΓöÇ ark-ec v0.6.0 (*)
-         Γö£ΓöÇΓöÇ indexmap v2.14.2
-         Γöé   ΓööΓöÇΓöÇ alloy-sol-macro-expander v1.7.3 (*)
-         ΓööΓöÇΓöÇ lru v0.18.5
-             ΓööΓöÇΓöÇ alloy-provider v2.5.0 (*)
 
 warning[duplicate]: found 2 duplicate entries for crate 'base64'
    ΓöîΓöÇ C:\Users\Tim\ChainTorrent/Cargo.lock:62:1
@@ -3337,6 +3172,7 @@ warning[duplicate]: found 3 duplicate entries for crate 'syn'
       Γöé       Γöé   Γö£ΓöÇΓöÇ alloy-rpc-client v2.5.0 (*)
       Γöé       Γöé   Γö£ΓöÇΓöÇ alloy-transport v2.5.0 (*)
       Γöé       Γöé   Γö£ΓöÇΓöÇ alloy-transport-http v2.5.0 (*)
+      Γöé       Γöé   Γö£ΓöÇΓöÇ (dev) chain v0.0.0 (*)
       Γöé       Γöé   Γö£ΓöÇΓöÇ reqwest v0.13.5 (*)
       Γöé       Γöé   ΓööΓöÇΓöÇ tower-http v0.6.11 (*)
       Γöé       ΓööΓöÇΓöÇ tower-http v0.6.11 (*)
@@ -3890,4 +3726,4 @@ error[unsound]: xattr functions mark unwritten bytes as initialized when given a
                   Γö£ΓöÇΓöÇ hyper-tls v0.6.0 (*)
                   ΓööΓöÇΓöÇ reqwest v0.13.5 (*)
 
-advisories FAILED, bans ok, licenses FAILED, sources ok
+advisories FAILED, bans ok, licenses ok, sources ok

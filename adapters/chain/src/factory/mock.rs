@@ -15,14 +15,15 @@ use super::interface::{
     ChainFormsIdentifier, ChainIdentifierErrorReturn, ChainIdentifierParams,
     ChainIdentifierPayload, ChainIdentifierReturn, ChainIdentifierSuccessReturn,
     ChainMemberIdentifier, ChainSelection, ChainSettingBounds, ChainSettingDisposition,
-    ChainSettingStatement, ConsumeChainParams, ConsumeChainPayload, CurrentReferenceAtErrorReturn,
-    CurrentReferenceAtParams, CurrentReferenceAtPayload, CurrentReferenceAtReturn,
-    CurrentReferenceAtSuccessReturn, DeriveKeyIdentifierParams, DeriveKeyIdentifierPayload,
-    DeriveKeyIdentifierReturn, DeriveKeyIdentifierSuccessReturn, EndpointParams, EndpointPayload,
-    EndpointReturn, EndpointSuccessReturn, EntitlementContractErrorReturn,
-    EntitlementContractParams, EntitlementContractPayload, EntitlementContractReturn,
-    EntitlementContractSuccessReturn, EstimateFeeErrorReturn, EstimateFeeParams,
-    EstimateFeePayload, EstimateFeeReturn, EstimateFeeSuccessReturn,
+    ChainSettingStatement, ConsumeChainParams, ConsumeChainPayload, CreateChainDeps,
+    CreateChainParams, CreateChainPayload, CreateChainReturn, CreateChainSuccessReturn,
+    CurrentReferenceAtErrorReturn, CurrentReferenceAtParams, CurrentReferenceAtPayload,
+    CurrentReferenceAtReturn, CurrentReferenceAtSuccessReturn, DeriveKeyIdentifierParams,
+    DeriveKeyIdentifierPayload, DeriveKeyIdentifierReturn, DeriveKeyIdentifierSuccessReturn,
+    EndpointParams, EndpointPayload, EndpointReturn, EndpointSuccessReturn,
+    EntitlementContractErrorReturn, EntitlementContractParams, EntitlementContractPayload,
+    EntitlementContractReturn, EntitlementContractSuccessReturn, EstimateFeeErrorReturn,
+    EstimateFeeParams, EstimateFeePayload, EstimateFeeReturn, EstimateFeeSuccessReturn,
     EvaluateAuthorizationBatchErrorReturn, EvaluateAuthorizationBatchParams,
     EvaluateAuthorizationBatchPayload, EvaluateAuthorizationBatchReturn,
     EvaluateAuthorizationBatchSuccessReturn, EvaluateAuthorizationErrorReturn,
@@ -42,6 +43,7 @@ use super::interface::{
     SignedIntentReturn, SignedIntentSuccessReturn, TierOfErrorReturn, TierOfParams, TierOfPayload,
     TierOfReturn, TierOfSuccessReturn,
 };
+use crate::admit_chain_composition::provides::AdmitChainCompositionFn;
 use crate::base::provides::{
     BaseChainIdentifierErrorReturn, BaseEntitlementContractErrorReturn, build_base_chain_settings,
 };
@@ -1459,4 +1461,64 @@ impl IChainConsumer for MockIChainConsumer {
         _payload: ConsumeChainPayload<K>,
     ) {
     }
+}
+
+#[derive(Default)]
+pub struct CreateChainDepsOverrides;
+
+pub fn build_create_chain_deps<C: IChainConsumer>(
+    admit_chain_composition: AdmitChainCompositionFn,
+    consumer: C,
+    _overrides: CreateChainDepsOverrides,
+) -> CreateChainDeps<C> {
+    CreateChainDeps {
+        admit_chain_composition,
+        consumer,
+    }
+}
+
+#[derive(Default)]
+pub struct CreateChainParamsOverrides {
+    pub selection: Option<ChainSelection>,
+}
+
+pub fn build_create_chain_params(overrides: CreateChainParamsOverrides) -> CreateChainParams {
+    CreateChainParams {
+        selection: overrides.selection.unwrap_or_else(|| {
+            build_chain_selection(ChainMemberIdentifier::Mock, ChainSelectionOverrides)
+        }),
+    }
+}
+
+#[derive(Default)]
+pub struct CreateChainPayloadOverrides;
+
+pub fn build_create_chain_payload(_overrides: CreateChainPayloadOverrides) -> CreateChainPayload {
+    CreateChainPayload
+}
+
+#[derive(Default)]
+pub struct CreateChainSuccessReturnOverrides;
+
+pub fn build_create_chain_success_return<O>(
+    output: O,
+    _overrides: CreateChainSuccessReturnOverrides,
+) -> CreateChainSuccessReturn<O> {
+    CreateChainSuccessReturn { output }
+}
+
+pub fn mock_create_chain<F: IChainForms, C: IChainConsumer>(
+    deps: &CreateChainDeps<C>,
+    _params: CreateChainParams,
+    _payload: CreateChainPayload,
+) -> CreateChainReturn<C::Output> {
+    let adapter = build_mock_i_chain_adapter::<F>(Default::default());
+    let output = deps.consumer.consume_chain(
+        build_consume_chain_params(Default::default()),
+        build_consume_chain_payload(adapter, Default::default()),
+    );
+    Ok(build_create_chain_success_return(
+        output,
+        Default::default(),
+    ))
 }

@@ -41,7 +41,7 @@ use alloy::providers::{DynProvider, Provider, ProviderBuilder};
 use alloy::rpc::client::RpcClient;
 use alloy::rpc::json_rpc::{RequestPacket, ResponsePacket};
 use alloy::rpc::types::eth::Log;
-use alloy::sol_types::{SolCall, SolEvent, SolValue};
+use alloy::sol_types::{SolCall, SolEvent};
 use alloy::transports::mock::{Asserter, MockTransport};
 use alloy::transports::{TransportError, TransportFut};
 use encoding::{CanonicalFieldValue, FromFieldParams, ICanonicalField, ToFieldParams};
@@ -1096,7 +1096,7 @@ fn evaluate_authorization_reads_at_the_block_of_the_reference() {
     assert_eq!(request["method"], "eth_call");
     assert_eq!(
         request["params"][1]["blockHash"],
-        "0x0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"
+        "0x0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b"
     );
     assert_eq!(request["params"][1]["requireCanonical"], true);
 }
@@ -1208,7 +1208,14 @@ fn evaluate_authorization_batch_returns_one_result_per_context_in_order() {
     ];
     push_call_result(
         &endpoint_transport,
-        Bytes::from((vec![2u8, 0, 1], U256::ZERO).abi_encode()),
+        Bytes::from(
+            Registry::evaluateAuthorizationBatchCall::abi_encode_returns(
+                &Registry::evaluateAuthorizationBatchReturn {
+                    results: vec![2u8, 0, 1],
+                    nextPage: U256::ZERO,
+                },
+            ),
+        ),
     );
 
     // Act
@@ -1247,7 +1254,14 @@ fn evaluate_authorization_batch_returns_the_next_page() {
     let contexts = [build_attempt_context::<MockIChainForms>(Default::default())];
     push_call_result(
         &endpoint_transport,
-        Bytes::from((vec![0u8], U256::from(7)).abi_encode()),
+        Bytes::from(
+            Registry::evaluateAuthorizationBatchCall::abi_encode_returns(
+                &Registry::evaluateAuthorizationBatchReturn {
+                    results: vec![0u8],
+                    nextPage: U256::from(7),
+                },
+            ),
+        ),
     );
 
     // Act
@@ -1323,7 +1337,14 @@ fn evaluate_authorization_batch_refuses_a_result_count_that_differs() {
     ];
     push_call_result(
         &endpoint_transport,
-        Bytes::from((vec![0u8], U256::ZERO).abi_encode()),
+        Bytes::from(
+            Registry::evaluateAuthorizationBatchCall::abi_encode_returns(
+                &Registry::evaluateAuthorizationBatchReturn {
+                    results: vec![0u8],
+                    nextPage: U256::ZERO,
+                },
+            ),
+        ),
     );
 
     // Act

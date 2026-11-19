@@ -1,10 +1,14 @@
 use core::convert::Infallible;
 
+use crate::admit_chain_composition::provides::{
+    AdmitChainCompositionErrorReturn, AdmitChainCompositionFn,
+};
 use crate::base::provides::{
-    BaseChainIdentifierErrorReturn, BaseChainSettings, BaseCurrentReferenceAtErrorReturn,
-    BaseEntitlementContractErrorReturn, BaseEstimateFeeErrorReturn,
-    BaseEvaluateAuthorizationBatchErrorReturn, BaseEvaluateAuthorizationErrorReturn,
-    BaseRecoverEnvelopeErrorReturn, BaseReferenceAgeErrorReturn, BaseTierOfErrorReturn,
+    BaseChainIdentifierErrorReturn, BaseChainSettings, BaseChainTryNewErrorReturn,
+    BaseCurrentReferenceAtErrorReturn, BaseEntitlementContractErrorReturn,
+    BaseEstimateFeeErrorReturn, BaseEvaluateAuthorizationBatchErrorReturn,
+    BaseEvaluateAuthorizationErrorReturn, BaseRecoverEnvelopeErrorReturn,
+    BaseReferenceAgeErrorReturn, BaseTierOfErrorReturn,
 };
 use domain::{DeploymentIdentity, HandshakeKeyCommitment, SignatureSchemeIdentifier};
 use encoding::{CanonicalFieldKind, CanonicalFieldValue, EncodingIdentifier, ICanonicalField};
@@ -647,3 +651,33 @@ pub enum MockIChainAdapterEstimateFeeErrorReturn {
 pub enum MockIChainAdapterRecoverEnvelopeErrorReturn {
     TransportRefused,
 }
+
+pub struct CreateChainDeps<C: IChainConsumer> {
+    pub admit_chain_composition: AdmitChainCompositionFn,
+    pub consumer: C,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CreateChainParams {
+    pub selection: ChainSelection,
+}
+
+pub struct CreateChainPayload;
+
+pub struct CreateChainSuccessReturn<O> {
+    pub output: O,
+}
+
+#[derive(Debug)]
+pub enum CreateChainErrorReturn {
+    Composition(AdmitChainCompositionErrorReturn),
+    Base(BaseChainTryNewErrorReturn),
+}
+
+pub type CreateChainReturn<O> = Result<CreateChainSuccessReturn<O>, CreateChainErrorReturn>;
+
+pub type CreateChainFn<C> = fn(
+    &CreateChainDeps<C>,
+    CreateChainParams,
+    CreateChainPayload,
+) -> CreateChainReturn<<C as IChainConsumer>::Output>;
