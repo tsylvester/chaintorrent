@@ -4,6 +4,7 @@ mod interface;
 #[cfg(any(test, feature = "mocks"))]
 mod mock;
 pub mod provides;
+mod settings;
 #[cfg(test)]
 mod test_basic;
 #[cfg(test)]
@@ -13,10 +14,8 @@ mod test_error;
 #[cfg(test)]
 mod test_verdict;
 
-use alloy::consensus::{SignableTransaction, TxEip1559};
-use alloy::eips::eip2930::AccessList;
 use alloy::network::TransactionBuilder;
-use alloy::primitives::{Address, Bytes, TxKind, U256};
+use alloy::primitives::{Address, Bytes, U256};
 use alloy::providers::{DynProvider, Provider, ProviderBuilder};
 use alloy::rpc::types::TransactionRequest;
 use alloy::sol;
@@ -24,7 +23,10 @@ use alloy::sol_types::{SolCall, SolValue};
 use alloy::transports::TransportError;
 #[cfg(any(test, feature = "mocks"))]
 use alloy::transports::mock::Asserter;
-use chain::IChainForms;
+use chain::{
+    EndpointParams, EndpointPayload, EstimateFeeParams, EstimateFeePayload, FeeRequest,
+    IChainAdapter, IChainForms, IEntitlementStateAdapter,
+};
 use encoding::{
     CanonicalFieldReader, CanonicalFieldValue, CanonicalFields, FromFieldParams, ICanonicalField,
     ToFieldParams,
@@ -42,15 +44,15 @@ use tokio::runtime::Builder;
 use url::Url;
 
 use super::factory::provides::{
-    IVerifierAdapter, L1DataFee, VerifierDeclaration, VerifyCost, VerifyOnChainErrorReturn,
+    IVerifierAdapter, VerifierDeclaration, VerifyCost, VerifyOnChainErrorReturn,
     VerifyOnChainParams, VerifyOnChainReturn, VerifyOnChainSuccessReturn,
 };
 use interface::{
-    EVM_VERIFIER_CONTEXT_FIELD_KINDS, EVM_VERIFIER_DECLARATION, EvmVerifier,
-    EvmVerifierConstructorParams, EvmVerifierEndpoint, EvmVerifierEndpointConstructorParams,
-    EvmVerifierEndpointTryNewErrorReturn, EvmVerifierEndpointTryNewReturn, EvmVerifierErrorReturn,
-    EvmVerifierField, EvmVerifierTryNewErrorReturn, EvmVerifierTryNewReturn,
+    EVM_VERIFIER_CONTEXT_FIELD_KINDS, EvmVerifier, EvmVerifierConstructorParams,
+    EvmVerifierErrorReturn, EvmVerifierField, EvmVerifierTryNewErrorReturn,
+    EvmVerifierTryNewReturn,
 };
+use settings::provides::EVM_VERIFIER_DECLARATION;
 
 sol!(
     IDeliveryVerifier,
@@ -60,69 +62,59 @@ sol!(
     )
 );
 
-sol! {
-    interface IGasPriceOracle {
-        function getL1Fee(bytes memory _data) external view returns (uint256);
-    }
-}
-
-impl EvmVerifierEndpoint {
-    pub fn try_new(
-        params: EvmVerifierEndpointConstructorParams,
-    ) -> EvmVerifierEndpointTryNewReturn {
-        match Url::parse(&params.text) {
-            Ok(url) => Ok(EvmVerifierEndpoint { url }),
-            Err(error) => Err(EvmVerifierEndpointTryNewErrorReturn::Unparsable { error }),
-        }
-    }
-}
-
-impl<'a, P, D> EvmVerifier<'a, P, D>
+impl<'a, P, C, D> EvmVerifier<'a, P, C, D>
 where
     P: IPairingAdapter,
-    D: IDeliveryProofAdapter<Pairing = P>,
+    C: IChainAdapter,
+    D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
 {
     pub fn try_new(
-        params: EvmVerifierConstructorParams<'a, P, D>,
-    ) -> EvmVerifierTryNewReturn<'a, P, D> {
-        let provider = ProviderBuilder::default()
-            .connect_http(params.settings.endpoint.url.clone())
-            .erased();
-        Self::with_provider(params, provider)
+        params: EvmVerifierConstructorParams<'a, P, C, D>,
+    ) -> EvmVerifierTryNewReturn<'a, P, C, D> {
+        let (verifier, verifier_address) = Self::admit_address(
+            EvmVerifierField::VerifierAddress,
+            params.verifier_address.clone(),
+        )?;
+        let Ok(endpoint) = params.chain.endpoint(EndpointParams, EndpointPayload);
+        let url = match Url::parse(&endpoint.endpoint.text) {
+            Ok(url) => url,
+            Err(error) => return Err(EvmVerifierTryNewErrorReturn::Endpoint { error }),
+        };
+        let provider = ProviderBuilder::default().connect_http(url).erased();
+        Self::with_provider(params, verifier, verifier_address, provider)
     }
 
     #[cfg(any(test, feature = "mocks"))]
     pub(crate) fn try_new_mocked(
-        params: EvmVerifierConstructorParams<'a, P, D>,
+        params: EvmVerifierConstructorParams<'a, P, C, D>,
         asserter: Asserter,
-    ) -> EvmVerifierTryNewReturn<'a, P, D> {
+    ) -> EvmVerifierTryNewReturn<'a, P, C, D> {
+        let (verifier, verifier_address) = Self::admit_address(
+            EvmVerifierField::VerifierAddress,
+            params.verifier_address.clone(),
+        )?;
         let provider = ProviderBuilder::default()
             .connect_mocked_client(asserter)
             .erased();
-        Self::with_provider(params, provider)
+        Self::with_provider(params, verifier, verifier_address, provider)
     }
 
     fn with_provider(
-        params: EvmVerifierConstructorParams<'a, P, D>,
+        params: EvmVerifierConstructorParams<'a, P, C, D>,
+        verifier: <D::Forms as IChainForms>::Identity,
+        verifier_address: Address,
         provider: DynProvider,
-    ) -> EvmVerifierTryNewReturn<'a, P, D> {
-        let verifier = Self::admit_address(
-            EvmVerifierField::VerifierAddress,
-            params.settings.verifier_address,
-        )?;
-        let oracle = Self::admit_address(
-            EvmVerifierField::GasPriceOracle,
-            params.settings.gas_price_oracle,
-        )?;
+    ) -> EvmVerifierTryNewReturn<'a, P, C, D> {
         let runtime = match Builder::new_current_thread().enable_all().build() {
             Ok(runtime) => runtime,
             Err(error) => return Err(EvmVerifierTryNewErrorReturn::Runtime(error)),
         };
         Ok(EvmVerifier {
             pairing: params.pairing,
+            chain: params.chain,
             delivery_proof: params.delivery_proof,
             verifier,
-            oracle,
+            verifier_address,
             provider,
             runtime,
         })
@@ -131,7 +123,7 @@ where
     fn admit_address(
         field: EvmVerifierField,
         address: CanonicalFieldValue,
-    ) -> Result<Address, EvmVerifierTryNewErrorReturn> {
+    ) -> Result<(<D::Forms as IChainForms>::Identity, Address), EvmVerifierTryNewErrorReturn> {
         let form = match <<D::Forms as IChainForms>::Identity as ICanonicalField>::from_field(
             FromFieldParams,
             address,
@@ -146,8 +138,8 @@ where
             &form,
         );
         match to_field.field {
-            CanonicalFieldValue::FixedBytes20(bytes) => Ok(Address::from(bytes)),
-            _ => Err(EvmVerifierTryNewErrorReturn::IdentityKind { field }),
+            CanonicalFieldValue::FixedBytes20(bytes) => Ok((form, Address::from(bytes))),
+            _ => unreachable!("the identity form's field is its declared bytes20"),
         }
     }
 
@@ -222,7 +214,7 @@ where
         &self,
         context: &DeliveryContext<D::Forms, Purpose>,
         purpose: u16,
-    ) -> Result<IDeliveryVerifier::DeliveryContext, EvmVerifierErrorReturn> {
+    ) -> IDeliveryVerifier::DeliveryContext {
         let Ok(chain) =
             <D::Forms as IChainForms>::ChainIdentifier::to_field(ToFieldParams, &context.chain);
         let Ok(entitlement_contract) = <D::Forms as IChainForms>::Identity::to_field(
@@ -245,7 +237,7 @@ where
             <D::Forms as IChainForms>::Identity::to_field(ToFieldParams, &context.seller);
         let Ok(buyer) =
             <D::Forms as IChainForms>::Identity::to_field(ToFieldParams, &context.buyer);
-        let mut reader = CanonicalFieldReader::try_new(
+        let Ok(mut reader) = CanonicalFieldReader::try_new(
             CanonicalFields {
                 values: vec![
                     chain.field,
@@ -259,33 +251,34 @@ where
                 ],
             },
             EVM_VERIFIER_CONTEXT_FIELD_KINDS,
-        )
-        .map_err(EvmVerifierErrorReturn::Fields)?;
-        let chain = reader
-            .read_unsigned256()
-            .map_err(EvmVerifierErrorReturn::Fields)?;
-        let entitlement_contract = reader
-            .read_fixed_bytes20()
-            .map_err(EvmVerifierErrorReturn::Fields)?;
-        let source_entitlement = reader
-            .read_unsigned256()
-            .map_err(EvmVerifierErrorReturn::Fields)?;
-        let target_entitlement = reader
-            .read_unsigned256()
-            .map_err(EvmVerifierErrorReturn::Fields)?;
-        let old_interval = reader
-            .read_unsigned64()
-            .map_err(EvmVerifierErrorReturn::Fields)?;
-        let new_interval = reader
-            .read_unsigned64()
-            .map_err(EvmVerifierErrorReturn::Fields)?;
-        let seller = reader
-            .read_fixed_bytes20()
-            .map_err(EvmVerifierErrorReturn::Fields)?;
-        let buyer = reader
-            .read_fixed_bytes20()
-            .map_err(EvmVerifierErrorReturn::Fields)?;
-        Ok(IDeliveryVerifier::DeliveryContext {
+        ) else {
+            unreachable!("the context's eight fields match their declared count")
+        };
+        let Ok(chain) = reader.read_unsigned256() else {
+            unreachable!("the chain identifier's field is a declared unsigned256")
+        };
+        let Ok(entitlement_contract) = reader.read_fixed_bytes20() else {
+            unreachable!("the entitlement contract's field is a declared bytes20")
+        };
+        let Ok(source_entitlement) = reader.read_unsigned256() else {
+            unreachable!("the source entitlement's field is a declared unsigned256")
+        };
+        let Ok(target_entitlement) = reader.read_unsigned256() else {
+            unreachable!("the target entitlement's field is a declared unsigned256")
+        };
+        let Ok(old_interval) = reader.read_unsigned64() else {
+            unreachable!("the old interval's field is a declared unsigned64")
+        };
+        let Ok(new_interval) = reader.read_unsigned64() else {
+            unreachable!("the new interval's field is a declared unsigned64")
+        };
+        let Ok(seller) = reader.read_fixed_bytes20() else {
+            unreachable!("the seller's field is a declared bytes20")
+        };
+        let Ok(buyer) = reader.read_fixed_bytes20() else {
+            unreachable!("the buyer's field is a declared bytes20")
+        };
+        IDeliveryVerifier::DeliveryContext {
             suiteIdentifier: (*context.suite_identifier.identifier()).into(),
             suiteVersion: context.suite_identifier.version(),
             chain: U256::from_be_bytes(chain),
@@ -300,7 +293,7 @@ where
             seller: seller.into(),
             buyer: buyer.into(),
             expiry: context.expiry,
-        })
+        }
     }
 
     fn encode_scalar_word(&self, scalar: P::Scalar) -> Result<U256, EvmVerifierErrorReturn> {
@@ -323,8 +316,7 @@ where
         responses: MintResponses<P::Scalar>,
         first_messages: Vec<P::G2>,
     ) -> Result<Vec<u8>, EvmVerifierErrorReturn> {
-        let context =
-            self.delivery_context(&statement.context, statement.context.purpose.code())?;
+        let context = self.delivery_context(&statement.context, statement.context.purpose.code());
         let Ok(hpub) = self.pairing.encode_g2(
             EncodeG2Params,
             EncodeG2Payload {
@@ -416,8 +408,7 @@ where
         responses: TransferResponses<P::Scalar>,
         first_messages: Vec<P::G2>,
     ) -> Result<Vec<u8>, EvmVerifierErrorReturn> {
-        let context =
-            self.delivery_context(&statement.context, statement.context.purpose.code())?;
+        let context = self.delivery_context(&statement.context, statement.context.purpose.code());
         let Ok(identity_element) = self.pairing.encode_g1(
             EncodeG1Params,
             EncodeG1Payload {
@@ -539,52 +530,21 @@ where
         .abi_encode())
     }
 
-    fn unsigned_transaction(
-        chain_id: u64,
-        gas_limit: u64,
-        verifier: Address,
-        calldata: &[u8],
-    ) -> Vec<u8> {
-        TxEip1559 {
-            chain_id,
-            nonce: 0,
-            gas_limit,
-            max_fee_per_gas: 0,
-            max_priority_fee_per_gas: 0,
-            to: TxKind::Call(verifier),
-            value: U256::ZERO,
-            access_list: AccessList::default(),
-            input: calldata.to_vec().into(),
-        }
-        .encoded_for_signing()
-    }
-
     fn verifier_request(&self, calldata: &[u8]) -> TransactionRequest {
         TransactionRequest::default()
-            .with_to(self.verifier)
+            .with_to(self.verifier_address)
             .with_input(calldata.to_vec())
-    }
-
-    fn fee_request(&self, unsigned: &[u8]) -> TransactionRequest {
-        TransactionRequest::default()
-            .with_to(self.oracle)
-            .with_input(
-                IGasPriceOracle::getL1FeeCall {
-                    _data: unsigned.to_vec().into(),
-                }
-                .abi_encode(),
-            )
     }
 
     fn read_chain(&self, calldata: Vec<u8>) -> VerifyOnChainReturn {
         let code = self
             .runtime
-            .block_on(async { self.provider.get_code_at(self.verifier).await })
+            .block_on(async { self.provider.get_code_at(self.verifier_address).await })
             .map_err(Self::rpc_error)?;
         if code.is_empty() {
             return Err(VerifyOnChainErrorReturn::Evm(
                 EvmVerifierErrorReturn::NothingDeployed {
-                    address: *self.verifier.0,
+                    address: *self.verifier_address.0,
                 },
             ));
         }
@@ -602,72 +562,26 @@ where
                 }
             },
             Err(error) => {
-                if let Some(data) = error
+                if error
                     .as_error_resp()
-                    .and_then(|payload| payload.as_revert_data())
+                    .is_some_and(|payload| payload.as_revert_data().is_some())
                 {
-                    return Ok(VerifyOnChainSuccessReturn::Reverted {
-                        data: data.to_vec(),
-                    });
+                    return Ok(VerifyOnChainSuccessReturn::Rejected);
                 }
                 return Err(Self::rpc_error(error));
             }
         }
-        let l2_execution_gas = self
-            .runtime
-            .block_on(async {
-                self.provider
-                    .estimate_gas(self.verifier_request(&calldata))
-                    .await
-            })
-            .map_err(Self::rpc_error)?;
-        let oracle_code = self
-            .runtime
-            .block_on(async { self.provider.get_code_at(self.oracle).await })
-            .map_err(Self::rpc_error)?;
-        if oracle_code.is_empty() {
-            return Ok(VerifyOnChainSuccessReturn::Accepted {
-                cost: VerifyCost {
-                    l2_execution_gas,
-                    l1_data_fee: L1DataFee::NotApplicable,
-                },
-            });
-        }
-        let chain_id = self
-            .runtime
-            .block_on(self.provider.get_chain_id())
-            .map_err(Self::rpc_error)?;
-        let unsigned =
-            Self::unsigned_transaction(chain_id, l2_execution_gas, self.verifier, &calldata);
-        let fee = match self
-            .runtime
-            .block_on(async { self.provider.call(self.fee_request(&unsigned)).await })
-        {
-            Ok(result) => match U256::abi_decode(result.as_ref()) {
-                Ok(fee) => fee,
-                Err(error) => {
-                    return Err(VerifyOnChainErrorReturn::Evm(
-                        EvmVerifierErrorReturn::ResultDecode(error),
-                    ));
-                }
-            },
-            Err(error) => return Err(Self::rpc_error(error)),
+        let request = FeeRequest {
+            to: self.verifier.clone(),
+            input: calldata,
         };
-        let wei = match u128::try_from(fee) {
-            Ok(wei) => wei,
-            Err(_) => {
-                return Err(VerifyOnChainErrorReturn::Evm(
-                    EvmVerifierErrorReturn::L1FeeOutOfRange {
-                        fee: fee.to_be_bytes::<32>(),
-                    },
-                ));
-            }
-        };
+        let description = self
+            .chain
+            .estimate_fee(EstimateFeeParams, EstimateFeePayload { request: &request })
+            .map(|success| success.description)
+            .map_err(|error| VerifyOnChainErrorReturn::Evm(EvmVerifierErrorReturn::Fee(error)))?;
         Ok(VerifyOnChainSuccessReturn::Accepted {
-            cost: VerifyCost {
-                l2_execution_gas,
-                l1_data_fee: L1DataFee::Charged { wei },
-            },
+            cost: VerifyCost { description },
         })
     }
 
@@ -676,10 +590,11 @@ where
     }
 }
 
-impl<'a, P, D> IVerifierAdapter for EvmVerifier<'a, P, D>
+impl<'a, P, C, D> IVerifierAdapter for EvmVerifier<'a, P, C, D>
 where
     P: IPairingAdapter,
-    D: IDeliveryProofAdapter<Pairing = P>,
+    C: IChainAdapter,
+    D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
 {
     const DECLARATION: VerifierDeclaration = EVM_VERIFIER_DECLARATION;
 

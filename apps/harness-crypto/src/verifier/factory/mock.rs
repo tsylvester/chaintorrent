@@ -7,15 +7,16 @@
 )]
 
 use chain::{
-    ConsumeChainFormsParams, ConsumeChainFormsPayload, CreateChainFormsParams, IChainForms,
-    IChainFormsConsumer, build_create_chain_forms_deps, build_create_chain_forms_params,
-    build_create_chain_forms_payload, create_chain_forms,
+    ChainFormsIdentifier, ChainMemberIdentifier, ConsumeChainFormsParams, ConsumeChainFormsPayload,
+    CreateChainFormsParams, FeeDescription, IChainForms, IChainFormsConsumer,
+    build_create_chain_forms_deps, build_create_chain_forms_params,
+    build_create_chain_forms_payload, build_fee_description, create_chain_forms,
 };
 use core::convert::Infallible;
 use encoding::{
-    ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingParams, IDecoderAdapter,
-    IEncoderAdapter, IEncodingConsumer, build_create_encoding_deps, build_create_encoding_params,
-    build_create_encoding_payload, create_encoding,
+    ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingParams, EncodingIdentifier,
+    IDecoderAdapter, IEncoderAdapter, IEncodingConsumer, build_create_encoding_deps,
+    build_create_encoding_params, build_create_encoding_payload, create_encoding,
 };
 use hash_to_scalar::{
     CreateHashToScalarParams, IHashToScalarAdapter, build_create_hash_to_scalar_deps,
@@ -46,27 +47,38 @@ use super::interface::{
     CreateVerifierCaseReturn, CreateVerifierCaseSuccessReturn, CreateVerifierDeps,
     CreateVerifierFn, CreateVerifierParams, CreateVerifierPayload, CreateVerifierReturn,
     CreateVerifierSuccessReturn, ICreateVerifierCaseConsumer, IVerifierAdapter, IVerifierConsumer,
-    L1DataFee, MockIVerifierAdapterFailureMode, MockIVerifierAdapterVerifyOnChainErrorReturn,
+    MockIVerifierAdapterFailureMode, MockIVerifierAdapterVerifyOnChainErrorReturn,
     RunCreateVerifierCaseFn, VERIFIER_INTERFACE_VERSION, VerifierConcrete, VerifierConcreteKind,
-    VerifierDeclaration, VerifyCost, VerifyOnChainErrorReturn, VerifyOnChainParams,
+    VerifierDeclaration, VerifierSettingBounds, VerifierSettingDisposition,
+    VerifierSettingStatement, VerifyCost, VerifyOnChainErrorReturn, VerifyOnChainParams,
     VerifyOnChainReturn, VerifyOnChainSuccessReturn,
 };
 
-use super::super::evm::provides::{build_evm_verifier_settings, invalidate_evm_verifier_settings};
+use super::super::evm::provides::{EvmVerifierSettings, build_evm_verifier_settings};
 
 #[derive(Default)]
 pub struct VerifierDeclarationOverrides {
+    pub identifier: Option<VerifierConcreteKind>,
+    pub name: Option<&'static str>,
     pub verifier_forms: Option<&'static [VerifierGroupArithmetic]>,
     pub statement_versions: Option<&'static [u16]>,
     pub adapter_version: Option<u32>,
     pub interface_version: Option<u32>,
+    pub chain_forms_identifier: Option<ChainFormsIdentifier>,
+    pub chain_member: Option<ChainMemberIdentifier>,
+    pub encoding_identifier: Option<EncodingIdentifier>,
+    pub contract_suite: Option<&'static str>,
+    pub settings: Option<&'static [VerifierSettingStatement]>,
 }
 
 pub fn build_verifier_declaration(overrides: VerifierDeclarationOverrides) -> VerifierDeclaration {
     VerifierDeclaration {
-        verifier_forms: overrides
-            .verifier_forms
-            .unwrap_or(&[VerifierGroupArithmetic::BothGroups]),
+        identifier: overrides.identifier.unwrap_or(VerifierConcreteKind::Evm),
+        name: overrides.name.unwrap_or("evm"),
+        verifier_forms: overrides.verifier_forms.unwrap_or(&[
+            VerifierGroupArithmetic::FirstGroupOnly,
+            VerifierGroupArithmetic::BothGroups,
+        ]),
         statement_versions: overrides
             .statement_versions
             .unwrap_or(&[DELIVERY_STATEMENT_VERSION_ONE]),
@@ -74,66 +86,38 @@ pub fn build_verifier_declaration(overrides: VerifierDeclarationOverrides) -> Ve
         interface_version: overrides
             .interface_version
             .unwrap_or(VERIFIER_INTERFACE_VERSION),
+        chain_forms_identifier: overrides
+            .chain_forms_identifier
+            .unwrap_or(ChainFormsIdentifier::EvmV1),
+        chain_member: overrides
+            .chain_member
+            .unwrap_or(ChainMemberIdentifier::Base),
+        encoding_identifier: overrides
+            .encoding_identifier
+            .unwrap_or(EncodingIdentifier::EthereumAbiV1),
+        contract_suite: overrides.contract_suite.unwrap_or("evm"),
+        settings: overrides.settings.unwrap_or(&[]),
     }
 }
 
 #[derive(Default)]
-pub struct VerifierDeclarationCorruptions {
-    pub verifier_forms: Option<Value>,
-    pub statement_versions: Option<Value>,
-    pub adapter_version: Option<Value>,
-    pub interface_version: Option<Value>,
+pub struct VerifierSettingStatementOverrides {
+    pub name: Option<&'static str>,
+    pub disposition: Option<VerifierSettingDisposition>,
 }
 
-pub fn invalidate_verifier_declaration(corruptions: VerifierDeclarationCorruptions) -> Value {
-    let declaration = build_verifier_declaration(Default::default());
-    let mut fields = Map::new();
-    fields.insert(
-        "verifier_forms".to_string(),
-        Value::Array(
-            declaration
-                .verifier_forms
-                .iter()
-                .map(|form| {
-                    Value::from(match form {
-                        VerifierGroupArithmetic::BothGroups => "BothGroups",
-                        VerifierGroupArithmetic::FirstGroupOnly => "FirstGroupOnly",
-                    })
-                })
-                .collect(),
-        ),
-    );
-    fields.insert(
-        "statement_versions".to_string(),
-        Value::Array(
-            declaration
-                .statement_versions
-                .iter()
-                .map(|version| Value::from(*version))
-                .collect(),
-        ),
-    );
-    fields.insert(
-        "adapter_version".to_string(),
-        Value::from(declaration.adapter_version),
-    );
-    fields.insert(
-        "interface_version".to_string(),
-        Value::from(declaration.interface_version),
-    );
-    if let Some(verifier_forms) = corruptions.verifier_forms {
-        fields.insert("verifier_forms".to_string(), verifier_forms);
+pub fn build_verifier_setting_statement(
+    overrides: VerifierSettingStatementOverrides,
+) -> VerifierSettingStatement {
+    VerifierSettingStatement {
+        name: overrides.name.unwrap_or("setting"),
+        disposition: overrides
+            .disposition
+            .unwrap_or(VerifierSettingDisposition::Settable {
+                bounds: VerifierSettingBounds::Unbounded,
+                default: "default",
+            }),
     }
-    if let Some(statement_versions) = corruptions.statement_versions {
-        fields.insert("statement_versions".to_string(), statement_versions);
-    }
-    if let Some(adapter_version) = corruptions.adapter_version {
-        fields.insert("adapter_version".to_string(), adapter_version);
-    }
-    if let Some(interface_version) = corruptions.interface_version {
-        fields.insert("interface_version".to_string(), interface_version);
-    }
-    Value::Object(fields)
 }
 
 #[derive(Default)]
@@ -147,55 +131,20 @@ pub fn build_verify_on_chain_params(
 
 #[derive(Default)]
 pub struct VerifyCostOverrides {
-    pub l2_execution_gas: Option<u64>,
-    pub l1_data_fee: Option<L1DataFee>,
+    pub description: Option<FeeDescription>,
 }
 
 pub fn build_verify_cost(overrides: VerifyCostOverrides) -> VerifyCost {
     VerifyCost {
-        l2_execution_gas: overrides.l2_execution_gas.unwrap_or(100_000),
-        l1_data_fee: overrides
-            .l1_data_fee
-            .unwrap_or(L1DataFee::Charged { wei: 1_000 }),
+        description: overrides
+            .description
+            .unwrap_or_else(|| build_fee_description(Default::default())),
     }
-}
-
-#[derive(Default)]
-pub struct VerifyCostCorruptions {
-    pub l2_execution_gas: Option<Value>,
-    pub l1_data_fee: Option<Value>,
-}
-
-pub fn invalidate_verify_cost(corruptions: VerifyCostCorruptions) -> Value {
-    let cost = build_verify_cost(Default::default());
-    let mut fields = Map::new();
-    fields.insert(
-        "l2_execution_gas".to_string(),
-        Value::from(cost.l2_execution_gas),
-    );
-    fields.insert(
-        "l1_data_fee".to_string(),
-        match cost.l1_data_fee {
-            L1DataFee::Charged { wei } => {
-                let mut charged = Map::new();
-                let mut wei_field = Map::new();
-                wei_field.insert("wei".to_string(), serde_json::to_value(wei).unwrap());
-                charged.insert("Charged".to_string(), Value::Object(wei_field));
-                Value::Object(charged)
-            }
-            L1DataFee::NotApplicable => Value::from("NotApplicable"),
-        },
-    );
-    if let Some(l2_execution_gas) = corruptions.l2_execution_gas {
-        fields.insert("l2_execution_gas".to_string(), l2_execution_gas);
-    }
-    if let Some(l1_data_fee) = corruptions.l1_data_fee {
-        fields.insert("l1_data_fee".to_string(), l1_data_fee);
-    }
-    Value::Object(fields)
 }
 
 pub(crate) const MOCK_I_VERIFIER_ADAPTER_DECLARATION: VerifierDeclaration = VerifierDeclaration {
+    identifier: VerifierConcreteKind::Mock,
+    name: "mock",
     verifier_forms: &[
         VerifierGroupArithmetic::FirstGroupOnly,
         VerifierGroupArithmetic::BothGroups,
@@ -203,6 +152,11 @@ pub(crate) const MOCK_I_VERIFIER_ADAPTER_DECLARATION: VerifierDeclaration = Veri
     statement_versions: &[DELIVERY_STATEMENT_VERSION_ONE],
     adapter_version: 1,
     interface_version: VERIFIER_INTERFACE_VERSION,
+    chain_forms_identifier: ChainFormsIdentifier::EvmV1,
+    chain_member: ChainMemberIdentifier::Mock,
+    encoding_identifier: EncodingIdentifier::Mock,
+    contract_suite: "evm",
+    settings: &[],
 };
 
 pub(crate) struct MockIVerifierAdapterConstructorParams<'a, D: IDeliveryProofAdapter> {
@@ -337,10 +291,7 @@ pub fn invalidate_create_verifier_params(corruptions: CreateVerifierParamsCorrup
         match &params.concrete {
             VerifierConcrete::Evm { .. } => {
                 let mut variant = Map::new();
-                variant.insert(
-                    "settings".to_string(),
-                    invalidate_evm_verifier_settings(Default::default()),
-                );
+                variant.insert("settings".to_string(), Value::Object(Map::new()));
                 let mut concrete = Map::new();
                 concrete.insert("Evm".to_string(), Value::Object(variant));
                 Value::Object(concrete)
@@ -372,16 +323,26 @@ pub fn invalidate_create_verifier_params(corruptions: CreateVerifierParamsCorrup
 }
 
 #[derive(Default)]
-pub struct VerifierConcreteOverrides;
+pub struct VerifierConcreteOverrides {
+    pub kind: Option<VerifierConcreteKind>,
+    pub settings: Option<EvmVerifierSettings>,
+    pub failure_mode: Option<MockIVerifierAdapterFailureMode>,
+}
 
-pub fn build_verifier_concrete(
-    kind: VerifierConcreteKind,
-    _overrides: VerifierConcreteOverrides,
-) -> VerifierConcrete {
-    match kind {
+pub fn build_verifier_concrete(overrides: VerifierConcreteOverrides) -> VerifierConcrete {
+    match overrides.kind.unwrap_or(VerifierConcreteKind::Mock) {
         VerifierConcreteKind::Evm => VerifierConcrete::Evm {
-            settings: Box::new(build_evm_verifier_settings(Default::default())),
+            settings: Box::new(
+                overrides
+                    .settings
+                    .unwrap_or_else(|| build_evm_verifier_settings(Default::default())),
+            ),
         },
+        VerifierConcreteKind::Mock => VerifierConcrete::Mock(
+            overrides
+                .failure_mode
+                .unwrap_or(MockIVerifierAdapterFailureMode::NoFailure),
+        ),
     }
 }
 

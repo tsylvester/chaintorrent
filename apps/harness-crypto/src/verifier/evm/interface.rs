@@ -2,57 +2,33 @@ use alloy::primitives::Address;
 use alloy::providers::DynProvider;
 use alloy::transports::TransportError;
 #[cfg(any(test, feature = "mocks"))]
-use chain::{CreateChainFormsErrorReturn, CreateChainFormsParams, IChainForms};
-use encoding::{
-    CanonicalFieldKind, CanonicalFieldReaderErrorReturn, CanonicalFieldValue, FromFieldErrorReturn,
+use chain::{
+    CreateChainErrorReturn, CreateChainFormsErrorReturn, CreateChainFormsParams, CreateChainParams,
 };
+use chain::{EstimateFeeErrorReturn, IChainAdapter, IChainForms, IEntitlementStateAdapter};
+use encoding::{CanonicalFieldKind, CanonicalFieldValue, FromFieldErrorReturn};
 #[cfg(any(test, feature = "mocks"))]
 use encoding::{CreateEncodingErrorReturn, CreateEncodingParams};
 #[cfg(any(test, feature = "mocks"))]
 use hash_to_scalar::{CreateHashToScalarErrorReturn, CreateHashToScalarParams};
+use pairing::IPairingAdapter;
 #[cfg(any(test, feature = "mocks"))]
 use pairing::{
     CreatePairingErrorReturn, CreatePairingParams, IPairingArithmetic, IPairingReference,
 };
-use pairing::{IPairingAdapter, VerifierGroupArithmetic};
+use proof::IDeliveryProofAdapter;
 #[cfg(any(test, feature = "mocks"))]
 use proof::{CreateDeliveryProofErrorReturn, CreateDeliveryProofParams};
-use proof::{DELIVERY_STATEMENT_VERSION_ONE, IDeliveryProofAdapter};
 #[cfg(any(test, feature = "mocks"))]
 use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 use tokio::runtime::Runtime;
-use url::{ParseError, Url};
+use url::ParseError;
 
-use super::super::factory::provides::{VERIFIER_INTERFACE_VERSION, VerifierDeclaration};
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct EvmVerifierEndpoint {
-    pub(super) url: Url,
-}
-
-pub struct EvmVerifierEndpointConstructorParams {
-    pub text: String,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum EvmVerifierEndpointTryNewErrorReturn {
-    Unparsable { error: ParseError },
-}
-
-pub type EvmVerifierEndpointTryNewReturn =
-    Result<EvmVerifierEndpoint, EvmVerifierEndpointTryNewErrorReturn>;
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct EvmVerifierSettings {
-    pub endpoint: EvmVerifierEndpoint,
-    pub verifier_address: CanonicalFieldValue,
-    pub gas_price_oracle: CanonicalFieldValue,
-}
+use super::settings::provides::EvmVerifierSettings;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EvmVerifierField {
     VerifierAddress,
-    GasPriceOracle,
 }
 
 pub const EVM_VERIFIER_CONTEXT_FIELD_KINDS: &[CanonicalFieldKind] = &[
@@ -69,24 +45,33 @@ pub const EVM_VERIFIER_CONTEXT_FIELD_KINDS: &[CanonicalFieldKind] = &[
 pub struct EvmVerifierConstructorParams<
     'a,
     P: IPairingAdapter,
-    D: IDeliveryProofAdapter<Pairing = P>,
+    C: IChainAdapter,
+    D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
 > {
     pub pairing: &'a P,
+    pub chain: &'a C,
     pub delivery_proof: &'a D,
+    pub verifier_address: CanonicalFieldValue,
     pub settings: EvmVerifierSettings,
 }
 
-pub struct EvmVerifier<'a, P: IPairingAdapter, D: IDeliveryProofAdapter<Pairing = P>> {
+pub struct EvmVerifier<
+    'a,
+    P: IPairingAdapter,
+    C: IChainAdapter,
+    D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
+> {
     pub(super) pairing: &'a P,
+    pub(super) chain: &'a C,
     pub(super) delivery_proof: &'a D,
-    pub(super) verifier: Address,
-    pub(super) oracle: Address,
+    pub(super) verifier: <<C as IEntitlementStateAdapter>::Forms as IChainForms>::Identity,
+    pub(super) verifier_address: Address,
     pub(super) provider: DynProvider,
     pub(super) runtime: Runtime,
 }
 
-pub type EvmVerifierTryNewReturn<'a, P, D> =
-    Result<EvmVerifier<'a, P, D>, EvmVerifierTryNewErrorReturn>;
+pub type EvmVerifierTryNewReturn<'a, P, C, D> =
+    Result<EvmVerifier<'a, P, C, D>, EvmVerifierTryNewErrorReturn>;
 
 #[derive(Debug)]
 pub enum EvmVerifierTryNewErrorReturn {
@@ -94,8 +79,8 @@ pub enum EvmVerifierTryNewErrorReturn {
         field: EvmVerifierField,
         error: FromFieldErrorReturn,
     },
-    IdentityKind {
-        field: EvmVerifierField,
+    Endpoint {
+        error: ParseError,
     },
     Runtime(std::io::Error),
 }
@@ -103,37 +88,40 @@ pub enum EvmVerifierTryNewErrorReturn {
 #[derive(Debug)]
 pub enum EvmVerifierErrorReturn {
     NothingDeployed { address: [u8; 20] },
-    Fields(CanonicalFieldReaderErrorReturn),
     ScalarLength { actual: usize },
     Rpc(TransportError),
     ResultDecode(alloy::sol_types::Error),
-    L1FeeOutOfRange { fee: [u8; 32] },
+    Fee(EstimateFeeErrorReturn),
 }
-
-pub const EVM_VERIFIER_DECLARATION: VerifierDeclaration = VerifierDeclaration {
-    verifier_forms: &[
-        VerifierGroupArithmetic::FirstGroupOnly,
-        VerifierGroupArithmetic::BothGroups,
-    ],
-    statement_versions: &[DELIVERY_STATEMENT_VERSION_ONE],
-    adapter_version: 1,
-    interface_version: VERIFIER_INTERFACE_VERSION,
-};
 
 #[cfg(any(test, feature = "mocks"))]
 pub trait IEvmVerifierCaseConsumer {
     type Output;
 
-    fn consume_evm_verifier_case<P, F, D>(
+    fn consume_evm_verifier_case<P, C, D>(
         &self,
-        pairing: &P,
-        forms: &F,
-        delivery_proof: &D,
+        params: ConsumeEvmVerifierCaseParams,
+        payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
     ) -> Self::Output
     where
         P: IPairingArithmetic + IPairingReference,
-        F: IChainForms,
-        D: IDeliveryProofAdapter<Pairing = P, Forms = F>;
+        C: IChainAdapter,
+        D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeEvmVerifierCaseParams;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeEvmVerifierCasePayload<
+    'a,
+    P: IPairingArithmetic + IPairingReference,
+    C: IChainAdapter,
+    D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
+> {
+    pub pairing: &'a P,
+    pub chain: &'a C,
+    pub delivery_proof: &'a D,
 }
 
 #[cfg(any(test, feature = "mocks"))]
@@ -147,6 +135,7 @@ pub struct EvmVerifierCaseParams {
     pub hash_to_scalar: CreateHashToScalarParams,
     pub encoding: CreateEncodingParams,
     pub chain_forms: CreateChainFormsParams,
+    pub chain: CreateChainParams,
     pub delivery_proof: CreateDeliveryProofParams,
     pub random_source: CreateRandomSourceParams,
 }
@@ -160,12 +149,13 @@ pub struct EvmVerifierCaseSuccessReturn<O> {
 }
 
 #[cfg(any(test, feature = "mocks"))]
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug)]
 pub enum EvmVerifierCaseErrorReturn {
     Pairing(CreatePairingErrorReturn),
     HashToScalar(CreateHashToScalarErrorReturn),
     Encoding(CreateEncodingErrorReturn),
     ChainForms(CreateChainFormsErrorReturn),
+    Chain(CreateChainErrorReturn),
     DeliveryProof(CreateDeliveryProofErrorReturn),
     RandomSource(CreateRandomSourceErrorReturn),
 }
@@ -175,7 +165,7 @@ pub type EvmVerifierCaseReturn<O> =
     Result<EvmVerifierCaseSuccessReturn<O>, EvmVerifierCaseErrorReturn>;
 
 #[cfg(any(test, feature = "mocks"))]
-pub type RunEvmVerifierCaseFn<C> =
+pub type RunEvmVerifierCaseFn<C: IEvmVerifierCaseConsumer> =
     fn(
         &EvmVerifierCaseDeps<C>,
         EvmVerifierCaseParams,

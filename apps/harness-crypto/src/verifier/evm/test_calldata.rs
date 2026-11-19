@@ -1,10 +1,10 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use alloy::network::TransactionBuilder;
-use alloy::primitives::{Address, FixedBytes, U256};
-use alloy::sol_types::SolCall;
+use alloy::primitives::{Address, Bytes, FixedBytes, U256, keccak256};
+use alloy::sol_types::{SolCall, SolValue};
 use alloy::transports::mock::Asserter;
-use chain::IChainForms;
+use chain::{IChainAdapter, IChainForms, IEntitlementStateAdapter};
 use encoding::{CanonicalFieldValue, FromFieldParams, ICanonicalField};
 use pairing::{
     EncodeG1Params, EncodeG1Payload, EncodeG2Params, EncodeG2Payload, EncodeScalarParams,
@@ -21,9 +21,11 @@ use proof::{
     build_transfer_second_group_first_messages,
 };
 
-use super::interface::{EvmVerifier, EvmVerifierSettings, IEvmVerifierCaseConsumer};
+use super::IDeliveryVerifier;
+use super::interface::{
+    ConsumeEvmVerifierCaseParams, ConsumeEvmVerifierCasePayload, IEvmVerifierCaseConsumer,
+};
 use super::mock::*;
-use super::{IDeliveryVerifier, IGasPriceOracle};
 
 /// Contract: a mint statement's calldata begins with the selector of
 ///   `verifyMint` over the interface's two struct types.
@@ -34,11 +36,11 @@ use super::{IDeliveryVerifier, IGasPriceOracle};
 ///   `keccak256("verifyMint((bytes32,uint16,uint256,bytes20,bytes32,
 ///   bytes32,uint256,uint256,uint64,uint64,uint16,bytes20,bytes20,
 ///   uint64),bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes),(uint256,
-///   uint256,uint256,uint256,uint256,bytes))")`, a text independent of
-///   the interface.
+///   uint256,uint256,uint256,uint256,uint256,bytes))")`, a text
+///   independent of the interface.
 /// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
+///   chain-forms', chain's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
 #[test]
 fn calldata_selects_verify_mint_for_a_mint_statement() {
     // Arrange
@@ -51,29 +53,30 @@ fn calldata_selects_verify_mint_for_a_mint_statement() {
     impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_evm_verifier_case<P, F, D>(
+        fn consume_evm_verifier_case<P, C, D>(
             &self,
-            pairing: &P,
-            _forms: &F,
-            delivery_proof: &D,
+            _params: ConsumeEvmVerifierCaseParams,
+            payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+            C: IChainAdapter,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
         {
             // Arrange
             let subject = build_evm_verifier(
-                pairing,
-                delivery_proof,
+                payload.pairing,
+                payload.chain,
+                payload.delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
-            let wire = build_delivery_proof_wire_components(pairing, Default::default());
+            let statement =
+                build_algebraic_mint_statement::<P, D::Forms>(payload.pairing, Default::default());
+            let wire = build_delivery_proof_wire_components(payload.pairing, Default::default());
             let components = DeliveryProofComponents::MintBothGroups {
                 challenge: wire.challenge,
-                responses: build_mint_responses(pairing, Default::default()),
+                responses: build_mint_responses(payload.pairing, Default::default()),
             };
 
             // Act
@@ -83,7 +86,12 @@ fn calldata_selects_verify_mint_for_a_mint_statement() {
             let Ok(calldata) = result else {
                 panic!("the default statement and components encode")
             };
-            assert_eq!(calldata[..4], IDeliveryVerifier::verifyMintCall::SELECTOR);
+            assert_eq!(
+                calldata[..4],
+                keccak256(
+                    "verifyMint((bytes32,uint16,uint256,bytes20,bytes32,bytes32,uint256,uint256,uint64,uint64,uint16,bytes20,bytes20,uint64),bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes),(uint256,uint256,uint256,uint256,uint256,bytes))"
+                )[..4]
+            );
         }
     }
 
@@ -118,8 +126,8 @@ fn calldata_selects_verify_mint_for_a_mint_statement() {
 ///   bytes,bytes,bytes,bytes),(uint256,uint256,uint256,uint256,uint256,
 ///   uint256,bytes))")`.
 /// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
+///   chain-forms', chain's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
 #[test]
 fn calldata_selects_verify_transfer_for_a_transfer_statement() {
     // Arrange
@@ -132,29 +140,32 @@ fn calldata_selects_verify_transfer_for_a_transfer_statement() {
     impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_evm_verifier_case<P, F, D>(
+        fn consume_evm_verifier_case<P, C, D>(
             &self,
-            pairing: &P,
-            _forms: &F,
-            delivery_proof: &D,
+            _params: ConsumeEvmVerifierCaseParams,
+            payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+            C: IChainAdapter,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
         {
             // Arrange
             let subject = build_evm_verifier(
-                pairing,
-                delivery_proof,
+                payload.pairing,
+                payload.chain,
+                payload.delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement = build_algebraic_transfer_statement::<P, F>(pairing, Default::default());
-            let wire = build_delivery_proof_wire_components(pairing, Default::default());
+            let statement = build_algebraic_transfer_statement::<P, D::Forms>(
+                payload.pairing,
+                Default::default(),
+            );
+            let wire = build_delivery_proof_wire_components(payload.pairing, Default::default());
             let components = DeliveryProofComponents::TransferBothGroups {
                 challenge: wire.challenge,
-                responses: build_transfer_responses(pairing, Default::default()),
+                responses: build_transfer_responses(payload.pairing, Default::default()),
             };
 
             // Act
@@ -166,7 +177,9 @@ fn calldata_selects_verify_transfer_for_a_transfer_statement() {
             };
             assert_eq!(
                 calldata[..4],
-                IDeliveryVerifier::verifyTransferCall::SELECTOR
+                keccak256(
+                    "verifyTransfer((bytes32,uint16,uint256,bytes20,bytes32,bytes32,uint256,uint256,uint64,uint64,uint16,bytes20,bytes20,uint64),bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes,bytes),(uint256,uint256,uint256,uint256,uint256,uint256,bytes))"
+                )[..4]
             );
         }
     }
@@ -213,8 +226,8 @@ fn calldata_selects_verify_transfer_for_a_transfer_statement() {
 ///   `4_102_444_800`, by `assert_eq!`, every member distinct from every
 ///   other of its type so a swap fails.
 /// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
+///   chain-forms', chain's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
 #[test]
 fn calldata_encodes_a_mint_statements_context_members_from_the_forms_and_domain_values() {
     // Arrange
@@ -227,77 +240,77 @@ fn calldata_encodes_a_mint_statements_context_members_from_the_forms_and_domain_
     impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_evm_verifier_case<P, F, D>(
+        fn consume_evm_verifier_case<P, C, D>(
             &self,
-            pairing: &P,
-            _forms: &F,
-            delivery_proof: &D,
+            _params: ConsumeEvmVerifierCaseParams,
+            payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+            C: IChainAdapter,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
         {
             // Arrange
             let subject = build_evm_verifier(
-                pairing,
-                delivery_proof,
+                payload.pairing,
+                payload.chain,
+                payload.delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
             let chain_literal: [u8; 32] =
                 core::array::from_fn(|index| u8::try_from(index + 1).unwrap());
-            let Ok(chain) = F::ChainIdentifier::from_field(
+            let Ok(chain) = <D::Forms as IChainForms>::ChainIdentifier::from_field(
                 FromFieldParams,
                 CanonicalFieldValue::Unsigned256(chain_literal),
             ) else {
                 panic!("the chain-identifier form admits a 256-bit field")
             };
-            let Ok(entitlement_contract) = F::Identity::from_field(
+            let Ok(entitlement_contract) = <D::Forms as IChainForms>::Identity::from_field(
                 FromFieldParams,
                 CanonicalFieldValue::FixedBytes20([0x51; 20]),
             ) else {
                 panic!("the identity form admits a twenty-byte field")
             };
-            let Ok(source_entitlement) = F::Entitlement::from_field(
+            let Ok(source_entitlement) = <D::Forms as IChainForms>::Entitlement::from_field(
                 FromFieldParams,
                 CanonicalFieldValue::Unsigned256([0x61; 32]),
             ) else {
                 panic!("the entitlement form admits a 256-bit field")
             };
-            let Ok(target_entitlement) = F::Entitlement::from_field(
+            let Ok(target_entitlement) = <D::Forms as IChainForms>::Entitlement::from_field(
                 FromFieldParams,
                 CanonicalFieldValue::Unsigned256([0x62; 32]),
             ) else {
                 panic!("the entitlement form admits a 256-bit field")
             };
-            let Ok(old_interval) = F::Interval::from_field(
+            let Ok(old_interval) = <D::Forms as IChainForms>::Interval::from_field(
                 FromFieldParams,
                 CanonicalFieldValue::Unsigned64(0x0102_0304_0506_0708),
             ) else {
                 panic!("the interval form admits a 64-bit field")
             };
-            let Ok(new_interval) = F::Interval::from_field(
+            let Ok(new_interval) = <D::Forms as IChainForms>::Interval::from_field(
                 FromFieldParams,
                 CanonicalFieldValue::Unsigned64(0x1112_1314_1516_1718),
             ) else {
                 panic!("the interval form admits a 64-bit field")
             };
-            let Ok(seller) = F::Identity::from_field(
+            let Ok(seller) = <D::Forms as IChainForms>::Identity::from_field(
                 FromFieldParams,
                 CanonicalFieldValue::FixedBytes20([0x52; 20]),
             ) else {
                 panic!("the identity form admits a twenty-byte field")
             };
-            let Ok(buyer) = F::Identity::from_field(
+            let Ok(buyer) = <D::Forms as IChainForms>::Identity::from_field(
                 FromFieldParams,
                 CanonicalFieldValue::FixedBytes20([0x53; 20]),
             ) else {
                 panic!("the identity form admits a twenty-byte field")
             };
-            let context = build_delivery_context::<F, MintPurpose>(
+            let context = build_delivery_context::<D::Forms, MintPurpose>(
                 MintPurpose::Mint,
-                DeliveryContextOverrides::<F> {
+                DeliveryContextOverrides::<D::Forms> {
                     chain: Some(chain.value),
                     entitlement_contract: Some(entitlement_contract.value),
                     source_entitlement: Some(source_entitlement.value),
@@ -310,17 +323,17 @@ fn calldata_encodes_a_mint_statements_context_members_from_the_forms_and_domain_
                     ..Default::default()
                 },
             );
-            let statement = build_algebraic_mint_statement::<P, F>(
-                pairing,
+            let statement = build_algebraic_mint_statement::<P, D::Forms>(
+                payload.pairing,
                 AlgebraicMintStatementOverrides {
                     context: Some(context),
                     ..Default::default()
                 },
             );
-            let wire = build_delivery_proof_wire_components(pairing, Default::default());
+            let wire = build_delivery_proof_wire_components(payload.pairing, Default::default());
             let components = DeliveryProofComponents::MintBothGroups {
                 challenge: wire.challenge,
-                responses: build_mint_responses(pairing, Default::default()),
+                responses: build_mint_responses(payload.pairing, Default::default()),
             };
 
             // Act
@@ -377,8 +390,8 @@ fn calldata_encodes_a_mint_statements_context_members_from_the_forms_and_domain_
 /// Assert:  the decoded `purpose` equals `4`, and a `MintPurpose::Mint`
 ///   run's equals `1`, by `assert_eq!`.
 /// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
+///   chain-forms', chain's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
 #[test]
 fn calldata_encodes_the_purpose_code_of_a_mint_replacement() {
     // Arrange
@@ -391,39 +404,40 @@ fn calldata_encodes_the_purpose_code_of_a_mint_replacement() {
     impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_evm_verifier_case<P, F, D>(
+        fn consume_evm_verifier_case<P, C, D>(
             &self,
-            pairing: &P,
-            _forms: &F,
-            delivery_proof: &D,
+            _params: ConsumeEvmVerifierCaseParams,
+            payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+            C: IChainAdapter,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
         {
             // Arrange
             let subject = build_evm_verifier(
-                pairing,
-                delivery_proof,
+                payload.pairing,
+                payload.chain,
+                payload.delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let replacement = build_algebraic_mint_statement::<P, F>(
-                pairing,
+            let replacement = build_algebraic_mint_statement::<P, D::Forms>(
+                payload.pairing,
                 AlgebraicMintStatementOverrides {
-                    context: Some(build_delivery_context::<F, MintPurpose>(
+                    context: Some(build_delivery_context::<D::Forms, MintPurpose>(
                         MintPurpose::Replacement,
                         Default::default(),
                     )),
                     ..Default::default()
                 },
             );
-            let mint = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
-            let wire = build_delivery_proof_wire_components(pairing, Default::default());
+            let mint =
+                build_algebraic_mint_statement::<P, D::Forms>(payload.pairing, Default::default());
+            let wire = build_delivery_proof_wire_components(payload.pairing, Default::default());
             let components = DeliveryProofComponents::MintBothGroups {
                 challenge: wire.challenge.clone(),
-                responses: build_mint_responses(pairing, Default::default()),
+                responses: build_mint_responses(payload.pairing, Default::default()),
             };
 
             // Act
@@ -431,7 +445,7 @@ fn calldata_encodes_the_purpose_code_of_a_mint_replacement() {
                 &AlgebraicStatement::Mint(&replacement),
                 DeliveryProofComponents::MintBothGroups {
                     challenge: wire.challenge.clone(),
-                    responses: build_mint_responses(pairing, Default::default()),
+                    responses: build_mint_responses(payload.pairing, Default::default()),
                 },
             );
             let minted = subject.calldata(&AlgebraicStatement::Mint(&mint), components);
@@ -495,8 +509,8 @@ fn calldata_encodes_the_purpose_code_of_a_mint_replacement() {
 ///   members are pairwise distinct, by `assert_eq!` and `assert_ne!`,
 ///   so two members of one group exchanged fail.
 /// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
+///   chain-forms', chain's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
 #[test]
 fn calldata_encodes_each_group_element_of_a_mint_statement_into_its_member() {
     // Arrange
@@ -509,29 +523,30 @@ fn calldata_encodes_each_group_element_of_a_mint_statement_into_its_member() {
     impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_evm_verifier_case<P, F, D>(
+        fn consume_evm_verifier_case<P, C, D>(
             &self,
-            pairing: &P,
-            _forms: &F,
-            delivery_proof: &D,
+            _params: ConsumeEvmVerifierCaseParams,
+            payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+            C: IChainAdapter,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
         {
             // Arrange
             let subject = build_evm_verifier(
-                pairing,
-                delivery_proof,
+                payload.pairing,
+                payload.chain,
+                payload.delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
-            let wire = build_delivery_proof_wire_components(pairing, Default::default());
+            let statement =
+                build_algebraic_mint_statement::<P, D::Forms>(payload.pairing, Default::default());
+            let wire = build_delivery_proof_wire_components(payload.pairing, Default::default());
             let components = DeliveryProofComponents::MintBothGroups {
                 challenge: wire.challenge,
-                responses: build_mint_responses(pairing, Default::default()),
+                responses: build_mint_responses(payload.pairing, Default::default()),
             };
 
             // Act
@@ -543,77 +558,82 @@ fn calldata_encodes_each_group_element_of_a_mint_statement_into_its_member() {
             };
             let call = IDeliveryVerifier::verifyMintCall::abi_decode(&calldata)
                 .expect("the calldata decodes under its own call type");
-            let Ok(hpub) = pairing.encode_g2(
+            let Ok(hpub) = payload.pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
                     point: statement.hpub.clone(),
                 },
             );
-            let Ok(identity_element) = pairing.encode_g1(
+            let Ok(identity_element) = payload.pairing.encode_g1(
                 EncodeG1Params,
                 EncodeG1Payload {
                     point: statement.identity_element.clone(),
                 },
             );
-            let Ok(buyer_pk1) = pairing.encode_g1(
+            let Ok(buyer_pk1) = payload.pairing.encode_g1(
                 EncodeG1Params,
                 EncodeG1Payload {
                     point: statement.buyer_keys.pk1.clone(),
                 },
             );
-            let Ok(buyer_pk2) = pairing.encode_g2(
+            let Ok(buyer_pk2) = payload.pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
                     point: statement.buyer_keys.pk2.clone(),
                 },
             );
-            let Ok(envelope_c1) = pairing.encode_g1(
+            let Ok(envelope_c1) = payload.pairing.encode_g1(
                 EncodeG1Params,
                 EncodeG1Payload {
                     point: statement.envelope.c1.clone(),
                 },
             );
-            let Ok(envelope_c2) = pairing.encode_g1(
+            let Ok(envelope_c2) = payload.pairing.encode_g1(
                 EncodeG1Params,
                 EncodeG1Payload {
                     point: statement.envelope.c2.clone(),
                 },
             );
-            let Ok(envelope_d1) = pairing.encode_g2(
+            let Ok(envelope_d1) = payload.pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
                     point: statement.envelope.d1.clone(),
                 },
             );
-            let Ok(envelope_d2) = pairing.encode_g2(
+            let Ok(envelope_d2) = payload.pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
                     point: statement.envelope.d2.clone(),
                 },
             );
-            assert_eq!(call.statement.hpub.as_ref(), hpub.bytes.as_ref());
-            assert_eq!(
-                call.statement.identityElement.as_ref(),
-                identity_element.bytes.as_ref()
-            );
-            assert_eq!(call.statement.buyerPk1.as_ref(), buyer_pk1.bytes.as_ref());
-            assert_eq!(call.statement.buyerPk2.as_ref(), buyer_pk2.bytes.as_ref());
-            assert_eq!(
-                call.statement.envelopeC1.as_ref(),
-                envelope_c1.bytes.as_ref()
-            );
-            assert_eq!(
-                call.statement.envelopeC2.as_ref(),
-                envelope_c2.bytes.as_ref()
-            );
-            assert_eq!(
-                call.statement.envelopeD1.as_ref(),
-                envelope_d1.bytes.as_ref()
-            );
-            assert_eq!(
-                call.statement.envelopeD2.as_ref(),
-                envelope_d2.bytes.as_ref()
-            );
+            let members = [
+                call.statement.hpub.clone(),
+                call.statement.identityElement.clone(),
+                call.statement.buyerPk1.clone(),
+                call.statement.buyerPk2.clone(),
+                call.statement.envelopeC1.clone(),
+                call.statement.envelopeC2.clone(),
+                call.statement.envelopeD1.clone(),
+                call.statement.envelopeD2.clone(),
+            ];
+            let expected = [
+                hpub.bytes.as_ref(),
+                identity_element.bytes.as_ref(),
+                buyer_pk1.bytes.as_ref(),
+                buyer_pk2.bytes.as_ref(),
+                envelope_c1.bytes.as_ref(),
+                envelope_c2.bytes.as_ref(),
+                envelope_d1.bytes.as_ref(),
+                envelope_d2.bytes.as_ref(),
+            ];
+            for (member, expected) in members.iter().zip(expected.iter()) {
+                assert_eq!(member.as_ref(), *expected);
+            }
+            for left in 0..members.len() {
+                for right in (left + 1)..members.len() {
+                    assert_ne!(members[left], members[right]);
+                }
+            }
         }
     }
 
@@ -647,8 +667,8 @@ fn calldata_encodes_each_group_element_of_a_mint_statement_into_its_member() {
 ///   pairing's `encode_scalar` of the scalar of its name and the five
 ///   are pairwise distinct, so `rho` and `sigma` exchanged fail.
 /// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
+///   chain-forms', chain's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
 #[test]
 fn calldata_encodes_a_mint_proofs_scalars_in_witness_order() {
     // Arrange
@@ -661,27 +681,29 @@ fn calldata_encodes_a_mint_proofs_scalars_in_witness_order() {
     impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_evm_verifier_case<P, F, D>(
+        fn consume_evm_verifier_case<P, C, D>(
             &self,
-            pairing: &P,
-            _forms: &F,
-            delivery_proof: &D,
+            _params: ConsumeEvmVerifierCaseParams,
+            payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+            C: IChainAdapter,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
         {
             // Arrange
             let subject = build_evm_verifier(
-                pairing,
-                delivery_proof,
+                payload.pairing,
+                payload.chain,
+                payload.delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
-            let wire = build_delivery_proof_wire_components(pairing, Default::default());
-            let responses = build_mint_responses(pairing, MintResponsesOverrides::default());
+            let statement =
+                build_algebraic_mint_statement::<P, D::Forms>(payload.pairing, Default::default());
+            let wire = build_delivery_proof_wire_components(payload.pairing, Default::default());
+            let responses =
+                build_mint_responses(payload.pairing, MintResponsesOverrides::default());
             fn scalar_word<P: IPairingArithmetic>(pairing: &P, scalar: P::Scalar) -> U256 {
                 let Ok(encoded) =
                     pairing.encode_scalar(EncodeScalarParams, EncodeScalarPayload { scalar });
@@ -694,11 +716,11 @@ fn calldata_encodes_a_mint_proofs_scalars_in_witness_order() {
                 U256::from_be_bytes(bytes)
             }
             let expected = [
-                scalar_word(pairing, wire.challenge.clone()),
-                scalar_word(pairing, responses.alpha.clone()),
-                scalar_word(pairing, responses.r.clone()),
-                scalar_word(pairing, responses.rho.clone()),
-                scalar_word(pairing, responses.sigma.clone()),
+                scalar_word(payload.pairing, wire.challenge.clone()),
+                scalar_word(payload.pairing, responses.alpha.clone()),
+                scalar_word(payload.pairing, responses.r.clone()),
+                scalar_word(payload.pairing, responses.rho.clone()),
+                scalar_word(payload.pairing, responses.sigma.clone()),
             ];
             let components = DeliveryProofComponents::MintBothGroups {
                 challenge: wire.challenge,
@@ -755,8 +777,8 @@ fn calldata_encodes_a_mint_proofs_scalars_in_witness_order() {
 /// Act:     `calldata`.
 /// Assert:  the decoded member's length equals `0`.
 /// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
+///   chain-forms', chain's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
 #[test]
 fn calldata_carries_no_second_group_first_messages_for_a_mint_under_the_both_groups_form() {
     // Arrange
@@ -769,29 +791,30 @@ fn calldata_carries_no_second_group_first_messages_for_a_mint_under_the_both_gro
     impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_evm_verifier_case<P, F, D>(
+        fn consume_evm_verifier_case<P, C, D>(
             &self,
-            pairing: &P,
-            _forms: &F,
-            delivery_proof: &D,
+            _params: ConsumeEvmVerifierCaseParams,
+            payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+            C: IChainAdapter,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
         {
             // Arrange
             let subject = build_evm_verifier(
-                pairing,
-                delivery_proof,
+                payload.pairing,
+                payload.chain,
+                payload.delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
-            let wire = build_delivery_proof_wire_components(pairing, Default::default());
+            let statement =
+                build_algebraic_mint_statement::<P, D::Forms>(payload.pairing, Default::default());
+            let wire = build_delivery_proof_wire_components(payload.pairing, Default::default());
             let components = DeliveryProofComponents::MintBothGroups {
                 challenge: wire.challenge,
-                responses: build_mint_responses(pairing, Default::default()),
+                responses: build_mint_responses(payload.pairing, Default::default()),
             };
 
             // Act
@@ -837,8 +860,8 @@ fn calldata_carries_no_second_group_first_messages_for_a_mint_under_the_both_gro
 ///   in that order by `assert_eq!`, and differs from the order `d1`,
 ///   `hpub`, `d2`.
 /// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
+///   chain-forms', chain's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
 #[test]
 fn calldata_concatenates_a_mints_second_group_first_messages_as_hpub_d1_d2() {
     // Arrange
@@ -851,43 +874,44 @@ fn calldata_concatenates_a_mints_second_group_first_messages_as_hpub_d1_d2() {
     impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_evm_verifier_case<P, F, D>(
+        fn consume_evm_verifier_case<P, C, D>(
             &self,
-            pairing: &P,
-            _forms: &F,
-            delivery_proof: &D,
+            _params: ConsumeEvmVerifierCaseParams,
+            payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+            C: IChainAdapter,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
         {
             // Arrange
             let subject = build_evm_verifier(
-                pairing,
-                delivery_proof,
+                payload.pairing,
+                payload.chain,
+                payload.delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement = build_algebraic_mint_statement::<P, F>(pairing, Default::default());
-            let wire = build_delivery_proof_wire_components(pairing, Default::default());
+            let statement =
+                build_algebraic_mint_statement::<P, D::Forms>(payload.pairing, Default::default());
+            let wire = build_delivery_proof_wire_components(payload.pairing, Default::default());
             let first_messages = build_mint_second_group_first_messages(
-                pairing,
+                payload.pairing,
                 MintSecondGroupFirstMessagesOverrides::default(),
             );
-            let Ok(hpub) = pairing.encode_g2(
+            let Ok(hpub) = payload.pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
                     point: first_messages.hpub.clone(),
                 },
             );
-            let Ok(d1) = pairing.encode_g2(
+            let Ok(d1) = payload.pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
                     point: first_messages.d1.clone(),
                 },
             );
-            let Ok(d2) = pairing.encode_g2(
+            let Ok(d2) = payload.pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
                     point: first_messages.d2.clone(),
@@ -895,7 +919,7 @@ fn calldata_concatenates_a_mints_second_group_first_messages_as_hpub_d1_d2() {
             );
             let components = DeliveryProofComponents::MintFirstGroupOnly {
                 challenge: wire.challenge,
-                responses: build_mint_responses(pairing, Default::default()),
+                responses: build_mint_responses(payload.pairing, Default::default()),
                 first_messages,
             };
 
@@ -947,8 +971,8 @@ fn calldata_concatenates_a_mints_second_group_first_messages_as_hpub_d1_d2() {
 /// Assert:  the decoded context equals the mint block's literals with
 ///   `purpose` `2`.
 /// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
+///   chain-forms', chain's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
 #[test]
 fn calldata_encodes_a_transfer_statements_context_members_from_the_forms_and_domain_values() {
     // Arrange
@@ -961,77 +985,77 @@ fn calldata_encodes_a_transfer_statements_context_members_from_the_forms_and_dom
     impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_evm_verifier_case<P, F, D>(
+        fn consume_evm_verifier_case<P, C, D>(
             &self,
-            pairing: &P,
-            _forms: &F,
-            delivery_proof: &D,
+            _params: ConsumeEvmVerifierCaseParams,
+            payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+            C: IChainAdapter,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
         {
             // Arrange
             let subject = build_evm_verifier(
-                pairing,
-                delivery_proof,
+                payload.pairing,
+                payload.chain,
+                payload.delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
             let chain_literal: [u8; 32] =
                 core::array::from_fn(|index| u8::try_from(index + 1).unwrap());
-            let Ok(chain) = F::ChainIdentifier::from_field(
+            let Ok(chain) = <D::Forms as IChainForms>::ChainIdentifier::from_field(
                 FromFieldParams,
                 CanonicalFieldValue::Unsigned256(chain_literal),
             ) else {
                 panic!("the chain-identifier form admits a 256-bit field")
             };
-            let Ok(entitlement_contract) = F::Identity::from_field(
+            let Ok(entitlement_contract) = <D::Forms as IChainForms>::Identity::from_field(
                 FromFieldParams,
                 CanonicalFieldValue::FixedBytes20([0x51; 20]),
             ) else {
                 panic!("the identity form admits a twenty-byte field")
             };
-            let Ok(source_entitlement) = F::Entitlement::from_field(
+            let Ok(source_entitlement) = <D::Forms as IChainForms>::Entitlement::from_field(
                 FromFieldParams,
                 CanonicalFieldValue::Unsigned256([0x61; 32]),
             ) else {
                 panic!("the entitlement form admits a 256-bit field")
             };
-            let Ok(target_entitlement) = F::Entitlement::from_field(
+            let Ok(target_entitlement) = <D::Forms as IChainForms>::Entitlement::from_field(
                 FromFieldParams,
                 CanonicalFieldValue::Unsigned256([0x62; 32]),
             ) else {
                 panic!("the entitlement form admits a 256-bit field")
             };
-            let Ok(old_interval) = F::Interval::from_field(
+            let Ok(old_interval) = <D::Forms as IChainForms>::Interval::from_field(
                 FromFieldParams,
                 CanonicalFieldValue::Unsigned64(0x0102_0304_0506_0708),
             ) else {
                 panic!("the interval form admits a 64-bit field")
             };
-            let Ok(new_interval) = F::Interval::from_field(
+            let Ok(new_interval) = <D::Forms as IChainForms>::Interval::from_field(
                 FromFieldParams,
                 CanonicalFieldValue::Unsigned64(0x1112_1314_1516_1718),
             ) else {
                 panic!("the interval form admits a 64-bit field")
             };
-            let Ok(seller) = F::Identity::from_field(
+            let Ok(seller) = <D::Forms as IChainForms>::Identity::from_field(
                 FromFieldParams,
                 CanonicalFieldValue::FixedBytes20([0x52; 20]),
             ) else {
                 panic!("the identity form admits a twenty-byte field")
             };
-            let Ok(buyer) = F::Identity::from_field(
+            let Ok(buyer) = <D::Forms as IChainForms>::Identity::from_field(
                 FromFieldParams,
                 CanonicalFieldValue::FixedBytes20([0x53; 20]),
             ) else {
                 panic!("the identity form admits a twenty-byte field")
             };
-            let context = build_delivery_context::<F, TransferPurpose>(
+            let context = build_delivery_context::<D::Forms, TransferPurpose>(
                 TransferPurpose::Transfer,
-                DeliveryContextOverrides::<F> {
+                DeliveryContextOverrides::<D::Forms> {
                     chain: Some(chain.value),
                     entitlement_contract: Some(entitlement_contract.value),
                     source_entitlement: Some(source_entitlement.value),
@@ -1044,17 +1068,17 @@ fn calldata_encodes_a_transfer_statements_context_members_from_the_forms_and_dom
                     ..Default::default()
                 },
             );
-            let statement = build_algebraic_transfer_statement::<P, F>(
-                pairing,
+            let statement = build_algebraic_transfer_statement::<P, D::Forms>(
+                payload.pairing,
                 AlgebraicTransferStatementOverrides {
                     context: Some(context),
                     ..Default::default()
                 },
             );
-            let wire = build_delivery_proof_wire_components(pairing, Default::default());
+            let wire = build_delivery_proof_wire_components(payload.pairing, Default::default());
             let components = DeliveryProofComponents::TransferBothGroups {
                 challenge: wire.challenge,
-                responses: build_transfer_responses(pairing, Default::default()),
+                responses: build_transfer_responses(payload.pairing, Default::default()),
             };
 
             // Act
@@ -1109,8 +1133,8 @@ fn calldata_encodes_a_transfer_statements_context_members_from_the_forms_and_dom
 /// Act:     `calldata`.
 /// Assert:  the decoded `purpose` equals `3`.
 /// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
+///   chain-forms', chain's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
 #[test]
 fn calldata_encodes_the_purpose_code_of_a_transfer_grant() {
     // Arrange
@@ -1123,38 +1147,38 @@ fn calldata_encodes_the_purpose_code_of_a_transfer_grant() {
     impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_evm_verifier_case<P, F, D>(
+        fn consume_evm_verifier_case<P, C, D>(
             &self,
-            pairing: &P,
-            _forms: &F,
-            delivery_proof: &D,
+            _params: ConsumeEvmVerifierCaseParams,
+            payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+            C: IChainAdapter,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
         {
             // Arrange
             let subject = build_evm_verifier(
-                pairing,
-                delivery_proof,
+                payload.pairing,
+                payload.chain,
+                payload.delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement = build_algebraic_transfer_statement::<P, F>(
-                pairing,
+            let statement = build_algebraic_transfer_statement::<P, D::Forms>(
+                payload.pairing,
                 AlgebraicTransferStatementOverrides {
-                    context: Some(build_delivery_context::<F, TransferPurpose>(
+                    context: Some(build_delivery_context::<D::Forms, TransferPurpose>(
                         TransferPurpose::Grant,
                         Default::default(),
                     )),
                     ..Default::default()
                 },
             );
-            let wire = build_delivery_proof_wire_components(pairing, Default::default());
+            let wire = build_delivery_proof_wire_components(payload.pairing, Default::default());
             let components = DeliveryProofComponents::TransferBothGroups {
                 challenge: wire.challenge,
-                responses: build_transfer_responses(pairing, Default::default()),
+                responses: build_transfer_responses(payload.pairing, Default::default()),
             };
 
             // Act
@@ -1206,8 +1230,8 @@ fn calldata_encodes_the_purpose_code_of_a_transfer_grant() {
 /// Assert:  each decoded member equals the pairing's encoding of its
 ///   element and the thirteen members are pairwise distinct.
 /// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
+///   chain-forms', chain's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
 #[test]
 fn calldata_encodes_each_group_element_of_a_transfer_statement_into_its_member() {
     // Arrange
@@ -1220,29 +1244,32 @@ fn calldata_encodes_each_group_element_of_a_transfer_statement_into_its_member()
     impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_evm_verifier_case<P, F, D>(
+        fn consume_evm_verifier_case<P, C, D>(
             &self,
-            pairing: &P,
-            _forms: &F,
-            delivery_proof: &D,
+            _params: ConsumeEvmVerifierCaseParams,
+            payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+            C: IChainAdapter,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
         {
             // Arrange
             let subject = build_evm_verifier(
-                pairing,
-                delivery_proof,
+                payload.pairing,
+                payload.chain,
+                payload.delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement = build_algebraic_transfer_statement::<P, F>(pairing, Default::default());
-            let wire = build_delivery_proof_wire_components(pairing, Default::default());
+            let statement = build_algebraic_transfer_statement::<P, D::Forms>(
+                payload.pairing,
+                Default::default(),
+            );
+            let wire = build_delivery_proof_wire_components(payload.pairing, Default::default());
             let components = DeliveryProofComponents::TransferBothGroups {
                 challenge: wire.challenge,
-                responses: build_transfer_responses(pairing, Default::default()),
+                responses: build_transfer_responses(payload.pairing, Default::default()),
             };
 
             // Act
@@ -1254,31 +1281,31 @@ fn calldata_encodes_each_group_element_of_a_transfer_statement_into_its_member()
             };
             let call = IDeliveryVerifier::verifyTransferCall::abi_decode(&calldata)
                 .expect("the calldata decodes under its own call type");
-            let Ok(identity_element) = pairing.encode_g1(
+            let Ok(identity_element) = payload.pairing.encode_g1(
                 EncodeG1Params,
                 EncodeG1Payload {
                     point: statement.identity_element.clone(),
                 },
             );
-            let Ok(seller_pk1) = pairing.encode_g1(
+            let Ok(seller_pk1) = payload.pairing.encode_g1(
                 EncodeG1Params,
                 EncodeG1Payload {
                     point: statement.seller_keys.pk1.clone(),
                 },
             );
-            let Ok(seller_pk2) = pairing.encode_g2(
+            let Ok(seller_pk2) = payload.pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
                     point: statement.seller_keys.pk2.clone(),
                 },
             );
-            let Ok(buyer_pk1) = pairing.encode_g1(
+            let Ok(buyer_pk1) = payload.pairing.encode_g1(
                 EncodeG1Params,
                 EncodeG1Payload {
                     point: statement.buyer_keys.pk1.clone(),
                 },
             );
-            let Ok(buyer_pk2) = pairing.encode_g2(
+            let Ok(buyer_pk2) = payload.pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
                     point: statement.buyer_keys.pk2.clone(),
@@ -1307,8 +1334,9 @@ fn calldata_encodes_each_group_element_of_a_transfer_statement_into_its_member()
                     statement.old_envelope.c2.clone(),
                 ),
             ] {
-                let Ok(expected) =
-                    pairing.encode_g1(EncodeG1Params, EncodeG1Payload { point: element });
+                let Ok(expected) = payload
+                    .pairing
+                    .encode_g1(EncodeG1Params, EncodeG1Payload { point: element });
                 assert_eq!(member, expected.bytes.as_ref());
             }
             for (member, element) in [
@@ -1329,8 +1357,9 @@ fn calldata_encodes_each_group_element_of_a_transfer_statement_into_its_member()
                     statement.new_envelope.d2.clone(),
                 ),
             ] {
-                let Ok(expected) =
-                    pairing.encode_g2(EncodeG2Params, EncodeG2Payload { point: element });
+                let Ok(expected) = payload
+                    .pairing
+                    .encode_g2(EncodeG2Params, EncodeG2Payload { point: element });
                 assert_eq!(member, expected.bytes.as_ref());
             }
             for (member, element) in [
@@ -1343,8 +1372,9 @@ fn calldata_encodes_each_group_element_of_a_transfer_statement_into_its_member()
                     statement.new_envelope.c2.clone(),
                 ),
             ] {
-                let Ok(expected) =
-                    pairing.encode_g1(EncodeG1Params, EncodeG1Payload { point: element });
+                let Ok(expected) = payload
+                    .pairing
+                    .encode_g1(EncodeG1Params, EncodeG1Payload { point: element });
                 assert_eq!(member, expected.bytes.as_ref());
             }
             let all = [
@@ -1398,8 +1428,8 @@ fn calldata_encodes_each_group_element_of_a_transfer_statement_into_its_member()
 /// Assert:  each member equals its scalar's word and the six are
 ///   pairwise distinct.
 /// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
+///   chain-forms', chain's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
 #[test]
 fn calldata_encodes_a_transfer_proofs_scalars_in_witness_order() {
     // Arrange
@@ -1412,28 +1442,31 @@ fn calldata_encodes_a_transfer_proofs_scalars_in_witness_order() {
     impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_evm_verifier_case<P, F, D>(
+        fn consume_evm_verifier_case<P, C, D>(
             &self,
-            pairing: &P,
-            _forms: &F,
-            delivery_proof: &D,
+            _params: ConsumeEvmVerifierCaseParams,
+            payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+            C: IChainAdapter,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
         {
             // Arrange
             let subject = build_evm_verifier(
-                pairing,
-                delivery_proof,
+                payload.pairing,
+                payload.chain,
+                payload.delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement = build_algebraic_transfer_statement::<P, F>(pairing, Default::default());
-            let wire = build_delivery_proof_wire_components(pairing, Default::default());
+            let statement = build_algebraic_transfer_statement::<P, D::Forms>(
+                payload.pairing,
+                Default::default(),
+            );
+            let wire = build_delivery_proof_wire_components(payload.pairing, Default::default());
             let responses =
-                build_transfer_responses(pairing, TransferResponsesOverrides::default());
+                build_transfer_responses(payload.pairing, TransferResponsesOverrides::default());
             fn scalar_word<P: IPairingArithmetic>(pairing: &P, scalar: P::Scalar) -> U256 {
                 let Ok(encoded) =
                     pairing.encode_scalar(EncodeScalarParams, EncodeScalarPayload { scalar });
@@ -1446,12 +1479,12 @@ fn calldata_encodes_a_transfer_proofs_scalars_in_witness_order() {
                 U256::from_be_bytes(bytes)
             }
             let expected = [
-                scalar_word(pairing, wire.challenge.clone()),
-                scalar_word(pairing, responses.x.clone()),
-                scalar_word(pairing, responses.y.clone()),
-                scalar_word(pairing, responses.s.clone()),
-                scalar_word(pairing, responses.rho.clone()),
-                scalar_word(pairing, responses.sigma.clone()),
+                scalar_word(payload.pairing, wire.challenge.clone()),
+                scalar_word(payload.pairing, responses.x.clone()),
+                scalar_word(payload.pairing, responses.y.clone()),
+                scalar_word(payload.pairing, responses.s.clone()),
+                scalar_word(payload.pairing, responses.rho.clone()),
+                scalar_word(payload.pairing, responses.sigma.clone()),
             ];
             let components = DeliveryProofComponents::TransferBothGroups {
                 challenge: wire.challenge,
@@ -1510,8 +1543,8 @@ fn calldata_encodes_a_transfer_proofs_scalars_in_witness_order() {
 /// Act:     `calldata`.
 /// Assert:  the decoded member's length equals `0`.
 /// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
+///   chain-forms', chain's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
 #[test]
 fn calldata_carries_no_second_group_first_messages_for_a_transfer_under_the_both_groups_form() {
     // Arrange
@@ -1524,29 +1557,32 @@ fn calldata_carries_no_second_group_first_messages_for_a_transfer_under_the_both
     impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_evm_verifier_case<P, F, D>(
+        fn consume_evm_verifier_case<P, C, D>(
             &self,
-            pairing: &P,
-            _forms: &F,
-            delivery_proof: &D,
+            _params: ConsumeEvmVerifierCaseParams,
+            payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+            C: IChainAdapter,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
         {
             // Arrange
             let subject = build_evm_verifier(
-                pairing,
-                delivery_proof,
+                payload.pairing,
+                payload.chain,
+                payload.delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement = build_algebraic_transfer_statement::<P, F>(pairing, Default::default());
-            let wire = build_delivery_proof_wire_components(pairing, Default::default());
+            let statement = build_algebraic_transfer_statement::<P, D::Forms>(
+                payload.pairing,
+                Default::default(),
+            );
+            let wire = build_delivery_proof_wire_components(payload.pairing, Default::default());
             let components = DeliveryProofComponents::TransferBothGroups {
                 challenge: wire.challenge,
-                responses: build_transfer_responses(pairing, Default::default()),
+                responses: build_transfer_responses(payload.pairing, Default::default()),
             };
 
             // Act
@@ -1591,8 +1627,8 @@ fn calldata_carries_no_second_group_first_messages_for_a_transfer_under_the_both
 /// Assert:  the decoded member equals the three encodings concatenated
 ///   in that order, and differs from the order `d1`, `pk2`, `d2`.
 /// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
+///   chain-forms', chain's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
 #[test]
 fn calldata_concatenates_a_transfers_second_group_first_messages_as_pk2_d1_d2() {
     // Arrange
@@ -1605,43 +1641,46 @@ fn calldata_concatenates_a_transfers_second_group_first_messages_as_pk2_d1_d2() 
     impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_evm_verifier_case<P, F, D>(
+        fn consume_evm_verifier_case<P, C, D>(
             &self,
-            pairing: &P,
-            _forms: &F,
-            delivery_proof: &D,
+            _params: ConsumeEvmVerifierCaseParams,
+            payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+            C: IChainAdapter,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
         {
             // Arrange
             let subject = build_evm_verifier(
-                pairing,
-                delivery_proof,
+                payload.pairing,
+                payload.chain,
+                payload.delivery_proof,
                 self.asserter.clone(),
                 Default::default(),
             );
-            let statement = build_algebraic_transfer_statement::<P, F>(pairing, Default::default());
-            let wire = build_delivery_proof_wire_components(pairing, Default::default());
+            let statement = build_algebraic_transfer_statement::<P, D::Forms>(
+                payload.pairing,
+                Default::default(),
+            );
+            let wire = build_delivery_proof_wire_components(payload.pairing, Default::default());
             let first_messages = build_transfer_second_group_first_messages(
-                pairing,
+                payload.pairing,
                 TransferSecondGroupFirstMessagesOverrides::default(),
             );
-            let Ok(pk2) = pairing.encode_g2(
+            let Ok(pk2) = payload.pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
                     point: first_messages.pk2.clone(),
                 },
             );
-            let Ok(d1) = pairing.encode_g2(
+            let Ok(d1) = payload.pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
                     point: first_messages.d1.clone(),
                 },
             );
-            let Ok(d2) = pairing.encode_g2(
+            let Ok(d2) = payload.pairing.encode_g2(
                 EncodeG2Params,
                 EncodeG2Payload {
                     point: first_messages.d2.clone(),
@@ -1649,7 +1688,7 @@ fn calldata_concatenates_a_transfers_second_group_first_messages_as_pk2_d1_d2() 
             );
             let components = DeliveryProofComponents::TransferFirstGroupOnly {
                 challenge: wire.challenge,
-                responses: build_transfer_responses(pairing, Default::default()),
+                responses: build_transfer_responses(payload.pairing, Default::default()),
                 first_messages,
             };
 
@@ -1694,71 +1733,8 @@ fn calldata_concatenates_a_transfers_second_group_first_messages_as_pk2_d1_d2() 
     // calldata_concatenates_a_transfers_second_group_first_messages_as_pk2_d1_d2
 }
 
-/// Contract: `unsigned_transaction` returns the byte `0x02` followed by
-///   the RLP list of `chain_id`, a zero nonce, two zero fees,
-///   `gas_limit`, the verifier's twenty bytes, a zero value, the
-///   calldata, and an empty access list.
-/// Arrange: `chain_id` `1`, `gas_limit` `21_000`, `verifier`
-///   `Address::from([0x11; 20])`, and `calldata` `&[0xab]`.
-/// Act:     `EvmVerifier::unsigned_transaction`.
-/// Assert:  the result equals the bytes `0x02`, `0xe0`, `0x01`, `0x80`,
-///   `0x80`, `0x80`, `0x82`, `0x52`, `0x08`, `0x94`, twenty bytes
-///   `0x11`, `0x80`, `0x81`, `0xab`, `0xc0`, a literal the RLP rules fix
-///   and no mention of the subject produced, thirty-four bytes long, so
-///   a field omitted, reordered, or widened fails.
-/// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
-#[test]
-fn unsigned_transaction_encodes_an_eip1559_transaction_as_the_rlp_standard_states() {
-    struct Consumer;
-
-    impl IEvmVerifierCaseConsumer for Consumer {
-        type Output = ();
-
-        fn consume_evm_verifier_case<P, F, D>(
-            &self,
-            _pairing: &P,
-            _forms: &F,
-            _delivery_proof: &D,
-        ) -> Self::Output
-        where
-            P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
-        {
-            // Act
-            let result = EvmVerifier::<P, D>::unsigned_transaction(
-                1,
-                21_000,
-                Address::from([0x11; 20]),
-                &[0xab],
-            );
-
-            // Assert
-            let mut expected = vec![0x02, 0xe0, 0x01, 0x80, 0x80, 0x80, 0x82, 0x52, 0x08, 0x94];
-            expected.extend_from_slice(&[0x11; 20]);
-            expected.extend_from_slice(&[0x80, 0x81, 0xab, 0xc0]);
-            assert_eq!(result, expected);
-        }
-    }
-
-    // Act
-    let result = run_evm_verifier_case(
-        &build_evm_verifier_case_deps(Consumer, Default::default()),
-        build_evm_verifier_case_params(Default::default()),
-        build_evm_verifier_case_payload(Default::default()),
-    );
-
-    // Assert
-    let Ok(_success) = result else {
-        panic!("the case chain admits every selection")
-    };
-    // unsigned_transaction_encodes_an_eip1559_transaction_as_the_rlp_standard_states
-}
-
-/// Contract: the request the verifying call and the gas estimate send is
-///   addressed to the verifier and carries the calldata.
+/// Contract: the request the verifying call sends is addressed to the
+///   verifier and carries the calldata.
 /// Arrange: a subject built over `verifier_address`
 ///   `FixedBytes20([0x42; 20])` and the calldata `[0x01, 0x02, 0x03]`.
 /// Act:     `verifier_request`.
@@ -1766,20 +1742,15 @@ fn unsigned_transaction_encodes_an_eip1559_transaction_as_the_rlp_standard_state
 ///   20]))` and `TransactionBuilder::input` returns the three bytes, by
 ///   `assert_eq!`.
 /// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
+///   chain-forms', chain's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
 #[test]
 fn verifier_request_targets_the_verifier_with_the_calldata() {
     // Arrange
     let asserter = Asserter::default();
-    let settings = build_evm_verifier_settings(EvmVerifierSettingsOverrides {
-        verifier_address: Some(CanonicalFieldValue::FixedBytes20([0x42; 20])),
-        ..Default::default()
-    });
     let calldata = vec![0x01, 0x02, 0x03];
 
     struct Consumer<'a> {
-        settings: &'a EvmVerifierSettings,
         asserter: &'a Asserter,
         calldata: &'a [u8],
     }
@@ -1787,24 +1758,25 @@ fn verifier_request_targets_the_verifier_with_the_calldata() {
     impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_evm_verifier_case<P, F, D>(
+        fn consume_evm_verifier_case<P, C, D>(
             &self,
-            pairing: &P,
-            _forms: &F,
-            delivery_proof: &D,
+            _params: ConsumeEvmVerifierCaseParams,
+            payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+            C: IChainAdapter,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
         {
             // Arrange
             let subject = build_evm_verifier(
-                pairing,
-                delivery_proof,
+                payload.pairing,
+                payload.chain,
+                payload.delivery_proof,
                 self.asserter.clone(),
                 EvmVerifierConstructorParamsOverrides {
-                    settings: Some(self.settings.clone()),
+                    verifier_address: Some(CanonicalFieldValue::FixedBytes20([0x42; 20])),
+                    ..Default::default()
                 },
             );
 
@@ -1818,7 +1790,7 @@ fn verifier_request_targets_the_verifier_with_the_calldata() {
             );
             assert_eq!(
                 TransactionBuilder::input(&request),
-                Some(&alloy::primitives::Bytes::from_static(&[0x01, 0x02, 0x03]))
+                Some(&Bytes::from_static(&[0x01, 0x02, 0x03]))
             );
         }
     }
@@ -1827,7 +1799,6 @@ fn verifier_request_targets_the_verifier_with_the_calldata() {
     let result = run_evm_verifier_case(
         &build_evm_verifier_case_deps(
             Consumer {
-                settings: &settings,
                 asserter: &asserter,
                 calldata: &calldata,
             },
@@ -1844,78 +1815,95 @@ fn verifier_request_targets_the_verifier_with_the_calldata() {
     // verifier_request_targets_the_verifier_with_the_calldata
 }
 
-/// Contract: the fee request is addressed to the oracle and carries
-///   `getL1Fee` over the unsigned transaction's bytes.
-/// Arrange: a subject built over `gas_price_oracle`
-///   `FixedBytes20([0x43; 20])` and unsigned bytes `[0x02, 0xaa, 0xbb]`.
-/// Act:     `fee_request`.
-/// Assert:  `TransactionBuilder::to` returns `Some(Address::from([0x43;
-///   20]))`, the input's first four bytes equal those of
-///   `keccak256("getL1Fee(bytes)")`, and `IGasPriceOracle::getL1FeeCall::
-///   abi_decode` over the input holds `_data` equal to `[0x02, 0xaa,
-///   0xbb]`, by `assert_eq!`, the verifier's address differing from the
-///   oracle's so an exchanged target fails.
+/// Contract: a mint's calldata over the pairing family's mock concrete —
+///   every `bytes` member holding a first-group element is `8` bytes,
+///   every member holding a second-group element `8` bytes,
+///   `secondGroupFirstMessages` `24` bytes under the mock's
+///   `FirstGroupOnly` declaration, and every scalar member `32` bytes,
+///   the mock concrete's `encode_g1`, `encode_g2`, and `encode_scalar`
+///   widths written as literals in the test.
+/// Arrange: the default mint statement and `MintFirstGroupOnly`
+///   components.
+/// Act:     `calldata`.
+/// Assert:  each decoded member's length equals its literal by
+///   `assert_eq!`, the literals independent of any pairing operation,
+///   so a member emitted at another width fails.
 /// Collaborators: the pairing's, hash-to-scalar's, encoding's,
-///   chain-forms', delivery-proof's, and random-source's mock concretes
-///   in their default modes through their factories.
+///   chain-forms', chain's, delivery-proof's, and random-source's mock
+///   concretes in their default modes through their factories.
 #[test]
-fn fee_request_targets_the_oracle_with_the_get_l1_fee_call_over_the_unsigned_transaction() {
+fn calldata_encodes_a_mints_members_at_the_mock_pairings_encoding_widths() {
     // Arrange
     let asserter = Asserter::default();
-    let settings = build_evm_verifier_settings(EvmVerifierSettingsOverrides {
-        verifier_address: Some(CanonicalFieldValue::FixedBytes20([0x42; 20])),
-        gas_price_oracle: Some(CanonicalFieldValue::FixedBytes20([0x43; 20])),
-        ..Default::default()
-    });
-    let unsigned = vec![0x02, 0xaa, 0xbb];
 
     struct Consumer<'a> {
-        settings: &'a EvmVerifierSettings,
         asserter: &'a Asserter,
-        unsigned: &'a [u8],
     }
 
     impl IEvmVerifierCaseConsumer for Consumer<'_> {
         type Output = ();
 
-        fn consume_evm_verifier_case<P, F, D>(
+        fn consume_evm_verifier_case<P, C, D>(
             &self,
-            pairing: &P,
-            _forms: &F,
-            delivery_proof: &D,
+            _params: ConsumeEvmVerifierCaseParams,
+            payload: ConsumeEvmVerifierCasePayload<'_, P, C, D>,
         ) -> Self::Output
         where
             P: IPairingArithmetic + IPairingReference,
-            F: IChainForms,
-            D: IDeliveryProofAdapter<Pairing = P, Forms = F>,
+            C: IChainAdapter,
+            D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
         {
             // Arrange
             let subject = build_evm_verifier(
-                pairing,
-                delivery_proof,
+                payload.pairing,
+                payload.chain,
+                payload.delivery_proof,
                 self.asserter.clone(),
-                EvmVerifierConstructorParamsOverrides {
-                    settings: Some(self.settings.clone()),
-                },
+                Default::default(),
             );
+            let statement =
+                build_algebraic_mint_statement::<P, D::Forms>(payload.pairing, Default::default());
+            let wire = build_delivery_proof_wire_components(payload.pairing, Default::default());
+            let components = DeliveryProofComponents::MintFirstGroupOnly {
+                challenge: wire.challenge,
+                responses: build_mint_responses(payload.pairing, Default::default()),
+                first_messages: build_mint_second_group_first_messages(
+                    payload.pairing,
+                    Default::default(),
+                ),
+            };
 
             // Act
-            let request = subject.fee_request(self.unsigned);
+            let result = subject.calldata(&AlgebraicStatement::Mint(&statement), components);
 
             // Assert
-            assert_eq!(
-                TransactionBuilder::to(&request),
-                Some(Address::from([0x43; 20]))
-            );
-            let input = TransactionBuilder::input(&request).expect("the request carries input");
-            assert_eq!(input[..4], IGasPriceOracle::getL1FeeCall::SELECTOR);
-            assert_eq!(
-                IGasPriceOracle::getL1FeeCall::abi_decode(input)
-                    .expect("the input decodes as getL1Fee")
-                    ._data
-                    .as_ref(),
-                &[0x02, 0xaa, 0xbb]
-            );
+            let Ok(calldata) = result else {
+                panic!("the default statement and components encode")
+            };
+            let call = IDeliveryVerifier::verifyMintCall::abi_decode(&calldata)
+                .expect("the calldata decodes under its own call type");
+            for member in [
+                &call.statement.hpub,
+                &call.statement.identityElement,
+                &call.statement.buyerPk1,
+                &call.statement.buyerPk2,
+                &call.statement.envelopeC1,
+                &call.statement.envelopeC2,
+                &call.statement.envelopeD1,
+                &call.statement.envelopeD2,
+            ] {
+                assert_eq!(member.as_ref().len(), 8);
+            }
+            assert_eq!(call.proof.secondGroupFirstMessages.len(), 24);
+            for member in [
+                call.proof.challenge,
+                call.proof.alpha,
+                call.proof.r,
+                call.proof.rho,
+                call.proof.sigma,
+            ] {
+                assert_eq!(member.abi_encode().len(), 32);
+            }
         }
     }
 
@@ -1923,9 +1911,7 @@ fn fee_request_targets_the_oracle_with_the_get_l1_fee_call_over_the_unsigned_tra
     let result = run_evm_verifier_case(
         &build_evm_verifier_case_deps(
             Consumer {
-                settings: &settings,
                 asserter: &asserter,
-                unsigned: &unsigned,
             },
             Default::default(),
         ),
@@ -1937,5 +1923,5 @@ fn fee_request_targets_the_oracle_with_the_get_l1_fee_call_over_the_unsigned_tra
     let Ok(_success) = result else {
         panic!("the case chain admits every selection")
     };
-    // fee_request_targets_the_oracle_with_the_get_l1_fee_call_over_the_unsigned_transaction
+    // calldata_encodes_a_mints_members_at_the_mock_pairings_encoding_widths
 }

@@ -1,5 +1,7 @@
+use chain::{ChainFormsIdentifier, ChainMemberIdentifier, FeeDescription};
 #[cfg(any(test, feature = "mocks"))]
 use chain::{CreateChainFormsErrorReturn, CreateChainFormsParams, IChainForms};
+use encoding::EncodingIdentifier;
 #[cfg(any(test, feature = "mocks"))]
 use encoding::{CreateEncodingErrorReturn, CreateEncodingParams};
 #[cfg(any(test, feature = "mocks"))]
@@ -9,9 +11,9 @@ use pairing::{
     CreatePairingErrorReturn, CreatePairingParams, IPairingArithmetic, IPairingReference,
 };
 use pairing::{IPairingAdapter, VerifierGroupArithmetic};
-use proof::{AdapterVerifyPayload, DeliveryRelation, IDeliveryProofAdapter};
 #[cfg(any(test, feature = "mocks"))]
 use proof::{CreateDeliveryProofErrorReturn, CreateDeliveryProofParams};
+use proof::{DeliveryRelation, IDeliveryProofAdapter, VerifyPayload};
 #[cfg(any(test, feature = "mocks"))]
 use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 
@@ -22,32 +24,53 @@ use super::super::evm::provides::{
 pub const VERIFIER_INTERFACE_VERSION: u32 = 1;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VerifierSettingBounds {
+    Unbounded,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum VerifierSettingDisposition {
+    Fixed {
+        value: &'static str,
+    },
+    Settable {
+        bounds: VerifierSettingBounds,
+        default: &'static str,
+    },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct VerifierSettingStatement {
+    pub name: &'static str,
+    pub disposition: VerifierSettingDisposition,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct VerifierDeclaration {
+    pub identifier: VerifierConcreteKind,
+    pub name: &'static str,
     pub verifier_forms: &'static [VerifierGroupArithmetic],
     pub statement_versions: &'static [u16],
     pub adapter_version: u32,
     pub interface_version: u32,
+    pub chain_forms_identifier: ChainFormsIdentifier,
+    pub chain_member: ChainMemberIdentifier,
+    pub encoding_identifier: EncodingIdentifier,
+    pub contract_suite: &'static str,
+    pub settings: &'static [VerifierSettingStatement],
 }
 
 pub struct VerifyOnChainParams;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum L1DataFee {
-    Charged { wei: u128 },
-    NotApplicable,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct VerifyCost {
-    pub l2_execution_gas: u64,
-    pub l1_data_fee: L1DataFee,
+    pub description: FeeDescription,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum VerifyOnChainSuccessReturn {
     Accepted { cost: VerifyCost },
     Rejected,
-    Reverted { data: Vec<u8> },
 }
 
 #[derive(Debug)]
@@ -84,13 +107,21 @@ pub trait IVerifierAdapter {
     fn verify_on_chain(
         &self,
         params: VerifyOnChainParams,
-        payload: AdapterVerifyPayload<'_, Self::DeliveryProof>,
+        payload: VerifyPayload<
+            '_,
+            <Self::DeliveryProof as IDeliveryProofAdapter>::Forms,
+            <<Self::DeliveryProof as IDeliveryProofAdapter>::Pairing as IPairingAdapter>::G1,
+            <<Self::DeliveryProof as IDeliveryProofAdapter>::Pairing as IPairingAdapter>::G2,
+            <Self::DeliveryProof as IDeliveryProofAdapter>::Proof,
+        >,
     ) -> VerifyOnChainReturn;
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VerifierConcreteKind {
     Evm,
+    #[cfg(any(test, feature = "mocks"))]
+    Mock,
 }
 
 pub const VERIFIER_CONCRETES: &[VerifierConcreteKind] = &[VerifierConcreteKind::Evm];

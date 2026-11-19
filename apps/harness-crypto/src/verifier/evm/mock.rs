@@ -8,9 +8,12 @@
 
 use alloy::transports::mock::Asserter;
 use chain::{
-    ConsumeChainFormsParams, ConsumeChainFormsPayload, CreateChainFormsParams, IChainForms,
-    IChainFormsConsumer, build_create_chain_forms_deps, build_create_chain_forms_params,
-    build_create_chain_forms_payload, create_chain_forms,
+    AdmitChainCompositionFn, ConsumeChainFormsParams, ConsumeChainFormsPayload, ConsumeChainParams,
+    ConsumeChainPayload, CreateChainFormsParams, CreateChainParams, IChainAdapter, IChainConsumer,
+    IChainForms, IChainFormsConsumer, IEntitlementStateAdapter, admit_chain_composition,
+    build_create_chain_deps, build_create_chain_forms_deps, build_create_chain_forms_params,
+    build_create_chain_forms_payload, build_create_chain_params, build_create_chain_payload,
+    create_chain, create_chain_forms,
 };
 use encoding::{
     CanonicalFieldValue, ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingParams,
@@ -35,156 +38,59 @@ use random::{
     CreateRandomSourceDeps, CreateRandomSourceParams, CreateRandomSourcePayload,
     IRandomSourceAdapter, build_create_random_source_params, create_random_source,
 };
-use serde_json::{Map, Value};
 
 use super::interface::{
-    EvmVerifier, EvmVerifierCaseDeps, EvmVerifierCaseErrorReturn, EvmVerifierCaseParams,
-    EvmVerifierCasePayload, EvmVerifierCaseReturn, EvmVerifierCaseSuccessReturn,
-    EvmVerifierConstructorParams, EvmVerifierEndpoint, EvmVerifierEndpointConstructorParams,
-    EvmVerifierSettings, IEvmVerifierCaseConsumer, RunEvmVerifierCaseFn,
+    ConsumeEvmVerifierCaseParams, ConsumeEvmVerifierCasePayload, EvmVerifier, EvmVerifierCaseDeps,
+    EvmVerifierCaseErrorReturn, EvmVerifierCaseParams, EvmVerifierCasePayload,
+    EvmVerifierCaseReturn, EvmVerifierCaseSuccessReturn, EvmVerifierConstructorParams,
+    IEvmVerifierCaseConsumer, RunEvmVerifierCaseFn,
 };
-
-#[derive(Default)]
-pub struct EvmVerifierEndpointConstructorParamsOverrides {
-    pub text: Option<String>,
-}
-
-pub fn build_evm_verifier_endpoint_constructor_params(
-    overrides: EvmVerifierEndpointConstructorParamsOverrides,
-) -> EvmVerifierEndpointConstructorParams {
-    EvmVerifierEndpointConstructorParams {
-        text: overrides
-            .text
-            .unwrap_or_else(|| "http://127.0.0.1:8545".to_string()),
-    }
-}
-
-#[derive(Default)]
-pub struct EvmVerifierEndpointConstructorParamsCorruptions {
-    pub text: Option<Value>,
-}
-
-pub fn invalidate_evm_verifier_endpoint_constructor_params(
-    corruptions: EvmVerifierEndpointConstructorParamsCorruptions,
-) -> Value {
-    let params = build_evm_verifier_endpoint_constructor_params(Default::default());
-    let mut fields = Map::new();
-    fields.insert("text".to_string(), Value::from(params.text));
-    if let Some(text) = corruptions.text {
-        fields.insert("text".to_string(), text);
-    }
-    Value::Object(fields)
-}
-
-pub fn build_evm_verifier_endpoint(
-    overrides: EvmVerifierEndpointConstructorParamsOverrides,
-) -> EvmVerifierEndpoint {
-    EvmVerifierEndpoint::try_new(build_evm_verifier_endpoint_constructor_params(overrides))
-        .expect("built params are a URL")
-}
-
-#[derive(Default)]
-pub struct EvmVerifierSettingsOverrides {
-    pub endpoint: Option<EvmVerifierEndpoint>,
-    pub verifier_address: Option<CanonicalFieldValue>,
-    pub gas_price_oracle: Option<CanonicalFieldValue>,
-}
-
-pub fn build_evm_verifier_settings(overrides: EvmVerifierSettingsOverrides) -> EvmVerifierSettings {
-    EvmVerifierSettings {
-        endpoint: overrides
-            .endpoint
-            .unwrap_or_else(|| build_evm_verifier_endpoint(Default::default())),
-        verifier_address: overrides
-            .verifier_address
-            .unwrap_or(CanonicalFieldValue::FixedBytes20([0x11; 20])),
-        gas_price_oracle: overrides
-            .gas_price_oracle
-            .unwrap_or(CanonicalFieldValue::FixedBytes20([
-                0x42, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x0f,
-            ])),
-    }
-}
-
-#[derive(Default)]
-pub struct EvmVerifierSettingsCorruptions {
-    pub endpoint: Option<Value>,
-    pub verifier_address: Option<Value>,
-    pub gas_price_oracle: Option<Value>,
-}
-
-fn address_text(value: &CanonicalFieldValue) -> String {
-    let CanonicalFieldValue::FixedBytes20(bytes) = value else {
-        panic!("the built address is a fixed-bytes-twenty field")
-    };
-    format!(
-        "0x{}",
-        bytes
-            .iter()
-            .map(|byte| format!("{byte:02x}"))
-            .collect::<String>()
-    )
-}
-
-pub fn invalidate_evm_verifier_settings(corruptions: EvmVerifierSettingsCorruptions) -> Value {
-    let settings = build_evm_verifier_settings(Default::default());
-    let mut fields = Map::new();
-    fields.insert(
-        "endpoint".to_string(),
-        Value::from(settings.endpoint.url.as_str()),
-    );
-    fields.insert(
-        "verifier_address".to_string(),
-        Value::from(address_text(&settings.verifier_address)),
-    );
-    fields.insert(
-        "gas_price_oracle".to_string(),
-        Value::from(address_text(&settings.gas_price_oracle)),
-    );
-    if let Some(endpoint) = corruptions.endpoint {
-        fields.insert("endpoint".to_string(), endpoint);
-    }
-    if let Some(verifier_address) = corruptions.verifier_address {
-        fields.insert("verifier_address".to_string(), verifier_address);
-    }
-    if let Some(gas_price_oracle) = corruptions.gas_price_oracle {
-        fields.insert("gas_price_oracle".to_string(), gas_price_oracle);
-    }
-    Value::Object(fields)
-}
+use super::settings::provides::{EvmVerifierSettings, build_evm_verifier_settings};
 
 #[derive(Default)]
 pub struct EvmVerifierConstructorParamsOverrides {
+    pub verifier_address: Option<CanonicalFieldValue>,
     pub settings: Option<EvmVerifierSettings>,
 }
 
-pub(crate) fn build_evm_verifier_constructor_params<
-    'a,
-    P: IPairingAdapter,
-    D: IDeliveryProofAdapter<Pairing = P>,
->(
+pub(crate) fn build_evm_verifier_constructor_params<'a, P, C, D>(
     pairing: &'a P,
+    chain: &'a C,
     delivery_proof: &'a D,
     overrides: EvmVerifierConstructorParamsOverrides,
-) -> EvmVerifierConstructorParams<'a, P, D> {
+) -> EvmVerifierConstructorParams<'a, P, C, D>
+where
+    P: IPairingAdapter,
+    C: IChainAdapter,
+    D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
+{
     EvmVerifierConstructorParams {
         pairing,
+        chain,
         delivery_proof,
+        verifier_address: overrides
+            .verifier_address
+            .unwrap_or(CanonicalFieldValue::FixedBytes20([0x11; 20])),
         settings: overrides
             .settings
             .unwrap_or_else(|| build_evm_verifier_settings(Default::default())),
     }
 }
 
-pub(crate) fn build_evm_verifier<'a, P: IPairingAdapter, D: IDeliveryProofAdapter<Pairing = P>>(
+pub(crate) fn build_evm_verifier<'a, P, C, D>(
     pairing: &'a P,
+    chain: &'a C,
     delivery_proof: &'a D,
     asserter: Asserter,
     overrides: EvmVerifierConstructorParamsOverrides,
-) -> EvmVerifier<'a, P, D> {
+) -> EvmVerifier<'a, P, C, D>
+where
+    P: IPairingAdapter,
+    C: IChainAdapter,
+    D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
+{
     EvmVerifier::try_new_mocked(
-        build_evm_verifier_constructor_params(pairing, delivery_proof, overrides),
+        build_evm_verifier_constructor_params(pairing, chain, delivery_proof, overrides),
         asserter,
     )
     .expect("built params are admitted and the runtime builds")
@@ -196,6 +102,7 @@ pub struct EvmVerifierCaseParamsOverrides {
     pub hash_to_scalar: Option<CreateHashToScalarParams>,
     pub encoding: Option<CreateEncodingParams>,
     pub chain_forms: Option<CreateChainFormsParams>,
+    pub chain: Option<CreateChainParams>,
     pub delivery_proof: Option<CreateDeliveryProofParams>,
     pub random_source: Option<CreateRandomSourceParams>,
 }
@@ -216,6 +123,9 @@ pub fn build_evm_verifier_case_params(
         chain_forms: overrides
             .chain_forms
             .unwrap_or_else(|| build_create_chain_forms_params(Default::default())),
+        chain: overrides
+            .chain
+            .unwrap_or_else(|| build_create_chain_params(Default::default())),
         delivery_proof: overrides
             .delivery_proof
             .unwrap_or_else(|| build_create_delivery_proof_params(Default::default())),
@@ -254,36 +164,71 @@ pub fn build_evm_verifier_case_success_return<O>(
     EvmVerifierCaseSuccessReturn { output }
 }
 
-struct CaseAtDeliveryProof<'a, P: IPairingArithmetic, F: IChainForms, C: IEvmVerifierCaseConsumer> {
+#[derive(Default)]
+pub struct ConsumeEvmVerifierCaseParamsOverrides;
+
+pub fn build_consume_evm_verifier_case_params(
+    _overrides: ConsumeEvmVerifierCaseParamsOverrides,
+) -> ConsumeEvmVerifierCaseParams {
+    ConsumeEvmVerifierCaseParams
+}
+
+#[derive(Default)]
+pub struct ConsumeEvmVerifierCasePayloadOverrides;
+
+pub fn build_consume_evm_verifier_case_payload<'a, P, C, D>(
     pairing: &'a P,
-    forms: &'a F,
+    chain: &'a C,
+    delivery_proof: &'a D,
+    _overrides: ConsumeEvmVerifierCasePayloadOverrides,
+) -> ConsumeEvmVerifierCasePayload<'a, P, C, D>
+where
+    P: IPairingArithmetic + IPairingReference,
+    C: IChainAdapter,
+    D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
+{
+    ConsumeEvmVerifierCasePayload {
+        pairing,
+        chain,
+        delivery_proof,
+    }
+}
+
+struct CaseAtDeliveryProof<'a, P: IPairingArithmetic, K: IChainAdapter, C: IEvmVerifierCaseConsumer>
+{
+    pairing: &'a P,
+    chain: &'a K,
     consumer: &'a C,
 }
 
-impl<'a, P, F, C> IDeliveryProofConsumer<P, F> for CaseAtDeliveryProof<'a, P, F, C>
+impl<'a, P, K, C> IDeliveryProofConsumer<P, K::Forms> for CaseAtDeliveryProof<'a, P, K, C>
 where
     P: IPairingArithmetic + IPairingReference,
-    F: IChainForms,
+    K: IChainAdapter,
     C: IEvmVerifierCaseConsumer,
 {
     type Output = EvmVerifierCaseReturn<C::Output>;
 
-    fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+    fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = K::Forms>>(
         &self,
         _params: ConsumeDeliveryProofParams,
         payload: ConsumeDeliveryProofPayload<D>,
     ) -> Self::Output {
         Ok(EvmVerifierCaseSuccessReturn {
             output: self.consumer.consume_evm_verifier_case(
-                self.pairing,
-                self.forms,
-                &payload.adapter,
+                build_consume_evm_verifier_case_params(Default::default()),
+                build_consume_evm_verifier_case_payload(
+                    self.pairing,
+                    self.chain,
+                    &payload.adapter,
+                    Default::default(),
+                ),
             ),
         })
     }
 }
 
-struct CaseAtChainForms<'a, P: IPairingArithmetic, E, C: IEvmVerifierCaseConsumer> {
+struct CaseAtChain<'a, P: IPairingArithmetic, E, C: IEvmVerifierCaseConsumer> {
     pairing: &'a P,
     hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
     encoder: &'a E,
@@ -292,7 +237,7 @@ struct CaseAtChainForms<'a, P: IPairingArithmetic, E, C: IEvmVerifierCaseConsume
     consumer: &'a C,
 }
 
-impl<'a, P, E, C> IChainFormsConsumer for CaseAtChainForms<'a, P, E, C>
+impl<'a, P, E, C> IChainConsumer for CaseAtChain<'a, P, E, C>
 where
     P: IPairingArithmetic + IPairingReference,
     E: IEncoderAdapter,
@@ -300,10 +245,10 @@ where
 {
     type Output = EvmVerifierCaseReturn<C::Output>;
 
-    fn consume_chain_forms<F: IChainForms>(
+    fn consume_chain<K: IChainAdapter>(
         &self,
-        _params: ConsumeChainFormsParams,
-        payload: ConsumeChainFormsPayload<F>,
+        _params: ConsumeChainParams,
+        payload: ConsumeChainPayload<K>,
     ) -> Self::Output {
         match create_delivery_proof(
             &build_create_delivery_proof_deps(
@@ -313,7 +258,7 @@ where
                 self.source,
                 CaseAtDeliveryProof {
                     pairing: self.pairing,
-                    forms: &payload.forms,
+                    chain: &payload.adapter,
                     consumer: self.consumer,
                 },
                 Default::default(),
@@ -331,11 +276,57 @@ where
     }
 }
 
+struct CaseAtChainForms<'a, P: IPairingArithmetic, E, C: IEvmVerifierCaseConsumer> {
+    pairing: &'a P,
+    hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    encoder: &'a E,
+    source: &'a dyn IRandomSourceAdapter,
+    chain: &'a CreateChainParams,
+    delivery_proof: &'a CreateDeliveryProofParams,
+    consumer: &'a C,
+}
+
+impl<'a, P, E, C> IChainFormsConsumer for CaseAtChainForms<'a, P, E, C>
+where
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter,
+    C: IEvmVerifierCaseConsumer,
+{
+    type Output = EvmVerifierCaseReturn<C::Output>;
+
+    fn consume_chain_forms<F: IChainForms>(
+        &self,
+        _params: ConsumeChainFormsParams,
+        _payload: ConsumeChainFormsPayload<F>,
+    ) -> Self::Output {
+        match create_chain::<F, _>(
+            &build_create_chain_deps(
+                admit_chain_composition as AdmitChainCompositionFn,
+                CaseAtChain {
+                    pairing: self.pairing,
+                    hashing: self.hashing,
+                    encoder: self.encoder,
+                    source: self.source,
+                    delivery_proof: self.delivery_proof,
+                    consumer: self.consumer,
+                },
+                Default::default(),
+            ),
+            self.chain.clone(),
+            build_create_chain_payload(Default::default()),
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(EvmVerifierCaseErrorReturn::Chain(error)),
+        }
+    }
+}
+
 struct CaseAtEncoding<'a, P: IPairingArithmetic, C: IEvmVerifierCaseConsumer> {
     pairing: &'a P,
     hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
     source: &'a dyn IRandomSourceAdapter,
     chain_forms: &'a CreateChainFormsParams,
+    chain: &'a CreateChainParams,
     delivery_proof: &'a CreateDeliveryProofParams,
     consumer: &'a C,
 }
@@ -359,6 +350,7 @@ where
                     hashing: self.hashing,
                     encoder: &payload.adapter,
                     source: self.source,
+                    chain: self.chain,
                     delivery_proof: self.delivery_proof,
                     consumer: self.consumer,
                 },
@@ -379,6 +371,7 @@ struct CaseAtPairing<'a, C: IEvmVerifierCaseConsumer> {
     random_source: &'a CreateRandomSourceParams,
     encoding: &'a CreateEncodingParams,
     chain_forms: &'a CreateChainFormsParams,
+    chain: &'a CreateChainParams,
     delivery_proof: &'a CreateDeliveryProofParams,
     consumer: &'a C,
 }
@@ -419,6 +412,7 @@ impl<C: IEvmVerifierCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
                 hashing: &*hashing.adapter,
                 source: &*source.adapter,
                 chain_forms: self.chain_forms,
+                chain: self.chain,
                 delivery_proof: self.delivery_proof,
                 consumer: self.consumer,
             }),
@@ -447,6 +441,7 @@ pub fn run_evm_verifier_case<C: IEvmVerifierCaseConsumer>(
                 random_source: &params.random_source,
                 encoding: &params.encoding,
                 chain_forms: &params.chain_forms,
+                chain: &params.chain,
                 delivery_proof: &params.delivery_proof,
                 consumer: &deps.consumer,
             },
