@@ -31,6 +31,15 @@ pub enum MyFamilyIdentifier {
     OtherConcrete,
 }
 
+impl MyFamilyIdentifier {
+    pub const fn name(self) -> &'static str {         // the member's only spelling at a boundary
+        match self {
+            MyFamilyIdentifier::MyConcrete => "my_concrete",
+            MyFamilyIdentifier::OtherConcrete => "other_concrete",
+        }
+    }
+}
+
 pub enum MyFamilySelection {
     MyConcrete { settings: MyConcreteSettings },       // the concrete's own settings type, declared in its interface
     OtherConcrete { settings: OtherConcreteSettings },
@@ -39,8 +48,7 @@ pub enum MyFamilySelection {
 }
 
 pub struct MyFamilyDeclaration {
-    pub identifier: MyFamilyIdentifier,
-    pub name: &'static str,                            // the name configuration uses and the settings table is keyed by
+    pub identifier: MyFamilyIdentifier,                // its name() is the name configuration uses and the settings table is keyed by
     pub requires: MyFamilyRequirements,
 }
 
@@ -69,8 +77,7 @@ export interface OtherConcreteSelection {
 export type MyFamilySelection = MyConcreteSelection | OtherConcreteSelection;
 
 export interface MyFamilyDeclaration {
-  identifier: MyFamilyIdentifier;
-  name: string;
+  identifier: MyFamilyIdentifier;          // the literal is the member's only spelling at a boundary
   requires: MyFamilyRequirements;
 }
 
@@ -83,8 +90,8 @@ A family's mock and its absence from the declared set are owned by [mocks](mocks
 
 A concrete declares itself in enough detail that every caller routes from the declaration and never from knowledge of the concrete. Its declaration is a constant of the family's declaration type, held in the concrete's interface and reached through the family's declaration lookup. It states:
 
-- **Its identity.** The identifier and the name configuration uses for it. Every name that reaches a document, a report, a path, or a log comes from a declaration.
-- **What it provides.** Every capability, form, version, or value a caller would otherwise know from the concrete's name, so that the caller reads it.
+- **Its identity.** The identifier. The identifier's total `name()`, declared beside the identifier type in the factory module, is the member's only spelling at a boundary (see [types](types.md#a-name-is-a-typed-identifier-text-exists-only-at-a-boundary)); the declaration carries no name of its own. Every name that reaches a document, a report, a path, or a log is an identifier's `name()`, read from the declaration through the declaration lookup.
+- **What it provides.** Every capability, form, version, or value a caller would otherwise know from the concrete's name, so that the caller reads it. A provided value that names a member of a closed set — a curve, a suite, a scheme — is that set's identifier type, never text.
 - **What it requires.** For every family it is composed with, the identifiers of that family's members, or the declared values of those members, it can work with. A concrete that works with any member of a family states no requirement of it.
 - **Its settings.** For each field of its own settings type, whether the concrete fixes it or permits it to be set, the bounds within which it may be set, and its default. A setting is never a literal outside the declaration.
 
@@ -138,15 +145,15 @@ A concrete's settings-document type is its settings type with every field option
 
 ### Where a concrete's settings live in a document
 
-A concrete's settings sit in a table the concrete owns, keyed by the name its declaration supplies and nested beneath the family's table. The configuration layers declare the family's table alone; the concrete's settings admission owns every key beneath its own table. A further concrete adds a table and no key to any shared table, and no configuration function, layer, or composition root names a concrete's setting.
+A concrete's settings sit in a table the concrete owns, keyed by its identifier's `name()` and nested beneath the family's table. The configuration layers declare the family's table alone; the concrete's settings admission owns every key beneath its own table. A further concrete adds a table and no key to any shared table, and no configuration function, layer, or composition root names a concrete's setting.
 
 ### A list of members defaults to the declared set
 
-Where configuration selects a list of members, an absent list is the family's declared set, and a present list is admitted name by name against the declarations' names and narrows the set. A name no declaration supplies is the admission's own error. The admission reads the names from the declarations; it never holds them as literals.
+Where configuration selects a list of members, an absent list is the family's declared set, and a present list is admitted name by name against the `name()` of each identifier in the declared set and narrows the set. A name no member is named by is the admission's own error. The admission reads the names from the identifiers; it never holds them as literals and never compares `Debug` text.
 
 ### Configuration naming a member
 
-A configuration file is configuration: it names a member by the name the member's declaration supplies, and that naming conforms. A node that authors a configuration file states, for each value, the declaration or default it comes from.
+A configuration file is configuration: it names a member by its identifier's `name()`, and that naming conforms. A node that authors a configuration file states, for each value, the declaration or default it comes from.
 
 ## Reading a declaration before construction
 
@@ -233,6 +240,10 @@ export * from "./admitMyFamilySelection/admitMyFamilySelection.provides.ts";
 
 A concrete whose behavior includes a component outside the codebase's language — a program deployed to another runtime, a schema a remote service holds, source a generator emits — owns that component under the concrete's declared identity. The component's location, its build and deployment outputs, and every record of where it is deployed are keyed by that identity, so a further concrete's component is placed beside it and never over it. A generator concrete declares the identity it emits for, and a client concrete declares the identity it requires; the composition admission compares them. The component's own language and tooling are that concrete's vocabulary, named in its own nodes and nowhere else.
 
+## A value two families must agree on
+
+Where members of two families must agree on a value — the suite a generator emits for and a client requires, the scheme a signature concrete serves and an identity form takes — the value's identifier type, with its total `name()`, is declared once in the domain ring. Each family's declaration states the value in that type, and the composition admission compares the two as identifiers. Neither family depends on the other for the type, and neither declares the value as text.
+
 ## Tests
 
 A test reaches a family's members as production code does, names no concrete but its own subject, and runs over the declared set; how is owned by [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust), [mocks](mocks.md#families--the-typescript-form), and [integrationTest](integrationTest.md#configuration-over-the-declared-set-rust).
@@ -247,7 +258,7 @@ A family, a family-owned function, and every value a family owns are [authored o
 
 ## Canary
 
-A node's `deps` element states each family the node consumes by the family's name and the surface it consumes it through: the factory, the consumer surface, the declaration lookup, the selection admission, or the composition admission. A concrete's type, constant, constructor, or settings name appearing in any node, element, or file outside that concrete's family trips the canary, and the node or file is discarded (see [traceability](traceability.md#canaries)).
+A node's `deps` element states each family the node consumes by the family's name and the surface it consumes it through: the factory, the consumer surface, the declaration lookup, the selection admission, or the composition admission. A concrete's type, constant, constructor, or settings name appearing in any node, element, or file outside that concrete's family trips the canary, and the node or file is discarded (see [traceability](traceability.md#canaries)). A declaration that carries a name as text, a declared value that names a member of a closed set typed as text, or a `Debug` rendering used as a name, key, or comparison operand trips the canary likewise.
 
 ## Halt triggers
 
@@ -258,7 +269,8 @@ Each of these is a discovery: report, propose the node, and halt (see [discovery
 - A declaration lacks what a caller would otherwise know from a concrete's name, or lacks a requirement a composition admission must compare.
 - A side effect of a composition precedes the admission of one of its members.
 - A family's value has no owner at the node of its first consumer.
+- A value names a member of a closed set and no identifier type with a total `name()` exists for that set in its owner, or in the domain ring where two families share it.
 
 ## Precedence
 
-This topic outranks the workplan. A node step that names a concrete outside its family, names a concrete outside its family in place of a family location's increment, builds a selection outside the family's selection admission, carries a concrete's settings in a shared table or as a literal outside its declaration, restates a member's declared value from knowledge of the member, takes a value a member's declaration fixes from configuration, puts a member's own model on the family's surface, branches on a concrete's error variant outside the family, constructs a member or causes a side effect before the composition admits it, or re-exports a concrete beyond its family is defective — comply with this topic and report the discrepancy.
+This topic outranks the workplan. A node step that names a concrete outside its family, names a concrete outside its family in place of a family location's increment, builds a selection outside the family's selection admission, carries a concrete's settings in a shared table or as a literal outside its declaration, restates a member's declared value from knowledge of the member, names a member by text other than its identifier's `name()` or compares members as text, declares a value two families share in either family or as text, takes a value a member's declaration fixes from configuration, puts a member's own model on the family's surface, branches on a concrete's error variant outside the family, constructs a member or causes a side effect before the composition admits it, or re-exports a concrete beyond its family is defective — comply with this topic and report the discrepancy.

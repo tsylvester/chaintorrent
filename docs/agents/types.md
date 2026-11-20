@@ -146,6 +146,33 @@ A ternary is not a type guard — a ternary supplies a default value. Default va
 
 In Rust the documented defaults a builder or factory holds are values it computes from its owner's builders, from constants, or from operations a production bound declares. A `Default` bound on a type parameter is not a documented default, and neither is `#[derive(Default)]` over a struct generic in a type parameter, which adds that bound (see [mocks](mocks.md#fields-with-no-default-rust)).
 
+## A name is a typed identifier; text exists only at a boundary
+
+A value that names a member of a closed set — a concrete, a curve, a suite, a kind, a scheme, a destination — is that set's identifier type. It is never a `String`, a `&str`, or a `&'static str`, and two such values are compared as identifiers, never as text.
+
+Text that names a member exists only at a boundary:
+
+- **Entering** — in a document the code reads (configuration, a layer, user input). The set's owner admits the text into the identifier, comparing it with the `name()` of each member of the declared set (see [families](families.md#the-declaration)); a text no member is named by is the admission's own error.
+- **Leaving** — in a document or an encoding the code writes (a report, a vector record, a file or a path). The identifier's `name()` is rendered there.
+
+Between the two boundaries the identifier is carried. A record field, a map key, a function's params or payload, a refusal, and a comparison all hold the identifier.
+
+The identifier's spelling is one total function beside the type, `fn name(self) -> &'static str`, an exhaustive `match`, so a further member cannot compile until its spelling is added and every spelling is visible in one place. The owner's tests prove, over the declared set, that every member's `name()` is distinct and that admitting `name(m)` returns `m`.
+
+`Debug` and `Display` text never names anything that is admitted, compared, keyed, or written; `Debug` exists for diagnostics alone.
+
+Forbidden substitutes:
+
+```rust
+let key = format!("{:?}", declaration.curve);                 // 1 — Debug text used as a name or a key
+pub contract_suite: &'static str,                              // 2 — a member's name held as text in a type
+pub primary_curve: String,                                     // 2
+records: BTreeMap<String, Record>                              // 3 — a map keyed by a member's text
+if declaration.contract_suite == "evm" { … }                   // 4 — a comparison of members as text
+```
+
+If a value names a member of a closed set and no identifier type for that set exists, that is a **type change**: propose the node that declares it in its owner (or, where two families share it, in the domain ring — see [families](families.md#a-value-two-families-must-agree-on)), and halt (see [discovery-halt](discovery-halt.md)).
+
 ## Imports
 
 - Use `import type { … }` for type-only imports. The `type` modifier is required wherever every imported symbol is a type, so type elision is explicit.
@@ -156,6 +183,6 @@ In Rust the documented defaults a builder or factory holds are values it compute
 
 ## Precedence
 
-This topic outranks the workplan. A node step that casts a repo-owned object, types a value `unknown` to skip finding its real type, redefines a type inline, or edits a type without authorization is defective — comply with this topic and report the discrepancy.
+This topic outranks the workplan. A node step that casts a repo-owned object, types a value `unknown` to skip finding its real type, redefines a type inline, carries a member's name as text between boundaries, uses `Debug` or `Display` text as a name, key, or comparison operand, or edits a type without authorization is defective — comply with this topic and report the discrepancy.
 
 

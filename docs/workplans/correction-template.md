@@ -21,6 +21,20 @@ The specifications precede the planning documents, and the planning documents pr
 
 A node marked complete whose content changes returns to unbuilt, and its files are rebuilt from the corrected node. A node the corrected dependency map adds inside the span the workplans already author is inserted at its dependency position. A node whose content no coupling touches is unchanged.
 
+## Correction Procedure
+
+**How to work.**
+- Find each node by its heading, the backticked node name at the start of a top-level bullet, in the current workplan documents.
+- Edit only the bullets named below and leave every other bullet as it is.
+- Follow the rules for changing completion status from `docs/agents/workplan-structure.md`
+- Where an item says "replace X with Y", X is quoted from the node exactly; find it and substitute Y word for word.
+- Follow the line-length rules from `docs/agents/line-length.md`.
+- Put no rule names or explanations into node text. Write the text the item gives.
+- Complete one item at a time. 
+- In this document, mark each item completed when the relevant line in the workplan is updated. 
+- Move to the next item.
+- Do not try to apply multiple edits from this document at once. Work one by one.  
+
 ## `docs/research` layer
 
 * `[ ]`   **`[someDoc].md`.** [has some error]

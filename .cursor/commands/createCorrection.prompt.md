@@ -1,0 +1,1 @@
+Use `docs/workplans/correction-template.md` to provide a handoff to a low reasoning worker agent that prescribes how to revise the work plan to implement these corrections into the nodes that need corrected. You must explain every touch to every node such that the worker does not have to reason against what edits you are telling them to do. Place it in `docs/workplans/current`. 
