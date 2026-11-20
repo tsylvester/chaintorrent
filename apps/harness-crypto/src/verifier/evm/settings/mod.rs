@@ -32,8 +32,8 @@ impl TryFrom<Value> for EvmVerifierSettingsDocument {
     }
 }
 
-pub fn admit_evm_verifier_settings(
-    _deps: &AdmitEvmVerifierSettingsDeps,
+pub fn admit_evm_verifier_settings<'a>(
+    _deps: &AdmitEvmVerifierSettingsDeps<'a>,
     _params: AdmitEvmVerifierSettingsParams,
     _payload: AdmitEvmVerifierSettingsPayload,
 ) -> AdmitEvmVerifierSettingsReturn {

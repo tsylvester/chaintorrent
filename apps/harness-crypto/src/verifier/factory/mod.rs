@@ -7,9 +7,14 @@ pub mod provides;
 #[cfg(test)]
 mod test;
 
+use chain::{IChainAdapter, IChainForms, IEntitlementStateAdapter};
 use pairing::IPairingAdapter;
 use proof::IDeliveryProofAdapter;
 
+use super::admit_verifier_composition::provides::{
+    ADMIT_VERIFIER_COMPOSITION_DEPS, AdmitVerifierCompositionParams,
+    AdmitVerifierCompositionPayload,
+};
 use super::evm::provides::{EvmVerifier, EvmVerifierConstructorParams};
 
 use self::interface::{
@@ -23,25 +28,33 @@ use self::mock::{MockIVerifierAdapter, MockIVerifierAdapterConstructorParams};
 pub fn create_verifier<
     'a,
     P: IPairingAdapter,
-    D: IDeliveryProofAdapter<Pairing = P>,
-    C: IVerifierConsumer<D>,
+    C: IChainAdapter,
+    D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
+    K: IVerifierConsumer<D>,
 >(
-    deps: &CreateVerifierDeps<'a, P, D, C>,
+    deps: &CreateVerifierDeps<'a, P, C, D, K>,
     params: CreateVerifierParams,
     _payload: CreateVerifierPayload,
-) -> CreateVerifierReturn<C::Output> {
+) -> CreateVerifierReturn<K::Output> {
     let declaration = match &params.concrete {
-        VerifierConcrete::Evm { .. } => <EvmVerifier<'a, P, D> as IVerifierAdapter>::DECLARATION,
+        VerifierConcrete::Evm { .. } => <EvmVerifier<'a, P, C, D> as IVerifierAdapter>::DECLARATION,
         #[cfg(any(test, feature = "mocks"))]
         VerifierConcrete::Mock(_) => <MockIVerifierAdapter<'a, D> as IVerifierAdapter>::DECLARATION,
     };
-    if !declaration
-        .verifier_forms
-        .contains(&P::DECLARATION.verifier_group_arithmetic)
-    {
-        return Err(CreateVerifierErrorReturn::UnsupportedVerifierForm {
-            form: P::DECLARATION.verifier_group_arithmetic,
-        });
+    if let Err(error) = (deps.admit_verifier_composition)(
+        &ADMIT_VERIFIER_COMPOSITION_DEPS,
+        AdmitVerifierCompositionParams {
+            identifier: declaration.identifier,
+        },
+        AdmitVerifierCompositionPayload {
+            chain_forms: &<<C as IEntitlementStateAdapter>::Forms as IChainForms>::DECLARATION,
+            chain: &C::DECLARATION,
+            encoder: deps.encoder,
+            pairing: &P::DECLARATION,
+            generate: deps.generate,
+        },
+    ) {
+        return Err(CreateVerifierErrorReturn::Composition(error));
     }
     if !declaration
         .statement_versions
@@ -55,7 +68,9 @@ pub fn create_verifier<
         VerifierConcrete::Evm { settings } => {
             let adapter = EvmVerifier::try_new(EvmVerifierConstructorParams {
                 pairing: deps.pairing,
+                chain: deps.chain,
                 delivery_proof: deps.delivery_proof,
+                verifier_address: params.verifier_address,
                 settings: *settings,
             })
             .map_err(CreateVerifierErrorReturn::Evm)?;

@@ -24,7 +24,10 @@ pub enum EvmVerifierSettingsDocumentErrorReturn {
 pub type EvmVerifierSettingsDocumentTryFromReturn =
     Result<EvmVerifierSettingsDocument, EvmVerifierSettingsDocumentErrorReturn>;
 
-pub struct AdmitEvmVerifierSettingsDeps;
+#[derive(Clone, Copy)]
+pub struct AdmitEvmVerifierSettingsDeps<'a> {
+    pub declaration: &'a VerifierDeclaration,
+}
 
 pub struct AdmitEvmVerifierSettingsParams;
 
@@ -40,8 +43,8 @@ pub struct AdmitEvmVerifierSettingsSuccessReturn {
 
 pub type AdmitEvmVerifierSettingsReturn = Result<AdmitEvmVerifierSettingsSuccessReturn, Infallible>;
 
-pub type AdmitEvmVerifierSettingsFn = fn(
-    &AdmitEvmVerifierSettingsDeps,
+pub type AdmitEvmVerifierSettingsFn = for<'a> fn(
+    &AdmitEvmVerifierSettingsDeps<'a>,
     AdmitEvmVerifierSettingsParams,
     AdmitEvmVerifierSettingsPayload,
 ) -> AdmitEvmVerifierSettingsReturn;

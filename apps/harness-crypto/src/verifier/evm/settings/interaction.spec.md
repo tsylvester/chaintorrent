@@ -14,7 +14,7 @@ Branch contract for the `settings` module of the `evm` module of `apps/harness-c
 
 ## `admit_evm_verifier_settings`
 
-`admit_evm_verifier_settings(deps: &AdmitEvmVerifierSettingsDeps, params: AdmitEvmVerifierSettingsParams, payload: AdmitEvmVerifierSettingsPayload) -> AdmitEvmVerifierSettingsReturn`, the trusted form; the payload arrives narrowed by the guard; neither `deps`, `params`, nor `payload` is read.
+`admit_evm_verifier_settings<'a>(deps: &AdmitEvmVerifierSettingsDeps<'a>, params: AdmitEvmVerifierSettingsParams, payload: AdmitEvmVerifierSettingsPayload) -> AdmitEvmVerifierSettingsReturn`, the trusted form; the payload arrives narrowed by the guard; `deps.declaration` is the declaration whose `settings` statements the admission applies, and the EVM declaration's `settings` is empty, so no statement is applied; `params` and `payload` are not read.
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|

@@ -7,16 +7,20 @@
 )]
 
 use chain::{
-    ChainFormsIdentifier, ChainMemberIdentifier, ConsumeChainFormsParams, ConsumeChainFormsPayload,
-    CreateChainFormsParams, FeeDescription, IChainForms, IChainFormsConsumer,
-    build_create_chain_forms_deps, build_create_chain_forms_params,
-    build_create_chain_forms_payload, build_fee_description, create_chain_forms,
+    AdmitChainCompositionFn, ChainFormsIdentifier, ChainMemberIdentifier, ConsumeChainFormsParams,
+    ConsumeChainFormsPayload, ConsumeChainParams, ConsumeChainPayload, CreateChainFormsParams,
+    CreateChainParams, FeeDescription, IChainAdapter, IChainConsumer, IChainForms,
+    IChainFormsConsumer, IEntitlementStateAdapter, admit_chain_composition,
+    build_create_chain_deps, build_create_chain_forms_deps, build_create_chain_forms_params,
+    build_create_chain_forms_payload, build_create_chain_params, build_create_chain_payload,
+    build_fee_description, create_chain, create_chain_forms,
 };
 use core::convert::Infallible;
 use encoding::{
-    ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingParams, EncodingIdentifier,
-    IDecoderAdapter, IEncoderAdapter, IEncodingConsumer, build_create_encoding_deps,
-    build_create_encoding_params, build_create_encoding_payload, create_encoding,
+    CanonicalFieldValue, ConsumeEncodingParams, ConsumeEncodingPayload, CreateEncodingParams,
+    EncodingDeclaration, EncodingIdentifier, IDecoderAdapter, IEncoderAdapter, IEncodingConsumer,
+    build_create_encoding_deps, build_create_encoding_params, build_create_encoding_payload,
+    create_encoding,
 };
 use hash_to_scalar::{
     CreateHashToScalarParams, IHashToScalarAdapter, build_create_hash_to_scalar_deps,
@@ -42,11 +46,12 @@ use random::{
 use serde_json::{Map, Value};
 
 use super::interface::{
-    ConsumeVerifierParams, ConsumeVerifierPayload, CreateVerifierCaseDeps,
-    CreateVerifierCaseErrorReturn, CreateVerifierCaseParams, CreateVerifierCasePayload,
-    CreateVerifierCaseReturn, CreateVerifierCaseSuccessReturn, CreateVerifierDeps,
-    CreateVerifierFn, CreateVerifierParams, CreateVerifierPayload, CreateVerifierReturn,
-    CreateVerifierSuccessReturn, ICreateVerifierCaseConsumer, IVerifierAdapter, IVerifierConsumer,
+    ConsumeCreateVerifierCaseParams, ConsumeCreateVerifierCasePayload, ConsumeVerifierParams,
+    ConsumeVerifierPayload, CreateVerifierCaseDeps, CreateVerifierCaseErrorReturn,
+    CreateVerifierCaseParams, CreateVerifierCasePayload, CreateVerifierCaseReturn,
+    CreateVerifierCaseSuccessReturn, CreateVerifierDeps, CreateVerifierFn, CreateVerifierParams,
+    CreateVerifierPayload, CreateVerifierReturn, CreateVerifierSuccessReturn,
+    ICreateVerifierCaseConsumer, IVerifierAdapter, IVerifierConsumer,
     MockIVerifierAdapterFailureMode, MockIVerifierAdapterVerifyOnChainErrorReturn,
     RunCreateVerifierCaseFn, VERIFIER_INTERFACE_VERSION, VerifierConcrete, VerifierConcreteKind,
     VerifierDeclaration, VerifierSettingBounds, VerifierSettingDisposition,
@@ -54,7 +59,13 @@ use super::interface::{
     VerifyOnChainReturn, VerifyOnChainSuccessReturn,
 };
 
-use super::super::evm::provides::{EvmVerifierSettings, build_evm_verifier_settings};
+use super::super::admit_verifier_composition::provides::{
+    AdmitVerifierCompositionFn, mock_admit_verifier_composition,
+};
+use super::super::evm::provides::{
+    EvmVerifierSettings, build_evm_verifier_settings, invalidate_evm_verifier_settings,
+};
+use crate::generate::provides::GenerateDeclaration;
 
 #[derive(Default)]
 pub struct VerifierDeclarationOverrides {
@@ -261,6 +272,7 @@ impl<'a, D: IDeliveryProofAdapter> IVerifierAdapter for MockIVerifierAdapter<'a,
 #[derive(Default)]
 pub struct CreateVerifierParamsOverrides {
     pub concrete: Option<VerifierConcrete>,
+    pub verifier_address: Option<CanonicalFieldValue>,
     pub statement_version: Option<u16>,
 }
 
@@ -268,9 +280,12 @@ pub fn build_create_verifier_params(
     overrides: CreateVerifierParamsOverrides,
 ) -> CreateVerifierParams {
     CreateVerifierParams {
-        concrete: overrides.concrete.unwrap_or(VerifierConcrete::Mock(
-            MockIVerifierAdapterFailureMode::NoFailure,
-        )),
+        concrete: overrides
+            .concrete
+            .unwrap_or_else(|| build_verifier_concrete(Default::default())),
+        verifier_address: overrides
+            .verifier_address
+            .unwrap_or(CanonicalFieldValue::FixedBytes20([0x11; 20])),
         statement_version: overrides
             .statement_version
             .unwrap_or(DELIVERY_STATEMENT_VERSION_ONE),
@@ -280,7 +295,43 @@ pub fn build_create_verifier_params(
 #[derive(Default)]
 pub struct CreateVerifierParamsCorruptions {
     pub concrete: Option<Value>,
+    pub verifier_address: Option<Value>,
     pub statement_version: Option<Value>,
+}
+
+fn byte_array(bytes: &[u8]) -> Value {
+    Value::Array(bytes.iter().map(|byte| Value::from(*byte)).collect())
+}
+
+fn canonical_field_value(value: &CanonicalFieldValue) -> Value {
+    let mut variant = Map::new();
+    match value {
+        CanonicalFieldValue::FixedBytes32(bytes) => {
+            variant.insert("FixedBytes32".to_string(), byte_array(bytes));
+        }
+        CanonicalFieldValue::Unsigned16(value) => {
+            variant.insert("Unsigned16".to_string(), Value::from(*value));
+        }
+        CanonicalFieldValue::Unsigned32(value) => {
+            variant.insert("Unsigned32".to_string(), Value::from(*value));
+        }
+        CanonicalFieldValue::Unsigned64(value) => {
+            variant.insert("Unsigned64".to_string(), Value::from(*value));
+        }
+        CanonicalFieldValue::Text(text) => {
+            variant.insert("Text".to_string(), Value::from(text.clone()));
+        }
+        CanonicalFieldValue::Bytes(bytes) => {
+            variant.insert("Bytes".to_string(), byte_array(bytes));
+        }
+        CanonicalFieldValue::FixedBytes20(bytes) => {
+            variant.insert("FixedBytes20".to_string(), byte_array(bytes));
+        }
+        CanonicalFieldValue::Unsigned256(bytes) => {
+            variant.insert("Unsigned256".to_string(), byte_array(bytes));
+        }
+    }
+    Value::Object(variant)
 }
 
 pub fn invalidate_create_verifier_params(corruptions: CreateVerifierParamsCorruptions) -> Value {
@@ -291,7 +342,10 @@ pub fn invalidate_create_verifier_params(corruptions: CreateVerifierParamsCorrup
         match &params.concrete {
             VerifierConcrete::Evm { .. } => {
                 let mut variant = Map::new();
-                variant.insert("settings".to_string(), Value::Object(Map::new()));
+                variant.insert(
+                    "settings".to_string(),
+                    invalidate_evm_verifier_settings(Default::default()),
+                );
                 let mut concrete = Map::new();
                 concrete.insert("Evm".to_string(), Value::Object(variant));
                 Value::Object(concrete)
@@ -310,11 +364,18 @@ pub fn invalidate_create_verifier_params(corruptions: CreateVerifierParamsCorrup
         },
     );
     fields.insert(
+        "verifier_address".to_string(),
+        canonical_field_value(&params.verifier_address),
+    );
+    fields.insert(
         "statement_version".to_string(),
         Value::from(params.statement_version),
     );
     if let Some(concrete) = corruptions.concrete {
         fields.insert("concrete".to_string(), concrete);
+    }
+    if let Some(verifier_address) = corruptions.verifier_address {
+        fields.insert("verifier_address".to_string(), verifier_address);
     }
     if let Some(statement_version) = corruptions.statement_version {
         fields.insert("statement_version".to_string(), statement_version);
@@ -385,22 +446,33 @@ pub fn build_create_verifier_payload(
 }
 
 #[derive(Default)]
-pub struct CreateVerifierDepsOverrides;
+pub struct CreateVerifierDepsOverrides {
+    pub admit_verifier_composition: Option<AdmitVerifierCompositionFn>,
+}
 
-pub fn build_create_verifier_deps<
-    'a,
-    P: IPairingAdapter,
-    D: IDeliveryProofAdapter<Pairing = P>,
-    C,
->(
+pub fn build_create_verifier_deps<'a, P, C, D, K>(
     pairing: &'a P,
+    chain: &'a C,
     delivery_proof: &'a D,
-    consumer: C,
-    _overrides: CreateVerifierDepsOverrides,
-) -> CreateVerifierDeps<'a, P, D, C> {
+    encoder: &'a EncodingDeclaration,
+    generate: &'a GenerateDeclaration,
+    consumer: K,
+    overrides: CreateVerifierDepsOverrides,
+) -> CreateVerifierDeps<'a, P, C, D, K>
+where
+    P: IPairingAdapter,
+    C: IChainAdapter,
+    D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
+{
     CreateVerifierDeps {
         pairing,
+        chain,
         delivery_proof,
+        encoder,
+        generate,
+        admit_verifier_composition: overrides
+            .admit_verifier_composition
+            .unwrap_or(mock_admit_verifier_composition),
         consumer,
     }
 }
@@ -418,17 +490,18 @@ impl<D: IDeliveryProofAdapter> IVerifierConsumer<D> for MockIVerifierConsumer {
     }
 }
 
-pub fn mock_create_verifier<
-    'a,
-    P: IPairingAdapter,
-    D: IDeliveryProofAdapter<Pairing = P>,
-    C: IVerifierConsumer<D>,
->(
-    deps: &CreateVerifierDeps<'a, P, D, C>,
+pub fn mock_create_verifier<'a, P, C, D, K>(
+    deps: &CreateVerifierDeps<'a, P, C, D, K>,
     _params: CreateVerifierParams,
     _payload: CreateVerifierPayload,
-) -> CreateVerifierReturn<C::Output> {
-    let _: CreateVerifierFn<'a, P, D, C> = mock_create_verifier;
+) -> CreateVerifierReturn<K::Output>
+where
+    P: IPairingAdapter,
+    C: IChainAdapter,
+    D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
+    K: IVerifierConsumer<D>,
+{
+    let _: CreateVerifierFn<'a, P, C, D, K> = mock_create_verifier;
     let adapter = build_mock_i_verifier_adapter(deps.delivery_proof, Default::default());
     let output = deps.consumer.consume_verifier(
         build_consume_verifier_params(Default::default()),
@@ -446,6 +519,7 @@ pub struct CreateVerifierCaseParamsOverrides {
     pub hash_to_scalar: Option<CreateHashToScalarParams>,
     pub encoding: Option<CreateEncodingParams>,
     pub chain_forms: Option<CreateChainFormsParams>,
+    pub chain: Option<CreateChainParams>,
     pub delivery_proof: Option<CreateDeliveryProofParams>,
     pub random_source: Option<CreateRandomSourceParams>,
 }
@@ -466,6 +540,9 @@ pub fn build_create_verifier_case_params(
         chain_forms: overrides
             .chain_forms
             .unwrap_or_else(|| build_create_chain_forms_params(Default::default())),
+        chain: overrides
+            .chain
+            .unwrap_or_else(|| build_create_chain_params(Default::default())),
         delivery_proof: overrides
             .delivery_proof
             .unwrap_or_else(|| build_create_delivery_proof_params(Default::default())),
@@ -488,10 +565,45 @@ pub fn build_create_verifier_case_deps<C: ICreateVerifierCaseConsumer>(
 #[derive(Default)]
 pub struct CreateVerifierCasePayloadOverrides;
 
-pub fn build_create_verifier_case_payload(
+pub fn build_create_verifier_case_payload<'a>(
+    generate: &'a GenerateDeclaration,
     _overrides: CreateVerifierCasePayloadOverrides,
-) -> CreateVerifierCasePayload {
-    CreateVerifierCasePayload
+) -> CreateVerifierCasePayload<'a> {
+    CreateVerifierCasePayload { generate }
+}
+
+#[derive(Default)]
+pub struct ConsumeCreateVerifierCaseParamsOverrides;
+
+pub fn build_consume_create_verifier_case_params(
+    _overrides: ConsumeCreateVerifierCaseParamsOverrides,
+) -> ConsumeCreateVerifierCaseParams {
+    ConsumeCreateVerifierCaseParams
+}
+
+#[derive(Default)]
+pub struct ConsumeCreateVerifierCasePayloadOverrides;
+
+pub fn build_consume_create_verifier_case_payload<'a, P, C, D>(
+    pairing: &'a P,
+    chain: &'a C,
+    delivery_proof: &'a D,
+    encoder: &'a EncodingDeclaration,
+    generate: &'a GenerateDeclaration,
+    _overrides: ConsumeCreateVerifierCasePayloadOverrides,
+) -> ConsumeCreateVerifierCasePayload<'a, P, C, D>
+where
+    P: IPairingArithmetic + IPairingReference,
+    C: IChainAdapter,
+    D: IDeliveryProofAdapter<Pairing = P, Forms = <C as IEntitlementStateAdapter>::Forms>,
+{
+    ConsumeCreateVerifierCasePayload {
+        pairing,
+        chain,
+        delivery_proof,
+        encoder,
+        generate,
+    }
 }
 
 #[derive(Default)]
@@ -507,47 +619,57 @@ pub fn build_create_verifier_case_success_return<O>(
 struct CaseAtDeliveryProof<
     'a,
     P: IPairingArithmetic,
-    F: IChainForms,
+    K: IChainAdapter,
     C: ICreateVerifierCaseConsumer,
 > {
     pairing: &'a P,
-    forms: &'a F,
+    chain: &'a K,
+    encoder: &'a EncodingDeclaration,
+    generate: &'a GenerateDeclaration,
     consumer: &'a C,
 }
 
-impl<'a, P, F, C> IDeliveryProofConsumer<P, F> for CaseAtDeliveryProof<'a, P, F, C>
+impl<'a, P, K, C> IDeliveryProofConsumer<P, K::Forms> for CaseAtDeliveryProof<'a, P, K, C>
 where
     P: IPairingArithmetic + IPairingReference,
-    F: IChainForms,
+    K: IChainAdapter,
     C: ICreateVerifierCaseConsumer,
 {
     type Output = CreateVerifierCaseReturn<C::Output>;
 
-    fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = F>>(
+    fn consume_delivery_proof<D: IDeliveryProofAdapter<Pairing = P, Forms = K::Forms>>(
         &self,
         _params: ConsumeDeliveryProofParams,
         payload: ConsumeDeliveryProofPayload<D>,
     ) -> Self::Output {
         Ok(CreateVerifierCaseSuccessReturn {
             output: self.consumer.consume_create_verifier_case(
-                self.pairing,
-                self.forms,
-                &payload.adapter,
+                build_consume_create_verifier_case_params(Default::default()),
+                build_consume_create_verifier_case_payload(
+                    self.pairing,
+                    self.chain,
+                    &payload.adapter,
+                    self.encoder,
+                    self.generate,
+                    Default::default(),
+                ),
             ),
         })
     }
 }
 
-struct CaseAtChainForms<'a, P: IPairingArithmetic, E, C: ICreateVerifierCaseConsumer> {
+struct CaseAtChain<'a, P: IPairingArithmetic, E, C: ICreateVerifierCaseConsumer> {
     pairing: &'a P,
     hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
     encoder: &'a E,
+    encoder_declaration: &'a EncodingDeclaration,
     source: &'a dyn IRandomSourceAdapter,
     delivery_proof: &'a CreateDeliveryProofParams,
+    generate: &'a GenerateDeclaration,
     consumer: &'a C,
 }
 
-impl<'a, P, E, C> IChainFormsConsumer for CaseAtChainForms<'a, P, E, C>
+impl<'a, P, E, C> IChainConsumer for CaseAtChain<'a, P, E, C>
 where
     P: IPairingArithmetic + IPairingReference,
     E: IEncoderAdapter,
@@ -555,10 +677,10 @@ where
 {
     type Output = CreateVerifierCaseReturn<C::Output>;
 
-    fn consume_chain_forms<F: IChainForms>(
+    fn consume_chain<K: IChainAdapter>(
         &self,
-        _params: ConsumeChainFormsParams,
-        payload: ConsumeChainFormsPayload<F>,
+        _params: ConsumeChainParams,
+        payload: ConsumeChainPayload<K>,
     ) -> Self::Output {
         match create_delivery_proof(
             &build_create_delivery_proof_deps(
@@ -568,7 +690,9 @@ where
                 self.source,
                 CaseAtDeliveryProof {
                     pairing: self.pairing,
-                    forms: &payload.forms,
+                    chain: &payload.adapter,
+                    encoder: self.encoder_declaration,
+                    generate: self.generate,
                     consumer: self.consumer,
                 },
                 Default::default(),
@@ -586,12 +710,63 @@ where
     }
 }
 
+struct CaseAtChainForms<'a, P: IPairingArithmetic, E, C: ICreateVerifierCaseConsumer> {
+    pairing: &'a P,
+    hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    encoder: &'a E,
+    encoder_declaration: &'a EncodingDeclaration,
+    source: &'a dyn IRandomSourceAdapter,
+    chain: &'a CreateChainParams,
+    delivery_proof: &'a CreateDeliveryProofParams,
+    generate: &'a GenerateDeclaration,
+    consumer: &'a C,
+}
+
+impl<'a, P, E, C> IChainFormsConsumer for CaseAtChainForms<'a, P, E, C>
+where
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter,
+    C: ICreateVerifierCaseConsumer,
+{
+    type Output = CreateVerifierCaseReturn<C::Output>;
+
+    fn consume_chain_forms<F: IChainForms>(
+        &self,
+        _params: ConsumeChainFormsParams,
+        _payload: ConsumeChainFormsPayload<F>,
+    ) -> Self::Output {
+        match create_chain::<F, _>(
+            &build_create_chain_deps(
+                admit_chain_composition as AdmitChainCompositionFn,
+                CaseAtChain {
+                    pairing: self.pairing,
+                    hashing: self.hashing,
+                    encoder: self.encoder,
+                    encoder_declaration: self.encoder_declaration,
+                    source: self.source,
+                    delivery_proof: self.delivery_proof,
+                    generate: self.generate,
+                    consumer: self.consumer,
+                },
+                Default::default(),
+            ),
+            self.chain.clone(),
+            build_create_chain_payload(Default::default()),
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(CreateVerifierCaseErrorReturn::CreateChain(error)),
+        }
+    }
+}
+
 struct CaseAtEncoding<'a, P: IPairingArithmetic, C: ICreateVerifierCaseConsumer> {
     pairing: &'a P,
     hashing: &'a dyn IHashToScalarAdapter<P::Scalar>,
     source: &'a dyn IRandomSourceAdapter,
     chain_forms: &'a CreateChainFormsParams,
+    chain: &'a CreateChainParams,
     delivery_proof: &'a CreateDeliveryProofParams,
+    generate: &'a GenerateDeclaration,
     consumer: &'a C,
 }
 
@@ -613,8 +788,11 @@ where
                     pairing: self.pairing,
                     hashing: self.hashing,
                     encoder: &payload.adapter,
+                    encoder_declaration: &E::DECLARATION,
                     source: self.source,
+                    chain: self.chain,
                     delivery_proof: self.delivery_proof,
+                    generate: self.generate,
                     consumer: self.consumer,
                 },
                 &payload.adapter,
@@ -634,7 +812,9 @@ struct CaseAtPairing<'a, C: ICreateVerifierCaseConsumer> {
     random_source: &'a CreateRandomSourceParams,
     encoding: &'a CreateEncodingParams,
     chain_forms: &'a CreateChainFormsParams,
+    chain: &'a CreateChainParams,
     delivery_proof: &'a CreateDeliveryProofParams,
+    generate: &'a GenerateDeclaration,
     consumer: &'a C,
 }
 
@@ -674,7 +854,9 @@ impl<C: ICreateVerifierCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
                 hashing: &*hashing.adapter,
                 source: &*source.adapter,
                 chain_forms: self.chain_forms,
+                chain: self.chain,
                 delivery_proof: self.delivery_proof,
+                generate: self.generate,
                 consumer: self.consumer,
             }),
             CreateEncodingParams {
@@ -692,7 +874,7 @@ impl<C: ICreateVerifierCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
 pub fn run_create_verifier_case<C: ICreateVerifierCaseConsumer>(
     deps: &CreateVerifierCaseDeps<C>,
     params: CreateVerifierCaseParams,
-    _payload: CreateVerifierCasePayload,
+    payload: CreateVerifierCasePayload<'_>,
 ) -> CreateVerifierCaseReturn<C::Output> {
     let _: RunCreateVerifierCaseFn<C> = run_create_verifier_case;
     match create_pairing(
@@ -702,7 +884,9 @@ pub fn run_create_verifier_case<C: ICreateVerifierCaseConsumer>(
                 random_source: &params.random_source,
                 encoding: &params.encoding,
                 chain_forms: &params.chain_forms,
+                chain: &params.chain,
                 delivery_proof: &params.delivery_proof,
+                generate: payload.generate,
                 consumer: &deps.consumer,
             },
             Default::default(),

@@ -6,6 +6,9 @@
     clippy::too_many_arguments
 )]
 
+use serde_json::{Map, Value};
+
+use super::super::super::factory::provides::VerifierDeclaration;
 use super::interface::{
     AdmitEvmVerifierSettingsDeps, AdmitEvmVerifierSettingsFn, AdmitEvmVerifierSettingsParams,
     AdmitEvmVerifierSettingsPayload, AdmitEvmVerifierSettingsReturn,
@@ -31,12 +34,21 @@ pub fn build_evm_verifier_settings_document(
 }
 
 #[derive(Default)]
+pub struct EvmVerifierSettingsCorruptions;
+
+pub fn invalidate_evm_verifier_settings(_corruptions: EvmVerifierSettingsCorruptions) -> Value {
+    let _document = build_evm_verifier_settings_document(Default::default());
+    Value::Object(Map::new())
+}
+
+#[derive(Default)]
 pub struct AdmitEvmVerifierSettingsDepsOverrides;
 
-pub fn build_admit_evm_verifier_settings_deps(
+pub fn build_admit_evm_verifier_settings_deps<'a>(
+    declaration: &'a VerifierDeclaration,
     _overrides: AdmitEvmVerifierSettingsDepsOverrides,
-) -> AdmitEvmVerifierSettingsDeps {
-    AdmitEvmVerifierSettingsDeps
+) -> AdmitEvmVerifierSettingsDeps<'a> {
+    AdmitEvmVerifierSettingsDeps { declaration }
 }
 
 #[derive(Default)]
@@ -78,8 +90,8 @@ pub fn build_admit_evm_verifier_settings_success_return(
     }
 }
 
-pub fn mock_admit_evm_verifier_settings(
-    _deps: &AdmitEvmVerifierSettingsDeps,
+pub fn mock_admit_evm_verifier_settings<'a>(
+    _deps: &AdmitEvmVerifierSettingsDeps<'a>,
     _params: AdmitEvmVerifierSettingsParams,
     _payload: AdmitEvmVerifierSettingsPayload,
 ) -> AdmitEvmVerifierSettingsReturn {

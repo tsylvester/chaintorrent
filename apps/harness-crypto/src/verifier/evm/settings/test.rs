@@ -4,7 +4,6 @@ use chain::{ChainFormsIdentifier, ChainMemberIdentifier};
 use encoding::EncodingIdentifier;
 use pairing::VerifierGroupArithmetic;
 use proof::DELIVERY_STATEMENT_VERSION_ONE;
-use serde_json;
 
 use super::super::super::factory::provides::VerifierConcreteKind;
 use super::admit_evm_verifier_settings;
@@ -209,7 +208,8 @@ fn the_document_guard_reports_the_lowest_key() {
 // the_document_guard_reports_the_lowest_key
 
 /// Contract: the narrowed document → `Ok` holding the concrete's settings.
-/// Arrange: deps from `build_admit_evm_verifier_settings_deps`, params from
+/// Arrange: deps from `build_admit_evm_verifier_settings_deps` handed
+///   `&EVM_VERIFIER_DECLARATION`, params from
 ///   `build_admit_evm_verifier_settings_params`, and the payload from
 ///   `build_admit_evm_verifier_settings_payload`.
 /// Act:     `admit_evm_verifier_settings`.
@@ -218,7 +218,8 @@ fn the_document_guard_reports_the_lowest_key() {
 #[test]
 fn admission_returns_the_concrete_settings_for_the_narrowed_document() {
     // Arrange
-    let deps = build_admit_evm_verifier_settings_deps(Default::default());
+    let deps =
+        build_admit_evm_verifier_settings_deps(&EVM_VERIFIER_DECLARATION, Default::default());
     let params = build_admit_evm_verifier_settings_params(Default::default());
     let payload = build_admit_evm_verifier_settings_payload(Default::default());
 
