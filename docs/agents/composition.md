@@ -141,7 +141,7 @@ This holds for production items and mocks alike. How a mock file declares the pa
 A family's factory takes its configuration in two kinds, and each is declared by the owner it belongs to:
 
 - **The family's.** A value the factory takes whichever concrete the selection names, the mock concrete's included, is the family's. Its type is declared in the factory module's interface, it is carried in the factory's params beside the selection, and its builder lives in the factory module's mock file.
-- **A concrete's own.** A value the factory takes for one concrete alone is that concrete's. Its type is declared in the concrete's interface, it is carried in that concrete's variant of the selection, and its builder lives in the concrete's mock file.
+- **A concrete's own.** A value the factory takes for one concrete alone is that concrete's. Its type is declared in the interface of the concrete's settings module, it is carried in that concrete's variant of the selection, and its builder lives in the settings module's mock file. A concrete with no value of its own has no settings module, and its variant carries none.
 
 The test is the one the type-parameter rule above applies: declare a value on the least specific owner that serves every reader. A family value carried inside one concrete's configuration is repeated in every other concrete's configuration or missing from it; a concrete's own value carried in the family's params is configuration every other concrete must ignore.
 

@@ -449,7 +449,7 @@ What a family is, what it owns, and how every caller reaches its concretes are o
 
 The mock concrete, `MockI<Trait>` after the trait it implements, lives in the factory module's mock file. Under the `mocks` feature the family's selection and the factory's selection branch carry it beside the real concretes, and the error union of a method carries its error variant where a failure mode of that method returns the mock concrete's own error. The declared set holds the real concretes alone, so a consumer or an integration test that runs over the declared set never reaches it. Its type is crate-visible; the public surface carries the configuration that selects it.
 
-A family whose selection's variants carry configuration that a constant cannot hold declares its set by identifier, and its factory module's mock file holds the family's **declared-selection builders**. The selection's builder takes the identifier of a member of the declared set as its leading parameter and a fieldless overrides struct, and returns the selection that names that concrete with the concrete's own configuration at its default, from the concrete's own builder. A companion builder takes the same leading parameter and returns a family-level value the selected concrete's declaration determines, such as one configuration entry per kind the declaration names at default quantities.
+A family whose selection's variants carry configuration that a constant cannot hold declares its set by identifier, and its factory module's mock file holds the family's **declared-selection builders**. The selection's builder takes the identifier of a member of the declared set as its leading parameter and a fieldless overrides struct, and returns the selection that names that concrete with the concrete's own configuration at its default, from the builder in the concrete's settings module, or with no configuration where the concrete has no settings module. A companion builder takes the same leading parameter and returns a family-level value the selected concrete's declaration determines, such as one configuration entry per kind the declaration names at default quantities.
 
 Each declared-selection builder is an exhaustive `match` on the identifier, so a further concrete adds an arm, and they are the one mock location that names each real concrete. Their production counterpart is the family's selection admission (see [families](families.md#selecting-a-concrete-from-configuration)).
 
@@ -549,7 +549,7 @@ TypeScript has no compile-time feature that keeps a mock member out of a product
 - **It answers the family's contract.** A family method's function mock computes from its inputs the outcomes the factory's contract entries state, a working simplified implementation, and returns the family's flavor where an entry states the failure as the family's; it never returns a constant an entry would reject. A consumer test that passes against it holds for every member of the declared set.
 - **An arm no input reaches.** An outer-edge failure is reached by the test overriding that method, through the interface builder's overrides, with its own production-typed function composed from builders (see [Function mocks](#function-mocks--the-production-function-nothing-else)), returning the error the contract entry states.
 - **A subject that calls the factory.** The composition root receives the factory's function mock, which returns the built success return around the interface's builder at its defaults.
-- **The declared set.** The factory module's mock file holds the family's declared-selection builder, named for the selection it returns and taking a member's identifier: an exhaustive `switch` returning the selection that names that member with its settings at their default, from the member's own settings builder. It carries no override into a member's settings. A block run over the declared set takes each member's selection from it (see [integrationTest](integrationTest.md#configuration-over-the-declared-set-typescript)).
+- **The declared set.** The factory module's mock file holds the family's declared-selection builder, named for the selection it returns and taking a member's identifier: an exhaustive `switch` returning the selection that names that member with its settings at their default, from the builder in the member's settings module, or with no settings where the member has none. It carries no override into a member's settings. A block run over the declared set takes each member's selection from it (see [integrationTest](integrationTest.md#configuration-over-the-declared-set-typescript)).
 - **A test names no concrete but its own subject.** It receives a family's adapter only from the interface's builder or from the factory over the declared set.
 
 ```ts
@@ -572,7 +572,7 @@ export function buildMyFamilySelection(identifier: MyFamilyIdentifier): MyFamily
     case "myConcrete":
       return { identifier: "myConcrete", settings: buildMyConcreteSettings() };
     case "otherConcrete":
-      return { identifier: "otherConcrete", settings: buildOtherConcreteSettings() };
+      return { identifier: "otherConcrete" };
   }
 }
 ```

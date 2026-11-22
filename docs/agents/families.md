@@ -19,7 +19,8 @@ The measure of the rule is what a further concrete changes. Adding a concrete is
 A family is a module holding its factory module, its concretes, and its family-owned functions.
 
 - **The factory module** owns the family's interface (the trait in Rust, the interface type in TypeScript), the family's declaration type, the member identifier type naming each member, the value identifier type naming each value its members provide that another family compares or that configuration names, the selection, the declared set, each method's error union, the family's configuration that every concrete takes (see [composition](composition.md#configuration-follows-ownership-rust)), the consumer surface through which a caller receives a concrete, the family's description types, and the family's mock (see [mocks](mocks.md#families--the-mock-is-a-concrete-of-the-family-rust), [mocks](mocks.md#families--the-typescript-form)). Its one function is the factory.
-- **A concrete** owns its implementation, its own settings type, its settings-document type and the guard that narrows to it, its declaration constant, its own error type, and the admission of its own settings. It is a child module of the family.
+- **A concrete** owns its implementation, its declaration constant, its own error type, and, where configuration may set a value it is constructed from, its settings module. It is a child module of the family.
+- **A concrete's settings module** owns the concrete's settings type, its settings-document type and the guard that narrows to it, and the admission of the concrete's settings. It is a child module of the concrete and precedes it (see [A concrete's settings precede the concrete](#a-concretes-settings-precede-the-concrete)).
 - **A family-owned function** is a function the family provides beside its factory: the selection admission, the declaration lookup, the composition admission, and any other function whose subject is the family rather than one concrete. Each is its own module and its own node under the family module, in the four-slot form (see [composition](composition.md#the-signature)).
 
 The Rust form of the factory module's family-level types:
@@ -41,8 +42,8 @@ impl MyFamilyIdentifier {
 }
 
 pub enum MyFamilySelection {
-    MyConcrete { settings: MyConcreteSettings },       // the concrete's own settings type, declared in its interface
-    OtherConcrete { settings: OtherConcreteSettings },
+    MyConcrete { settings: MyConcreteSettings },       // the concrete's own settings type, declared in its settings module
+    OtherConcrete,                                     // no settable value: the variant carries no settings
     #[cfg(any(test, feature = "mocks"))]
     Mock { failure_mode: MockIMyAdapterFailureMode },
 }
@@ -66,12 +67,11 @@ export type MyFamilyIdentifier = "myConcrete" | "otherConcrete";
 
 export interface MyConcreteSelection {
   identifier: "myConcrete";
-  settings: MyConcreteSettings;            // declared in the concrete's interface
+  settings: MyConcreteSettings;            // declared in the concrete's settings module
 }
 
 export interface OtherConcreteSelection {
-  identifier: "otherConcrete";
-  settings: OtherConcreteSettings;
+  identifier: "otherConcrete";             // no settable value: the selection carries no settings
 }
 
 export type MyFamilySelection = MyConcreteSelection | OtherConcreteSelection;
@@ -93,13 +93,13 @@ A concrete declares itself in enough detail that every caller routes from the de
 - **Its identity.** The identifier. The identifier's spelling, declared beside the identifier type in the factory module, is the member's only spelling at a boundary (see [types](types.md#a-name-is-a-typed-identifier-text-exists-only-at-a-boundary)); the declaration carries no name of its own. Every name that reaches a document, a report, a path, or a log is an identifier's spelling, read from the declaration through the declaration lookup.
 - **What it provides.** Every capability, form, version, or value a caller would otherwise know from the concrete's name, so that the caller reads it. A provided value that names a member of a closed set is the value identifier type of the family that provides it, never text (see [A value families must agree on](#a-value-families-must-agree-on)).
 - **What it requires.** For every family it is composed with, the declared values, in that family's value identifiers, it can work with. A requirement never names another family's member. Where no declared value distinguishes the members a concrete can work with, the providing family's declaration lacks that value, and that is a discovery. A concrete that works with any member of a family states no requirement of it.
-- **Its settings.** For each field of its own settings type, whether the concrete fixes it or permits it to be set, the bounds within which it may be set, and its default. A setting is never a literal outside the declaration.
+- **Its settings.** For each field of its settings type, the bounds within which it may be set and its default. A value the concrete fixes is not a setting; it is stated under what the concrete provides. A concrete with no settable value states no settings. A setting is never a literal outside the declaration.
 
 ## Selecting a concrete from configuration
 
-Configuration names a member; the family turns that name and the member's settings into the selection. The family's **selection admission** is a family-owned function in the validating form (see [composition](composition.md#parameter-jurisdiction--what-is-trusted-vs-proven)): its params carry the identifier admitted from configuration and nothing else, its payload is the untrusted settings document, and it returns the settings-carrying selection.
+Configuration names a member; the family turns that name and the member's settings into the selection. The family's **selection admission** is a family-owned function in the validating form (see [composition](composition.md#parameter-jurisdiction--what-is-trusted-vs-proven)): its params carry the identifier admitted from configuration and nothing else, its payload is the untrusted settings document, and it returns the selection, carrying the member's admitted settings where the member has a settings module.
 
-It is an exhaustive branch on the identifier. Each branch narrows the document on entry to that concrete's settings-document type through the guard the concrete owns (see [guards](guards.md#guard-on-entry--validating-functions-take-unknown)), then calls the concrete's settings admission in the trusted form with the narrowed document, building that admission's deps and params from what the family admission received.
+It is an exhaustive branch on the identifier. A branch for a concrete with a settings module narrows the document on entry to that concrete's settings-document type through the guard the settings module owns (see [guards](guards.md#guard-on-entry--validating-functions-take-unknown)), then calls the concrete's settings admission in the trusted form with the narrowed document, building that admission's deps and params from what the family admission received. A branch for a concrete with no settings module refuses a document that supplies any setting, with the family's own error naming the member, and returns the selection that names the member.
 
 Each callee's error is carried intact in a variant named by the concrete (see [errors-and-returns](errors-and-returns.md#naming-a-variant-that-carries-a-callees-error)). No concrete's own value is carried in the family admission's params or deps (see [composition](composition.md#configuration-follows-ownership-rust)).
 
@@ -141,11 +141,15 @@ export const admitMyFamilySelection: AdmitMyFamilySelectionFn = (deps, params, p
 };
 ```
 
-A concrete's settings-document type is its settings type with every field optional; the concrete's guard narrows to it, and the concrete's settings admission takes it in the trusted form. The settings admission reads its declaration. It refuses a document value for a setting the declaration fixes, refuses a settable value outside its declared bounds, and takes the declared default where the document supplies none. Each refusal is the concrete's own typed error, naming the setting.
+A concrete's settings-document type is its settings type with every field optional; the guard narrows to it and refuses a document carrying a key that names no field of the settings type, and the settings admission takes it in the trusted form. The settings admission reads the concrete's declaration. It refuses a value outside its declared bounds and takes the declared default where the document supplies none. Each refusal is the concrete's own typed error, naming the setting.
+
+### A concrete's settings precede the concrete
+
+A concrete is constructed from its admitted settings, so its file needs the settings type, and its settings module precedes it in dependency order. The settings module is the first consumer of the concrete's declaration constant and authors it in the concrete's interface (see [Ownership at the first consumer](#ownership-at-the-first-consumer)). The family's selection admission follows both, since it calls the settings module's guard and admission and builds the selection that names the concrete.
 
 ### Where a concrete's settings live in a document
 
-A concrete's settings sit in a table the concrete owns, keyed by its identifier's spelling and nested beneath the family's table. The configuration layers declare the family's table alone; the concrete's settings admission owns every key beneath its own table. A further concrete adds a table and no key to any shared table, and no configuration function, layer, or composition root names a concrete's setting.
+A concrete with a settings module has its settings in a table the concrete owns, keyed by its identifier's spelling and nested beneath the family's table. The configuration layers declare the family's table alone; the concrete's settings admission owns every key beneath its own table. A further concrete adds a table and no key to any shared table, and no configuration function, layer, or composition root names a concrete's setting. A concrete with no settings module has no table.
 
 ### A list of members defaults to the declared set
 
@@ -279,8 +283,9 @@ Each of these is a discovery: report, propose the node, and halt (see [discovery
 - A family's value has no owner at the node of its first consumer.
 - A value names a member of a closed set and no identifier type with its spelling exists for that set in the family that provides it.
 - A requirement can be stated only by naming another family's member.
+- A concrete is constructed from a value configuration sets and has no settings module, or a settings module exists for a concrete with no settable value.
 - A value families must agree on has no single providing family, or two families would each provide a value the other consumes.
 
 ## Precedence
 
-This topic outranks the workplan. A node step that names a concrete outside its family, names a concrete outside its family in place of a family location's increment, builds a selection outside the family's selection admission, carries a concrete's settings in a shared table or as a literal outside its declaration, restates a member's declared value from knowledge of the member, names a member by text other than its identifier's spelling or compares members as text, declares a value families share outside its providing family, as a second copy of its type, or as text, states a requirement on another family's member, makes a providing family depend on a consumer of its value, takes a value a member's declaration fixes from configuration, puts a member's own model on the family's surface, branches on a concrete's error variant outside the family, constructs a member or causes a side effect before the composition admits it, or re-exports a concrete beyond its family is defective — comply with this topic and report the discrepancy.
+This topic outranks the workplan. A node step that names a concrete outside its family, names a concrete outside its family in place of a family location's increment, builds a selection outside the family's selection admission, carries a concrete's settings in a shared table or as a literal outside its declaration, authors a settings module for a concrete with no settable value, orders a concrete ahead of its settings module, states a value a concrete fixes as a setting, restates a member's declared value from knowledge of the member, names a member by text other than its identifier's spelling or compares members as text, declares a value families share outside its providing family, as a second copy of its type, or as text, states a requirement on another family's member, makes a providing family depend on a consumer of its value, takes a value a member's declaration fixes from configuration, puts a member's own model on the family's surface, branches on a concrete's error variant outside the family, constructs a member or causes a side effect before the composition admits it, or re-exports a concrete beyond its family is defective — comply with this topic and report the discrepancy.
