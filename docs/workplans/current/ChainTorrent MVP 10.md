@@ -839,6 +839,12 @@ A developer installs dependencies and receives a working `node_modules` assemble
     * `[ ]`   The integration blocks pass: a signed message verifies and no other does, a signature is bound to the concrete's context, and the borrowed secret key is left intact
     * `[ ]`   Code outside `adapters/signature` naming `MlDsa65Adapter` or anything under `ml_dsa_65` fails to compile; the crate's public surface is the `factory` module's `provides`
 
+* `[ ]`   `signature/lookup_signature_declaration` — Halt: This node must be authored
+
+* `[ ]`   `signature/admit_signature_selection` — Halt: This node must be authored
+
+* `[ ]`   `signature/admit_signature_composition` — Halt: This node must be authored
+
 * `[ ]`   `signature/factory` **Signature factory constructing the concrete the composition names for a layer, admitted when that concrete declares it serves the layer, and handing it to a consumer generic over the family's trait; carries the family's integration test and the Signature services milestone's commit**
 
   * `[ ]`   `objective`
@@ -1037,6 +1043,8 @@ A developer installs dependencies and receives a working `node_modules` assemble
     * `[ ]`   Contract: `ISignatureAdapter` with its associated types, `SignatureLayer`, `SignatureDeclaration`, `SignErrorReturn`, `SignatureConcrete`, `ISignatureConsumer`, `create_signature`, and `DECLARED_SIGNATURE_SELECTIONS`
 
 **Swarm transport, discovery, storage and seed host**
+
+* `[ ]`   `transport/rqbit/settings` — Halt: This node must be authored
 
 * `[ ]`   `transport/rqbit` **BitTorrent transport concrete over embedded `librqbit` on the overlay branch the workspace manifest names: translates an object's Bao root to the BitTorrent info-hash locator by creating one torrent per object, serves published objects, retrieves an object by locator while Bao-verifying every completed piece after the library's SHA-1 check and before the piece counts as held, injects peers into a managed torrent, releases a served object, and exposes the library's DHT, tracker, and peer-exchange peer feeds as the engine capability; creates the `adapters/transport` crate and authors the transport family's generic interface, locator types, declaration, configuration, engine capability, and mock**
 
@@ -1337,6 +1345,12 @@ A developer installs dependencies and receives a working `node_modules` assemble
     * `[ ]`   The overlay branch carries `PieceValidator`, `AddTorrentOptions::piece_validator`, `ManagedTorrent::add_peers`, `Session::peer_feed`, and `PeerFeed` before this node's elements build, and an upstream issue is open for each
     * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, and `cargo deny check` complete without error; `cargo clippy --workspace --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the `rqbit` concrete, which `transport/factory` resolves by constructing the concrete
     * `[ ]`   Code outside `adapters/transport` naming `RqbitAdapter` or any item under `rqbit` other than `RqbitConfiguration` fails to compile; the crate's public surface is the `factory` module's `provides`
+
+* `[ ]`   `transport/lookup_transport_declaration` — Halt: This node must be authored
+
+* `[ ]`   `transport/admit_transport_selection` — Halt: This node must be authored
+
+* `[ ]`   `transport/admit_transport_composition` — Halt: This node must be authored
 
 * `[ ]`   `transport/factory` **Transport factory constructing the concrete the configuration names over the family configuration, and returning it behind the family's trait, which reports its declaration and the address it listens on and exposes the engine capability; carries the family's integration test across factory and concrete**
 
@@ -1743,6 +1757,8 @@ A developer installs dependencies and receives a working `node_modules` assemble
     * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, and `cargo deny check` complete without error; `cargo clippy --workspace --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the family's items, which the discovery family's concretes and factory consume
     * `[ ]`   Code outside `adapters/discovery` naming `admit_peers` fails to compile; the crate's public surface is the `factory` module's `provides`
 
+* `[ ]`   `discovery/local/settings` — Halt: This node must be authored
+
 * `[ ]`   `discovery/local` **Local-network discovery concrete over the BEP 14 Local Service Discovery implementation `librqbit-lsd`: announces the port a participant serves an object on to the local network and returns the peers that answer or announce the same object key within a deadline, each address admitted through the family's `admit_peers`**
 
   * `[ ]`   `objective`
@@ -1982,6 +1998,8 @@ A developer installs dependencies and receives a working `node_modules` assemble
     * `[ ]`   The two `locator_of` tests pass (SW-02, a source asks the engine for the locator of the key it holds)
     * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, and `cargo deny check` complete without error; `cargo clippy --workspace --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the family's items, which the discovery concretes consume
     * `[ ]`   Code outside `adapters/discovery` naming `locator_of` fails to compile; no vendor library is named in `adapters/discovery/src/locator_of`
+
+* `[ ]`   `discovery/dht/settings` — Halt: This node must be authored
 
 * `[ ]`   `discovery/dht` **DHT discovery concrete over the transport family's engine capability: admitted only over a transport whose declaration lists the `Dht` engine source and that exposes an engine, it looks a key's peers up by asking that engine for the `Dht` feed of the locator that carries the key's info-hash, and returns the addresses the engine yields, each admitted through the peer type's fallible constructor and deduplicated in arrival order, with the source recorded; names no vendor and no transport concrete**
 

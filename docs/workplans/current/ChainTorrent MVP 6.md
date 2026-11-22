@@ -2206,6 +2206,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Every block of `integration_test.rs` passes over the real forms and the mocked transports
     * `[✅]`   A module outside the `adapters/chain` crate naming `BaseChain`, `BaseChainSettings`, or `BASE_CHAIN_DECLARATION` fails to compile
 
+* `[ ]`   `chain/lookup_chain_declaration` — Halt: This node must be authored
+
+* `[ ]`   `chain/admit_chain_selection` — Halt: This node must be authored
+
+* `[ ]`   `chain/admit_chain_composition` — Halt: This node must be authored
+
 * `[✅]`   `chain/factory` **The chain family's factory function: constructs the chain concrete the settings-carrying selection its params carry names, calling the family's composition admission, over the member identifier the selection names and the declaration of the forms it is generic over, before anything is constructed, the admission reading the member's declaration through the family's declaration lookup, and hands the constructed concrete to a consumer generic over the chain interface; carries the family's integration test across factory, concrete, and family-owned functions**
 
   * `[✅]`   `objective`

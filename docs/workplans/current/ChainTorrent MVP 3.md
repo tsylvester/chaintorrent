@@ -900,6 +900,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Every family and concrete error enum the key agreement declares derives `Debug`, `PartialEq`, and `Eq`, and every refusal the concrete's tests assert is asserted by `assert_eq!` against the whole expected error
     * `[✅]`   Code outside `adapters/envelope` naming `PairingElGamalKeyAgreement` or anything under `pairing_elgamal` fails to compile; the crate's public surface is the `factory` and `possession_statement` modules' `provides`
 
+* `[ ]`   `envelope/lookup_envelope_declaration` — Halt: This node must be authored
+
+* `[ ]`   `envelope/admit_envelope_selection` — Halt: This node must be authored
+
+* `[ ]`   `envelope/admit_envelope_composition` — Halt: This node must be authored
+
 * `[✅]`   `envelope/factory` **Key-agreement factory constructing the concrete the configuration names over a borrowed pairing, hash-to-scalar adapter, encoder, and randomness source, admitted against the key-agreement identifier the hash-card names and the envelope algebra the suite's delivery proof requires, and handing it to a consumer generic over the family's trait for that pairing; carries the family's integration test and the milestone's commit**
 
   * `[✅]`   `objective`

@@ -411,6 +411,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   A generator failure is returned as `FillBytesErrorReturn::OperatingSystem` holding `OsRandomSourceFillBytesErrorReturn::OperatingSystem` with the `getrandom::Error` unchanged, fixed by the error arm's type; the failure branch has no unit test, since the operating system's generator cannot be driven to fail from a test and the vendor is not mocked
     * `[✅]`   Code outside `adapters/random` naming `OsRandomSource` or anything under `os` fails to compile; the crate's public surface is the `factory` module's `provides`
 
+* `[ ]`   `random/lookup_random_declaration` — Halt: This node must be authored
+
+* `[ ]`   `random/admit_random_selection` — Halt: This node must be authored
+
+* `[ ]`   `random/admit_random_composition` — Halt: This node must be authored
+
 * `[✅]`   `random/factory` **Randomness factory constructing the concrete a configuration names and returning it behind the family's trait, which reports its declaration; carries the family's integration test and the grouping's commit**
 
   * `[✅]`   `objective`
@@ -3203,6 +3209,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Every test in `bls12_381_halo2curves/test.rs` passes (CR-04, CR-08, CR-09, and CR-10 on BLS12-381 over halo2curves; CR-05 for the sampled scalar; CR-07 for the clearing; CR-11 for the order)
     * `[✅]`   The declaration and concrete-identity compile-time assertions compile, the `ZeroizeOnDrop` compile-time assertion compiles, `bls12_381_halo2curves_scalar_zeroize_clears_its_value` passes (CR-07), and `pairing_product_of_the_generators_equals_the_definition`, `encode_gt_writes_the_published_pairing_of_the_generators`, and `reduced_pairing_correction_inverts_three` pass (CR-10, the target-group value fixed by the identifier's definition, executed in the test, and its serialization by the standard's published value)
     * `[✅]`   Code outside `adapters/pairing` naming `Bls12381Halo2curvesPairing` or anything under `bls12_381_halo2curves` fails to compile; the crate's public surface is the `factory` module's `provides`
+
+* `[ ]`   `pairing/lookup_pairing_declaration` — Halt: This node must be authored
+
+* `[ ]`   `pairing/admit_pairing_selection` — Halt: This node must be authored
+
+* `[ ]`   `pairing/admit_pairing_composition` — Halt: This node must be authored
 
 * `[✅]`   `pairing/factory` **Pairing factory constructing the concrete the composition names, admitted against the chain's precompile encodings and the suite's target-group encoding identifier, and handing it to a consumer generic over the family's arithmetic and reference traits; carries the family's integration test proving the libraries of each curve agree**
 

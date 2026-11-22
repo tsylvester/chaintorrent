@@ -356,6 +356,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   The five integration blocks pass, one per own entry the spec lists
     * `[✅]`   Code outside `adapters/hashing` naming `Blake3BaoCommitment` or anything under `blake3_bao` fails to compile; the crate's public surface is the `factory` module's `provides`
 
+* `[ ]`   `hashing/lookup_hashing_declaration` — Halt: This node must be authored
+
+* `[ ]`   `hashing/admit_hashing_selection` — Halt: This node must be authored
+
+* `[ ]`   `hashing/admit_hashing_composition` — Halt: This node must be authored
+
 * `[✅]`   `hashing/factory` **Hashing factory constructing the concrete the configuration names, admitted against the commitment-scheme identifier the hash-card requires, and returning it behind the family's trait, which reports its declaration; carries the family's integration test**
 
   * `[✅]`   `objective`
@@ -1022,6 +1028,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `DecodeErrorReturn` and `AbiDecoderErrorReturn` derive `Debug` and `PartialEq` and omit only `Eq`, which the vendor's error lacks; every refusal the concrete's tests assert is asserted by `assert_eq!` against the whole expected error, the truncated head naming the vendor's `Overrun`
     * `[✅]`   Code outside `adapters/encoding` naming `AbiEncoding` or anything under `abi` fails to compile; the crate's public surface is the `factory` module's `provides`
 
+* `[ ]`   `encoding/lookup_encoding_declaration` — Halt: This node must be authored
+
+* `[ ]`   `encoding/admit_encoding_selection` — Halt: This node must be authored
+
+* `[ ]`   `encoding/admit_encoding_composition` — Halt: This node must be authored
+
 * `[✅]`   `encoding/factory` **Encoding factory constructing the concrete the configuration names, admitted against the encoding identifier the hash-card or configuration requires, and handing it to a consumer generic over the family's encoder and decoder traits; carries the family's integration test**
 
   * `[✅]`   `objective`
@@ -1478,6 +1490,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `try_new_returns_the_adapter`, `declaration_returns_the_blake3_keyed_declaration`, `derive_key_of_the_prefix_length_is_the_prefix_of_the_reference_length_output`, and `derive_key_of_zero_bytes_returns_an_empty_key` pass
     * `[✅]`   `derive_key_leaves_the_borrowed_key_material_intact` and `derive_key_returns_a_key_that_outlives_the_key_material` pass
     * `[✅]`   Code outside `adapters/kdf` naming `Blake3KeyedKdf` or anything under `blake3_keyed` fails to compile; the crate's public surface is the `factory` module's `provides`
+
+* `[ ]`   `kdf/lookup_kdf_declaration` — Halt: This node must be authored
+
+* `[ ]`   `kdf/admit_kdf_selection` — Halt: This node must be authored
+
+* `[ ]`   `kdf/admit_kdf_composition` — Halt: This node must be authored
 
 * `[✅]`   `kdf/factory` **Key-derivation factory constructing the concrete the configuration names, admitted against the KDF identifier the hash-card requires, and returning it behind the family's trait, which reports its declaration; carries the family's integration test**
 
@@ -2062,6 +2080,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `hash_to_scalar_binds_the_tag_length` and `hash_to_scalar_separates_domains` pass
     * `[✅]`   Code outside `adapters/hash-to-scalar` naming `Keccak256HashToScalar` or anything under `keccak256` fails to compile; the crate's public surface is the `domain_tag` and `factory` modules' `provides`
 
+* `[ ]`   `hash-to-scalar/lookup_hash_to_scalar_declaration` — Halt: This node must be authored
+
+* `[ ]`   `hash-to-scalar/admit_hash_to_scalar_selection` — Halt: This node must be authored
+
+* `[ ]`   `hash-to-scalar/admit_hash_to_scalar_composition` — Halt: This node must be authored
+
 * `[✅]`   `hash-to-scalar/factory` **Hash-to-scalar factory constructing the concrete the configuration names, admitted against the hash-to-scalar identifier the hash-card requires, and returning it behind the family's trait for the pairing scalar type asked for; carries the family's integration test and the milestone's commit**
 
   * `[✅]`   `objective`
@@ -2632,6 +2656,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Every block of `bb1_depth_one/integration_test.rs` passes, each proving the own entry of its name over every concrete of `PAIRING_CONCRETES` and every case of `DECLARED_HASH_TO_SCALAR_SELECTIONS` (issued and rerandomized credentials valid, every valid credential recovering the encapsulated bytes, the invalid and ill-formed cases refused, the trivial and outside-scope identities refused, every rebuilt value behaving as its original)
     * `[✅]`   Every family and concrete error enum the KEM declares derives `Debug`, `PartialEq`, and `Eq`, and every refusal the concrete's tests assert is asserted by `assert_eq!` against the whole expected error
     * `[✅]`   Code outside `adapters/kem` naming `Bb1DepthOneKem` or anything under `bb1_depth_one` fails to compile; the crate's public surface is the `factory` module's `provides`
+
+* `[ ]`   `kem/lookup_kem_declaration` — Halt: This node must be authored
+
+* `[ ]`   `kem/admit_kem_selection` — Halt: This node must be authored
+
+* `[ ]`   `kem/admit_kem_composition` — Halt: This node must be authored
 
 * `[✅]`   `kem/factory` **Credential KEM factory constructing the concrete the configuration names over a borrowed pairing and hash-to-scalar adapter, admitted against the KEM identifier and the identity scope the suite requires, and handing it to a consumer generic over the family's trait for that pairing; carries the family's integration test**
 

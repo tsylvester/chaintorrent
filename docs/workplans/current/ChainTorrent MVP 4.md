@@ -2150,6 +2150,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Every test `proof/mint_statement`, `proof/transfer_statement`, and `proof/schnorr_fs/challenge` authored passes unchanged, and every test in `adapters/chain` passes with the edited bounds
     * `[✅]`   Code outside `adapters/proof` naming `SchnorrFsDeliveryProof` or anything under `schnorr_fs` fails to compile; the crate's public surface is the `factory`, `mint_statement`, and `transfer_statement` modules' `provides`
 
+* `[ ]`   `proof/lookup_proof_declaration` — Halt: This node must be authored
+
+* `[ ]`   `proof/admit_proof_selection` — Halt: This node must be authored
+
+* `[ ]`   `proof/admit_proof_composition` — Halt: This node must be authored
+
 * `[✅]`   `proof/factory` **Delivery-proof factory constructing the concrete the configuration names over a borrowed pairing, hash-to-scalar adapter, encoder, and randomness source, admitted against the resolved envelope's algebra, the verifier form the resolved pairing declares, and the delivery-statement version the hash-card names, and handing it to a consumer generic over the family's trait for that pairing and chain's forms; carries the family's integration test**
 
   * `[✅]`   `objective`

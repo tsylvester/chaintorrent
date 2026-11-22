@@ -36,6 +36,8 @@ A developer installs dependencies and receives a working `node_modules` assemble
 
 # Work Breakdown Structure
 
+* `[ ]`   `discovery/pex/settings` — Halt: This node must be authored
+
 * `[ ]`   `discovery/pex` **Peer exchange discovery concrete over the transport family's engine capability: admitted only over a transport whose declaration lists the `PeerExchange` engine source and that exposes an engine, it looks a key's peers up by asking that engine for the `PeerExchange` feed of the locator that carries the key's info-hash, and returns the addresses the engine yields, each admitted through the peer type's fallible constructor and deduplicated in arrival order, with the source recorded; names no vendor and no transport concrete**
 
   * `[ ]`   `objective`
@@ -186,6 +188,8 @@ A developer installs dependencies and receives a working `node_modules` assemble
     * `[ ]`   `the_engine_returns_no_peers_when_no_feed_has_any` passes (SW-02, a source that has nothing to report returns no peers and not a failure)
     * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, and `cargo deny check` complete without error; `cargo clippy --workspace --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the discovery crate's concretes and the family's items, which the discovery family's factory resolves by constructing the concretes
     * `[ ]`   Code outside `adapters/discovery` naming `PexDiscoveryAdapter` or any item under `pex` fails to compile; the crate's public surface is the `factory` module's `provides`
+
+* `[ ]`   `discovery/tracker/settings` — Halt: This node must be authored
 
 * `[ ]`   `discovery/tracker` **Tracker discovery concrete over the transport family's engine capability: admitted only over a transport whose declaration lists the `Tracker` engine source and that exposes an engine, it looks a key's peers up by asking that engine for the `Tracker` feed of the locator that carries the key's info-hash, and returns the addresses the engine yields, each admitted through the peer type's fallible constructor and deduplicated in arrival order, with the source recorded; names no vendor and no transport concrete**
 
@@ -474,6 +478,12 @@ A developer installs dependencies and receives a working `node_modules` assemble
     * `[ ]`   Every test `discovery/admit_peers` authored passes unchanged
     * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, and `cargo deny check` complete without error; `cargo clippy --workspace --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the discovery crate's concretes and the family's items, which the discovery family's factory resolves by constructing the concretes and calling `aggregate`
     * `[ ]`   Code outside `adapters/discovery` naming `aggregate` fails to compile; the crate's public surface is the `factory` module's `provides`
+
+* `[ ]`   `discovery/lookup_discovery_declaration` — Halt: This node must be authored
+
+* `[ ]`   `discovery/admit_discovery_selection` — Halt: This node must be authored
+
+* `[ ]`   `discovery/admit_discovery_composition` — Halt: This node must be authored
 
 * `[ ]`   `discovery/factory` **Discovery factory resolving the sources the composition names over a transport adapter: each selection is constructed as the concrete it names, a selection the concrete refuses to be constructed over the transport is reported beside the sources that resolved and constructs nothing, and the resolved sources are handed back as one handle whose `discover` joins them through the family's `aggregate`; carries the family's integration test across factory, concretes, and aggregation**
 
@@ -1017,6 +1027,12 @@ A developer installs dependencies and receives a working `node_modules` assemble
     * `[ ]`   `a_value_survives_the_store_being_reopened`, `an_aborted_write_transaction_leaves_the_prior_checkpoint`, `a_write_transaction_dropped_before_commit_leaves_the_prior_checkpoint`, `entries_are_returned_in_ascending_order_of_the_encoded_key`, and `a_table_not_declared_is_refused_by_every_transaction` pass (XA-03, transactions and checkpoints under interruption)
     * `[ ]`   Code outside `adapters/storage` naming `RedbStorage` or anything under `redb` fails to compile; the crate's public surface is the `factory` module's `provides`
 
+* `[ ]`   `storage/lookup_storage_declaration` — Halt: This node must be authored
+
+* `[ ]`   `storage/admit_storage_selection` — Halt: This node must be authored
+
+* `[ ]`   `storage/admit_storage_composition` — Halt: This node must be authored
+
 * `[ ]`   `storage/factory` **Storage factory constructing the concrete the configuration names over the family configuration, the location and the declared table names, and the borrowed encoder, and handing it to a consumer generic over the family's adapter trait; carries the family's integration test across factory and concrete**
 
   * `[ ]`   `objective`
@@ -1256,6 +1272,8 @@ A developer installs dependencies and receives a working `node_modules` assemble
     * `[ ]`   Every test `storage/redb` authored passes unchanged
     * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`, `cargo fmt --all --check`, and `cargo deny check` complete without error or warning in every target, the `redb` concrete's and the family's unused-item warnings having no remaining cause
     * `[ ]`   `redb` is named nowhere outside `adapters/storage/src/redb`, and no code outside `adapters/storage` can name `RedbStorage`
+
+* `[ ]`   `seed-host/owned/settings` — Halt: This node must be authored
 
 * `[ ]`   `seed-host/owned` **Owned seed host concrete holding root-keyed ciphertext and sidecar objects in a filesystem store with their holding reason, index, and seeding choice kept through the storage family, verifying custody by a Bao challenge over the stored bytes, serving through the transport family, evicting voluntary holdings to a capacity and never an obligated one, and pausing or resuming serving under the host's clock, battery, meter, and CPU conditions; creates the `adapters/seed-host` crate and authors the seed host family's generic interface, holding types, host conditions interface, declaration, and mock**
 
@@ -1673,6 +1691,8 @@ A developer installs dependencies and receives a working `node_modules` assemble
     * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, and `cargo deny check` complete without error; `cargo clippy --workspace --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the `owned` concrete and the family's items, which `seed-host/factory` resolves by constructing the concrete
     * `[ ]`   Code outside `adapters/seed-host` naming `OwnedSeedHost` or any item under `owned` other than `OwnedSeedHostConfiguration` fails to compile; the crate's public surface is the `factory` module's `provides`
 
+* `[ ]`   `seed-host/rqbit/settings` — Halt: This node must be authored
+
 * `[ ]`   `seed-host/rqbit` **Delegated seed host concrete driving the rqbit application through its HTTP API: an object's info-hash, length, outboard, holding reason, and seeding choice are kept in an index through the storage family, custody is verified by a Bao challenge whose chunk is read from the application with an HTTP range request and checked against the stored outboard's path rather than trusted from the application's report, and serving is paused or resumed in the application under the host's conditions; adds the concrete beside `seed-host/owned` in the `adapters/seed-host` crate**
 
   * `[ ]`   `objective`
@@ -2022,6 +2042,12 @@ A developer installs dependencies and receives a working `node_modules` assemble
     * `[ ]`   `the_archive_lists_every_held_object_in_ascending_root_order` and `a_committed_record_survives_a_reopen_and_a_refused_commit_leaves_the_prior_index` pass (SW-07, the archive is the index's contents, which outlive the process)
     * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, and `cargo deny check` complete without error; `cargo clippy --workspace --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the `rqbit` concrete, which `seed-host/factory` resolves by constructing it
     * `[ ]`   Code outside `adapters/seed-host` naming `RqbitSeedHost` or any item under `rqbit` other than `RqbitSeedHostConfiguration` fails to compile; the crate's public surface is the `factory` module's `provides`
+
+* `[ ]`   `seed-host/lookup_seed_host_declaration` — Halt: This node must be authored
+
+* `[ ]`   `seed-host/admit_seed_host_selection` — Halt: This node must be authored
+
+* `[ ]`   `seed-host/admit_seed_host_composition` — Halt: This node must be authored
 
 * `[ ]`   `seed-host/factory` **Seed host factory constructing the concrete the configuration names over the family configuration, the borrowed encoder, and the caller's storage adapter, transport adapter, commitment adapter, and host conditions source, and returning it behind the family's trait; carries the family's integration test across factory and concretes, the Swarm transport and seed host milestone's integration test, and the milestone's commit**
 
