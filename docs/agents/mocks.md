@@ -645,7 +645,46 @@ This topic outranks the workplan. If a node step instructs a null/undefined-acce
 
 ## Forbidden (summary)
 
-modify or widen production types · invent shapes or type names · `as` · `satisfies` · overloads · type aliases that weaken checking · generic merge helpers · specialized mock variants instead of overrides · wrap one mock with another · duplicate builders · mock imported symbols / databases / repositories / external services · generic or shared invalidators · spread a class instance · cast an object literal to a class type · type a dep by a class instead of the interface it implements · a positional-argument constructor · a class instance invalidator or a constructor mock · a mock parameterized by, wrapping, or borrowing from a concrete · a test naming a concrete other than its subject · a test-local implementation of a trait a family's concretes implement · a test's consumer that does anything beyond the subject's single call · a function, outcome, or override carried in configuration for a mock concrete · a `Default`, `Arbitrary`, or `Dummy` bound to manufacture a value · `#[derive(Default)]` over a struct generic in a type parameter · a function mock fixed to one consumer · a function mock that panics or diverges · a mock concrete's own variant for an arm an input reaches · a dead error branch in the mock's no-failure path · a type chosen for a type parameter only to reach a value that depends on none of it · a type parameter on an item whose output does not carry it · a value that depends on no type parameter repeated as literals in a second item · an overrides struct whose fields are test instructions rather than the production type's fields · a declared-selection builder that overrides a concrete's configuration · a block run over a declared set that varies a concrete's own configuration · a test block that nests family consumers where the subject composes more than one family · a case runner's type declared in the mock file · a case runner level assembled by hand rather than from its family's builders · a case runner that unpacks a factory result by `expect` or alters a factory's error · a case runner that hands fewer adapters or produced values than some block of the module uses · a value a level determines carried in the case params or payload, or computed in a test.
+- modify or widen production types
+- invent shapes or type names
+- `as`
+- `satisfies`
+- overloads
+- type aliases that weaken checking
+- generic merge helpers
+- specialized mock variants instead of overrides
+- wrap one mock with another
+- duplicate builders
+- mock imported symbols / databases / repositories / external services
+- generic or shared invalidators
+- spread a class instance
+- cast an object literal to a class type
+- type a dep by a class instead of the interface it implements
+- a positional-argument constructor
+- a class instance invalidator or a constructor mock
+- a mock parameterized by, wrapping, or borrowing from a concrete
+- a test naming a concrete other than its subject
+- a test-local implementation of a trait a family's concretes implement
+- a test's consumer that does anything beyond the subject's single call
+- a function, outcome, or override carried in configuration for a mock concrete
+- a `Default`, `Arbitrary`, or `Dummy` bound to manufacture a value
+- `#[derive(Default)]` over a struct generic in a type parameter
+- a function mock fixed to one consumer
+- a function mock that panics or diverges
+- a mock concrete's own variant for an arm an input reaches
+- a dead error branch in the mock's no-failure path
+- a type chosen for a type parameter only to reach a value that depends on none of it
+- a type parameter on an item whose output does not carry it
+- a value that depends on no type parameter repeated as literals in a second item
+- an overrides struct whose fields are test instructions rather than the production type's fields
+- a declared-selection builder that overrides a concrete's configuration
+- a block run over a declared set that varies a concrete's own configuration
+- a test block that nests family consumers where the subject composes more than one family
+- a case runner's type declared in the mock file
+- a case runner level assembled by hand rather than from its family's builders
+- a case runner that unpacks a factory result by `expect` or alters a factory's error
+- a case runner that hands fewer adapters or produced values than some block of the module uses
+- a value a level determines carried in the case params or payload, or computed in a test.
 
 ## Architecture
 

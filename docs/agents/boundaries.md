@@ -58,6 +58,7 @@ Tests outside the crate consume the public surface and the official mocks under 
 
 - **Deps face inward, provides face outward.** A module depends on the modules beneath it and is depended on by the modules above it.
 - No reverse dependencies. No lateral layer violations.
+- Modules of one layer may depend on one another in one direction: a consumer on the provider of what it consumes. That dependency is not a lateral violation; a cycle among them is.
 - No dependency cycles unless a cycle is explicitly justified and recorded.
 - This is the same order the repo builds in — producers before consumers (see [tdd-ordering](tdd-ordering.md)).
 
