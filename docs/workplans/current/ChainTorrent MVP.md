@@ -104,51 +104,6 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `Cargo.toml`, `rust-toolchain.toml`, `deny.toml`, and `.gitignore` exist at the repository root with exactly the keys and values stated above and no others
     * `[✅]`   No directory exists under `crates/`, `adapters/`, or `apps/` when this node completes
 
-* `[✅]`   `workspace/ci` **Continuous-integration matrix over Windows, macOS, and Linux running the workspace checks, tests, and dependency audits**
-
-  * `[✅]`   `objective`
-    * `[✅]`   Problem: every ticket's proof, format, type check, lint, tests, license policy, and advisories, runs on each platform the completion boundary names
-    * `[✅]`   Functional: every push to any branch and every pull request to `main` runs the workspace proof on `ubuntu-latest`, `macos-latest`, and `windows-latest`, and a failure on one runner does not cancel the others
-    * `[✅]`   Functional: each runner installs the toolchain and components pinned by `rust-toolchain.toml`, never a toolchain named in the workflow
-    * `[✅]`   Functional: each runner runs, in order, the format check, the type check, the lint, the tests, the dependency-policy check, and the advisory audit, and any failure fails that runner's job
-    * `[✅]`   Non-functional: the workflow token is read-only, a newer run on the same ref cancels the older one, and no step exists beyond those listed here
-
-  * `[✅]`   `role`
-    * `[✅]`   Infrastructure: one configuration file with no types and no tests, exempt from the support-file structure
-    * `[✅]`   Does not create the Solidity, TypeScript, fuzz, or end-to-end workflow definitions, each a separate file created once by the ticket that first needs it, `contracts/evm/ParameterSets` for `forge build`, `forge fmt --check`, and `forge test`, the first shell or webview ticket for the TypeScript linter, the first fuzz target for `cargo-fuzz`, and the first end-to-end scenario for the clean-runner job; no later ticket edits `rust.yml`
-    * `[✅]`   Does not edit `.github/workflows/npm-publish.yml`
-    * `[✅]`   Does not package, sign, release, or publish, and reads no secret
-    * `[✅]`   Does not carry a commit; the grouping's integration test and commit are carried by `random/factory`
-
-  * `[✅]`   `module`
-    * `[✅]`   Bounded context: the Rust continuous-integration definition — triggers, token permissions, concurrency, the runner matrix, toolchain and tool installation, and the proof commands
-    * `[✅]`   Outside: the workspace configuration it reads (`workspace/cargo`), release packaging and signing, and every non-Rust check
-
-  * `[✅]`   `deps`
-    * `[✅]`   `workspace/cargo`, repository-root configuration: `Cargo.toml` for the members and lint table, `rust-toolchain.toml` for the toolchain and components, `deny.toml` for the dependency policy; the workflow consumes them and nothing in them refers to the workflow
-    * `[✅]`   `actions/checkout@v7`, external action, checks out the ref under test
-    * `[✅]`   `actions-rust-lang/setup-rust-toolchain@v2`, external action, given no `toolchain` input so it installs the toolchain and components from `rust-toolchain.toml`, caches through `Swatinem/rust-cache` by its default, and sets build warnings to deny by its default
-    * `[✅]`   `taiki-e/install-action@v2`, external action, installs prebuilt `cargo-deny` and `cargo-audit` on Linux, macOS, and Windows
-    * `[✅]`   No reverse dependency: no repository file reads the workflow
-
-  * `[✅]`   `.github/workflows/rust.yml`
-    * `[✅]`   `on`: `push` with `branches: ["**"]`, and `pull_request` with `branches: ["main"]`
-    * `[✅]`   `permissions`: `contents: read`
-    * `[✅]`   `concurrency`: `group: ${{ github.workflow }}-${{ github.ref }}` and `cancel-in-progress: true`
-    * `[✅]`   `name`: `Rust`
-    * `[✅]`   `env`: `CARGO_TERM_COLOR: always`
-    * `[✅]`   `jobs.build`: `strategy` with `fail-fast: false` and `matrix.os: [ubuntu-latest, macos-latest, windows-latest]`; `runs-on: ${{ matrix.os }}`
-    * `[✅]`   `jobs.build.steps`, in this order: `uses: actions/checkout@v7`; `uses: actions-rust-lang/setup-rust-toolchain@v2` with no `with` block; `uses: taiki-e/install-action@v2` with `tool: cargo-deny,cargo-audit`; `run: cargo fmt --all --check`; `run: cargo check --workspace --all-targets --all-features`; `run: cargo clippy --workspace --all-targets --all-features -- -D warnings`; `run: cargo test --workspace --all-features`; `run: cargo deny check`; `run: cargo audit`
-
-  * `[✅]`   `directionality`
-    * `[✅]`   The workflow depends inward on the root configuration and on pinned external actions; nothing in the repository depends on it; no cycle
-
-  * `[✅]`   `requirements`
-    * `[✅]`   `.github/workflows/rust.yml` carries exactly the triggers, permissions, concurrency, environment, matrix, and steps stated above, in that order, under the workflow name `Rust` and the job id `build`
-    * `[✅]`   On each runner, `cargo deny check` reads `deny.toml` without a configuration error
-    * `[✅]`   A formatting deviation, a clippy warning or denied lint, a failing test, a dependency outside the license allowlist or from an unlisted source, or an unignored advisory fails the job on the runner where it occurs
-    * `[✅]`   `cargo deny check` under `workspace/ci` reads `deny.toml` without a configuration error on Windows, macOS, and Linux
-
 * `[✅]`   `domain/secret` **Secret-typed value that cannot be formatted, cloned, or serialized, exposes its value only through an explicit accessor, and zeroizes on drop; creates the `domain` crate**
 
   * `[✅]`   `objective`
@@ -577,6 +532,51 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Structural: the virtual workspace manifest with its lint table and `librqbit` overlay, `rust-toolchain.toml`, `deny.toml`, `.gitignore`, `.github/workflows/rust.yml`, the `domain` crate with its `secret` module, and the `random` crate with its `factory` module and `os` concrete
     * `[✅]`   Behavioral: secrets zeroize on drop and cannot be formatted, cloned, or copied; random bytes are drawn from the operating system's generator into a `Secret` through the family's factory
     * `[✅]`   Contract: `Secret` with `try_new` and `expose`; `IRandomSourceAdapter` with `fill_bytes`, its params, payload, and return types, `RandomSourceDeclaration`, and `RANDOM_SOURCE_INTERFACE_VERSION`; `create_random_source` with its signature and return types
+
+* `[✅]`   `workspace/ci` **Continuous-integration matrix over Windows, macOS, and Linux running the workspace checks, tests, and dependency audits**
+
+  * `[✅]`   `objective`
+    * `[✅]`   Problem: every ticket's proof, format, type check, lint, tests, license policy, and advisories, runs on each platform the completion boundary names
+    * `[✅]`   Functional: every push to any branch and every pull request to `main` runs the workspace proof on `ubuntu-latest`, `macos-latest`, and `windows-latest`, and a failure on one runner does not cancel the others
+    * `[✅]`   Functional: each runner installs the toolchain and components pinned by `rust-toolchain.toml`, never a toolchain named in the workflow
+    * `[✅]`   Functional: each runner runs, in order, the format check, the type check, the lint, the tests, the dependency-policy check, and the advisory audit, and any failure fails that runner's job
+    * `[✅]`   Non-functional: the workflow token is read-only, a newer run on the same ref cancels the older one, and no step exists beyond those listed here
+
+  * `[✅]`   `role`
+    * `[✅]`   Infrastructure: one configuration file with no types and no tests, exempt from the support-file structure
+    * `[✅]`   Does not create the Solidity, TypeScript, fuzz, or end-to-end workflow definitions, each a separate file created once by the ticket that first needs it, `contracts/evm/ParameterSets` for `forge build`, `forge fmt --check`, and `forge test`, the first shell or webview ticket for the TypeScript linter, the first fuzz target for `cargo-fuzz`, and the first end-to-end scenario for the clean-runner job; no later ticket edits `rust.yml`
+    * `[✅]`   Does not edit `.github/workflows/npm-publish.yml`
+    * `[✅]`   Does not package, sign, release, or publish, and reads no secret
+    * `[✅]`   Does not carry a commit; the grouping's integration test and commit are carried by `random/factory`
+
+  * `[✅]`   `module`
+    * `[✅]`   Bounded context: the Rust continuous-integration definition — triggers, token permissions, concurrency, the runner matrix, toolchain and tool installation, and the proof commands
+    * `[✅]`   Outside: the workspace configuration it reads (`workspace/cargo`), release packaging and signing, and every non-Rust check
+
+  * `[✅]`   `deps`
+    * `[✅]`   `workspace/cargo`, repository-root configuration: `Cargo.toml` for the members and lint table, `rust-toolchain.toml` for the toolchain and components, `deny.toml` for the dependency policy; the workflow consumes them and nothing in them refers to the workflow
+    * `[✅]`   `actions/checkout@v7`, external action, checks out the ref under test
+    * `[✅]`   `actions-rust-lang/setup-rust-toolchain@v2`, external action, given no `toolchain` input so it installs the toolchain and components from `rust-toolchain.toml`, caches through `Swatinem/rust-cache` by its default, and sets build warnings to deny by its default
+    * `[✅]`   `taiki-e/install-action@v2`, external action, installs prebuilt `cargo-deny` and `cargo-audit` on Linux, macOS, and Windows
+    * `[✅]`   No reverse dependency: no repository file reads the workflow
+
+  * `[✅]`   `.github/workflows/rust.yml`
+    * `[✅]`   `on`: `push` with `branches: ["**"]`, and `pull_request` with `branches: ["main"]`
+    * `[✅]`   `permissions`: `contents: read`
+    * `[✅]`   `concurrency`: `group: ${{ github.workflow }}-${{ github.ref }}` and `cancel-in-progress: true`
+    * `[✅]`   `name`: `Rust`
+    * `[✅]`   `env`: `CARGO_TERM_COLOR: always`
+    * `[✅]`   `jobs.build`: `strategy` with `fail-fast: false` and `matrix.os: [ubuntu-latest, macos-latest, windows-latest]`; `runs-on: ${{ matrix.os }}`
+    * `[✅]`   `jobs.build.steps`, in this order: `uses: actions/checkout@v7`; `uses: actions-rust-lang/setup-rust-toolchain@v2` with no `with` block; `uses: taiki-e/install-action@v2` with `tool: cargo-deny,cargo-audit`; `run: cargo fmt --all --check`; `run: cargo check --workspace --all-targets --all-features`; `run: cargo clippy --workspace --all-targets --all-features -- -D warnings`; `run: cargo test --workspace --all-features`; `run: cargo deny check`; `run: cargo audit`
+
+  * `[✅]`   `directionality`
+    * `[✅]`   The workflow depends inward on the root configuration and on pinned external actions; nothing in the repository depends on it; no cycle
+
+  * `[✅]`   `requirements`
+    * `[✅]`   `.github/workflows/rust.yml` carries exactly the triggers, permissions, concurrency, environment, matrix, and steps stated above, in that order, under the workflow name `Rust` and the job id `build`
+    * `[✅]`   On each runner, `cargo deny check` reads `deny.toml` without a configuration error
+    * `[✅]`   A formatting deviation, a clippy warning or denied lint, a failing test, a dependency outside the license allowlist or from an unlisted source, or an unignored advisory fails the job on the runner where it occurs
+    * `[✅]`   `cargo deny check` under `workspace/ci` reads `deny.toml` without a configuration error on Windows, macOS, and Linux
 
 * **Cryptographic validation harness**
 

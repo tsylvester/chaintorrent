@@ -77,10 +77,10 @@ Each entry names its nodes in Work Breakdown Structure order and, per node, the 
 * `[ ]`   `workspace/cargo`
 * `[ ]`   `domain/secret`
 * `[ ]`   `random/os`
-* `[ ]`   `random/lookup_random_declaration`
-* `[ ]`   `random/admit_random_selection`
-* `[ ]`   `random/admit_random_composition`
-* `[ ]`   `random/factory`
+* `[ ]`   `random/lookup_random_declaration` — Halt: This node must be authored
+* `[ ]`   `random/admit_random_selection` — Halt: This node must be authored
+* `[ ]`   `random/admit_random_composition` — Halt: This node must be authored
+* `[ ]`   `random/factory` — Halt: This node must be revised
 * `[ ]`   `workspace/ci`
 
 ### Pairing adapters and key derivation (harness grouping)
@@ -89,10 +89,10 @@ Each entry names its nodes in Work Breakdown Structure order and, per node, the 
 * `[ ]`   `pairing/bn254_halo2curves`
 * `[ ]`   `pairing/bls12_381_arkworks`
 * `[ ]`   `pairing/bls12_381_halo2curves`
-* `[ ]`   `pairing/lookup_pairing_declaration`
-* `[ ]`   `pairing/admit_pairing_selection`
-* `[ ]`   `pairing/admit_pairing_composition`
-* `[ ]`   `pairing/factory`
+* `[ ]`   `pairing/lookup_pairing_declaration` — Halt: This node must be authored
+* `[ ]`   `pairing/admit_pairing_selection` — Halt: This node must be authored
+* `[ ]`   `pairing/admit_pairing_composition` — Halt: This node must be authored
+* `[ ]`   `pairing/factory` — Halt: This node must be revised
 * `[ ]`   `harness-crypto/benchmark`
 * `[ ]`   `domain/deployment_identity`
 * `[ ]`   `domain/suite_identifier`
@@ -100,44 +100,44 @@ Each entry names its nodes in Work Breakdown Structure order and, per node, the 
 * `[ ]`   `domain/group_index`
 * `[ ]`   `domain/piece_geometry`
 * `[ ]`   `hashing/blake3_bao`
-* `[ ]`   `hashing/lookup_hashing_declaration`
-* `[ ]`   `hashing/admit_hashing_selection`
-* `[ ]`   `hashing/admit_hashing_composition`
-* `[ ]`   `hashing/factory`
+* `[ ]`   `hashing/lookup_hashing_declaration` — Halt: This node must be authored
+* `[ ]`   `hashing/admit_hashing_selection` — Halt: This node must be authored
+* `[ ]`   `hashing/admit_hashing_composition` — Halt: This node must be authored
+* `[ ]`   `hashing/factory` — Halt: This node must be revised
 * `[ ]`   `encoding/canonical_field_reader`
 * `[ ]`   `encoding/abi`
-* `[ ]`   `encoding/lookup_encoding_declaration`
-* `[ ]`   `encoding/admit_encoding_selection`
-* `[ ]`   `encoding/admit_encoding_composition`
-* `[ ]`   `encoding/factory`
+* `[ ]`   `encoding/lookup_encoding_declaration` — Halt: This node must be authored
+* `[ ]`   `encoding/admit_encoding_selection` — Halt: This node must be authored
+* `[ ]`   `encoding/admit_encoding_composition` — Halt: This node must be authored
+* `[ ]`   `encoding/factory` — Halt: This node must be revised
 * `[ ]`   `kdf/blake3_keyed`
-* `[ ]`   `kdf/lookup_kdf_declaration`
-* `[ ]`   `kdf/admit_kdf_selection`
-* `[ ]`   `kdf/admit_kdf_composition`
-* `[ ]`   `kdf/factory`
+* `[ ]`   `kdf/lookup_kdf_declaration` — Halt: This node must be authored
+* `[ ]`   `kdf/admit_kdf_selection` — Halt: This node must be authored
+* `[ ]`   `kdf/admit_kdf_composition` — Halt: This node must be authored
+* `[ ]`   `kdf/factory` — Halt: This node must be revised
 * `[ ]`   `hash-to-scalar/keccak256`
-* `[ ]`   `hash-to-scalar/lookup_hash_to_scalar_declaration`
-* `[ ]`   `hash-to-scalar/admit_hash_to_scalar_selection`
-* `[ ]`   `hash-to-scalar/admit_hash_to_scalar_composition`
-* `[ ]`   `hash-to-scalar/factory`
+* `[ ]`   `hash-to-scalar/lookup_hash_to_scalar_declaration` — Halt: This node must be authored
+* `[ ]`   `hash-to-scalar/admit_hash_to_scalar_selection` — Halt: This node must be authored
+* `[ ]`   `hash-to-scalar/admit_hash_to_scalar_composition` — Halt: This node must be authored
+* `[ ]`   `hash-to-scalar/factory` — Halt: This node must be revised
 
 ### Signature services (protocol core; runs beside the harness from `encoding/factory`)
 
 * `[ ]`   `signature/ed25519`
 * `[ ]`   `signature/secp256k1`
 * `[ ]`   `signature/ml_dsa_65`
-* `[ ]`   `signature/lookup_signature_declaration`
-* `[ ]`   `signature/admit_signature_selection`
-* `[ ]`   `signature/admit_signature_composition`
-* `[ ]`   `signature/factory`
+* `[ ]`   `signature/lookup_signature_declaration` — Halt: This node must be authored
+* `[ ]`   `signature/admit_signature_selection` — Halt: This node must be authored
+* `[ ]`   `signature/admit_signature_composition` — Halt: This node must be authored
+* `[ ]`   `signature/factory` — Halt: This node must be revised
 
 ### Credential KEM
 
 * `[ ]`   `kem/bb1_depth_one`
-* `[ ]`   `kem/lookup_kem_declaration`
-* `[ ]`   `kem/admit_kem_selection`
-* `[ ]`   `kem/admit_kem_composition`
-* `[ ]`   `kem/factory`
+* `[ ]`   `kem/lookup_kem_declaration` — Halt: This node must be authored
+* `[ ]`   `kem/admit_kem_selection` — Halt: This node must be authored
+* `[ ]`   `kem/admit_kem_composition` — Halt: This node must be authored
+* `[ ]`   `kem/factory` — Halt: This node must be revised
 * `[ ]`   `workflows/sidecar/derivation_context`
 * `[ ]`   `workflows/sidecar/wrap`
 * `[ ]`   `workflows/sidecar/unwrap`
@@ -146,10 +146,10 @@ Each entry names its nodes in Work Breakdown Structure order and, per node, the 
 
 * `[ ]`   `envelope/possession_statement`
 * `[ ]`   `envelope/pairing_elgamal`
-* `[ ]`   `envelope/lookup_envelope_declaration`
-* `[ ]`   `envelope/admit_envelope_selection`
-* `[ ]`   `envelope/admit_envelope_composition`
-* `[ ]`   `envelope/factory`
+* `[ ]`   `envelope/lookup_envelope_declaration` — Halt: This node must be authored
+* `[ ]`   `envelope/admit_envelope_selection` — Halt: This node must be authored
+* `[ ]`   `envelope/admit_envelope_composition` — Halt: This node must be authored
+* `[ ]`   `envelope/factory` — Halt: This node must be revised
 
 ### Delivery proof and on-chain verifier
 
