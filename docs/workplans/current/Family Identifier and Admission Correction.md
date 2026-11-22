@@ -153,13 +153,13 @@ Each entry names its nodes in Work Breakdown Structure order and, per node, the 
 
 ### Delivery proof and on-chain verifier
 
-*Chain forms sequence — precedes every proof ticket (requires `signature/factory` from the parallel milestone):*
+*Chain-forms family — precedes every proof ticket (requires `signature/factory`):*
 
-* `[ ]`   `chain/evm_forms`
-* `[ ]`   `chain/lookup_chain_declaration`
-* `[ ]`   `chain/admit_chain_selection`
-* `[ ]`   `chain/admit_chain_composition`
-* `[ ]`   `chain/create_chain_forms`
+* `[ ]`   `chain-forms/evm`
+* `[ ]`   `chain-forms/lookup_chain_declaration` — Halt: This node must be revised
+* `[ ]`   `chain-forms/admit_chain_selection` — Halt: This node must be revised
+* `[ ]`   `chain-forms/admit_chain_composition` — Halt: This node must be revised
+* `[ ]`   `chain-forms/factory` — Halt: This node must be revised
 
 *Proof family:*
 
@@ -167,10 +167,10 @@ Each entry names its nodes in Work Breakdown Structure order and, per node, the 
 * `[ ]`   `proof/transfer_statement`
 * `[ ]`   `proof/schnorr_fs/challenge`
 * `[ ]`   `proof/schnorr_fs`
-* `[ ]`   `proof/lookup_proof_declaration`
-* `[ ]`   `proof/admit_proof_selection`
-* `[ ]`   `proof/admit_proof_composition`
-* `[ ]`   `proof/factory`
+* `[ ]`   `proof/lookup_proof_declaration` — Halt: This node must be authored
+* `[ ]`   `proof/admit_proof_selection` — Halt: This node must be authored
+* `[ ]`   `proof/admit_proof_composition` — Halt: This node must be authored
+* `[ ]`   `proof/factory` — Halt: This node must be revised
 
 *Delivery functions:*
 
@@ -200,10 +200,10 @@ Each entry names its nodes in Work Breakdown Structure order and, per node, the 
 * `[ ]`   `domain/handshake_key_commitment`
 * `[ ]`   `chain/base/settings`
 * `[ ]`   `chain/base`
-* `[ ]`   `chain/lookup_chain_declaration`
-* `[ ]`   `chain/admit_chain_selection`
-* `[ ]`   `chain/admit_chain_composition`
-* `[ ]`   `chain/factory`
+* `[ ]`   `chain/lookup_chain_declaration` — Halt: This node must be authored
+* `[ ]`   `chain/admit_chain_selection` — Halt: This node must be authored
+* `[ ]`   `chain/admit_chain_composition` — Halt: This node must be authored
+* `[ ]`   `chain/factory` — Halt: This node must be revised
 
 *Verifier family:*
 
@@ -254,40 +254,40 @@ Each entry names its nodes in Work Breakdown Structure order and, per node, the 
 
 ### Swarm transport and seed host
 
-* `[ ]`   `transport/rqbit/settings`
-* `[ ]`   `transport/rqbit`
-* `[ ]`   `transport/lookup_transport_declaration`
-* `[ ]`   `transport/admit_transport_selection`
-* `[ ]`   `transport/admit_transport_composition`
-* `[ ]`   `transport/factory`
+* `[ ]`   `transport/rqbit/settings` — Halt: This node must be authored
+* `[ ]`   `transport/rqbit` — Halt: This node must be revised
+* `[ ]`   `transport/lookup_transport_declaration` — Halt: This node must be authored
+* `[ ]`   `transport/admit_transport_selection` — Halt: This node must be authored
+* `[ ]`   `transport/admit_transport_composition` — Halt: This node must be authored
+* `[ ]`   `transport/factory` — Halt: This node must be revised
 * `[ ]`   `discovery/admit_peers`
-* `[ ]`   `discovery/local/settings`
-* `[ ]`   `discovery/local`
+* `[ ]`   `discovery/local/settings` — Halt: This node must be authored
+* `[ ]`   `discovery/local` — Halt: This node must be revised
 * `[ ]`   `discovery/locator_of`
-* `[ ]`   `discovery/dht/settings`
-* `[ ]`   `discovery/dht`
-* `[ ]`   `discovery/pex/settings`
-* `[ ]`   `discovery/pex`
-* `[ ]`   `discovery/tracker/settings`
-* `[ ]`   `discovery/tracker`
+* `[ ]`   `discovery/dht/settings` — Halt: This node must be authored
+* `[ ]`   `discovery/dht` — Halt: This node must be revised
+* `[ ]`   `discovery/pex/settings` — Halt: This node must be authored
+* `[ ]`   `discovery/pex` — Halt: This node must be revised
+* `[ ]`   `discovery/tracker/settings` — Halt: This node must be authored
+* `[ ]`   `discovery/tracker` — Halt: This node must be revised
 * `[ ]`   `discovery/aggregate`
-* `[ ]`   `discovery/lookup_discovery_declaration`
-* `[ ]`   `discovery/admit_discovery_selection`
-* `[ ]`   `discovery/admit_discovery_composition`
-* `[ ]`   `discovery/factory`
+* `[ ]`   `discovery/lookup_discovery_declaration` — Halt: This node must be authored
+* `[ ]`   `discovery/admit_discovery_selection` — Halt: This node must be authored
+* `[ ]`   `discovery/admit_discovery_composition` — Halt: This node must be authored
+* `[ ]`   `discovery/factory` — Halt: This node must be revised
 * `[ ]`   `storage/redb`
-* `[ ]`   `storage/lookup_storage_declaration`
-* `[ ]`   `storage/admit_storage_selection`
-* `[ ]`   `storage/admit_storage_composition`
-* `[ ]`   `storage/factory`
-* `[ ]`   `seed-host/owned/settings`
-* `[ ]`   `seed-host/owned`
-* `[ ]`   `seed-host/rqbit/settings`
-* `[ ]`   `seed-host/rqbit`
-* `[ ]`   `seed-host/lookup_seed_host_declaration`
-* `[ ]`   `seed-host/admit_seed_host_selection`
-* `[ ]`   `seed-host/admit_seed_host_composition`
-* `[ ]`   `seed-host/factory` 
+* `[ ]`   `storage/lookup_storage_declaration` — Halt: This node must be authored
+* `[ ]`   `storage/admit_storage_selection` — Halt: This node must be authored
+* `[ ]`   `storage/admit_storage_composition` — Halt: This node must be authored
+* `[ ]`   `storage/factory` — Halt: This node must be revised
+* `[ ]`   `seed-host/owned/settings` — Halt: This node must be authored
+* `[ ]`   `seed-host/owned` — Halt: This node must be revised
+* `[ ]`   `seed-host/rqbit/settings` — Halt: This node must be authored
+* `[ ]`   `seed-host/rqbit` — Halt: This node must be revised
+* `[ ]`   `seed-host/lookup_seed_host_declaration` — Halt: This node must be authored
+* `[ ]`   `seed-host/admit_seed_host_selection` — Halt: This node must be authored
+* `[ ]`   `seed-host/admit_seed_host_composition` — Halt: This node must be authored
+* `[ ]`   `seed-host/factory` — Halt: This node must be revised
 
 ## Completion check
 
