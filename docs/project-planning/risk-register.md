@@ -94,7 +94,7 @@ External cryptographic review of the composition and the contract verifier befor
 
 ## Mitigation Plan
 - Implement the verifier in Rust and Solidity from the same statement of the relations; treat the Rust verifier as the reference and the contract as its port.
-- Declare the target-group encoding identifier in the pairing family, total over the real declared concretes, require it in the suite, and prove every pairing concrete by executing the identifier's definition in its tests — declarations obtained without construction and each Rust, Solidity, pairing, generator, and verifier composition admitted before execution or deployment — including its exact final exponent, and prove the two concretes of each curve equal to each other, since a library's reduced pairing may be a fixed multiple of the exact value and still pass every pairing-equation check.
+- Declare the target-group encoding identifier in the pairing family, total over the real declared concretes, require it in the suite, and prove every pairing concrete by executing the identifier's definition in its tests — declarations obtained without construction and each Rust, Solidity, pairing, chain forms, chain, generator, and verifier composition admitted before execution or deployment, the resolved forms and chain declarations read through their own families' declaration lookups — including its exact final exponent, and prove the two concretes of each curve equal to each other, since a library's reduced pairing may be a fixed multiple of the exact value and still pass every pairing-equation check.
 - Mutation and replay test suite over every statement field, both curve forms.
 - Commission external review in parallel with the harness, scoped to the composition claims and the verifier.
 - Gate the priced dogfood deployment on the review's result.
@@ -245,7 +245,7 @@ Medium. Exhaustion stops free onboarding, which is the MVP's only onboarding; gr
 Medium for cost growth with success, since on Base L2 execution is cheap and the L1 data-posting fee is the dominant and measurable component; Medium for deliberate abuse.
 
 ## Mitigation
-Per-identity rate limits under relayer policy, the decisions carried as owning identifiers; short published lock expiries with refund; explicit sponsorship failure states as typed identifiers that never produce a false-authorization refusal value; relayer gas recorded per install, the cost reported through the verifier family's description of the concrete's own cost type, its entries owning identifiers and family-owned value types (LC-10, RO-01, RO-03, AS-27). Bundlers and paymasters on Base — members selected through settings-carrying admission — make sponsored transactions available but do not remove the project's gas bill, gas, cost, and budget outcomes rendered only at the reporting boundary. The subsidy is named as scaffolding to be replaced.
+Per-identity rate limits under relayer policy, the decisions carried as owning identifiers; short published lock expiries with refund; explicit sponsorship failure states as typed identifiers that never produce a false-authorization refusal value; relayer gas recorded per install, the cost carried by the verifier family's cost description, which carries the chain family's estimated-fee description whose entries take names and units from the producing chain member's declaration (LC-10, RO-01, RO-03, AS-27). Bundlers and paymasters on Base — members selected through settings-carrying admission — make sponsored transactions available but do not remove the project's gas bill, gas, cost, and budget outcomes rendered only at the reporting boundary. The subsidy is named as scaffolding to be replaced.
 
 ## Seed Examples
 - Many fresh identities flood free mints for one package; each mint costs a precompile verification.
@@ -320,7 +320,7 @@ Restate the legal framings as analogies and name licensing as the actual protect
 - **Affected components:** business case, licensing, relayer, priced dogfood path.
 - **Dependencies:** R-01.
 - **Sequencing:** before the transaction flow proof.
-- **Guardrails:** no priced deployment before legal review; the payment asset and sponsorship mechanism are compared as identifiers in legal-review, dogfood, lock, and deployment records, and payment, submission, and chain composition admission completes before any priced deployment or transaction.
+- **Guardrails:** no priced deployment before legal review; the payment asset and sponsorship mechanism are compared as identifiers in legal-review, dogfood, lock, and deployment records, and payment, submission, chain forms, and chain composition admission completes, the forms and chain selections admitted separately through their own families, before any priced deployment or transaction.
 - **Signals:** none technical.
 - **Open questions:** which jurisdictions; whether the reference client and protocol libraries carry different licenses.
 
@@ -366,7 +366,7 @@ Medium. Reads are protected by multi-node views and continue through a sequencer
 Medium. OP Stack upgrades are routine. EIP-2537 is confirmed live on Base since Isthmus activated on 9 May 2025, so the precompile gate is closed; Arbitrum's remains unconfirmed and it stays out of member and network identifier variants and declared fallback sets until a real confirmed member provides it.
 
 ## Mitigation
-Chain behind an adapter with settlement expressed through the settlement family's tier identifiers rather than confirmation counts; state views from a quorum of configured nodes at a common reference with divergence failing closed (XA-06); a launch network admitted only after its declarations prove the required precompile and verifier-form capabilities; gas instrumented.
+Chain behind an adapter with settlement expressed through the chain family's settlement-tier identifiers rather than confirmation counts; state views from a quorum of configured nodes at a common reference with divergence failing closed (XA-06); a launch network admitted only after each providing family's admission proves compatibility — the chain declaration binding a forms identifier, chain composition admission comparing that requirement with the resolved forms declaration, pairing composition admission comparing the precompile-encoding requirements and provisions, and proof composition admission comparing the verifier-form requirements; gas instrumented.
 
 ## Seed Examples
 - Base's sequencer stalls; mints, grants, and transfers wait while reads continue from configured nodes until the freshest agreeing view ages past `τ_soft`.
@@ -453,7 +453,7 @@ Keep every service behind an interface with a documented replacement path; the s
 Low. The exposure is one entitlement's credential held by a non-holder, the same bounded quantity a seller could produce by leaking its own; forward-only, non-compounding, self-healing, and the seller may re-post.
 
 ## Likelihood
-Low for public free packages reading at the settlement family's `INCLUDED` tier identifier, which accept a higher frequency of an already-accepted failure; lower for priced deployments declaring a deeper tier identifier.
+Low for public free packages reading at the chain family's `INCLUDED` settlement-tier identifier, which accept a higher frequency of an already-accepted failure; lower for priced deployments declaring a deeper tier identifier.
 
 ## Mitigation
 Reads at the declared settlement-tier identifier, destruction at its `HARD` member, the tier declared per deployment and immutable; scarcity is ordered by the ledger, never by a credential (LC-04, LC-05, AS-19).
