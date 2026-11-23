@@ -1350,8 +1350,6 @@ A developer installs dependencies and receives a working `node_modules` assemble
 
 * `[ ]`   `transport/admit_transport_selection` — Halt: This node must be authored
 
-* `[ ]`   `transport/admit_transport_composition` — Halt: This node must be authored
-
 * `[ ]`   `transport/factory` **Transport factory constructing the concrete the configuration names over the family configuration, and returning it behind the family's trait, which reports its declaration and the address it listens on and exposes the engine capability; carries the family's integration test across factory and concrete**
 
   * `[ ]`   `objective`

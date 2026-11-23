@@ -38,7 +38,7 @@ A node marked complete whose content changes returns to unbuilt, and its files a
 - Find each node by its heading, the backticked node name at the start of a top-level bullet, in the document.
 - Do not read forward. You will not benefit from swamping your context by trying to read everything at once. Read incrementally as you go. 
 - Edit only the bullets named below and leave every other bullet as it is.
-- New or rewritten bullets in a `[ ]` node take `[ ]`. Bullets in a `[✅]` node keep `[✅]`.
+- Elements in a workplan node follow the status marking rules from `workplan-structure.md`.
 - Where an item says "replace X with Y", X is quoted from the node exactly; find it and substitute Y word for word.
 - Keep each bullet on one unbroken line.
 - Put no rule names or explanations into node text. Write the text the item gives.

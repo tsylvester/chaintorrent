@@ -42,22 +42,22 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
 ## Pairing adapters and key derivation
 
-* `[✅]`   `hashing/blake3_bao` **BLAKE3/Bao commitment concrete computing an object's root and outboard, plain or keyed, verifying content against them whole or one chunk at a time with an authentication path, and answering chunk custody challenges; creates the `adapters/hashing` crate and authors the hashing family's generic interface, root, outboard, path, and chunk types, commitment-scheme identifier, declaration, and mock**
+* `[ ]`   `hashing/blake3_bao` **BLAKE3/Bao commitment concrete computing an object's root and outboard, plain or keyed, verifying content against them whole or one chunk at a time with an authentication path, and answering chunk custody challenges; creates the `adapters/hashing` crate and authors the hashing family's generic interface, root, outboard, path, and chunk types, the typed member identifier `CommitmentConcrete` with its real-only declared set `COMMITMENT_CONCRETES` and total member spellings, the commitment-scheme value identifier with its total spelling and `uint8` wire code, declaration, and mock**
 
-  * `[✅]`   `objective`
+  * `[ ]`   `objective`
     * `[✅]`   Problem: the asset's identity is the object's BLAKE3/Bao root, the plaintext root for a public asset and the ciphertext root for a private one, and every ciphertext, sidecar, and plaintext commitment is checked against a root, chunk by chunk, before any byte is stored or served, so root construction, verification, and custody challenges pass through one repo-owned interface and no module outside a concrete names the hash library (CR-02; EC-02; SW-04; `docs/research/cryptography.md`'s Content Identity, Content Commitments, Plaintext Root Disclosure Modes, Units, and Incremental Verification statements)
     * `[✅]`   Functional: the family's generic interface computes, over a byte string, a root and an outboard, the tree's parent nodes held apart from the content, either plain or under a borrowed 32-byte key for the keyed plaintext-root disclosure mode
     * `[✅]`   Functional: the interface verifies a whole byte string against a root and an outboard, naming the first root, parent, or chunk that fails, and verifies one chunk against a root with an authentication path, the ordered sibling chaining values from the root down to that chunk
     * `[✅]`   Functional: the interface extracts the authentication path of one chunk from an outboard, maps uniform bytes supplied by the caller to a chunk index within an object's chunk count, and answers a challenge with the chunk's bytes and its path
     * `[✅]`   Functional: the root type holds exactly 32 bytes by its type and refuses the all-zero value at construction; the outboard, path, and chunk types are plain data whose fit to an object the concrete decides when it uses them
     * `[✅]`   Functional: every hashing operation is over bytes; the family carries no digest operation, no identity-hash identifier, and no operation that derives a root from a name
-    * `[✅]`   Functional: every concrete declares its commitment-scheme identifier, which a deployment's hash-card carries, its chunk length, its key length, its adapter version, and the interface version it implements, readable before any instance exists
+    * `[ ]`   Functional: every concrete declares its commitment-scheme value identifier, which a deployment's hash-card carries and whose total spelling and `uint8` wire code each real variant holds with `MockV1` absent from the real identifier, its typed member identifier `CommitmentConcrete` drawn from the real-only declared set `COMMITMENT_CONCRETES` with total member spellings, its chunk length, its key length, its adapter version, and the interface version it implements, the declaration carrying typed member identity and no duplicate text name, read through `hashing/lookup_hashing_declaration` before any instance exists
     * `[✅]`   Functional: the BLAKE3/Bao concrete's plain root equals the `bao_hash` of bao's published test vectors and its plain outboard equals bao's outboard encoding for the same inputs; its keyed root equals BLAKE3's `keyed_hash` of the content under the key
     * `[✅]`   Functional: corruption of a root, a parent node, a chunk, a length, or the order of chunks is refused with the family's error naming where it failed (CR-02)
     * `[✅]`   Non-functional: `blake3` and `bao` are named only inside `adapters/hashing/src/blake3_bao`; every keyed hasher and every copy of a key is zeroized after use; the crate depends on no repository crate but `domain` at runtime and on no encoding
 
-  * `[✅]`   `role`
-    * `[✅]`   Adapter: the hashing family's first concrete, and the first source file that requires the family's generic interface, the root, outboard, authentication path, and chunk types, the commitment-scheme identifier, the declaration, and the family's mock, which it authors in the family's `factory` module as its producers
+  * `[ ]`   `role`
+    * `[ ]`   Adapter: the hashing family's first concrete, and the first source file that requires the family's generic interface, the root, outboard, authentication path, and chunk types, the commitment-scheme value identifier, the typed member identifier `CommitmentConcrete` with the real-only declared set `COMMITMENT_CONCRETES` and total member spellings, the declaration, and the family's mock, which it authors in the family's `factory` module as its producers
     * `[✅]`   Creates `factory/mod.rs` with the module wiring and the root type's constructor and accessor, and `factory/provides.rs` with the interface and mock surface; the factory function, its types, its interaction spec, its unit test, its re-export, and the family's integration test are `hashing/factory`'s
     * `[✅]`   Does not encode any value
     * `[✅]`   Does not draw randomness; a challenge maps uniform bytes its caller drew to a chunk index
@@ -65,10 +65,10 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Does not map the commitment-scheme identifier to the hash-card's `commitmentSchemeId` byte; the hash-card's own encoding does that
     * `[✅]`   Does not carry a commit
 
-  * `[✅]`   `module`
-    * `[✅]`   Bounded context: the `adapters/hashing` crate's `factory` module, holding the family's generic trait, the root, outboard, authentication path, and chunk types, the commitment key, each method's params, payload, success, error, and return types, the outboard layout constants, the commitment-scheme identifier, the declaration, the interface version, and the family's mock; and its private `blake3_bao` concrete, holding the adapter over `blake3` and `bao`, its constructor params and return, its chunk and key lengths, and its own error
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the `adapters/hashing` crate's `factory` module, holding the family's generic trait, the root, outboard, authentication path, and chunk types, the commitment key, each method's params, payload, success, error, and return types, the outboard layout constants, the commitment-scheme value identifier with its total spelling and `uint8` wire code, the typed member identifier `CommitmentConcrete` with the real-only declared set `COMMITMENT_CONCRETES` and total member spellings, the declaration, the interface version, and the family's mock; and its private `blake3_bao` concrete, holding the adapter over `blake3` and `bao`, its constructor params and return, its chunk and key lengths, and its own error
     * `[✅]`   Creates the crate at `adapters/hashing`, admitted by the workspace's `adapters/*` glob with no edit to the root manifest
-    * `[✅]`   Outside: the root's encoding, which bytes a caller commits and what it keys, where roots, outboards, and chunks are stored or carried, the random draw behind a challenge, and the factory's selection of a concrete
+    * `[ ]`   Outside: the root's encoding, which bytes a caller commits and what it keys, where roots, outboards, and chunks are stored or carried, the random draw behind a challenge, and the factory's selection and admissions of a concrete — real selections carry no settings and selection admission refuses every supplied setting, no settings module or table exists, declaration reads use `hashing/lookup_hashing_declaration`, and composition admission precedes construction
 
   * `[✅]`   `deps`
     * `[✅]`   `domain`, `crates/domain`, protocol and domain ring, path dependency; supplies `Secret` and `Secret::expose`, the wrapper of a borrowed key; direction inward, adapter ring on domain ring
@@ -103,11 +103,12 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   The crate barrel: `mod blake3_bao;`, `mod factory;`, and `pub use factory::provides::*;`, nothing else
     * `[✅]`   Until `factory/mod.rs` and `blake3_bao/mod.rs` exist, `cargo check` reports the unresolved modules, which is the RED state for every element below that precedes them
 
-  * `[✅]`   `adapters/hashing/src/factory/interface.rs`
+  * `[ ]`   `adapters/hashing/src/factory/interface.rs`
     * `[✅]`   `COMMITMENT_INTERFACE_VERSION`, a `pub const` of type `u32` with value `1`
     * `[✅]`   The outboard layout every concrete writes and reads, each a `pub const`: `CHAINING_VALUE_LENGTH: usize = 32`, `OUTBOARD_HEADER_LENGTH: usize = 8`, the content length as little-endian `u64` bytes at the outboard's head, and `OUTBOARD_PARENT_LENGTH: usize = 64`, one parent node, its left child's chaining value followed by its right child's; after the header the parent nodes follow in pre-order, root first, left subtree before right, one per parent of the tree, so an object of `n` chunks has `n − 1` parent nodes; a subtree longer than one chunk splits so its left child holds the largest power-of-two number of chunks strictly less than the subtree's chunk count, its right child the rest; empty content is one empty chunk
-    * `[✅]`   `CommitmentSchemeIdentifier`, an enum with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]` and the variant `Blake3BaoV1`, the identifier a deployment's hash-card names, and, behind `#[cfg(any(test, feature = "mocks"))]`, the variant `MockV1`, the identifier the family's mock concrete declares
-    * `[✅]`   `CommitmentDeclaration`, a struct with `pub identifier: CommitmentSchemeIdentifier`, `pub chunk_length: u64`, `pub key_length: usize`, `pub adapter_version: u32`, and `pub interface_version: u32`
+    * `[ ]`   `CommitmentSchemeIdentifier`, an enum with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]` and the one real variant `Blake3BaoV1`, the identifier a deployment's hash-card names, with an exhaustive `name()` mapping spelling `blake3_bao_v1` and `uint8` wire code `1`; the real value identifier carries no `MockV1`, the family's mock concrete declaring no scheme identifier the hash-card names
+    * `[ ]`   `CommitmentConcrete`, an enum with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]`, the real variant `Blake3Bao` and, behind `#[cfg(any(test, feature = "mocks"))]`, `Mock(MockICommitmentAdapterFailureMode)`, with an exhaustive `name()` mapping spelling `blake3_bao` and `mock`; `COMMITMENT_CONCRETES: &[CommitmentConcrete]` containing only the real `Blake3Bao` member, so input admission accepts only declared real spellings and never mock text
+    * `[ ]`   `CommitmentDeclaration`, a struct with `pub concrete: CommitmentConcrete`, `pub identifier: CommitmentSchemeIdentifier`, `pub chunk_length: u64`, `pub key_length: usize`, `pub adapter_version: u32`, and `pub interface_version: u32`, the typed member identity carried with no duplicate text name
     * `[✅]`   `Root`, a struct with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]` and the one field `pub(super) bytes: [u8; 32]`, so only the `factory` module and its children reach the field; `RootConstructorParams`, a struct with `pub bytes: [u8; 32]`; `RootTryNewErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the one variant `AllZero`; `RootTryNewReturn`, the alias `Result<Root, RootTryNewErrorReturn>`
     * `[✅]`   `Outboard`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and `pub bytes: Vec<u8>`; `AuthenticationPath`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and `pub siblings: Vec<[u8; 32]>`, ordered from the root's children down to the chunk's sibling; `Chunk`, a struct with `#[derive(Clone, Debug, PartialEq, Eq)]` and `pub bytes: Vec<u8>`
     * `[✅]`   `CommitmentKey<'a>`, an enum with the variants `Unkeyed` and `Keyed(&'a Secret<Vec<u8>>)`, the mode the root is computed in and, when keyed, the borrowed key; no derives
@@ -126,20 +127,21 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `RespondErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `OutboardTruncated { length: usize }`, `ContentLengthMismatch { declared: u64, actual: u64 }`, `OutboardLengthMismatch { expected: u64, actual: u64 }`, `ChunkIndexOutOfRange { chunk_index: u64, chunk_count: u64 }`, `Blake3Bao(Blake3BaoCommitmentErrorReturn)`, and, behind `#[cfg(any(test, feature = "mocks"))]`, `Mock(MockICommitmentAdapterErrorReturn)`
     * `[✅]`   `CommitReturn`, `VerifyReturn`, `ExtractPathReturn`, `VerifyChunkReturn`, `ChallengeReturn`, and `RespondReturn`, each the alias `Result<{Method}SuccessReturn, {Method}ErrorReturn>`
     * `[✅]`   `MockICommitmentAdapterFailureMode`, behind `#[cfg(any(test, feature = "mocks"))]`, an enum with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]` and the variants `NoFailure`, `ContentLengthUnrepresentable`, and `OffsetUnrepresentable`, the failure modes a configuration selects for the family's mock concrete; the second and third stand for a concrete's own error when a byte length does not fit a `u64` or an offset does not fit a `usize`
-    * `[✅]`   `ICommitmentAdapter`, an object-safe trait with `fn declaration(&self) -> CommitmentDeclaration;`, `fn commit(&self, params: CommitParams, payload: CommitPayload<'_>) -> CommitReturn;`, `fn verify(&self, params: VerifyParams, payload: VerifyPayload<'_>) -> VerifyReturn;`, `fn extract_path(&self, params: ExtractPathParams, payload: ExtractPathPayload<'_>) -> ExtractPathReturn;`, `fn verify_chunk(&self, params: VerifyChunkParams, payload: VerifyChunkPayload<'_>) -> VerifyChunkReturn;`, `fn challenge(&self, params: ChallengeParams, payload: ChallengePayload) -> ChallengeReturn;`, and `fn respond(&self, params: RespondParams, payload: RespondPayload<'_>) -> RespondReturn;`
+    * `[ ]`   `ICommitmentAdapter`, an object-safe trait with `fn commit(&self, params: CommitParams, payload: CommitPayload<'_>) -> CommitReturn;`, `fn verify(&self, params: VerifyParams, payload: VerifyPayload<'_>) -> VerifyReturn;`, `fn extract_path(&self, params: ExtractPathParams, payload: ExtractPathPayload<'_>) -> ExtractPathReturn;`, `fn verify_chunk(&self, params: VerifyChunkParams, payload: VerifyChunkPayload<'_>) -> VerifyChunkReturn;`, `fn challenge(&self, params: ChallengeParams, payload: ChallengePayload) -> ChallengeReturn;`, and `fn respond(&self, params: RespondParams, payload: RespondPayload<'_>) -> RespondReturn;`; a member's declaration, including its `concrete` identifier and provided scheme values, is read through `hashing/lookup_hashing_declaration` without constructing the member, not through a second instance-based declaration surface
     * `[✅]`   No derives on any type in this file beyond those stated; imports `domain::Secret`, `Blake3BaoCommitmentErrorReturn` from `crate::blake3_bao::provides`, and, behind `#[cfg(any(test, feature = "mocks"))]`, `MockICommitmentAdapterErrorReturn` from `super::mock`; names no vendor
 
-  * `[✅]`   `adapters/hashing/src/blake3_bao/interface.rs`
+  * `[ ]`   `adapters/hashing/src/blake3_bao/interface.rs`
     * `[✅]`   `Blake3BaoCommitment`, the unit struct `pub struct Blake3BaoCommitment;`, the adapter over `blake3` and `bao`
-    * `[✅]`   `Blake3BaoCommitmentConstructorParams`, the fieldless struct `pub struct Blake3BaoCommitmentConstructorParams;`, the constructor's deps slot
+    * `[ ]`   `Blake3BaoCommitmentConstructorParams`, the fieldless struct `pub struct Blake3BaoCommitmentConstructorParams;`, the constructor's deps slot; the constructor is settings-free and this concrete has no settings module
     * `[✅]`   `Blake3BaoCommitmentTryNewReturn`, the alias `Result<Blake3BaoCommitment, Infallible>`; the error arm is uninhabited because the adapter takes no configuration
     * `[✅]`   `BLAKE3_BAO_CHUNK_LENGTH`, a `pub const` of type `u64` with value `1024`, the BLAKE3 chunk length; `BLAKE3_BAO_KEY_LENGTH`, a `pub const` of type `usize` with value `32`, the BLAKE3 key length
     * `[✅]`   `Blake3BaoCommitmentErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `ContentLengthUnrepresentable { length: usize }`, a byte length that does not fit a `u64`, and `OffsetUnrepresentable { offset: u64 }`, an offset that does not fit a `usize`
-    * `[✅]`   Imports `core::convert::Infallible`; declares nothing else
+    * `[ ]`   `Blake3BaoCommitment::DECLARATION`, a `pub const` in this interface: `CommitmentDeclaration { concrete: CommitmentConcrete::Blake3Bao, identifier: CommitmentSchemeIdentifier::Blake3BaoV1, chunk_length: BLAKE3_BAO_CHUNK_LENGTH, key_length: BLAKE3_BAO_KEY_LENGTH, adapter_version: 1, interface_version: COMMITMENT_INTERFACE_VERSION }`, the interface-held declaration read through `hashing/lookup_hashing_declaration` without an instance
+    * `[ ]`   Imports `core::convert::Infallible` and, from the `factory` module's interface, `CommitmentConcrete`, `CommitmentDeclaration`, `CommitmentSchemeIdentifier`, and `COMMITMENT_INTERFACE_VERSION`; declares nothing else
 
-  * `[✅]`   `adapters/hashing/src/blake3_bao/interaction.spec.md`
+  * `[ ]`   `adapters/hashing/src/blake3_bao/interaction.spec.md`
     * `[✅]`   `Blake3BaoCommitment::try_new(params: Blake3BaoCommitmentConstructorParams) -> Blake3BaoCommitmentTryNewReturn`: one branch; condition any params; decision none; dependency call none; outcome `Ok(Blake3BaoCommitment)`; the error arm has no branch
-    * `[✅]`   `Blake3BaoCommitment::DECLARATION`: the inherent constant `CommitmentDeclaration { identifier: CommitmentSchemeIdentifier::Blake3BaoV1, chunk_length: BLAKE3_BAO_CHUNK_LENGTH, key_length: BLAKE3_BAO_KEY_LENGTH, adapter_version: 1, interface_version: COMMITMENT_INTERFACE_VERSION }`; `declaration()`: one branch, outcome `Self::DECLARATION`
+    * `[ ]`   `Blake3BaoCommitment::DECLARATION`: the interface-held constant `CommitmentDeclaration { concrete: CommitmentConcrete::Blake3Bao, identifier: CommitmentSchemeIdentifier::Blake3BaoV1, chunk_length: BLAKE3_BAO_CHUNK_LENGTH, key_length: BLAKE3_BAO_KEY_LENGTH, adapter_version: 1, interface_version: COMMITMENT_INTERFACE_VERSION }`, read through `hashing/lookup_hashing_declaration` without an instance; no `declaration()` branch exists
     * `[✅]`   Shared terms: the chunk count of a content length `L` is `1` when `L` is zero and `L.div_ceil(BLAKE3_BAO_CHUNK_LENGTH)` otherwise; the expected outboard length is `OUTBOARD_HEADER_LENGTH + OUTBOARD_PARENT_LENGTH × (chunk count − 1)`; the expected length of chunk `i` is `min(BLAKE3_BAO_CHUNK_LENGTH, L − i × BLAKE3_BAO_CHUNK_LENGTH)`; a subtree at offset `o` of length `n` is a leaf when `n ≤ BLAKE3_BAO_CHUNK_LENGTH`, and otherwise splits at `left_subtree_len(n)` into a left child at `o` and a right child at `o + left_subtree_len(n)`; the mode is `Mode::Hash` unkeyed and `Mode::KeyedHash(&key)` keyed
     * `[✅]`   Leaf and parent values: a leaf's chaining value is a `Hasher`, `Hasher::new()` unkeyed and `Hasher::new_keyed(&key)` keyed, given `set_input_offset(o)`, then `update` with the leaf's bytes, then `finalize_non_root`; a parent's chaining value is `merge_subtrees_non_root(left, right, mode)`; the root of a single-chunk object is that same `Hasher`'s `finalize` over the content with no offset set, and the root of a larger object is `merge_subtrees_root` of the top split's two children; every keyed hasher is zeroized after its last call
     * `[✅]`   Key admission, shared by `commit`, `verify`, and `verify_chunk` when the key is `CommitmentKey::Keyed(key)`: decision `<[u8; 32]>::try_from(key.expose().as_slice())`, before any hashing; outcome on failure `Err({Method}ErrorReturn::KeyLengthMismatch { expected: BLAKE3_BAO_KEY_LENGTH, actual })`, `actual` the exposed key's length; on success the copied key array is zeroized when the method returns, on every branch
@@ -161,11 +163,11 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Own entry `keyed_paths_verify_only_under_their_key`: condition a path extracted from a keyed commitment is checked with `verify_chunk` under the same key and unkeyed; outcome `Ok(VerifyChunkSuccessReturn)` under the key and `Err(VerifyChunkErrorReturn::RootMismatch)` unkeyed; variation the mode, the content and chunk index fixed
     * `[✅]`   Private surface: the chain of real functions is `build_blake3_bao_commitment` through `Blake3BaoCommitment::try_new`, then `Blake3BaoCommitment::commit`, `verify`, `extract_path`, `verify_chunk`, `challenge`, and `respond`, which run `bao::encode::outboard`, `blake3::Hasher`, `blake3::hazmat`, `Zeroize::zeroize`, and `Root::try_new` for real; the key is a `domain` `Secret` whose `expose` runs for real; no outer-edge collaborator is mocked; the observable results are the methods' returns and the borrowed key's bytes after the call
 
-  * `[✅]`   `adapters/hashing/src/factory/mock.rs`
+  * `[ ]`   `adapters/hashing/src/factory/mock.rs`
     * `[✅]`   Module-level `#![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]`; imports the family's names from `super::interface`, `Secret` from `domain`, `build_secret` from `domain`'s mocks, `std::collections::hash_map::DefaultHasher`, `std::hash::Hasher`, and `serde_json::Value` and `serde_json::Map`
     * `[✅]`   Reference inputs, public so the concrete's tests and mock read the same values: `reference_content(length: usize) -> Vec<u8>`, bao's test-vector input, the little-endian bytes of the `u32` counter starting at 1 and incrementing per four bytes, truncated to `length`; `REFERENCE_CONTENT_LENGTH`, a `pub const` of type `usize` with value `3073`; `reference_key_bytes() -> Vec<u8>`, 32 bytes whose byte at index `i` is `i + 1`
     * `[✅]`   Every invalidator in this file returns `serde_json::Value`, a JSON object holding the built default's fields with each present corruption replacing its key: an enum as its variant name text by an exhaustive `match`, an integer as a number, a byte array or vector as an array of byte numbers, and a vector of 32-byte arrays as an array of such arrays
-    * `[✅]`   `CommitmentDeclarationOverrides`, `#[derive(Default)]`, one `Option` per field; `build_commitment_declaration(overrides) -> CommitmentDeclaration`, defaulting to the mock concrete's own declaration; `CommitmentDeclarationCorruptions`, `#[derive(Default)]`, one `Option<serde_json::Value>` per field; `invalidate_commitment_declaration(corruptions) -> serde_json::Value`
+    * `[ ]`   `CommitmentDeclarationOverrides`, `#[derive(Default)]`, one `Option` per field; `build_commitment_declaration(overrides) -> CommitmentDeclaration`, `concrete` defaulting to `CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::NoFailure)` and `identifier` to the real `CommitmentSchemeIdentifier::Blake3BaoV1`, the remaining fields to the declared lengths and versions; `CommitmentDeclarationCorruptions`, `#[derive(Default)]`, one `Option<serde_json::Value>` per field; `invalidate_commitment_declaration(corruptions) -> serde_json::Value`, each identifier rendering by its canonical `name()` spelling, `MockV1` and variant-name text never rendered
     * `[✅]`   `RootConstructorParamsOverrides`, `#[derive(Default)]`, `pub bytes: Option<[u8; 32]>`; `build_root_constructor_params(overrides) -> RootConstructorParams`, defaulting to 32 bytes of `0x01`; `RootConstructorParamsCorruptions`, `#[derive(Default)]`, `pub bytes: Option<serde_json::Value>`; `invalidate_root_constructor_params(corruptions) -> serde_json::Value`; `build_root(overrides: RootConstructorParamsOverrides) -> Root`, the real instance from `Root::try_new(build_root_constructor_params(overrides))` bound through `expect` naming that the built bytes are not all zero
     * `[✅]`   `OutboardOverrides`, `#[derive(Default)]`, `pub bytes: Option<Vec<u8>>`; `build_outboard(overrides) -> Outboard`, defaulting to the eight zero bytes of the empty object's outboard; `OutboardCorruptions` and `invalidate_outboard(corruptions) -> serde_json::Value`, since an outboard arrives from storage and the swarm
     * `[✅]`   `AuthenticationPathOverrides`, `#[derive(Default)]`, `pub siblings: Option<Vec<[u8; 32]>>`; `build_authentication_path(overrides) -> AuthenticationPath`, defaulting to no siblings; `AuthenticationPathCorruptions` and `invalidate_authentication_path(corruptions) -> serde_json::Value`
@@ -177,10 +179,11 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Success returns, each with a builder and an overrides struct of one `Option` per field and no invalidator, since they hold instances or are fieldless: `build_commit_success_return`, defaulting to `build_root(Default::default())` and `build_outboard(Default::default())`; `build_verify_success_return`; `build_extract_path_success_return`, defaulting to `build_authentication_path(Default::default())`; `build_verify_chunk_success_return`; `build_challenge_success_return`, defaulting to index 0; `build_respond_success_return`, defaulting to `build_chunk(Default::default())` and `build_authentication_path(Default::default())`
     * `[✅]`   `MockICommitmentAdapterErrorReturn`, a `pub` enum with `#[derive(Debug, PartialEq, Eq)]` and the variants `ContentLengthUnrepresentable { length: usize }` and `OffsetUnrepresentable { offset: u64 }`, the mock concrete's own errors
     * `[✅]`   `MockICommitmentAdapterConstructorParams`, a `pub(crate)` struct with one field `pub failure_mode: MockICommitmentAdapterFailureMode`; `MockICommitmentAdapterTryNewReturn`, the alias `Result<MockICommitmentAdapter, Infallible>`
-    * `[✅]`   `MockICommitmentAdapter`, a `pub(crate)` struct holding the failure mode in a private field, the family's mock concrete: self-contained, taking no concrete as a type parameter and wrapping, delegating to, or borrowing from none; `MockICommitmentAdapter::DECLARATION`, the inherent constant `CommitmentDeclaration { identifier: CommitmentSchemeIdentifier::MockV1, chunk_length: 64, key_length: 32, adapter_version: 1, interface_version: COMMITMENT_INTERFACE_VERSION }`; `MockICommitmentAdapter::try_new(params) -> MockICommitmentAdapterTryNewReturn`, returning `Ok` holding the params' failure mode
+    * `[ ]`   `MockICommitmentAdapter`, a `pub(crate)` struct holding the failure mode in a private field, the family's mock concrete: self-contained, taking no concrete as a type parameter and wrapping, delegating to, or borrowing from none; `MockICommitmentAdapter::try_new(params) -> MockICommitmentAdapterTryNewReturn`, returning `Ok` holding the params' failure mode; `MOCK_I_COMMITMENT_ADAPTER_DECLARATION`, a `pub` constant `CommitmentDeclaration { concrete: CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::NoFailure), identifier: CommitmentSchemeIdentifier::Blake3BaoV1, chunk_length: 64, key_length: 32, adapter_version: 1, interface_version: COMMITMENT_INTERFACE_VERSION }`, the mock member identifier with the real scheme value, which `hashing/lookup_hashing_declaration` returns substituting the selected mock identifier; the mock carries no inherent declaration constant and no instance declaration method
     * `[✅]`   `impl ICommitmentAdapter for MockICommitmentAdapter`, a working simplified commitment answering the family's contract: the outboard layout, tree shape, admissions, flavors, and check order the concrete's interaction spec states, over its declared 64-byte chunks; a node's 32 bytes are four `u64` words, each the `DefaultHasher` digest of the key bytes or none, a role byte, `0` for a non-root leaf, `1` for a non-root parent, `2` for a root leaf, and `3` for a root parent, the leaf's offset as 8 little-endian bytes for a leaf, the node's input bytes, and the word's index, written little-endian; byte-length and offset conversions use `TryFrom` bound by `expect`, since they fit on every supported target and the mock carries no variant for them
     * `[✅]`   The mock's failure modes: under `ContentLengthUnrepresentable` every method but `challenge` returns its `Mock(MockICommitmentAdapterErrorReturn::ContentLengthUnrepresentable { length })` before any admission, `length` the byte length of the payload's content, of the chunk for `verify_chunk`, and of the outboard for `extract_path`; under `OffsetUnrepresentable` every method but `challenge` returns its `Mock(MockICommitmentAdapterErrorReturn::OffsetUnrepresentable { offset })`, `offset` the payload's chunk index where the payload has one and the content's length as a `u64` otherwise; `challenge` ignores the failure mode
     * `[✅]`   `MockICommitmentAdapterConstructorParamsOverrides`, `#[derive(Default)]`, `pub failure_mode: Option<MockICommitmentAdapterFailureMode>`; `build_mock_i_commitment_adapter_constructor_params(overrides)`, the mode defaulting to `NoFailure`; `build_mock_i_commitment_adapter(overrides) -> MockICommitmentAdapter`, the real instance through the irrefutable pattern `let Ok(adapter) = …;`
+    * `[ ]`   `CommitmentConcreteOverrides`, the fieldless struct with `#[derive(Default)]`; `build_commitment_concrete(concrete: CommitmentConcrete, overrides: CommitmentConcreteOverrides) -> CommitmentConcrete`, the declared-selection builder over `COMMITMENT_CONCRETES`, the real `Blake3Bao` arm returning the selection without configuration
     * `[✅]`   `COMMITMENT_INTERFACE_VERSION`, the layout constants, `CommitmentSchemeIdentifier`, `CommitmentKey`, `MockICommitmentAdapterFailureMode`, every error enum, and every return alias are used by their production value or type with no mock; `ICommitmentAdapter` is answered by `MockICommitmentAdapter`
 
   * `[✅]`   `adapters/hashing/src/factory/mod.rs`
@@ -211,18 +214,23 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   `expected_outboard(content: &[u8], key: Option<&[u8; 32]>) -> Vec<u8>` and `expected_path(content: &[u8], chunk_index: u64, key: Option<&[u8; 32]>) -> Vec<[u8; 32]>`, oracles written in this file independently of `mod.rs`: a recursive function over a subtree's offset and bytes returning its chaining value through `Hasher::new` or `Hasher::new_keyed` with `set_input_offset` and `finalize_non_root` for a leaf of at most 1024 bytes, a literal written here, and `merge_subtrees_non_root` otherwise, splitting at the largest power-of-two multiple of 1024 strictly less than the subtree's length, computed here by doubling; the outboard is the content length's 8 little-endian bytes followed by every parent's two child values in pre-order; the path is the sibling values from the root's split down to the chunk
     * `[✅]`   `Blake3BaoCommitmentTryNewReturn`, the chunk and key length constants, and `Blake3BaoCommitmentErrorReturn` are used by their production value or type with no mock; `Blake3BaoCommitment` takes no overrides, invalidator, or mock function, and the trait it implements is answered by the family's mock concrete
 
-  * `[✅]`   `adapters/hashing/src/blake3_bao/test.rs`
+  * `[ ]`   `adapters/hashing/src/blake3_bao/test.rs`
     * `[✅]`   Module-level `#![allow(clippy::expect_used)]`; imports `Blake3BaoCommitment`, `build_blake3_bao_commitment`, `build_blake3_bao_commitment_constructor_params`, `expected_keyed_root`, `expected_outboard`, and `expected_path` from `super::provides`, the family's names, builders, and reference inputs from `crate::factory::provides`, `build_secret` from `domain`, `blake3::hash`, and `hex::decode`
     * `[✅]`   `try_new_returns_the_adapter`
       * `[✅]`   Contract: any params → `Ok(Blake3BaoCommitment)`
       * `[✅]`   Arrange: `build_blake3_bao_commitment_constructor_params` with no override
       * `[✅]`   Act: `Blake3BaoCommitment::try_new`
       * `[✅]`   Assert: the result matches `Ok(Blake3BaoCommitment)`
-    * `[✅]`   `declaration_returns_the_blake3_bao_declaration`
-      * `[✅]`   Contract: any adapter → `Blake3BaoCommitment::DECLARATION`
-      * `[✅]`   Arrange: `build_blake3_bao_commitment` with no override
-      * `[✅]`   Act: `adapter.declaration()`
-      * `[✅]`   Assert: the identifier matches `CommitmentSchemeIdentifier::Blake3BaoV1`; the chunk length equals the literal 1024; the key length equals the literal 32; the adapter version equals the literal 1; the interface version equals `COMMITMENT_INTERFACE_VERSION`
+    * `[ ]`   `declaration_returns_the_blake3_bao_declaration`
+      * `[ ]`   Contract: `hashing/lookup_hashing_declaration` over `CommitmentConcrete::Blake3Bao` → `Blake3BaoCommitment::DECLARATION`, no adapter constructed
+      * `[ ]`   Arrange: none; the lookup reads the interface-held constant
+      * `[ ]`   Act: the declaration lookup for `CommitmentConcrete::Blake3Bao`
+      * `[ ]`   Assert: `concrete` is `CommitmentConcrete::Blake3Bao`; the identifier matches the real `CommitmentSchemeIdentifier::Blake3BaoV1`; the chunk length equals the literal 1024; the key length equals the literal 32; the adapter version equals the literal 1; the interface version equals `COMMITMENT_INTERFACE_VERSION`
+    * `[ ]`   `the_declared_set_and_spellings_are_total_and_real`
+      * `[ ]`   Contract: `COMMITMENT_CONCRETES` contains only `CommitmentConcrete::Blake3Bao`; every declared member's `name()` spelling is distinct; `CommitmentSchemeIdentifier::Blake3BaoV1` spells `blake3_bao_v1` with `uint8` wire code `1`; no mock-only scheme variant exists; `build_commitment_concrete` returns the real selection without configuration
+      * `[ ]`   Arrange: `COMMITMENT_CONCRETES`; `build_commitment_concrete` over `CommitmentConcrete::Blake3Bao` with fieldless overrides
+      * `[ ]`   Act: read the declared set and each member's `name()`; run the declared-selection builder
+      * `[ ]`   Assert: the set is exactly `Blake3Bao`; the member spellings are pairwise distinct; `Blake3BaoV1` spells `blake3_bao_v1` and its `uint8` wire code is `1`; no `MockV1` exists; the builder returns `CommitmentConcrete::Blake3Bao` carrying no settings
     * `[✅]`   `commit_of_{input_len}_bytes_returns_the_bao_hash_test_vector`, one block per entry of bao's published `hash` vectors, each with its literal: 0 `af1349b9f5f9a1a6a0404dea36dcc9499bcb25c9adc112b7cc9a93cae41f3262`; 1 `48fc721fbbc172e0925fa27af1671de225ba927134802998b10a1568a188652b`; 1023 `15f8c1ae1049fe7e837186612c8ce732e66835841a4569b71e4ac3e3d3411b90`; 1024 `f749c19181983b839cd97fe121cebaf076bc951e8c8e6d64accfedad5951ec22`; 1025 `3613596275c4ea790774dedf20835b2daf86cacc892feef6ce720c121572f1f9`; 2048 `fed8b40d6095dc7c5061f9cd832fd192337473bd392bf6f6bbaf1261ea78f8fa`; 2049 `64770fa15a4bbe7770654c4ac68ed4f0e975ad6c85b5edb4d3db3b4b604e084e`; 3072 `9748169f2aa70258d18cef6dc6b4b4511265e268e85f73dcbea6e34ab0341da1`; 3073 `5ba075072daba2470558a171e3769fba057dc3f12375c60892bdbe73348d9fd1`; 13312 `3e88d1dd20f426640077dcf82d6d4e18ee0062aa72f8ae547a0e65fcd36a0f06`
       * `[✅]`   Contract: the key is `Unkeyed` → `Ok(CommitSuccessReturn)` whose root is the content's Bao hash
       * `[✅]`   Arrange: `reference_content` of the block's length; `build_commit_payload` over it with `CommitmentKey::Unkeyed`; lengths straddle the chunk boundary and the tree's splits, so a wrong split or offset yields another hash
@@ -291,15 +299,15 @@ Write each element in the fixed dependency order below — do not reorder or mer
       * `[✅]`   Act per block: `adapter.respond`
       * `[✅]`   Assert per block: `Err(RespondErrorReturn::ContentLengthMismatch { declared: 3073, actual: 3072 })`; `Err(RespondErrorReturn::ChunkIndexOutOfRange { chunk_index: 4, chunk_count: 4 })`; `Err(RespondErrorReturn::OutboardTruncated { length: 4 })`
 
-  * `[✅]`   `construction`
-    * `[✅]`   `Blake3BaoCommitment::try_new` is the concrete's only producer, and its only caller is the hashing factory, which reads `Blake3BaoCommitment::DECLARATION` before constructing; `Root::try_new` is the root's only producer
+  * `[ ]`   `construction`
+    * `[ ]`   `Blake3BaoCommitment::try_new` is the concrete's only producer, and its only caller is the hashing factory, which obtains this member's declaration through `hashing/lookup_hashing_declaration` and completes `hashing/admit_hashing_composition` before constructing; `Root::try_new` is the root's only producer
     * `[✅]`   `build_blake3_bao_commitment` builds the concrete as a real instance for its own tests; no consumer names the concrete
 
-  * `[✅]`   `adapters/hashing/src/blake3_bao/mod.rs`
+  * `[ ]`   `adapters/hashing/src/blake3_bao/mod.rs`
     * `[✅]`   Module declarations: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub(crate) mod provides;`, `#[cfg(test)] mod test;`, and `#[cfg(test)] mod integration_test;`
-    * `[✅]`   `impl Blake3BaoCommitment` with `pub const DECLARATION: CommitmentDeclaration` and `pub fn try_new(_params: Blake3BaoCommitmentConstructorParams) -> Blake3BaoCommitmentTryNewReturn` returning `Ok(Blake3BaoCommitment)`, and private associated functions for the tree walks the methods share, the subtree chaining value, the pre-order outboard writer and reader, and the descent to a chunk
-    * `[✅]`   `impl ICommitmentAdapter for Blake3BaoCommitment` realizing every branch, admission, conversion, and ordering of the interaction spec
-    * `[✅]`   Imports the family's names from `crate::factory::provides`, `zeroize::Zeroize`, `blake3::Hasher`, `blake3::hazmat`'s items named in `context_slice`, `bao::encode::outboard`, and this module's names from `interface`
+    * `[ ]`   `impl Blake3BaoCommitment` with `pub fn try_new(_params: Blake3BaoCommitmentConstructorParams) -> Blake3BaoCommitmentTryNewReturn` returning `Ok(Blake3BaoCommitment)`, and private associated functions for the tree walks the methods share, the subtree chaining value, the pre-order outboard writer and reader, and the descent to a chunk
+    * `[ ]`   `impl ICommitmentAdapter for Blake3BaoCommitment` realizing every branch, admission, conversion, and ordering of the interaction spec, with no instance `declaration()` implementation, the trait carrying only commitment operations
+    * `[ ]`   Imports the family's names from `crate::factory::provides`, `zeroize::Zeroize`, `blake3::Hasher`, `blake3::hazmat`'s items named in `context_slice`, `bao::encode::outboard`, and this module's names from `interface`, the interface owning the declaration
     * `[✅]`   No `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
 
   * `[✅]`   `adapters/hashing/src/blake3_bao/integration_test.rs`
@@ -343,10 +351,10 @@ Write each element in the fixed dependency order below — do not reorder or mer
   * `[✅]`   `adapters/hashing/src/blake3_bao/provides.rs`
     * `[✅]`   `pub(crate) use super::interface::*;`, `#[cfg(test)] pub(crate) use super::mock::*;`, and `#[cfg(any(test, feature = "mocks"))] pub use super::mock::{expected_keyed_root, expected_outboard, expected_path};`, nothing else, so the concrete is visible to the crate's factory and to nothing outside the crate and the oracles are the items the factory's `provides` can re-export
 
-  * `[✅]`   `directionality`
-    * `[✅]`   `blake3_bao` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, `zeroize`, `blake3`, and `bao`; the `factory` module depends on `domain` and on `blake3_bao`'s error through `crate::blake3_bao::provides`, the family form's recorded cycle, which `hashing/factory` completes by constructing the concrete; among repository crates the crate depends on `crates/domain` alone and on no encoding; nothing depends on the crate yet
+  * `[ ]`   `directionality`
+    * `[ ]`   `blake3_bao` depends on the `factory` module's surface through `crate::factory::provides`, on `domain`, `zeroize`, `blake3`, and `bao`; the `factory` module depends on `domain` and on `blake3_bao`'s error through `crate::blake3_bao::provides`, the family form's recorded cycle, which `hashing/factory` completes by constructing the concrete; `hashing/lookup_hashing_declaration` reaches this member's interface-held declaration through the family's private path, selection and composition admission consume `CommitmentConcrete`, `COMMITMENT_CONCRETES`, and the real scheme identifier, and the factory completes composition admission before constructing this member; among repository crates the crate depends on `crates/domain` alone and on no encoding; no consumer depends on the concrete or reads an instance declaration; nothing else depends on the crate yet
 
-  * `[✅]`   `requirements`
+  * `[ ]`   `requirements`
     * `[✅]`   `adapters/hashing/Cargo.toml` carries exactly the tables and keys stated above; `blake3` and `bao` are named nowhere in the crate outside `adapters/hashing/src/blake3_bao`
     * `[✅]`   Every error enum of the family and the concrete derives `Debug`, `PartialEq`, and `Eq`
     * `[✅]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, and `cargo deny check` complete without error; `cargo clippy --workspace --all-targets --all-features` reports nothing beyond the library target's unused-item warnings for the `blake3_bao` concrete, which `hashing/factory` resolves by constructing the concrete
@@ -354,40 +362,417 @@ Write each element in the fixed dependency order below — do not reorder or mer
     * `[✅]`   Every `commit_of_…_returns_the_bao_hash_test_vector` and `commit_of_…_returns_the_bao_outboard_test_vector` test passes (CR-02, construction against bao's published vectors)
     * `[✅]`   Every `verify_…`, `extract_path_…`, `verify_chunk_…`, `challenge_…`, and `respond_…` test passes (CR-02, corruption of roots, paths, chunks, lengths, and order detected; EC-02; SW-04)
     * `[✅]`   The five integration blocks pass, one per own entry the spec lists
+    * `[ ]`   `declaration_returns_the_blake3_bao_declaration` passes through `hashing/lookup_hashing_declaration` with no adapter constructed, the declaration carrying `CommitmentConcrete::Blake3Bao` and the real `Blake3BaoV1` scheme; `the_declared_set_and_spellings_are_total_and_real` passes, `COMMITMENT_CONCRETES` containing only real members with distinct spellings, `Blake3BaoV1` spelling `blake3_bao_v1` with `uint8` wire code `1` and `MockV1` absent, and `build_commitment_concrete` returning the real selection without configuration; real selections carry no settings and selection admission refuses every supplied setting; declaration lookup and composition admission precede construction
     * `[✅]`   Code outside `adapters/hashing` naming `Blake3BaoCommitment` or anything under `blake3_bao` fails to compile; the crate's public surface is the `factory` module's `provides`
 
-* `[ ]`   `hashing/lookup_hashing_declaration` — Halt: This node must be authored
+* `[ ]`   `hashing/lookup_hashing_declaration` **Hashing family declaration lookup returning a member's declaration from its identifier without constructing the member; creates the `lookup_hashing_declaration` module of the `adapters/hashing` crate and adds its line to the crate barrel**
 
-* `[ ]`   `hashing/admit_hashing_selection` — Halt: This node must be authored
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: a caller that holds an admitted member identifier needs what the member declares, its commitment-scheme identifier, chunk length, key length, adapter version, and interface version, before any adapter exists, so a composition can be admitted before construction and no caller restates a member's declared value from its own knowledge of the member (`docs/agents/families.md`, Reading a declaration before construction; the dependency-map row of this ticket, a declaration read with no concrete constructed)
+    * `[ ]`   Functional: the function takes the admitted `CommitmentConcrete` in its params and returns that member's `CommitmentDeclaration`
+    * `[ ]`   Functional: for `CommitmentConcrete::Blake3Bao` the returned declaration is `Blake3BaoCommitment::DECLARATION`, read from the interface-held constant with no `Blake3BaoCommitment` constructed
+    * `[ ]`   Functional: for `CommitmentConcrete::Mock(failure_mode)`, available under `#[cfg(any(test, feature = "mocks"))]`, the returned declaration is `MOCK_I_COMMITMENT_ADAPTER_DECLARATION` with its `concrete` substituted by the selected `CommitmentConcrete::Mock(failure_mode)`
+    * `[ ]`   Functional: the error arm has no variant, since no input fails the lookup
+    * `[ ]`   Non-functional: a further concrete of the hashing family adds its own arm to this function and changes no consumer of the lookup
+    * `[ ]`   Non-functional: the function names no vendor library, takes no configuration text, and identifies members only by `CommitmentConcrete`
 
-* `[ ]`   `hashing/admit_hashing_composition` — Halt: This node must be authored
+  * `[ ]`   `role`
+    * `[ ]`   Adapter ring: a family-owned function of the hashing family, beside the `factory` module and the private `blake3_bao` concrete, in the four-slot form (`docs/agents/families.md`, What a family owns)
+    * `[ ]`   Does not construct a concrete or call any operation of one
+    * `[ ]`   Does not admit configuration text into an identifier and does not admit settings
+    * `[ ]`   Does not compare the declarations of composed members
+    * `[ ]`   Does not hold a member's declared value as a literal of its own, since each value comes from the member's interface-held declaration constant
+    * `[ ]`   Does not edit the `factory` module or the `blake3_bao` concrete
 
-* `[✅]`   `hashing/factory` **Hashing factory constructing the concrete the configuration names, admitted against the commitment-scheme identifier the hash-card requires, and returning it behind the family's trait, which reports its declaration; carries the family's integration test**
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the `adapters/hashing` crate's `lookup_hashing_declaration` module, holding the function, its deps, params, payload, success return, error return, return alias, and function type, its mock, its tests, and its provides
+    * `[ ]`   Outside: the family's types, which the `factory` module owns, the concretes and their declaration constants, which each concrete's interface owns, the admission of text and settings into a selection, the comparison of declarations across families, and the construction of any member
+    * `[ ]`   Creates the module directory `adapters/hashing/src/lookup_hashing_declaration`
 
-  * `[✅]`   `objective`
-    * `[✅]`   Problem: every content root, outboard, authentication path, and custody challenge passes through the hashing family's generic surface, and a consumer resolves the hashing concrete from the commitment-scheme identifier a deployment's hash-card carries rather than assuming the scheme, so a concrete that does not declare the required identifier is refused before anything is constructed (CR-02; EC-02; SW-04; Composition Boundary; `docs/research/cryptography.md`'s The Hash-Card, commitment-scheme identifier row)
-    * `[✅]`   Functional: given the concrete the configuration names and the commitment-scheme identifier required, the factory refuses a concrete whose declared identifier is not the required one, with no construction; the identifier alone admits
-    * `[✅]`   Functional: an admitted concrete is constructed and returned as `Box<dyn ICommitmentAdapter>` that reports its declaration
+  * `[ ]`   `deps`
+    * `[ ]`   `hashing/blake3_bao`, the same crate, through `crate::blake3_bao::provides`; supplies `Blake3BaoCommitment` and its interface-held constant `Blake3BaoCommitment::DECLARATION`; direction inward, since a family-owned function reaches a concrete through the family's private path, which no module outside the family names (`docs/agents/families.md`, Concretes are unreachable outside their family)
+    * `[ ]`   The family's `factory` module, through `crate::factory::provides`; supplies `CommitmentConcrete`, `CommitmentDeclaration`, `CommitmentSchemeIdentifier`, `COMMITMENT_CONCRETES`, and `COMMITMENT_INTERFACE_VERSION`, and, under `#[cfg(any(test, feature = "mocks"))]`, `MOCK_I_COMMITMENT_ADAPTER_DECLARATION`, `MockICommitmentAdapterFailureMode`, `CommitmentConcreteOverrides`, `build_commitment_concrete`, `CommitmentDeclarationOverrides`, and `build_commitment_declaration`; direction inward
+    * `[ ]`   This node adds no dependency and makes no edit to `adapters/hashing/Cargo.toml`; the crate's `mocks` feature gates the mock items
+    * `[ ]`   Integration entries of the direct dependency `hashing/blake3_bao`: `commit_under_a_key_leaves_the_borrowed_key_intact`, `committed_outboard_verifies_its_content`, `extracted_paths_verify_every_chunk`, `a_challenge_response_verifies_against_the_root`, and `keyed_paths_verify_only_under_their_key` concern `commit`, `verify`, `extract_path`, `verify_chunk`, `challenge`, and `respond`; none passes through this function and none ends at one of its tests, so the spec dispositions none
+    * `[ ]`   No reverse dependency: neither `blake3_bao` nor the `factory` module depends on this module
+
+  * `[ ]`   `context_slice`
+    * `[ ]`   From `blake3_bao`: `Blake3BaoCommitment::DECLARATION: CommitmentDeclaration`, the `pub const` read without an instance
+    * `[ ]`   From the `factory` module: `CommitmentDeclaration { concrete: CommitmentConcrete, identifier: CommitmentSchemeIdentifier, chunk_length: u64, key_length: usize, adapter_version: u32, interface_version: u32 }`, and `CommitmentConcrete`, whose real variant is `Blake3Bao` and whose variant `Mock(MockICommitmentAdapterFailureMode)` exists under `#[cfg(any(test, feature = "mocks"))]`
+    * `[ ]`   From the `factory` module's mock, under the same cfg: `MOCK_I_COMMITMENT_ADAPTER_DECLARATION: CommitmentDeclaration`, whose `concrete` is `CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::NoFailure)`, whose `identifier` is `CommitmentSchemeIdentifier::Blake3BaoV1`, whose `chunk_length` is `64`, whose `key_length` is `32`, whose `adapter_version` is `1`, and whose `interface_version` is `COMMITMENT_INTERFACE_VERSION`
+
+  * `[ ]`   `adapters/hashing/src/lookup_hashing_declaration/interface.rs`
+    * `[ ]`   `LookupHashingDeclarationDeps`, a fieldless struct with no derives, the deps slot, supplied because the slot is part of the contract
+    * `[ ]`   `LookupHashingDeclarationParams`, a struct with no derives and the field `pub concrete: CommitmentConcrete`, the admitted member identifier, the selection that chooses which member's declaration is read
+    * `[ ]`   `LookupHashingDeclarationPayload`, a fieldless struct with no derives, since the function operates on no data
+    * `[ ]`   `LookupHashingDeclarationSuccessReturn`, a struct with no derives and the field `pub declaration: CommitmentDeclaration`
+    * `[ ]`   `LookupHashingDeclarationErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and no variant, the error arm of a function no input fails
+    * `[ ]`   `LookupHashingDeclarationReturn`, the alias `Result<LookupHashingDeclarationSuccessReturn, LookupHashingDeclarationErrorReturn>`; `LookupHashingDeclarationFn`, the alias `fn(&LookupHashingDeclarationDeps, LookupHashingDeclarationParams, LookupHashingDeclarationPayload) -> LookupHashingDeclarationReturn`
+    * `[ ]`   The function is in the trusted form, since its params carry an identifier an in-process caller already admitted and its payload carries no untrusted data
+    * `[ ]`   Imports `CommitmentConcrete` and `CommitmentDeclaration` from `crate::factory::provides`; names no vendor
+
+  * `[ ]`   `adapters/hashing/src/lookup_hashing_declaration/interaction.spec.md`
+    * `[ ]`   `lookup_hashing_declaration`, member `Blake3Bao`: condition `params.concrete` is `CommitmentConcrete::Blake3Bao`; decision the exhaustive `match` on `params.concrete`; dependency call none, the arm reads the interface-held constant `Blake3BaoCommitment::DECLARATION` and constructs no adapter; outcome `Ok(LookupHashingDeclarationSuccessReturn { declaration })`, `declaration` equal in every field to that constant
+    * `[ ]`   `lookup_hashing_declaration`, member `Mock`, under `#[cfg(any(test, feature = "mocks"))]`: condition `params.concrete` is `CommitmentConcrete::Mock(failure_mode)`; decision the same `match`; dependency call none; outcome `Ok(LookupHashingDeclarationSuccessReturn { declaration })`, `declaration` holding every field of `MOCK_I_COMMITMENT_ADAPTER_DECLARATION` except `concrete`, which is `CommitmentConcrete::Mock(failure_mode)` with the `failure_mode` the params selected
+    * `[ ]`   The `match` is exhaustive over the variants of `CommitmentConcrete` present in the build, and a further concrete adds its arm
+    * `[ ]`   The error arm has no branch, since no input reaches it, and it has no unit test
+    * `[ ]`   Ordering and effects: the function reads constants, constructs nothing, mutates nothing, and retains no params or payload; the same params always yield the same outcome
+    * `[ ]`   Own entry `every_declared_member_declares_itself_through_the_public_surface`: condition the function is called through the crate's public surface once for each member of `COMMITMENT_CONCRETES`; outcome `Ok` whose declaration's `identifier` is the real `CommitmentSchemeIdentifier::Blake3BaoV1` and whose `interface_version` is `COMMITMENT_INTERFACE_VERSION`; variation the selected member across the declared set; the failure that must survive composition is a declared member whose declaration the surface cannot read
+    * `[ ]`   Callee dispositions: none, the direct dependency's entries neither pass through this function nor end at its tests
+    * `[ ]`   Private surface: none; the function composes no collaborator beyond the constant it reads, which the unit tests prove, so the node has no `integration_test.rs`
+    * `[ ]`   Public surface: an outside caller invokes `lookup_hashing_declaration` from the crate root with params naming each member of `COMMITMENT_CONCRETES` and observes the success return's declaration; the entry proven is `every_declared_member_declares_itself_through_the_public_surface`; its route is the public call, the `match` arm of the selected member, and that member's interface-held declaration constant; no outer-edge collaborator exists; the outcome of a `Mock(failure_mode)` selection, observable under the `mocks` feature, is a property of this function alone and is proven by `lookup_returns_the_mock_declaration_naming_the_selected_failure_mode`, so it is not an entry, and the declared set the public block runs over holds real members alone
+
+  * `[ ]`   `adapters/hashing/src/lookup_hashing_declaration/mock.rs`
+    * `[ ]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`; the module is available under `#[cfg(any(test, feature = "mocks"))]`; imports the family's names and builders from `crate::factory::provides` and this module's types from `super::interface`
+    * `[ ]`   `LookupHashingDeclarationDepsOverrides`, fieldless with `#[derive(Default)]`, and `build_lookup_hashing_declaration_deps(overrides) -> LookupHashingDeclarationDeps`
+    * `[ ]`   `LookupHashingDeclarationParamsOverrides`, `#[derive(Default)]` with `pub concrete: Option<CommitmentConcrete>`, and `build_lookup_hashing_declaration_params(overrides) -> LookupHashingDeclarationParams`, `concrete` defaulting to `build_commitment_concrete(CommitmentConcrete::Blake3Bao, Default::default())`, the real member through the family's declared-selection builder
+    * `[ ]`   `LookupHashingDeclarationPayloadOverrides`, fieldless with `#[derive(Default)]`, and `build_lookup_hashing_declaration_payload(overrides) -> LookupHashingDeclarationPayload`
+    * `[ ]`   `LookupHashingDeclarationSuccessReturnOverrides`, `#[derive(Default)]` with `pub declaration: Option<CommitmentDeclaration>`, and `build_lookup_hashing_declaration_success_return(overrides) -> LookupHashingDeclarationSuccessReturn`, `declaration` defaulting to `build_commitment_declaration(Default::default())`
+    * `[ ]`   `mock_lookup_hashing_declaration`, typed `LookupHashingDeclarationFn`, returning `Ok(build_lookup_hashing_declaration_success_return(Default::default()))`
+    * `[ ]`   No invalidator and no corruptions struct, since deps and params are never serialized, the payload is fieldless, and the success return holds a declaration instance; the error return has no value to build, so it takes no builder; the aliases and the function type are used by their production type with no mock
+
+  * `[ ]`   `adapters/hashing/src/lookup_hashing_declaration/test.rs`
+    * `[ ]`   Imports `lookup_hashing_declaration`, `LookupHashingDeclarationParamsOverrides`, `build_lookup_hashing_declaration_deps`, `build_lookup_hashing_declaration_params`, and `build_lookup_hashing_declaration_payload` from `super::provides`, and `CommitmentConcrete`, `CommitmentSchemeIdentifier`, `MockICommitmentAdapterFailureMode`, and `COMMITMENT_INTERFACE_VERSION` from `crate::factory::provides`
+    * `[ ]`   `lookup_returns_the_blake3_bao_declaration`
+      * `[ ]`   Contract: `params.concrete` is `CommitmentConcrete::Blake3Bao` → `Ok` whose declaration is the real member's declaration
+      * `[ ]`   Arrange: `build_lookup_hashing_declaration_params` with the `concrete` override `CommitmentConcrete::Blake3Bao`; the real member's chunk length 1024 differs from the mock constant's 64, so a lookup answering the mock constant fails
+      * `[ ]`   Act: `lookup_hashing_declaration` over the deps, params, and payload builders
+      * `[ ]`   Assert: the success arm binds through the irrefutable pattern `let Ok(success) = result;`; `declaration.concrete` equals `CommitmentConcrete::Blake3Bao`; `declaration.identifier` equals `CommitmentSchemeIdentifier::Blake3BaoV1`; `declaration.chunk_length` equals the literal `1024`; `declaration.key_length` equals the literal `32`; `declaration.adapter_version` equals the literal `1`; `declaration.interface_version` equals `COMMITMENT_INTERFACE_VERSION`
+    * `[ ]`   `lookup_returns_the_mock_declaration_naming_the_selected_failure_mode`
+      * `[ ]`   Contract: `params.concrete` is `CommitmentConcrete::Mock(failure_mode)` → `Ok` whose declaration is the mock constant's declaration with `concrete` the selected member
+      * `[ ]`   Arrange: `build_lookup_hashing_declaration_params` with the `concrete` override `CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::ContentLengthUnrepresentable)`, a mode other than the `NoFailure` the constant holds, so a lookup that returns the constant unsubstituted fails
+      * `[ ]`   Act: `lookup_hashing_declaration` over the deps, params, and payload builders
+      * `[ ]`   Assert: `declaration.concrete` equals `CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::ContentLengthUnrepresentable)`; `declaration.identifier` equals `CommitmentSchemeIdentifier::Blake3BaoV1`; `declaration.chunk_length` equals the literal `64`; `declaration.key_length` equals the literal `32`; `declaration.adapter_version` equals the literal `1`; `declaration.interface_version` equals `COMMITMENT_INTERFACE_VERSION`
+
+  * `[ ]`   `construction`
+    * `[ ]`   `lookup_hashing_declaration` is a standalone function; it constructs no adapter and holds no instance, and its deps are the fieldless `LookupHashingDeclarationDeps` built at the call site
+
+  * `[ ]`   `adapters/hashing/src/lookup_hashing_declaration/mod.rs`
+    * `[ ]`   Module wiring: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[ ]`   `pub fn lookup_hashing_declaration(_deps: &LookupHashingDeclarationDeps, params: LookupHashingDeclarationParams, _payload: LookupHashingDeclarationPayload) -> LookupHashingDeclarationReturn`, realizing every branch of the interaction spec by a `match` on `params.concrete`, the `Blake3Bao` arm returning `Blake3BaoCommitment::DECLARATION` and the `Mock` arm, under `#[cfg(any(test, feature = "mocks"))]`, returning `MOCK_I_COMMITMENT_ADAPTER_DECLARATION` with `concrete` set to `params.concrete`
+    * `[ ]`   Imports `Blake3BaoCommitment` from `crate::blake3_bao::provides`, the family's names from `crate::factory::provides`, and this module's types from `interface`
+    * `[ ]`   No `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[ ]`   `adapters/hashing/src/lookup_hashing_declaration/provides.rs`
+    * `[ ]`   `pub use super::interface::*;`, `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, and `pub use super::lookup_hashing_declaration;`
+
+  * `[ ]`   `adapters/hashing/src/lib.rs`
+    * `[ ]`   Adds `mod lookup_hashing_declaration;` and `pub use lookup_hashing_declaration::provides::*;` to the barrel, the module's provides step, so the function and its types are part of the crate's public surface
+
+  * `[ ]`   `adapters/hashing/tests/lookup_hashing_declaration_integration_test.rs`
+    * `[ ]`   Crate-level `#![cfg(feature = "mocks")]`; imports from the crate root `lookup_hashing_declaration`, `LookupHashingDeclarationParamsOverrides`, `build_lookup_hashing_declaration_deps`, `build_lookup_hashing_declaration_params`, `build_lookup_hashing_declaration_payload`, `CommitmentSchemeIdentifier`, `COMMITMENT_CONCRETES`, and `COMMITMENT_INTERFACE_VERSION`; names no concrete
+    * `[ ]`   `every_declared_member_declares_itself_through_the_public_surface`
+      * `[ ]`   Contract: the entry of that name
+      * `[ ]`   Arrange: for each member of `COMMITMENT_CONCRETES`, `build_lookup_hashing_declaration_params` with the `concrete` override that member; the body is written once and run over the declared set
+      * `[ ]`   Act: `lookup_hashing_declaration` over the deps, params, and payload builders, once per member
+      * `[ ]`   Assert: for each member the success arm binds through the irrefutable pattern `let Ok(success) = result;`, `declaration.identifier` equals `CommitmentSchemeIdentifier::Blake3BaoV1`, and `declaration.interface_version` equals `COMMITMENT_INTERFACE_VERSION`
+      * `[ ]`   Boundary: the public call `lookup_hashing_declaration` from the crate root, running the `match` arm of the selected member and that member's interface-held declaration constant
+      * `[ ]`   Mocked: nothing
+    * `[ ]`   Enumeration: the spec's public surface lists the own entry `every_declared_member_declares_itself_through_the_public_surface`, and the block of that name proves it
+
+  * `[ ]`   `directionality`
+    * `[ ]`   The module depends on the `factory` module's surface through `crate::factory::provides` and on the `blake3_bao` concrete's interface-held declaration through `crate::blake3_bao::provides`, the family's private path; neither depends on this module; the crate barrel re-exports this module's provides outward, and no concrete is re-exported
+
+  * `[ ]`   `requirements`
+    * `[ ]`   `lookup_returns_the_blake3_bao_declaration` passes, the declaration of the real member read with no adapter constructed (the dependency-map row of this ticket)
+    * `[ ]`   `lookup_returns_the_mock_declaration_naming_the_selected_failure_mode` passes
+    * `[ ]`   `every_declared_member_declares_itself_through_the_public_surface` passes under the `mocks` feature
+    * `[ ]`   `LookupHashingDeclarationErrorReturn` derives `Debug`, `PartialEq`, and `Eq`
+    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, and `cargo clippy --workspace --all-targets --all-features` complete without a warning or error from this module
+    * `[ ]`   Code outside `adapters/hashing` reaches the lookup through the crate root and fails to compile if it names `Blake3BaoCommitment` or anything under `blake3_bao`
+
+* `[ ]`   `hashing/admit_hashing_selection` **Hashing family selection admission receiving the admitted member identifier and the untrusted settings document, refusing any supplied setting with the family's own error naming the member, and returning the selection that names the member; creates the `admit_hashing_selection` module of the `adapters/hashing` crate and adds its line to the crate barrel**
+
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: configuration names a member of the hashing family by its identifier and may carry a settings document for it, and the family turns the identifier and the document into the family's selection through its selection admission; no member of the hashing family has a settable value, so a document that supplies any setting would carry configuration no member reads, and the admission refuses it with an error naming the member instead of returning a selection that silently discards it (`docs/agents/families.md`, Selecting a concrete from configuration; the dependency-map row of this ticket; `docs/project-planning/milestones.md`, Pairing adapters and key derivation, where the hashing family's selection admission refuses every supplied setting)
+    * `[ ]`   Functional: the function takes the admitted `CommitmentConcrete` in its params and the untrusted settings document, a `serde_json::Value`, as its payload
+    * `[ ]`   Functional: a document that is `serde_json::Value::Null`, or a JSON object with no entry, supplies no setting; the function returns `Ok` whose `selection` is the member the params named, `CommitmentConcrete::Blake3Bao` for the real member and `CommitmentConcrete::Mock(failure_mode)` for the mock member under `#[cfg(any(test, feature = "mocks"))]`, with the failure mode the params selected
+    * `[ ]`   Functional: any other document supplies a setting; the function returns `Err(AdmitHashingSelectionErrorReturn::SettingsSupplied { concrete })`, `concrete` the member the params named
+    * `[ ]`   Functional: the family's selection is `CommitmentConcrete`, the type `build_commitment_concrete` builds, and a real member's selection carries no settings
+    * `[ ]`   Non-functional: a further concrete of the hashing family adds its own arm to this function and changes no consumer of the admission
+    * `[ ]`   Non-functional: the function names no vendor library, takes no configuration text, holds no member's declared value, and identifies members only by `CommitmentConcrete`
+
+  * `[ ]`   `role`
+    * `[ ]`   Adapter ring: a family-owned function of the hashing family, beside the `factory` module and the private `blake3_bao` concrete, in the four-slot validating form (`docs/agents/families.md`, What a family owns; `docs/agents/composition.md`, The validating form)
+    * `[ ]`   Does not construct a concrete or call any operation of one
+    * `[ ]`   Does not admit configuration text into an identifier; its params carry the identifier already admitted
+    * `[ ]`   Does not call a declaration lookup, a settings admission, or a guard, since no member has a settings module and the family declares no settings-document type
+    * `[ ]`   Does not compare the declarations of composed members
+    * `[ ]`   Does not edit the `factory` module, the `blake3_bao` concrete, or `lookup_hashing_declaration`
+
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the `adapters/hashing` crate's `admit_hashing_selection` module, holding the function, its deps, params, success return, error return, return alias, and function type, its mock, its tests, and its provides
+    * `[ ]`   Outside: the family's types, which the `factory` module owns, the concretes, the declarations, the admission of configuration text into an identifier, the comparison of declarations across families, and the construction of any member
+    * `[ ]`   Creates the module directory `adapters/hashing/src/admit_hashing_selection`
+
+  * `[ ]`   `deps`
+    * `[ ]`   `hashing/blake3_bao`, the owner of the family's `factory` module items this function consumes, reached through `crate::factory::provides`; supplies `CommitmentConcrete`, `COMMITMENT_CONCRETES`, and, under `#[cfg(any(test, feature = "mocks"))]`, `MockICommitmentAdapterFailureMode`, `CommitmentConcreteOverrides`, and `build_commitment_concrete`; direction inward, since a family-owned function consumes the family's factory module surface (`docs/agents/families.md`, Concretes are unreachable outside their family)
+    * `[ ]`   `hashing/lookup_hashing_declaration`, a direct dependency of this ticket in the dependency map; this function calls no declaration lookup and imports nothing from the module, since no member has a settable value for a declaration to bound
+    * `[ ]`   `serde_json` `1.0.151`, external crate, MIT OR Apache-2.0, the version `hashing/blake3_bao` pins, a runtime dependency of this crate, because the function's payload is the untrusted settings document `serde_json::Value`; supplies `serde_json::Value` and `serde_json::Map`, and in the tests `serde_json::json!`
+    * `[ ]`   Integration entries of the direct dependency `hashing/blake3_bao`: `commit_under_a_key_leaves_the_borrowed_key_intact`, `committed_outboard_verifies_its_content`, `extracted_paths_verify_every_chunk`, `a_challenge_response_verifies_against_the_root`, and `keyed_paths_verify_only_under_their_key` concern `commit`, `verify`, `extract_path`, `verify_chunk`, `challenge`, and `respond`; none passes through this function and none ends at one of its tests, so the spec dispositions none
+    * `[ ]`   Integration entries of the direct dependency `hashing/lookup_hashing_declaration`: `every_declared_member_declares_itself_through_the_public_surface` concerns `lookup_hashing_declaration`; it does not pass through this function and does not end at one of its tests, so the spec dispositions none
+    * `[ ]`   No reverse dependency: neither `blake3_bao`, the `factory` module, nor `lookup_hashing_declaration` depends on this module
+
+  * `[ ]`   `context_slice`
+    * `[ ]`   From the `factory` module: `CommitmentConcrete`, whose real variant is `Blake3Bao` and whose variant `Mock(MockICommitmentAdapterFailureMode)` exists under `#[cfg(any(test, feature = "mocks"))]`, with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]`; and `COMMITMENT_CONCRETES: &[CommitmentConcrete]`, the real declared set
+    * `[ ]`   From the `factory` module's mock, under the same cfg: `MockICommitmentAdapterFailureMode`, with the variants `NoFailure`, `ContentLengthUnrepresentable`, and `OffsetUnrepresentable`; `CommitmentConcreteOverrides`, the fieldless struct; and `build_commitment_concrete(concrete: CommitmentConcrete, overrides: CommitmentConcreteOverrides) -> CommitmentConcrete`, the declared-selection builder
+    * `[ ]`   From `serde_json`: `Value`, whose variants `Null` and `Object(Map<String, Value>)` the function matches, and `Map::is_empty(&self) -> bool`
+
+  * `[ ]`   `adapters/hashing/Cargo.toml`
+    * `[ ]`   `[dependencies]` carries `serde_json = "1.0.151"`, a runtime dependency without the `optional` key, the dependency the function's payload type requires
+    * `[ ]`   `[features]` carries `mocks = ["domain/mocks"]`, with no `dep:serde_json` member, since `serde_json` is a runtime dependency
+    * `[ ]`   `[dev-dependencies]` carries no `serde_json` entry, since the runtime dependency serves the tests and the integration test
+
+  * `[ ]`   `adapters/hashing/src/admit_hashing_selection/interface.rs`
+    * `[ ]`   `AdmitHashingSelectionDeps`, a fieldless struct with no derives, the deps slot, supplied because the slot is part of the contract
+    * `[ ]`   `AdmitHashingSelectionParams`, a struct with no derives and the field `pub concrete: CommitmentConcrete`, the admitted member identifier, the selection that chooses which member's selection is returned
+    * `[ ]`   The payload slot is `serde_json::Value`, the untrusted settings document; the interface declares no payload type, since a member with no settable value has no settings-document type for a guard to narrow to
+    * `[ ]`   `AdmitHashingSelectionSuccessReturn`, a struct with `#[derive(Debug, PartialEq, Eq)]` and the field `pub selection: CommitmentConcrete`
+    * `[ ]`   `AdmitHashingSelectionErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variant `SettingsSupplied { concrete: CommitmentConcrete }`, the family's own error naming the member whose selection was asked for with a document that supplies a setting
+    * `[ ]`   `AdmitHashingSelectionReturn`, the alias `Result<AdmitHashingSelectionSuccessReturn, AdmitHashingSelectionErrorReturn>`; `AdmitHashingSelectionFn`, the alias `fn(&AdmitHashingSelectionDeps, AdmitHashingSelectionParams, serde_json::Value) -> AdmitHashingSelectionReturn`
+    * `[ ]`   The function is in the validating form: the payload is the untrusted document and the function decides on entry whether it supplies a setting
+    * `[ ]`   Imports `CommitmentConcrete` from `crate::factory::provides` and `serde_json::Value`; names no vendor library
+
+  * `[ ]`   `adapters/hashing/src/admit_hashing_selection/interaction.spec.md`
+    * `[ ]`   Document decision, shared by every member's arm: the document supplies no setting when it is `Value::Null` or `Value::Object` whose map is empty, and supplies a setting when it is any other value
+    * `[ ]`   `admit_hashing_selection`, member `Blake3Bao`, document supplies no setting: condition `params.concrete` is `CommitmentConcrete::Blake3Bao` and the document decision finds no setting; decision the exhaustive `match` on `params.concrete` and the document decision; dependency call none; outcome `Ok(AdmitHashingSelectionSuccessReturn { selection })`, `selection` equal to `CommitmentConcrete::Blake3Bao`
+    * `[ ]`   `admit_hashing_selection`, member `Blake3Bao`, document supplies a setting: condition `params.concrete` is `CommitmentConcrete::Blake3Bao` and the document decision finds a setting; decision the same; dependency call none; outcome `Err(AdmitHashingSelectionErrorReturn::SettingsSupplied { concrete: CommitmentConcrete::Blake3Bao })`
+    * `[ ]`   `admit_hashing_selection`, member `Mock`, under `#[cfg(any(test, feature = "mocks"))]`, document supplies no setting: condition `params.concrete` is `CommitmentConcrete::Mock(failure_mode)` and the document decision finds no setting; decision the same `match` and document decision; dependency call none; outcome `Ok(AdmitHashingSelectionSuccessReturn { selection })`, `selection` equal to `CommitmentConcrete::Mock(failure_mode)` with the `failure_mode` the params selected
+    * `[ ]`   `admit_hashing_selection`, member `Mock`, under `#[cfg(any(test, feature = "mocks"))]`, document supplies a setting: condition `params.concrete` is `CommitmentConcrete::Mock(failure_mode)` and the document decision finds a setting; decision the same; dependency call none; outcome `Err(AdmitHashingSelectionErrorReturn::SettingsSupplied { concrete })`, `concrete` equal to `CommitmentConcrete::Mock(failure_mode)` with the `failure_mode` the params selected
+    * `[ ]`   The `match` is exhaustive over the variants of `CommitmentConcrete` present in the build, and a further concrete adds its arm
+    * `[ ]`   Ordering and effects: the function reads its params and payload, constructs nothing, mutates nothing, and retains no params or payload; the same params and payload always yield the same outcome
+    * `[ ]`   Own entry `every_declared_member_is_selected_through_the_public_surface`: condition the function is called through the crate's public surface once for each member of `COMMITMENT_CONCRETES`, first with a document that is `Value::Null` and then with a document that is a JSON object holding an entry; outcome the first call returns `Ok` whose `selection` equals the member the params named, and the second returns `Err(AdmitHashingSelectionErrorReturn::SettingsSupplied { concrete })` with `concrete` equal to that member; variation the selected member across the declared set and the document across absent and supplying a setting; the failure that must survive composition is a supplied setting reaching a selection that discards it, or a refusal that names another member than the one selected
+    * `[ ]`   Callee dispositions: none, the direct dependencies' entries neither pass through this function nor end at its tests
+    * `[ ]`   Private surface: none; the function composes no collaborator, which the unit tests prove, so the node has no `integration_test.rs`
+    * `[ ]`   Public surface: an outside caller invokes `admit_hashing_selection` from the crate root with params naming each member of `COMMITMENT_CONCRETES` and a document, and observes the returned selection or the refusal; the entry proven is `every_declared_member_is_selected_through_the_public_surface`; its route is the public call and the `match` arm of the selected member; no outer-edge collaborator exists; the outcome of a `Mock(failure_mode)` selection, observable under the `mocks` feature, is a property of this function alone and is proven by `admit_returns_the_mock_selection_naming_the_selected_failure_mode` and `admit_refuses_a_supplied_setting_naming_the_mock_member`, so it is not an entry; the outcome of an empty-object document and the outcome of a non-object document, each observable through the public call, are properties of this function alone and are proven by `admit_returns_the_blake3_bao_selection_for_an_empty_document` and `admit_refuses_a_document_that_is_not_an_object`, so they are not entries; the declared set the public block runs over holds real members alone
+
+  * `[ ]`   `adapters/hashing/src/admit_hashing_selection/mock.rs`
+    * `[ ]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`; the module is available under `#[cfg(any(test, feature = "mocks"))]`; imports the family's names and builders from `crate::factory::provides` and this module's types from `super::interface`
+    * `[ ]`   `AdmitHashingSelectionDepsOverrides`, fieldless with `#[derive(Default)]`, and `build_admit_hashing_selection_deps(overrides) -> AdmitHashingSelectionDeps`
+    * `[ ]`   `AdmitHashingSelectionParamsOverrides`, `#[derive(Default)]` with `pub concrete: Option<CommitmentConcrete>`, and `build_admit_hashing_selection_params(overrides) -> AdmitHashingSelectionParams`, `concrete` defaulting to `build_commitment_concrete(CommitmentConcrete::Blake3Bao, Default::default())`, the real member through the family's declared-selection builder
+    * `[ ]`   `AdmitHashingSelectionSuccessReturnOverrides`, `#[derive(Default)]` with `pub selection: Option<CommitmentConcrete>`, and `build_admit_hashing_selection_success_return(overrides) -> AdmitHashingSelectionSuccessReturn`, `selection` defaulting to `build_commitment_concrete(CommitmentConcrete::Blake3Bao, Default::default())`
+    * `[ ]`   `mock_admit_hashing_selection`, typed `AdmitHashingSelectionFn`, returning `Ok(build_admit_hashing_selection_success_return(Default::default()))`
+    * `[ ]`   No invalidator and no corruptions struct, since deps and params are never serialized and the payload is the imported `serde_json::Value`, which this interface does not own; no payload builder for the same reason; the error return is an enum used by its production value, and the aliases and the function type are used by their production type with no mock
+
+  * `[ ]`   `adapters/hashing/src/admit_hashing_selection/test.rs`
+    * `[ ]`   Imports `admit_hashing_selection`, `AdmitHashingSelectionErrorReturn`, `AdmitHashingSelectionParamsOverrides`, `build_admit_hashing_selection_deps`, and `build_admit_hashing_selection_params` from `super::provides`, `CommitmentConcrete` and `MockICommitmentAdapterFailureMode` from `crate::factory::provides`, and `serde_json::Value`
+    * `[ ]`   `admit_returns_the_blake3_bao_selection_for_an_absent_document`
+      * `[ ]`   Contract: `params.concrete` is `CommitmentConcrete::Blake3Bao` and the document is `Value::Null` → `Ok` whose selection is `CommitmentConcrete::Blake3Bao`
+      * `[ ]`   Arrange: `build_admit_hashing_selection_params` with the `concrete` override `CommitmentConcrete::Blake3Bao`; the payload `Value::Null`
+      * `[ ]`   Act: `admit_hashing_selection` over the deps builder, the params, and the payload
+      * `[ ]`   Assert: the result's selection equals the literal `CommitmentConcrete::Blake3Bao`, written as `Ok` holding that selection
+    * `[ ]`   `admit_returns_the_blake3_bao_selection_for_an_empty_document`
+      * `[ ]`   Contract: `params.concrete` is `CommitmentConcrete::Blake3Bao` and the document is a JSON object with no entry → `Ok` whose selection is `CommitmentConcrete::Blake3Bao`
+      * `[ ]`   Arrange: the params as above; the payload `Value::Object` over an empty `serde_json::Map`, an object that differs from the supplying document of the refusal blocks only in holding no entry, so an admission that refuses every object fails
+      * `[ ]`   Act: `admit_hashing_selection`
+      * `[ ]`   Assert: the result's selection equals the literal `CommitmentConcrete::Blake3Bao`, written as `Ok` holding that selection
+    * `[ ]`   `admit_returns_the_mock_selection_naming_the_selected_failure_mode`
+      * `[ ]`   Contract: `params.concrete` is `CommitmentConcrete::Mock(failure_mode)` and the document is `Value::Null` → `Ok` whose selection is `CommitmentConcrete::Mock(failure_mode)`
+      * `[ ]`   Arrange: the `concrete` override `CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::ContentLengthUnrepresentable)`, a member other than the real member and a mode other than the `NoFailure` the family's mock constant holds, so an admission that returns a fixed member or an unsubstituted mode fails; the payload `Value::Null`
+      * `[ ]`   Act: `admit_hashing_selection`
+      * `[ ]`   Assert: the result's selection equals the literal `CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::ContentLengthUnrepresentable)`, written as `Ok` holding that selection
+    * `[ ]`   `admit_refuses_a_supplied_setting_naming_the_blake3_bao_member`
+      * `[ ]`   Contract: `params.concrete` is `CommitmentConcrete::Blake3Bao` and the document is a JSON object holding an entry → `Err(AdmitHashingSelectionErrorReturn::SettingsSupplied { concrete })`
+      * `[ ]`   Arrange: the params with the `concrete` override `CommitmentConcrete::Blake3Bao`; the payload `serde_json::json!({ "setting": 1 })`, an object that differs from the empty object of the accepting block only in holding an entry
+      * `[ ]`   Act: `admit_hashing_selection`
+      * `[ ]`   Assert: the result equals `Err(AdmitHashingSelectionErrorReturn::SettingsSupplied { concrete: CommitmentConcrete::Blake3Bao })`
+    * `[ ]`   `admit_refuses_a_supplied_setting_naming_the_mock_member`
+      * `[ ]`   Contract: `params.concrete` is `CommitmentConcrete::Mock(failure_mode)` and the document is a JSON object holding an entry → `Err(AdmitHashingSelectionErrorReturn::SettingsSupplied { concrete })` naming the mock member with its failure mode
+      * `[ ]`   Arrange: the `concrete` override `CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::OffsetUnrepresentable)`; the payload `serde_json::json!({ "setting": 1 })`
+      * `[ ]`   Act: `admit_hashing_selection`
+      * `[ ]`   Assert: the result equals `Err(AdmitHashingSelectionErrorReturn::SettingsSupplied { concrete: CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::OffsetUnrepresentable) })`
+    * `[ ]`   `admit_refuses_a_document_that_is_not_an_object`
+      * `[ ]`   Contract: `params.concrete` is `CommitmentConcrete::Blake3Bao` and the document is neither `Value::Null` nor an object → `Err(AdmitHashingSelectionErrorReturn::SettingsSupplied { concrete })`
+      * `[ ]`   Arrange: the params with the `concrete` override `CommitmentConcrete::Blake3Bao`; the payload `serde_json::json!([1])`, an array, a value that is neither the absent document nor an object
+      * `[ ]`   Act: `admit_hashing_selection`
+      * `[ ]`   Assert: the result equals `Err(AdmitHashingSelectionErrorReturn::SettingsSupplied { concrete: CommitmentConcrete::Blake3Bao })`
+
+  * `[ ]`   `construction`
+    * `[ ]`   `admit_hashing_selection` is a standalone function; it constructs no adapter and holds no instance, and its deps are the fieldless `AdmitHashingSelectionDeps` built at the call site
+
+  * `[ ]`   `adapters/hashing/src/admit_hashing_selection/mod.rs`
+    * `[ ]`   Module wiring: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[ ]`   `pub fn admit_hashing_selection(_deps: &AdmitHashingSelectionDeps, params: AdmitHashingSelectionParams, payload: serde_json::Value) -> AdmitHashingSelectionReturn`, realizing every branch of the interaction spec by a `match` on `params.concrete`, each arm applying the document decision to `payload` and returning `Ok(AdmitHashingSelectionSuccessReturn { selection: params.concrete })` when the document supplies no setting and `Err(AdmitHashingSelectionErrorReturn::SettingsSupplied { concrete: params.concrete })` otherwise, the `Mock` arm under `#[cfg(any(test, feature = "mocks"))]`
+    * `[ ]`   Imports the family's names from `crate::factory::provides`, `serde_json::Value`, and this module's types from `interface`
+    * `[ ]`   No `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[ ]`   `adapters/hashing/src/admit_hashing_selection/provides.rs`
+    * `[ ]`   `pub use super::interface::*;`, `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, and `pub use super::admit_hashing_selection;`
+
+  * `[ ]`   `adapters/hashing/src/lib.rs`
+    * `[ ]`   Adds `mod admit_hashing_selection;` and `pub use admit_hashing_selection::provides::*;` to the barrel, the module's provides step, so the function and its types are part of the crate's public surface
+
+  * `[ ]`   `adapters/hashing/tests/admit_hashing_selection_integration_test.rs`
+    * `[ ]`   Crate-level `#![cfg(feature = "mocks")]`; imports from the crate root `admit_hashing_selection`, `AdmitHashingSelectionErrorReturn`, `AdmitHashingSelectionParamsOverrides`, `build_admit_hashing_selection_deps`, `build_admit_hashing_selection_params`, and `COMMITMENT_CONCRETES`, and `serde_json::Value`; names no concrete
+    * `[ ]`   `every_declared_member_is_selected_through_the_public_surface`
+      * `[ ]`   Contract: the entry of that name
+      * `[ ]`   Arrange: for each member of `COMMITMENT_CONCRETES`, `build_admit_hashing_selection_params` with the `concrete` override that member; the documents `Value::Null` and `serde_json::json!({ "setting": 1 })`; the body is written once and run over the declared set
+      * `[ ]`   Act: `admit_hashing_selection` over the deps builder, the params, and each document, once per member
+      * `[ ]`   Assert: for each member the call with `Value::Null` returns `Ok` whose selection equals that member, and the call with the supplying document returns `Err(AdmitHashingSelectionErrorReturn::SettingsSupplied { concrete })` with `concrete` equal to that member
+      * `[ ]`   Boundary: the public call `admit_hashing_selection` from the crate root, running the `match` arm of the selected member
+      * `[ ]`   Mocked: nothing
+    * `[ ]`   Enumeration: the spec's public surface lists the own entry `every_declared_member_is_selected_through_the_public_surface`, and the block of that name proves it
+
+  * `[ ]`   `directionality`
+    * `[ ]`   The module depends on the `factory` module's surface through `crate::factory::provides` and on `serde_json`; neither the `factory` module nor any concrete depends on this module; the crate barrel re-exports this module's provides outward, and no concrete is re-exported
+
+  * `[ ]`   `requirements`
+    * `[ ]`   `admit_returns_the_blake3_bao_selection_for_an_absent_document`, `admit_returns_the_blake3_bao_selection_for_an_empty_document`, and `admit_returns_the_mock_selection_naming_the_selected_failure_mode` pass, each member's selection returned for a document that supplies no setting (the dependency-map row of this ticket)
+    * `[ ]`   `admit_refuses_a_supplied_setting_naming_the_blake3_bao_member`, `admit_refuses_a_supplied_setting_naming_the_mock_member`, and `admit_refuses_a_document_that_is_not_an_object` pass, a document supplying a setting refused with the family's own error naming the member
+    * `[ ]`   `every_declared_member_is_selected_through_the_public_surface` passes under the `mocks` feature
+    * `[ ]`   `AdmitHashingSelectionErrorReturn` derives `Debug`, `PartialEq`, and `Eq`
+    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, and `cargo clippy --workspace --all-targets --all-features` complete without a warning or error from this module
+    * `[ ]`   Code outside `adapters/hashing` reaches the admission through the crate root and fails to compile if it names `Blake3BaoCommitment` or anything under `blake3_bao`
+
+* `[ ]`   `hashing/admit_hashing_composition` **Hashing family composition admission comparing the selected member's declared commitment-scheme identifier, read through the declaration lookup, with the required identifier its params carry, and returning the family's `Incompatible` flavor naming the member and both identifiers where they disagree; creates the `admit_hashing_composition` module of the `adapters/hashing` crate and adds its line to the crate barrel**
+
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: a deployment's hash-card names the commitment-scheme identifier a deployment requires, and each member of the hashing family declares the identifier it provides; the composition resolver must learn, before any member is constructed and before any effect, whether the selected member provides the identifier the hash-card requires, so a mismatch is refused before construction and no caller restates a member's declared identifier from its own knowledge of the member (`docs/agents/families.md`, Compatibility is admitted before construction and before effort; the dependency-map row of this ticket; `docs/project-planning/milestones.md`, Pairing adapters and key derivation, where the hashing family admits a member by the commitment-scheme identifier alone; `docs/project-planning/technical-requirements.md`, the hashing family's row of the subsystem register)
+    * `[ ]`   Functional: the function takes the admitted `CommitmentConcrete` and the required `CommitmentSchemeIdentifier` in its params
+    * `[ ]`   Functional: the function reads the member's declaration through the declaration lookup its deps carry and constructs no member
+    * `[ ]`   Functional: when the declaration's `identifier` equals the params' `identifier`, the function returns `Ok(AdmitHashingCompositionSuccessReturn)`
+    * `[ ]`   Functional: when the two identifiers differ, the function returns `Err(AdmitHashingCompositionErrorReturn::Incompatible { concrete, declared, required })`, naming the member, the identifier it declares, and the identifier required, and naming no concrete type
+    * `[ ]`   Functional: the compared values are the declaration's `identifier` and the params' `identifier`, both `CommitmentSchemeIdentifier`, compared as identifiers and never as text
+    * `[ ]`   Non-functional: a further concrete of the hashing family is its own module, its variant in the member identifier, the selection, and each error union it reaches, its entry in the declared set, its declaration constant, and its branch in the factory, the selection admission, the declaration lookup, and the declared-selection builders, and none of these is a line of this function
+    * `[ ]`   Non-functional: the function names no vendor library, takes no configuration text, holds no member's declared value as a literal, and identifies members only by `CommitmentConcrete`
+
+  * `[ ]`   `role`
+    * `[ ]`   Adapter ring: a family-owned function of the hashing family, beside the `factory` module and the private `blake3_bao` concrete, in the four-slot trusted form, since its params carry identifiers an in-process caller already admitted and its payload carries no data (`docs/agents/families.md`, What a family owns; `docs/agents/composition.md`, The signature)
+    * `[ ]`   Does not construct a concrete or call any operation of one
+    * `[ ]`   Does not admit configuration text into an identifier and does not admit settings
+    * `[ ]`   Does not call the selection admission; its params carry the member the selection admission admitted
+    * `[ ]`   Does not compare the chunk length, the key length, the adapter version, or the interface version, which are values a member declares and no selection requires
+    * `[ ]`   Does not edit the `factory` module, the `blake3_bao` concrete, `lookup_hashing_declaration`, or `admit_hashing_selection`
+
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the `adapters/hashing` crate's `admit_hashing_composition` module, holding the function, its deps, params, payload, success return, error return, return alias, and function type, its mock, its tests, and its provides
+    * `[ ]`   Outside: the family's types, which the `factory` module owns, the concretes and their declaration constants, the declaration lookup, the admission of text and settings into a selection, the construction of any member, and the comparison of declarations of other families, which the family has no composed member for
+    * `[ ]`   Creates the module directory `adapters/hashing/src/admit_hashing_composition`
+
+  * `[ ]`   `deps`
+    * `[ ]`   `hashing/blake3_bao`, not a direct dependency of this ticket in the dependency map and the node that authors the family's `factory` module items this function consumes, reached through `crate::factory::provides`; supplies `CommitmentConcrete`, `CommitmentSchemeIdentifier`, `CommitmentDeclaration`, and `COMMITMENT_CONCRETES`, and, under `#[cfg(any(test, feature = "mocks"))]`, `CommitmentConcreteOverrides` and `build_commitment_concrete`; direction inward, since a family-owned function consumes the family's factory module surface (`docs/agents/families.md`, Concretes are unreachable outside their family)
+    * `[ ]`   `hashing/lookup_hashing_declaration`, a direct dependency, reached through `crate::lookup_hashing_declaration::provides`, the family's private path; supplies `LookupHashingDeclarationFn`, `LookupHashingDeclarationDeps`, `LookupHashingDeclarationParams`, `LookupHashingDeclarationPayload`, and `LookupHashingDeclarationSuccessReturn`, and, under `#[cfg(any(test, feature = "mocks"))]`, `mock_lookup_hashing_declaration`; the function reads the member's declaration through a `LookupHashingDeclarationFn` its deps hold, so a declaration is read without constructing the member; direction inward
+    * `[ ]`   `hashing/admit_hashing_selection`, a direct dependency of this ticket in the dependency map; this function imports nothing from the module, since its params carry the `CommitmentConcrete` the selection admission returns as its selection
+    * `[ ]`   This node adds no external dependency and makes no edit to `adapters/hashing/Cargo.toml`
+    * `[ ]`   Integration entry of the direct dependency `hashing/lookup_hashing_declaration`: `every_declared_member_declares_itself_through_the_public_surface` concerns `lookup_hashing_declaration`, which this function calls, so it passes through this function and the spec dispositions it
+    * `[ ]`   Integration entry of the direct dependency `hashing/admit_hashing_selection`: `every_declared_member_is_selected_through_the_public_surface` concerns `admit_hashing_selection`; it does not pass through this function and does not end at one of its tests, so the spec dispositions none
+    * `[ ]`   No reverse dependency: neither `blake3_bao`, the `factory` module, `lookup_hashing_declaration`, nor `admit_hashing_selection` depends on this module
+
+  * `[ ]`   `context_slice`
+    * `[ ]`   From the `factory` module: `CommitmentConcrete`, whose real variant is `Blake3Bao` and whose variant `Mock(MockICommitmentAdapterFailureMode)` exists under `#[cfg(any(test, feature = "mocks"))]`, with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]`; `CommitmentSchemeIdentifier`, whose one real variant is `Blake3BaoV1`, with `#[derive(Clone, Copy, Debug, PartialEq, Eq)]`; `CommitmentDeclaration`, whose field `identifier: CommitmentSchemeIdentifier` the function reads; and `COMMITMENT_CONCRETES: &[CommitmentConcrete]`, the real declared set
+    * `[ ]`   From the `factory` module's mock, under the same cfg: `CommitmentConcreteOverrides`, the fieldless struct, and `build_commitment_concrete(concrete: CommitmentConcrete, overrides: CommitmentConcreteOverrides) -> CommitmentConcrete`, the declared-selection builder
+    * `[ ]`   From `lookup_hashing_declaration`: `LookupHashingDeclarationFn`, the alias `fn(&LookupHashingDeclarationDeps, LookupHashingDeclarationParams, LookupHashingDeclarationPayload) -> LookupHashingDeclarationReturn`; `LookupHashingDeclarationDeps` and `LookupHashingDeclarationPayload`, fieldless structs; `LookupHashingDeclarationParams { concrete: CommitmentConcrete }`; `LookupHashingDeclarationSuccessReturn { declaration: CommitmentDeclaration }`; `LookupHashingDeclarationErrorReturn`, the enum with no variant; and, under the same cfg, `mock_lookup_hashing_declaration`, typed `LookupHashingDeclarationFn`, which returns the mock declaration whose `identifier` is `CommitmentSchemeIdentifier::Blake3BaoV1`
+
+  * `[ ]`   `adapters/hashing/src/admit_hashing_composition/interface.rs`
+    * `[ ]`   `AdmitHashingCompositionDeps`, a struct with no derives and the field `pub lookup_hashing_declaration: LookupHashingDeclarationFn`, the collaborator through which the function reads a member's declaration
+    * `[ ]`   `AdmitHashingCompositionParams`, a struct with no derives and the fields `pub concrete: CommitmentConcrete`, the admitted member identifier whose declaration is read, and `pub identifier: CommitmentSchemeIdentifier`, the commitment-scheme identifier the hash-card requires
+    * `[ ]`   `AdmitHashingCompositionPayload`, a fieldless struct with no derives, since the hashing family composes with no other family's member and the payload carries no declaration
+    * `[ ]`   `AdmitHashingCompositionSuccessReturn`, a fieldless struct with `#[derive(Debug, PartialEq, Eq)]`, the outcome that the member provides the required identifier
+    * `[ ]`   `AdmitHashingCompositionErrorReturn`, an enum with `#[derive(Debug, PartialEq, Eq)]` and the variant `Incompatible { concrete: CommitmentConcrete, declared: CommitmentSchemeIdentifier, required: CommitmentSchemeIdentifier }`, the family's `Incompatible` flavor naming the member and the identifiers that disagree; the lookup's error arm has no variant, so no variant carries it
+    * `[ ]`   `AdmitHashingCompositionReturn`, the alias `Result<AdmitHashingCompositionSuccessReturn, AdmitHashingCompositionErrorReturn>`; `AdmitHashingCompositionFn`, the alias `fn(&AdmitHashingCompositionDeps, AdmitHashingCompositionParams, AdmitHashingCompositionPayload) -> AdmitHashingCompositionReturn`
+    * `[ ]`   The function is in the trusted form
+    * `[ ]`   Imports `CommitmentConcrete` and `CommitmentSchemeIdentifier` from `crate::factory::provides` and `LookupHashingDeclarationFn` from `crate::lookup_hashing_declaration::provides`; names no vendor
+
+  * `[ ]`   `adapters/hashing/src/admit_hashing_composition/interaction.spec.md`
+    * `[ ]`   `admit_hashing_composition`, declaration read: the function calls `deps.lookup_hashing_declaration` with a `LookupHashingDeclarationDeps`, `LookupHashingDeclarationParams { concrete: params.concrete }`, and a `LookupHashingDeclarationPayload`, built by struct literals; the lookup's error arm has no variant, so the call binds through the irrefutable pattern `let Ok(looked_up) = …;`; the branches below read `looked_up.declaration.identifier`
+    * `[ ]`   `admit_hashing_composition`, identifiers agree: condition the declaration's `identifier` equals `params.identifier`; decision equality of two `CommitmentSchemeIdentifier` values; dependency call the lookup above and no other; outcome `Ok(AdmitHashingCompositionSuccessReturn)`
+    * `[ ]`   `admit_hashing_composition`, identifiers disagree: condition the declaration's `identifier` differs from `params.identifier`; decision the same equality; dependency call the same lookup; outcome `Err(AdmitHashingCompositionErrorReturn::Incompatible { concrete: params.concrete, declared: the declaration's identifier, required: params.identifier })`; no input and no failure mode of the official mocks reaches this branch, so it has no unit test: `mock_lookup_hashing_declaration` and the real lookup return, for every member and every `MockICommitmentAdapterFailureMode`, a declaration holding the identifier the real member provides, and a value identifier has a variant only for a value some member of the declared set provides (`docs/agents/families.md`, A value families must agree on); for the same reason the agreeing-branch blocks vary no input the comparison discriminates over
+    * `[ ]`   The function is the same for every member of `CommitmentConcrete` present in the build, since it reads the member's declaration through the lookup and matches on no member
+    * `[ ]`   Ordering and effects: the function constructs nothing, mutates nothing, and retains no params or payload; the same deps, params, and payload always yield the same outcome
+    * `[ ]`   Own entries: none; the cross-module property of reading each member's real declaration is the carried entry below, stated in this node's terms
+    * `[ ]`   Callee dispositions: carried `every_declared_member_declares_itself_through_the_public_surface` of `hashing/lookup_hashing_declaration`, restated where this node transforms it: the declaration the lookup returns for each member of `COMMITMENT_CONCRETES` is read by this function and compared with the identifier required, so every declared member is admitted for the identifier it declares; its route is that member's interface-held declaration constant, the `match` arm of the selected member, the injected `lookup_hashing_declaration`, and `admit_hashing_composition`; no outer-edge collaborator exists; no other direct dependency entry passes through this function or ends at one of its tests
+    * `[ ]`   Private surface: none; the function composes no collaborator beyond the lookup its deps carry, which the public integration test runs for real, so the node has no `integration_test.rs`
+    * `[ ]`   Public surface: an outside caller invokes `admit_hashing_composition` from the crate root with deps holding `lookup_hashing_declaration`, params naming each member of `COMMITMENT_CONCRETES` and the identifier the real lookup returns for that member, and observes the returned outcome; the entry proven is the carried `every_declared_member_declares_itself_through_the_public_surface`; its route is that member's interface-held declaration constant, the `match` arm of the selected member, the injected lookup, and the public call; the outcome of a `Mock(failure_mode)` selection, observable under the `mocks` feature, is a property of this function alone and is proven by `admit_returns_ok_for_the_mock_member_naming_the_required_identifier`, so it is not an entry; the declared set the public block runs over holds real members alone
+
+  * `[ ]`   `adapters/hashing/src/admit_hashing_composition/mock.rs`
+    * `[ ]`   Module-level `#![allow(dead_code, clippy::too_many_arguments)]`; the module is available under `#[cfg(any(test, feature = "mocks"))]`; imports the family's names and builders from `crate::factory::provides`, `mock_lookup_hashing_declaration` and `LookupHashingDeclarationFn` from `crate::lookup_hashing_declaration::provides`, and this module's types from `super::interface`
+    * `[ ]`   `AdmitHashingCompositionDepsOverrides`, `#[derive(Default)]` with `pub lookup_hashing_declaration: Option<LookupHashingDeclarationFn>`, and `build_admit_hashing_composition_deps(overrides) -> AdmitHashingCompositionDeps`, `lookup_hashing_declaration` defaulting to `mock_lookup_hashing_declaration`, the lookup's own function mock
+    * `[ ]`   `AdmitHashingCompositionParamsOverrides`, `#[derive(Default)]` with `pub concrete: Option<CommitmentConcrete>` and `pub identifier: Option<CommitmentSchemeIdentifier>`, and `build_admit_hashing_composition_params(overrides) -> AdmitHashingCompositionParams`, `concrete` defaulting to `build_commitment_concrete(CommitmentConcrete::Blake3Bao, Default::default())`, the real member through the family's declared-selection builder, and `identifier` defaulting to `CommitmentSchemeIdentifier::Blake3BaoV1`
+    * `[ ]`   `AdmitHashingCompositionPayloadOverrides`, fieldless with `#[derive(Default)]`, and `build_admit_hashing_composition_payload(overrides) -> AdmitHashingCompositionPayload`
+    * `[ ]`   `AdmitHashingCompositionSuccessReturnOverrides`, fieldless with `#[derive(Default)]`, and `build_admit_hashing_composition_success_return(overrides) -> AdmitHashingCompositionSuccessReturn`
+    * `[ ]`   `mock_admit_hashing_composition`, typed `AdmitHashingCompositionFn`, returning `Ok(build_admit_hashing_composition_success_return(Default::default()))`
+    * `[ ]`   No invalidator and no corruptions struct, since deps and params are never serialized and the payload and success return are fieldless; the error return is an enum used by its production value, and the aliases and the function type are used by their production type with no mock
+
+  * `[ ]`   `adapters/hashing/src/admit_hashing_composition/test.rs`
+    * `[ ]`   Imports `admit_hashing_composition`, `AdmitHashingCompositionParamsOverrides`, `AdmitHashingCompositionSuccessReturn`, `build_admit_hashing_composition_deps`, `build_admit_hashing_composition_params`, and `build_admit_hashing_composition_payload` from `super::provides`, and `CommitmentConcrete`, `CommitmentSchemeIdentifier`, and `MockICommitmentAdapterFailureMode` from `crate::factory::provides`
+    * `[ ]`   `admit_returns_ok_when_the_required_identifier_equals_the_declared_identifier`
+      * `[ ]`   Contract: the declaration the lookup returns holds an `identifier` equal to `params.identifier` → `Ok(AdmitHashingCompositionSuccessReturn)`
+      * `[ ]`   Arrange: `build_admit_hashing_composition_deps` with no override, so the lookup is `mock_lookup_hashing_declaration`, whose declaration's identifier is the real `CommitmentSchemeIdentifier::Blake3BaoV1`; `build_admit_hashing_composition_params` with the `identifier` override `CommitmentSchemeIdentifier::Blake3BaoV1`, stated as an independent literal; `build_admit_hashing_composition_payload` with no override
+      * `[ ]`   Act: `admit_hashing_composition` over the deps, params, and payload builders
+      * `[ ]`   Assert: the result equals `Ok(AdmitHashingCompositionSuccessReturn)`
+    * `[ ]`   `admit_returns_ok_for_the_mock_member_naming_the_required_identifier`
+      * `[ ]`   Contract: `params.concrete` is `CommitmentConcrete::Mock(failure_mode)` and the declaration the lookup returns holds an `identifier` equal to `params.identifier` → `Ok(AdmitHashingCompositionSuccessReturn)`
+      * `[ ]`   Arrange: `build_admit_hashing_composition_deps` with no override; `build_admit_hashing_composition_params` with the `concrete` override `CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::ContentLengthUnrepresentable)`, a member other than the real member and a mode other than the `NoFailure` the family's mock constant holds, and the `identifier` override `CommitmentSchemeIdentifier::Blake3BaoV1`, stated as an independent literal; `build_admit_hashing_composition_payload` with no override
+      * `[ ]`   Act: `admit_hashing_composition` over the deps, params, and payload builders
+      * `[ ]`   Assert: the result equals `Ok(AdmitHashingCompositionSuccessReturn)`
+
+  * `[ ]`   `construction`
+    * `[ ]`   `admit_hashing_composition` is a standalone function; it constructs no adapter and holds no instance, and its deps hold the `LookupHashingDeclarationFn` handle built at the call site
+
+  * `[ ]`   `adapters/hashing/src/admit_hashing_composition/mod.rs`
+    * `[ ]`   Module wiring: `mod interface;`, `#[cfg(any(test, feature = "mocks"))] mod mock;`, `pub mod provides;`, and `#[cfg(test)] mod test;`
+    * `[ ]`   `pub fn admit_hashing_composition(deps: &AdmitHashingCompositionDeps, params: AdmitHashingCompositionParams, _payload: AdmitHashingCompositionPayload) -> AdmitHashingCompositionReturn`, realizing every branch of the interaction spec: the declaration read through `deps.lookup_hashing_declaration` bound by the irrefutable pattern `let Ok(looked_up) = …;`, then the equality of `looked_up.declaration.identifier` and `params.identifier` choosing `Ok(AdmitHashingCompositionSuccessReturn)` or `Err(AdmitHashingCompositionErrorReturn::Incompatible { … })`
+    * `[ ]`   Imports the family's names from `crate::factory::provides`, `LookupHashingDeclarationDeps`, `LookupHashingDeclarationParams`, and `LookupHashingDeclarationPayload` from `crate::lookup_hashing_declaration::provides`, and this module's types from `interface`
+    * `[ ]`   No `unsafe`, `unwrap`, `expect`, `panic!`, or numeric `as`
+
+  * `[ ]`   `adapters/hashing/src/admit_hashing_composition/provides.rs`
+    * `[ ]`   `pub use super::interface::*;`, `#[cfg(any(test, feature = "mocks"))] pub use super::mock::*;`, and `pub use super::admit_hashing_composition;`
+
+  * `[ ]`   `adapters/hashing/src/lib.rs`
+    * `[ ]`   Adds `mod admit_hashing_composition;` and `pub use admit_hashing_composition::provides::*;` to the barrel, the module's provides step, so the function and its types are part of the crate's public surface
+
+  * `[ ]`   `adapters/hashing/tests/admit_hashing_composition_integration_test.rs`
+    * `[ ]`   Crate-level `#![cfg(feature = "mocks")]`; imports from the crate root `admit_hashing_composition`, `AdmitHashingCompositionDepsOverrides`, `AdmitHashingCompositionParamsOverrides`, `AdmitHashingCompositionSuccessReturn`, `build_admit_hashing_composition_deps`, `build_admit_hashing_composition_params`, `build_admit_hashing_composition_payload`, `lookup_hashing_declaration`, `LookupHashingDeclarationParamsOverrides`, `build_lookup_hashing_declaration_deps`, `build_lookup_hashing_declaration_params`, `build_lookup_hashing_declaration_payload`, and `COMMITMENT_CONCRETES`; names no concrete
+    * `[ ]`   `every_declared_member_declares_itself_through_the_public_surface`
+      * `[ ]`   Contract: the carried entry of that name, restated: for each member of `COMMITMENT_CONCRETES` the function reads the member's declaration through the real lookup and admits the member for the identifier it declares
+      * `[ ]`   Arrange: for each member of `COMMITMENT_CONCRETES`, `build_admit_hashing_composition_deps` with the `lookup_hashing_declaration` override `lookup_hashing_declaration`, the real function, the declaration the real `lookup_hashing_declaration` returns for that member, read through `build_lookup_hashing_declaration_deps`, `build_lookup_hashing_declaration_params` with the `concrete` override that member, and `build_lookup_hashing_declaration_payload`, bound through the irrefutable pattern `let Ok(success) = result;`, and `build_admit_hashing_composition_params` with the `concrete` override that member and the `identifier` override that declaration's `identifier`, the identifier the member provides, read where the member is received and never restated; the body is written once and run over the declared set
+      * `[ ]`   Act: `admit_hashing_composition` over the deps, params, and payload builders, once per member
+      * `[ ]`   Assert: for each member the result equals `Ok(AdmitHashingCompositionSuccessReturn)`
+      * `[ ]`   Boundary: the public call `admit_hashing_composition` from the crate root, running the real injected `lookup_hashing_declaration`, the `match` arm of the selected member, and that member's interface-held declaration constant
+      * `[ ]`   Mocked: nothing
+    * `[ ]`   Enumeration: the spec's public surface lists the carried entry `every_declared_member_declares_itself_through_the_public_surface`, and the block of that name proves it
+
+  * `[ ]`   `directionality`
+    * `[ ]`   The module depends on the `factory` module's surface through `crate::factory::provides` and on `lookup_hashing_declaration` through `crate::lookup_hashing_declaration::provides`, the family's private path; neither depends on this module; the crate barrel re-exports this module's provides outward, and no concrete is re-exported
+
+  * `[ ]`   `requirements`
+    * `[ ]`   `admit_returns_ok_when_the_required_identifier_equals_the_declared_identifier` passes, a member admitted for the identifier it declares (the dependency-map row of this ticket)
+    * `[ ]`   `admit_returns_ok_for_the_mock_member_naming_the_required_identifier` passes
+    * `[ ]`   `every_declared_member_declares_itself_through_the_public_surface` passes under the `mocks` feature
+    * `[ ]`   `AdmitHashingCompositionErrorReturn` derives `Debug`, `PartialEq`, and `Eq`
+    * `[ ]`   `cargo check --workspace --all-targets --all-features`, `cargo fmt --all --check`, and `cargo clippy --workspace --all-targets --all-features` complete without a warning or error from this module
+    * `[ ]`   Code outside `adapters/hashing` reaches the admission through the crate root and fails to compile if it names `Blake3BaoCommitment` or anything under `blake3_bao`
+
+* `[ ]`   `hashing/factory` **Hashing factory completing the family's composition admission against the commitment-scheme identifier the hash-card requires before it constructs anything, then constructing the concrete the configuration names and returning it behind the family's trait; carries the family's integration test**
+
+  * `[ ]`   `objective`
+    * `[ ]`   Problem: every content root, outboard, authentication path, and custody challenge passes through the hashing family's generic surface, and a consumer resolves the hashing concrete from the commitment-scheme identifier a deployment's hash-card carries rather than assuming the scheme, so a concrete whose declaration the family's composition admission finds incompatible with the required identifier is refused before anything is constructed, and the factory restates no member's declared value and repeats no comparison the composition admission owns (`docs/agents/families.md`, Compatibility is admitted before construction and before effort; the dependency-map row of this ticket; CR-02; EC-02; SW-04; Composition Boundary; `docs/research/cryptography.md`'s The Hash-Card, commitment-scheme identifier row)
+    * `[ ]`   Functional: given the concrete the configuration names and the commitment-scheme identifier required, the factory calls `admit_hashing_composition` with both before any construction and returns the admission's refusal unchanged with no construction; the identifier alone admits
+    * `[ ]`   Functional: an admitted concrete is constructed and returned as `Box<dyn ICommitmentAdapter>`; a member's declaration is read through `lookup_hashing_declaration` and never from the adapter
     * `[✅]`   Functional: a concrete's constructor error is returned unchanged in the factory's error arm, one variant per concrete
     * `[✅]`   Functional: the concrete the factory returns for the `Blake3BaoV1` identifier commits the reference content to bao's published hash and outboard
-    * `[✅]`   Non-functional: adding a concrete is its module, its variant in the selection enum and in the error enum, its branch here, and its entry in the declared set; adding an identifier is its variant in `CommitmentSchemeIdentifier`; no consumer changes
+    * `[ ]`   Non-functional: adding a concrete is its module, its variant in `CommitmentConcrete` and in the error enum, its branch here, and its entry in `COMMITMENT_CONCRETES`, with its branch in the lookup, the selection admission, and the declared-selection builder, which are the files the family's measure lists; adding an identifier is its variant in `CommitmentSchemeIdentifier`; no consumer changes and nothing outside the family changes (`docs/agents/families.md`, The rule)
 
-  * `[✅]`   `role`
+  * `[ ]`   `role`
     * `[✅]`   Adapter family factory: the implementation of the `factory` module, the hashing family's construction point, and the crate's public surface
     * `[✅]`   Returns the concrete behind `Box<dyn ICommitmentAdapter>`, because the family's trait is object-safe, as the key-derivation factory returns its adapter
-    * `[✅]`   Selects by concrete and admits by commitment-scheme identifier alone, so a further concrete implementing an existing identifier and a further identifier each arrive as a variant and a branch, with no change to the params or to any consumer
+    * `[ ]`   Selects by concrete and hands the concrete and the required commitment-scheme identifier to `admit_hashing_composition` before it constructs, so a further concrete implementing an existing identifier and a further identifier each arrive as a variant and a branch in the files the family's measure lists, with no change to the params or to any consumer
+    * `[ ]`   Does not read a member's declaration and does not compare identifiers; `admit_hashing_composition` reads the declaration through the lookup and compares
     * `[✅]`   Does not read a hash-card or the configuration; the composition resolver passes the concrete the configuration names as a typed `CommitmentConcrete` and the identifier the hash-card requires as a typed `CommitmentSchemeIdentifier`
     * `[✅]`   Does not hash; every commitment operation is the concrete's
     * `[✅]`   Carries the family's integration test across factory and concretes; does not carry a commit
 
-  * `[✅]`   `module`
-    * `[✅]`   Bounded context: the `factory` module of `adapters/hashing`, holding the factory function, its deps, params, payload, and return types, its signature type, the selection enum and the declared set, the function mock and builders, the module's private integration test, and the crate's public integration test under `adapters/hashing/tests`
+  * `[ ]`   `module`
+    * `[ ]`   Bounded context: the `factory` module of `adapters/hashing`, holding the factory function, its deps, params, payload, and return types, its signature type, the function mock and builders, the module's private integration test, and the crate's public integration test under `adapters/hashing/tests`
     * `[✅]`   Outside: the concrete's behavior, the root's encoding, the hash-card, the configuration catalogue, and every consumer of the family
 
-  * `[✅]`   `deps`
-    * `[✅]`   The `blake3_bao` concrete, through `crate::blake3_bao::provides`: `Blake3BaoCommitment`, `Blake3BaoCommitmentConstructorParams`, `Blake3BaoCommitment::try_new`, and `Blake3BaoCommitment::DECLARATION`; the factory constructs its concrete, completing the family form's recorded cycle that `hashing/blake3_bao` opened
-    * `[✅]`   The `factory` module's own interface, authored by `hashing/blake3_bao`: `ICommitmentAdapter`, `CommitmentSchemeIdentifier`, `CommitmentDeclaration`, `COMMITMENT_INTERFACE_VERSION`, `MockICommitmentAdapterFailureMode`, and each method's params, payload, success, error, and return types
-    * `[✅]`   The `factory` module's own mock, authored by `hashing/blake3_bao`, through `super::mock` in `factory/mod.rs` under `#[cfg(any(test, feature = "mocks"))]`: `MockICommitmentAdapter`, `MockICommitmentAdapterConstructorParams`, `MockICommitmentAdapter::try_new`, and `MockICommitmentAdapter::DECLARATION`
+  * `[ ]`   `deps`
+    * `[ ]`   The `blake3_bao` concrete, through `crate::blake3_bao::provides`: `Blake3BaoCommitment`, `Blake3BaoCommitmentConstructorParams`, and `Blake3BaoCommitment::try_new`; the factory constructs its concrete, completing the family form's recorded cycle that `hashing/blake3_bao` opened
+    * `[ ]`   The `factory` module's own interface, authored by `hashing/blake3_bao`: `ICommitmentAdapter`, `CommitmentConcrete`, `COMMITMENT_CONCRETES`, `CommitmentSchemeIdentifier`, `MockICommitmentAdapterFailureMode`, and each method's params, payload, success, error, and return types
+    * `[ ]`   The `factory` module's own mock, authored by `hashing/blake3_bao`, through `super::mock` in `factory/mod.rs` under `#[cfg(any(test, feature = "mocks"))]`: `MockICommitmentAdapter`, `MockICommitmentAdapterConstructorParams`, `MockICommitmentAdapter::try_new`, `MOCK_I_COMMITMENT_ADAPTER_DECLARATION`, `CommitmentConcreteOverrides`, and `build_commitment_concrete`
+    * `[ ]`   `hashing/admit_hashing_composition`, a direct dependency, through `crate::admit_hashing_composition::provides`, the family's private path: `AdmitHashingCompositionFn`, `AdmitHashingCompositionDeps`, `AdmitHashingCompositionParams`, `AdmitHashingCompositionPayload`, and `AdmitHashingCompositionErrorReturn`, and, under the same cfg, `mock_admit_hashing_composition`; the factory calls the composition admission before it constructs anything (`docs/agents/families.md`, Compatibility is admitted before construction and before effort)
+    * `[ ]`   `hashing/lookup_hashing_declaration`, not a direct dependency in the dependency map and the owner of the `LookupHashingDeclarationFn` that `AdmitHashingCompositionDeps` holds, through `crate::lookup_hashing_declaration::provides`: `LookupHashingDeclarationFn`, `LookupHashingDeclarationDeps`, `LookupHashingDeclarationParams`, and `LookupHashingDeclarationPayload`, and, under the same cfg, `mock_lookup_hashing_declaration`; the factory holds the handle to build the admission's deps
+    * `[ ]`   Integration entry of the direct dependency `hashing/admit_hashing_composition`: `every_declared_member_declares_itself_through_the_public_surface` passes through `create_commitment`, and the spec dispositions it
     * `[✅]`   The `factory` module's mock surface through `provides` under the `mocks` feature, in `factory/test.rs`, `factory/integration_test.rs`, and `tests/factory_integration_test.rs` only: this module's builders and overrides, the method builders `build_commit_params`, `build_commit_payload`, `build_verify_params`, `build_verify_payload`, `build_extract_path_params`, `build_extract_path_payload`, `build_verify_chunk_params`, `build_verify_chunk_payload`, `build_challenge_params`, `build_challenge_payload`, `build_respond_params`, and `build_respond_payload` with their overrides, `build_chunk` and `ChunkOverrides`, `reference_content`, `REFERENCE_CONTENT_LENGTH`, `reference_key_bytes`, `MockICommitmentAdapterErrorReturn`, the declared set `DECLARED_COMMITMENT_SELECTIONS`, and the oracle `expected_outboard`, which `hashing/blake3_bao` authors and the factory's mock surface re-exports; the tests reach the family only through `create_commitment` and name no concrete
     * `[✅]`   `domain` with its `mocks` feature, the existing dev-dependency, in `factory/integration_test.rs` only: `build_secret` with `SecretConstructorParamsOverrides`
     * `[✅]`   `hex` `0.4.3`, the existing dev-dependency, in `tests/factory_integration_test.rs` only: `hex::decode` over bao's published 3073-byte hash literal
@@ -1032,8 +1417,6 @@ Write each element in the fixed dependency order below — do not reorder or mer
 
 * `[ ]`   `encoding/admit_encoding_selection` — Halt: This node must be authored
 
-* `[ ]`   `encoding/admit_encoding_composition` — Halt: This node must be authored
-
 * `[✅]`   `encoding/factory` **Encoding factory constructing the concrete the configuration names, admitted against the encoding identifier the hash-card or configuration requires, and handing it to a consumer generic over the family's encoder and decoder traits; carries the family's integration test**
 
   * `[✅]`   `objective`
@@ -1494,8 +1877,6 @@ Write each element in the fixed dependency order below — do not reorder or mer
 * `[ ]`   `kdf/lookup_kdf_declaration` — Halt: This node must be authored
 
 * `[ ]`   `kdf/admit_kdf_selection` — Halt: This node must be authored
-
-* `[ ]`   `kdf/admit_kdf_composition` — Halt: This node must be authored
 
 * `[✅]`   `kdf/factory` **Key-derivation factory constructing the concrete the configuration names, admitted against the KDF identifier the hash-card requires, and returning it behind the family's trait, which reports its declaration; carries the family's integration test**
 
@@ -2083,8 +2464,6 @@ Write each element in the fixed dependency order below — do not reorder or mer
 * `[ ]`   `hash-to-scalar/lookup_hash_to_scalar_declaration` — Halt: This node must be authored
 
 * `[ ]`   `hash-to-scalar/admit_hash_to_scalar_selection` — Halt: This node must be authored
-
-* `[ ]`   `hash-to-scalar/admit_hash_to_scalar_composition` — Halt: This node must be authored
 
 * `[✅]`   `hash-to-scalar/factory` **Hash-to-scalar factory constructing the concrete the configuration names, admitted against the hash-to-scalar identifier the hash-card requires, and returning it behind the family's trait for the pairing scalar type asked for; carries the family's integration test and the milestone's commit**
 

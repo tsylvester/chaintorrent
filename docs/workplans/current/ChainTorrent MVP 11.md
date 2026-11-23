@@ -1031,8 +1031,6 @@ A developer installs dependencies and receives a working `node_modules` assemble
 
 * `[ ]`   `storage/admit_storage_selection` — Halt: This node must be authored
 
-* `[ ]`   `storage/admit_storage_composition` — Halt: This node must be authored
-
 * `[ ]`   `storage/factory` **Storage factory constructing the concrete the configuration names over the family configuration, the location and the declared table names, and the borrowed encoder, and handing it to a consumer generic over the family's adapter trait; carries the family's integration test across factory and concrete**
 
   * `[ ]`   `objective`
@@ -2046,8 +2044,6 @@ A developer installs dependencies and receives a working `node_modules` assemble
 * `[ ]`   `seed-host/lookup_seed_host_declaration` — Halt: This node must be authored
 
 * `[ ]`   `seed-host/admit_seed_host_selection` — Halt: This node must be authored
-
-* `[ ]`   `seed-host/admit_seed_host_composition` — Halt: This node must be authored
 
 * `[ ]`   `seed-host/factory` **Seed host factory constructing the concrete the configuration names over the family configuration, the borrowed encoder, and the caller's storage adapter, transport adapter, commitment adapter, and host conditions source, and returning it behind the family's trait; carries the family's integration test across factory and concretes, the Swarm transport and seed host milestone's integration test, and the milestone's commit**
 
