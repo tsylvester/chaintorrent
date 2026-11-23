@@ -1,17 +1,46 @@
-# `factory` — interaction spec
+# `create_random_source` — interaction spec
 
-Branch contract for `create_random_source` in the `factory` module of the `random` crate. Each branch states condition, decision, dependency call, and the exact return outcome.
+Branch contract for the `create_random_source` module of the `random` crate: the randomness family's factory — receives the selection `admit_random_selection` returns, constructs the concrete the selection names, and returns it behind the family's trait, the one surface every production draw passes through. Each branch states condition, decision, dependency call, and the exact return outcome.
 
 ## `create_random_source(deps: &CreateRandomSourceDeps, params: CreateRandomSourceParams, payload: CreateRandomSourcePayload) -> CreateRandomSourceReturn`
 
+The trusted form: `deps` and `payload` are not read. Decision: an exhaustive `match` on `params.kind`, one arm per `RandomSourceKind` variant, so a further member adds an arm.
+
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| operating system | `params.kind` is `RandomSourceKind::OperatingSystem` | a `match` on `params.kind` | `OsRandomSource::try_new(OsRandomSourceConstructorParams)`, exactly once | `Ok(CreateRandomSourceSuccessReturn { adapter: Box::new(source) })`; the boxed source reports `OsRandomSource::DECLARATION` through the trait method |
-| mock | `params.kind` is `RandomSourceKind::Mock(mode)`; present under `#[cfg(any(test, feature = "mocks"))]` | the same `match` on `params.kind` | `MockIRandomSourceAdapter::try_new(MockIRandomSourceAdapterConstructorParams { failure_mode: mode })`, exactly once | `Ok(CreateRandomSourceSuccessReturn { adapter: Box::new(source) })`; the boxed source reports `RandomSourceKind::Mock(mode)` as its declaration's source, and its constructor error arm is uninhabited |
+| operating system | `params.kind` is `RandomSourceKind::OperatingSystem` | the discriminant | `OsRandomSource::try_new(OsRandomSourceConstructorParams)`, exactly once | `Ok(CreateRandomSourceSuccessReturn { adapter: Box::new(source) })` |
+| mock — `#[cfg(any(test, feature = "mocks"))]` | `params.kind` is `RandomSourceKind::Mock(mode)` | the discriminant | `MockIRandomSourceAdapter::try_new(MockIRandomSourceAdapterConstructorParams { failure_mode: mode })`, exactly once | `Ok(CreateRandomSourceSuccessReturn { adapter: Box::new(source) })`, the boxed source carrying the failure mode `mode`, and its constructor error arm uninhabited |
 
-## Invariants and edges
+The operating-system constructor's error arm is uninhabited (`Result<_, Infallible>`), so its success is destructured irrefutably and that branch has no failure outcome; `CreateRandomSourceErrorReturn::OperatingSystem` carries its error type in the return union, so each concrete's constructor error has a variant.
 
-- The operating-system constructor's error arm is uninhabited (`Result<_, Infallible>`), so its success is destructured irrefutably and this branch has no failure outcome. `CreateRandomSourceErrorReturn::OperatingSystem` nevertheless carries its error type in the return union, so each concrete's constructor error has a variant.
-- `params.kind` selects the concrete; `deps` and `payload` carry nothing and are not read.
-- The `match` is exhaustive over `RandomSourceKind`: a kind with no branch fails to compile, which is how adding a concrete forces its factory branch to be written.
+## Ordering and invariants
 
+- `params.kind` selects the concrete; `deps` and `payload` carry nothing and are not read; the `match` is exhaustive over `RandomSourceKind`, so a kind with no branch fails to compile.
+- The matched branch returns; no side effect — no clock, no environment variable, no network, no filesystem.
+
+## Integration: callee dispositions
+
+- `random/os`: its interaction spec states no integration entry, so no entry passes through `create_random_source` or ends at one of its tests.
+- `random/lookup_random_declaration`: this node calls none of its functions, so no entry of it passes through `create_random_source` or ends at one of its tests.
+- `random/admit_random_selection`: its entries `every_declared_member_is_admitted_to_the_selection_naming_it` and `the_mock_member_is_admitted_to_the_selection_carrying_its_failure_mode` are carried below, each reaching a test of this node through its selection; its entry `a_document_supplying_a_setting_is_refused_naming_the_member` yields no selection and so reaches neither `create_random_source` nor a test of this node.
+
+## Integration: own entries
+
+- `a_source_the_factory_constructs_for_each_declared_member_draws_the_requested_bytes_from_the_generator`: condition `create_random_source` is called by a caller outside the crate with the selection admitted for each member of `RANDOM_SOURCE_KINDS`, and `fill_bytes` is called on the returned source for a length of 1024; outcome `Ok` whose `bytes` hold exactly 1024 bytes, whose 32-byte segments are pairwise distinct; variation the length 1024, which differs from the builder's default of 32 and splits into segments, so a source that returns the default width, or a zero-filled or repeating buffer, fails; edge that must survive the composition: the generator's output reaches the caller through the family's trait, and the test does not prove the generator's quality.
+- `a_source_the_factory_constructs_draws_an_empty_buffer_for_a_zero_length`: condition `create_random_source` is called by a caller outside the crate with the selection admitted for each member of `RANDOM_SOURCE_KINDS`, and `fill_bytes` is called on the returned source for a length of zero; outcome `Ok` whose `bytes` are empty; variation the length zero, which differs from the builder's default of 32, so a source that ignores the length fails; edge that must survive the composition: a zero-length draw is a success through the factory's surface.
+- `every_source_the_factory_constructs_draws_exactly_the_bytes_requested`: condition `fill_bytes` is called on the source `create_random_source` returns for each selection `build_random_source_kind` returns for a member of `RANDOM_SOURCE_KINDS` and for `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::Succeeds)`, for a length of 48; outcome `Ok` whose `bytes` hold exactly 48 bytes; variation the length 48, which differs from the builder's default of 32, so a source that returns the default width fails; edge that must survive the composition: every concrete of the family, the mock concrete included, answers the trait's length contract.
+- `every_source_the_factory_constructs_draws_an_empty_buffer_for_a_zero_length`: condition `fill_bytes` is called on the source `create_random_source` returns for each selection `build_random_source_kind` returns for a member of `RANDOM_SOURCE_KINDS` and for `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::Succeeds)`, for a length of zero; outcome `Ok` whose `bytes` are empty; variation the length zero, which differs from the builder's default of 32, so a source that ignores the length fails; edge that must survive the composition: a zero-length draw is a success for every concrete.
+- `the_mock_source_returns_the_family_mock_error_when_its_failure_mode_refuses`: condition `fill_bytes` is called on the source `create_random_source` returns for `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::FillBytesRefused)`; outcome `Err(FillBytesErrorReturn::MockIRandomSourceAdapter)`; variation the failure mode `FillBytesRefused`, which differs from the builder's default `Succeeds`, so a source that ignores the mode fails; edge that must survive the composition: the failure mode the selection names reaches the draw, and the declared set cannot reach this arm.
+
+## Integration: carried entries
+
+- `every_declared_member_is_admitted_to_the_selection_naming_it` of `random/admit_random_selection`, restated in this node's terms: the selection admitted for each member of `RANDOM_SOURCE_KINDS`, from a document that is `Value::Null` and from a document that is an empty `Value::Object`, is the selection `create_random_source` constructs that member's real source from, so two sources built from the two admitted selections draw 32-byte buffers that differ, which the mock concrete's fixed counter does not; route: `admit_random_selection` → `create_random_source` → the member's `try_new` → `IRandomSourceAdapter::fill_bytes` → the member's generator; the outer-edge collaborator is the member's generator, which runs real.
+- `the_mock_member_is_admitted_to_the_selection_carrying_its_failure_mode` of `random/admit_random_selection`, restated in this node's terms: the selection admitted for `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::FillBytesRefused)` constructs a source whose `fill_bytes` returns `Err(FillBytesErrorReturn::MockIRandomSourceAdapter)`, and the selection admitted for `RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::Succeeds)` constructs a source whose `fill_bytes` returns the bytes requested, so the failure mode the configuration names survives the factory; route: `admit_random_selection` → `create_random_source` → the mock selection's `try_new` → `IRandomSourceAdapter::fill_bytes`; no outer-edge collaborator, the mock concrete being the family's own.
+
+## Integration: private surface
+
+The real chain `create_random_source` → the selection's `try_new` → `IRandomSourceAdapter::fill_bytes`; the outer-edge collaborator is the operating system's generator, which runs real; the entries proven are `every_source_the_factory_constructs_draws_exactly_the_bytes_requested`, `every_source_the_factory_constructs_draws_an_empty_buffer_for_a_zero_length`, and `the_mock_source_returns_the_family_mock_error_when_its_failure_mode_refuses`, by `integration_test.rs`; the observable result is the `FillBytesReturn`; the branches of `create_random_source` are proven by the unit blocks of `test.rs`.
+
+## Integration: public surface
+
+The crate's `lib.rs` re-exports `factory::provides`, so an outside caller invokes `create_random_source` over a selection and `fill_bytes` on the source it returns. It observes the `CreateRandomSourceReturn` and the source's `FillBytesReturn` through their public fields. The entries proven are `a_source_the_factory_constructs_for_each_declared_member_draws_the_requested_bytes_from_the_generator`, `a_source_the_factory_constructs_draws_an_empty_buffer_for_a_zero_length`, `every_declared_member_is_admitted_to_the_selection_naming_it`, and `the_mock_member_is_admitted_to_the_selection_carrying_its_failure_mode`. The routes are those the entries state.

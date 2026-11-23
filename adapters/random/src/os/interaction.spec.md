@@ -12,7 +12,7 @@ The error arm has no branch: the operating-system source takes no configuration,
 
 ## `OsRandomSource::DECLARATION`
 
-An inherent constant, readable from the type before any instance exists:
+An inherent constant held by `os/interface.rs`, readable from the type before any instance exists — read through `random/lookup_random_declaration` without an instance, never obtained from a constructed adapter:
 
 `RandomSourceDeclaration { source: RandomSourceKind::OperatingSystem, adapter_version: 1, interface_version: RANDOM_SOURCE_INTERFACE_VERSION }`
 

@@ -1,6 +1,7 @@
 use crate::os::provides::OsRandomSourceFillBytesErrorReturn;
 use core::convert::Infallible;
 use domain::Secret;
+#[cfg(any(test, feature = "mocks"))]
 use serde::Serialize;
 
 pub const RANDOM_SOURCE_INTERFACE_VERSION: u32 = 1;
@@ -12,13 +13,24 @@ pub enum MockIRandomSourceAdapterFailureMode {
     FillBytesRefused,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RandomSourceKind {
     OperatingSystem,
     #[cfg(any(test, feature = "mocks"))]
     Mock(MockIRandomSourceAdapterFailureMode),
 }
 
+impl RandomSourceKind {
+    pub const fn name(&self) -> &'static str {
+        match self {
+            RandomSourceKind::OperatingSystem => "operating_system",
+            #[cfg(any(test, feature = "mocks"))]
+            RandomSourceKind::Mock(_) => "mock",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RandomSourceDeclaration {
     pub source: RandomSourceKind,
     pub adapter_version: u32,
@@ -45,7 +57,6 @@ pub enum FillBytesErrorReturn {
 pub type FillBytesReturn = Result<FillBytesSuccessReturn, FillBytesErrorReturn>;
 
 pub trait IRandomSourceAdapter {
-    fn declaration(&self) -> RandomSourceDeclaration;
     fn fill_bytes(&self, params: FillBytesParams, payload: FillBytesPayload) -> FillBytesReturn;
 }
 

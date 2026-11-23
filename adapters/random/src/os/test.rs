@@ -3,7 +3,8 @@
 use super::provides::{OsRandomSource, OsRandomSourceConstructorParams, build_os_random_source};
 use crate::factory::provides::{
     FillBytesParams, FillBytesPayloadOverrides, IRandomSourceAdapter,
-    RANDOM_SOURCE_INTERFACE_VERSION, RandomSourceKind, build_fill_bytes_payload,
+    RANDOM_SOURCE_INTERFACE_VERSION, RANDOM_SOURCE_KINDS, RandomSourceKind,
+    build_fill_bytes_payload,
 };
 use std::collections::HashSet;
 
@@ -127,30 +128,45 @@ fn os_random_source_declares_its_adapter_and_interface_versions() {
     );
 }
 
-/// Contract: `declaration()` on a living source → `Self::DECLARATION`.
-/// Arrange: `build_os_random_source()`.
-/// Act:     `declaration()` on the built source through `IRandomSourceAdapter`.
-/// Assert:  `source` matches `RandomSourceKind::OperatingSystem` under
-///   `matches!`; `adapter_version` equals the literal 1 written in the
-///   assertion; `interface_version` equals `RANDOM_SOURCE_INTERFACE_VERSION`.
+/// Contract: the declared set holds the real members alone →
+///   `RANDOM_SOURCE_KINDS` contains `RandomSourceKind::OperatingSystem` and no
+///   `Mock(_)` member.
+/// Arrange: none; the constant alone.
+/// Act:     reading `RANDOM_SOURCE_KINDS`.
+/// Assert:  every member is `RandomSourceKind::OperatingSystem` and none is
+///   `Mock(_)`.
 #[test]
-fn declaration_returns_the_associated_declaration() {
+fn random_source_kinds_declares_only_real_members() {
     // Arrange
-    let source = build_os_random_source();
 
     // Act
-    let declaration = source.declaration();
+    let kinds = RANDOM_SOURCE_KINDS;
 
     // Assert
-    assert!(matches!(
-        declaration.source,
-        RandomSourceKind::OperatingSystem
-    ));
-    assert_eq!(declaration.adapter_version, 1);
-    assert_eq!(
-        declaration.interface_version,
-        RANDOM_SOURCE_INTERFACE_VERSION
+    assert!(
+        kinds
+            .iter()
+            .all(|kind| matches!(kind, RandomSourceKind::OperatingSystem))
     );
+}
+
+/// Contract: each declared member has one total spelling → the `name()`
+///   spellings of the members of `RANDOM_SOURCE_KINDS` are pairwise distinct.
+/// Arrange: none; the constant alone.
+/// Act:     collecting each member's `name()` into a `HashSet`.
+/// Assert:  the `HashSet`'s length equals the length of `RANDOM_SOURCE_KINDS`.
+#[test]
+fn every_declared_kind_spells_a_distinct_name() {
+    // Arrange
+
+    // Act
+    let names: HashSet<&'static str> = RANDOM_SOURCE_KINDS
+        .iter()
+        .map(RandomSourceKind::name)
+        .collect();
+
+    // Assert
+    assert_eq!(names.len(), RANDOM_SOURCE_KINDS.len());
 }
 
 /// Contract: any params → `Ok(OsRandomSource)`.

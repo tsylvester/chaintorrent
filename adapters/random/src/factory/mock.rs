@@ -109,14 +109,6 @@ impl MockIRandomSourceAdapter {
 }
 
 impl IRandomSourceAdapter for MockIRandomSourceAdapter {
-    fn declaration(&self) -> RandomSourceDeclaration {
-        RandomSourceDeclaration {
-            source: RandomSourceKind::Mock(self.failure_mode),
-            adapter_version: 1,
-            interface_version: RANDOM_SOURCE_INTERFACE_VERSION,
-        }
-    }
-
     fn fill_bytes(&self, _params: FillBytesParams, payload: FillBytesPayload) -> FillBytesReturn {
         if matches!(
             self.failure_mode,
@@ -150,6 +142,28 @@ pub(crate) fn build_mock_i_random_source_adapter(
         build_mock_i_random_source_adapter_constructor_params(overrides),
     );
     adapter
+}
+
+pub(crate) const MOCK_I_RANDOM_SOURCE_ADAPTER_DECLARATION: RandomSourceDeclaration =
+    RandomSourceDeclaration {
+        source: RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::Succeeds),
+        adapter_version: 1,
+        interface_version: RANDOM_SOURCE_INTERFACE_VERSION,
+    };
+
+#[derive(Default)]
+pub struct RandomSourceKindOverrides;
+
+pub fn build_random_source_kind(
+    kind: RandomSourceKind,
+    _overrides: RandomSourceKindOverrides,
+) -> RandomSourceKind {
+    match kind {
+        RandomSourceKind::OperatingSystem => RandomSourceKind::OperatingSystem,
+        RandomSourceKind::Mock(_) => {
+            RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::Succeeds)
+        }
+    }
 }
 
 #[derive(Default)]
