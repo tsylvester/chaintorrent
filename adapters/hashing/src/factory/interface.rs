@@ -1,6 +1,10 @@
 #[cfg(any(test, feature = "mocks"))]
 use super::mock::MockICommitmentAdapterErrorReturn;
+use crate::admit_hashing_composition::provides::{
+    AdmitHashingCompositionErrorReturn, AdmitHashingCompositionFn,
+};
 use crate::blake3_bao::provides::Blake3BaoCommitmentErrorReturn;
+use crate::lookup_hashing_declaration::provides::LookupHashingDeclarationFn;
 use core::convert::Infallible;
 use domain::Secret;
 
@@ -13,11 +17,24 @@ pub const OUTBOARD_PARENT_LENGTH: usize = 64;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CommitmentSchemeIdentifier {
     Blake3BaoV1,
-    #[cfg(any(test, feature = "mocks"))]
-    MockV1,
+}
+
+impl CommitmentSchemeIdentifier {
+    pub const fn name(self) -> &'static str {
+        match self {
+            CommitmentSchemeIdentifier::Blake3BaoV1 => "blake3_bao_v1",
+        }
+    }
+
+    pub const fn wire_code(self) -> u8 {
+        match self {
+            CommitmentSchemeIdentifier::Blake3BaoV1 => 1,
+        }
+    }
 }
 
 pub struct CommitmentDeclaration {
+    pub concrete: CommitmentConcrete,
     pub identifier: CommitmentSchemeIdentifier,
     pub chunk_length: u64,
     pub key_length: usize,
@@ -252,7 +269,6 @@ pub enum MockICommitmentAdapterFailureMode {
 }
 
 pub trait ICommitmentAdapter {
-    fn declaration(&self) -> CommitmentDeclaration;
     fn commit(&self, params: CommitParams, payload: CommitPayload<'_>) -> CommitReturn;
     fn verify(&self, params: VerifyParams, payload: VerifyPayload<'_>) -> VerifyReturn;
     fn extract_path(
@@ -276,7 +292,20 @@ pub enum CommitmentConcrete {
     Mock(MockICommitmentAdapterFailureMode),
 }
 
-pub struct CreateCommitmentDeps;
+impl CommitmentConcrete {
+    pub const fn name(self) -> &'static str {
+        match self {
+            CommitmentConcrete::Blake3Bao => "blake3_bao",
+            #[cfg(any(test, feature = "mocks"))]
+            CommitmentConcrete::Mock(_) => "mock",
+        }
+    }
+}
+
+pub struct CreateCommitmentDeps {
+    pub admit_hashing_composition: AdmitHashingCompositionFn,
+    pub lookup_hashing_declaration: LookupHashingDeclarationFn,
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CreateCommitmentParams {
@@ -292,7 +321,7 @@ pub struct CreateCommitmentSuccessReturn {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum CreateCommitmentErrorReturn {
-    UnsupportedCommitmentScheme,
+    Composition(AdmitHashingCompositionErrorReturn),
     Blake3Bao(Infallible),
     #[cfg(any(test, feature = "mocks"))]
     Mock(Infallible),
@@ -311,3 +340,5 @@ pub const DECLARED_COMMITMENT_SELECTIONS: &[CreateCommitmentParams] = &[CreateCo
     concrete: CommitmentConcrete::Blake3Bao,
     identifier: CommitmentSchemeIdentifier::Blake3BaoV1,
 }];
+
+pub const COMMITMENT_CONCRETES: &[CommitmentConcrete] = &[CommitmentConcrete::Blake3Bao];

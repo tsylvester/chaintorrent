@@ -34,7 +34,7 @@ impl IPairingConsumer for PairingBenchmark {
 
     fn consume_pairing<P: IPairingAdapter>(
         &self,
-        _params: ConsumePairingParams,
+        params: ConsumePairingParams,
         payload: ConsumePairingPayload<P>,
     ) -> Self::Output {
         let adapter = &payload.adapter;
@@ -185,7 +185,7 @@ impl IPairingConsumer for PairingBenchmark {
         let pairing_product = start.elapsed() / iterations;
 
         Ok(PairingBenchmarkSuccessReturn {
-            concrete: P::CONCRETE,
+            concrete: params.concrete,
             iterations: self.iterations,
             timings: PairingOperationTimings {
                 mul_g1,

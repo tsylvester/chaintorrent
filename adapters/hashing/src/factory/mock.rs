@@ -14,6 +14,12 @@ use super::interface::{
     VerifyChunkReturn, VerifyChunkSuccessReturn, VerifyErrorReturn, VerifyParams, VerifyPayload,
     VerifyReturn, VerifySuccessReturn,
 };
+use crate::admit_hashing_composition::provides::{
+    AdmitHashingCompositionFn, mock_admit_hashing_composition,
+};
+use crate::lookup_hashing_declaration::provides::{
+    LookupHashingDeclarationFn, mock_lookup_hashing_declaration,
+};
 use core::convert::Infallible;
 use domain::Secret;
 use serde_json::{Map, Value};
@@ -39,6 +45,7 @@ pub fn reference_key_bytes() -> Vec<u8> {
 
 #[derive(Default)]
 pub struct CommitmentDeclarationOverrides {
+    pub concrete: Option<CommitmentConcrete>,
     pub identifier: Option<CommitmentSchemeIdentifier>,
     pub chunk_length: Option<u64>,
     pub key_length: Option<usize>,
@@ -50,26 +57,24 @@ pub fn build_commitment_declaration(
     overrides: CommitmentDeclarationOverrides,
 ) -> CommitmentDeclaration {
     CommitmentDeclaration {
+        concrete: overrides.concrete.unwrap_or(CommitmentConcrete::Mock(
+            MockICommitmentAdapterFailureMode::NoFailure,
+        )),
         identifier: overrides
             .identifier
-            .unwrap_or(MockICommitmentAdapter::DECLARATION.identifier),
-        chunk_length: overrides
-            .chunk_length
-            .unwrap_or(MockICommitmentAdapter::DECLARATION.chunk_length),
-        key_length: overrides
-            .key_length
-            .unwrap_or(MockICommitmentAdapter::DECLARATION.key_length),
-        adapter_version: overrides
-            .adapter_version
-            .unwrap_or(MockICommitmentAdapter::DECLARATION.adapter_version),
+            .unwrap_or(CommitmentSchemeIdentifier::Blake3BaoV1),
+        chunk_length: overrides.chunk_length.unwrap_or(MOCK_CHUNK_LENGTH),
+        key_length: overrides.key_length.unwrap_or(MOCK_KEY_LENGTH),
+        adapter_version: overrides.adapter_version.unwrap_or(1),
         interface_version: overrides
             .interface_version
-            .unwrap_or(MockICommitmentAdapter::DECLARATION.interface_version),
+            .unwrap_or(COMMITMENT_INTERFACE_VERSION),
     }
 }
 
 #[derive(Default)]
 pub struct CommitmentDeclarationCorruptions {
+    pub concrete: Option<Value>,
     pub identifier: Option<Value>,
     pub chunk_length: Option<Value>,
     pub key_length: Option<Value>,
@@ -81,11 +86,12 @@ pub fn invalidate_commitment_declaration(corruptions: CommitmentDeclarationCorru
     let declaration = build_commitment_declaration(Default::default());
     let mut fields = Map::new();
     fields.insert(
+        "concrete".to_string(),
+        Value::from(declaration.concrete.name()),
+    );
+    fields.insert(
         "identifier".to_string(),
-        Value::from(match declaration.identifier {
-            CommitmentSchemeIdentifier::Blake3BaoV1 => "Blake3BaoV1",
-            CommitmentSchemeIdentifier::MockV1 => "MockV1",
-        }),
+        Value::from(declaration.identifier.name()),
     );
     fields.insert(
         "chunk_length".to_string(),
@@ -103,6 +109,9 @@ pub fn invalidate_commitment_declaration(corruptions: CommitmentDeclarationCorru
         "interface_version".to_string(),
         Value::from(declaration.interface_version),
     );
+    if let Some(concrete) = corruptions.concrete {
+        fields.insert("concrete".to_string(), concrete);
+    }
     if let Some(identifier) = corruptions.identifier {
         fields.insert("identifier".to_string(), identifier);
     }
@@ -719,14 +728,6 @@ pub(crate) struct MockICommitmentAdapter {
 }
 
 impl MockICommitmentAdapter {
-    pub const DECLARATION: CommitmentDeclaration = CommitmentDeclaration {
-        identifier: CommitmentSchemeIdentifier::MockV1,
-        chunk_length: MOCK_CHUNK_LENGTH,
-        key_length: MOCK_KEY_LENGTH,
-        adapter_version: 1,
-        interface_version: COMMITMENT_INTERFACE_VERSION,
-    };
-
     pub fn try_new(
         params: MockICommitmentAdapterConstructorParams,
     ) -> MockICommitmentAdapterTryNewReturn {
@@ -737,10 +738,6 @@ impl MockICommitmentAdapter {
 }
 
 impl ICommitmentAdapter for MockICommitmentAdapter {
-    fn declaration(&self) -> CommitmentDeclaration {
-        Self::DECLARATION
-    }
-
     fn commit(&self, _params: CommitParams, payload: CommitPayload<'_>) -> CommitReturn {
         match self.failure_mode {
             MockICommitmentAdapterFailureMode::NoFailure => {}
@@ -1109,13 +1106,48 @@ pub(crate) fn build_mock_i_commitment_adapter(
     adapter
 }
 
+pub const MOCK_I_COMMITMENT_ADAPTER_DECLARATION: CommitmentDeclaration = CommitmentDeclaration {
+    concrete: CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::NoFailure),
+    identifier: CommitmentSchemeIdentifier::Blake3BaoV1,
+    chunk_length: MOCK_CHUNK_LENGTH,
+    key_length: MOCK_KEY_LENGTH,
+    adapter_version: 1,
+    interface_version: COMMITMENT_INTERFACE_VERSION,
+};
+
 #[derive(Default)]
-pub struct CreateCommitmentDepsOverrides;
+pub struct CommitmentConcreteOverrides;
+
+pub fn build_commitment_concrete(
+    concrete: CommitmentConcrete,
+    _overrides: CommitmentConcreteOverrides,
+) -> CommitmentConcrete {
+    match concrete {
+        CommitmentConcrete::Blake3Bao => CommitmentConcrete::Blake3Bao,
+        #[cfg(any(test, feature = "mocks"))]
+        CommitmentConcrete::Mock(_) => {
+            CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::NoFailure)
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct CreateCommitmentDepsOverrides {
+    pub admit_hashing_composition: Option<AdmitHashingCompositionFn>,
+    pub lookup_hashing_declaration: Option<LookupHashingDeclarationFn>,
+}
 
 pub fn build_create_commitment_deps(
-    _overrides: CreateCommitmentDepsOverrides,
+    overrides: CreateCommitmentDepsOverrides,
 ) -> CreateCommitmentDeps {
-    CreateCommitmentDeps
+    CreateCommitmentDeps {
+        admit_hashing_composition: overrides
+            .admit_hashing_composition
+            .unwrap_or(mock_admit_hashing_composition),
+        lookup_hashing_declaration: overrides
+            .lookup_hashing_declaration
+            .unwrap_or(mock_lookup_hashing_declaration),
+    }
 }
 
 #[derive(Default)]
@@ -1142,7 +1174,7 @@ pub fn build_create_commitment_params(
         )),
         identifier: overrides
             .identifier
-            .unwrap_or(CommitmentSchemeIdentifier::MockV1),
+            .unwrap_or(MOCK_I_COMMITMENT_ADAPTER_DECLARATION.identifier),
     }
 }
 
@@ -1160,11 +1192,11 @@ pub fn invalidate_create_commitment_params(
     fields.insert(
         "concrete".to_string(),
         match params.concrete {
-            CommitmentConcrete::Blake3Bao => Value::from("Blake3Bao"),
+            CommitmentConcrete::Blake3Bao => Value::from(params.concrete.name()),
             CommitmentConcrete::Mock(failure_mode) => {
                 let mut entry = Map::new();
                 entry.insert(
-                    "Mock".to_string(),
+                    params.concrete.name().to_string(),
                     Value::from(match failure_mode {
                         MockICommitmentAdapterFailureMode::NoFailure => "NoFailure",
                         MockICommitmentAdapterFailureMode::ContentLengthUnrepresentable => {
@@ -1181,10 +1213,7 @@ pub fn invalidate_create_commitment_params(
     );
     fields.insert(
         "identifier".to_string(),
-        Value::from(match params.identifier {
-            CommitmentSchemeIdentifier::Blake3BaoV1 => "Blake3BaoV1",
-            CommitmentSchemeIdentifier::MockV1 => "MockV1",
-        }),
+        Value::from(params.identifier.name()),
     );
     if let Some(concrete) = corruptions.concrete {
         fields.insert("concrete".to_string(), concrete);

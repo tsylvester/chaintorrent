@@ -6,17 +6,22 @@ use super::provides::{
     expected_path,
 };
 use crate::factory::provides::{
-    AuthenticationPathOverrides, COMMITMENT_INTERFACE_VERSION, ChallengePayloadOverrides,
-    ChunkOverrides, CommitErrorReturn, CommitmentKey, CommitmentSchemeIdentifier,
-    ExtractPathErrorReturn, ExtractPathPayloadOverrides, ICommitmentAdapter, OutboardOverrides,
-    REFERENCE_CONTENT_LENGTH, RespondErrorReturn, RespondPayloadOverrides,
-    RootConstructorParamsOverrides, VerifyChunkErrorReturn, VerifyChunkPayloadOverrides,
-    VerifyChunkSuccessReturn, VerifyErrorReturn, VerifySuccessReturn, build_authentication_path,
-    build_challenge_params, build_challenge_payload, build_chunk, build_commit_params,
-    build_commit_payload, build_extract_path_params, build_extract_path_payload, build_outboard,
-    build_respond_params, build_respond_payload, build_root, build_verify_chunk_params,
-    build_verify_chunk_payload, build_verify_params, build_verify_payload, reference_content,
-    reference_key_bytes,
+    AuthenticationPathOverrides, COMMITMENT_CONCRETES, COMMITMENT_INTERFACE_VERSION,
+    ChallengePayloadOverrides, ChunkOverrides, CommitErrorReturn, CommitmentConcrete,
+    CommitmentConcreteOverrides, CommitmentKey, CommitmentSchemeIdentifier, ExtractPathErrorReturn,
+    ExtractPathPayloadOverrides, ICommitmentAdapter, OutboardOverrides, REFERENCE_CONTENT_LENGTH,
+    RespondErrorReturn, RespondPayloadOverrides, RootConstructorParamsOverrides,
+    VerifyChunkErrorReturn, VerifyChunkPayloadOverrides, VerifyChunkSuccessReturn,
+    VerifyErrorReturn, VerifySuccessReturn, build_authentication_path, build_challenge_params,
+    build_challenge_payload, build_chunk, build_commit_params, build_commit_payload,
+    build_commitment_concrete, build_extract_path_params, build_extract_path_payload,
+    build_outboard, build_respond_params, build_respond_payload, build_root,
+    build_verify_chunk_params, build_verify_chunk_payload, build_verify_params,
+    build_verify_payload, reference_content, reference_key_bytes,
+};
+use crate::lookup_hashing_declaration::provides::{
+    LookupHashingDeclarationDeps, LookupHashingDeclarationParams, LookupHashingDeclarationPayload,
+    lookup_hashing_declaration,
 };
 use blake3::hash;
 use domain::{SecretConstructorParamsOverrides, build_secret};
@@ -39,27 +44,82 @@ fn try_new_returns_the_adapter() {
     assert!(matches!(result, Ok(Blake3BaoCommitment)));
 }
 
-/// Contract: `declaration`, declared: any adapter → `Blake3BaoCommitment::DECLARATION`.
-/// Arrange: `build_blake3_bao_commitment` with no override.
-/// Act:     `adapter.declaration()`.
-/// Assert:  the identifier matches `CommitmentSchemeIdentifier::Blake3BaoV1`; the
-///   chunk length equals 1024; the key length equals 32; the adapter version
-///   equals 1; the interface version equals `COMMITMENT_INTERFACE_VERSION`, each
-///   by `assert!`.
+/// Contract: `hashing/lookup_hashing_declaration` over
+///   `CommitmentConcrete::Blake3Bao` → `Blake3BaoCommitment::DECLARATION`, no
+///   adapter constructed.
+/// Arrange: none; the lookup reads the interface-held constant.
+/// Act:     the declaration lookup for `CommitmentConcrete::Blake3Bao`.
+/// Assert:  `concrete` is `CommitmentConcrete::Blake3Bao`; the identifier
+///   matches `CommitmentSchemeIdentifier::Blake3BaoV1`; the chunk length equals
+///   the literal 1024; the key length equals the literal 32; the adapter
+///   version equals the literal 1; the interface version equals
+///   `COMMITMENT_INTERFACE_VERSION`, each by `assert!`.
 #[test]
 fn declaration_returns_the_blake3_bao_declaration() {
-    // Arrange
-    let adapter = build_blake3_bao_commitment(Default::default());
+    // Arrange: none; the lookup reads the interface-held constant.
 
     // Act
-    let declaration = adapter.declaration();
+    let declaration = lookup_hashing_declaration(
+        &LookupHashingDeclarationDeps,
+        LookupHashingDeclarationParams {
+            concrete: CommitmentConcrete::Blake3Bao,
+        },
+        LookupHashingDeclarationPayload,
+    )
+    .expect("the declared concrete is a member")
+    .declaration;
 
     // Assert
+    assert!(matches!(
+        declaration.concrete,
+        CommitmentConcrete::Blake3Bao
+    ));
     assert!(declaration.identifier == CommitmentSchemeIdentifier::Blake3BaoV1);
     assert!(declaration.chunk_length == 1024);
     assert!(declaration.key_length == 32);
     assert!(declaration.adapter_version == 1);
     assert!(declaration.interface_version == COMMITMENT_INTERFACE_VERSION);
+}
+
+/// Contract: `COMMITMENT_CONCRETES` contains only `CommitmentConcrete::Blake3Bao`;
+///   every declared member's `name()` spelling is distinct;
+///   `CommitmentSchemeIdentifier::Blake3BaoV1` spells `blake3_bao_v1` with
+///   `uint8` wire code `1`; no mock-only scheme variant exists;
+///   `build_commitment_concrete` returns the real selection without
+///   configuration.
+/// Arrange: `COMMITMENT_CONCRETES`; `build_commitment_concrete` over
+///   `CommitmentConcrete::Blake3Bao` with fieldless overrides.
+/// Act:     read the declared set and each member's `name()`; run the
+///   declared-selection builder.
+/// Assert:  the set is exactly `Blake3Bao`; the member spellings are pairwise
+///   distinct; `Blake3BaoV1` spells `blake3_bao_v1` and its `uint8` wire code is
+///   `1`; no `MockV1` exists; the builder returns `CommitmentConcrete::Blake3Bao`
+///   carrying no settings.
+#[test]
+fn the_declared_set_and_spellings_are_total_and_real() {
+    // Arrange
+    let declared = COMMITMENT_CONCRETES;
+
+    // Act
+    let spellings: Vec<&'static str> = declared.iter().map(|member| member.name()).collect();
+    let selected = build_commitment_concrete(
+        CommitmentConcrete::Blake3Bao,
+        CommitmentConcreteOverrides::default(),
+    );
+
+    // Assert
+    assert_eq!(declared, &[CommitmentConcrete::Blake3Bao]);
+    let mut unique = spellings.clone();
+    unique.sort_unstable();
+    unique.dedup();
+    assert_eq!(unique.len(), spellings.len());
+    assert_eq!(
+        CommitmentSchemeIdentifier::Blake3BaoV1.name(),
+        "blake3_bao_v1"
+    );
+    assert_eq!(CommitmentSchemeIdentifier::Blake3BaoV1.wire_code(), 1);
+    let CommitmentSchemeIdentifier::Blake3BaoV1 = CommitmentSchemeIdentifier::Blake3BaoV1;
+    assert!(matches!(selected, CommitmentConcrete::Blake3Bao));
 }
 
 /// Contract: `commit`, unkeyed: the key is `Unkeyed` → `Ok(CommitSuccessReturn)`

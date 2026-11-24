@@ -1,119 +1,103 @@
 #![allow(clippy::expect_used)]
 
 use super::provides::{
-    COMMITMENT_INTERFACE_VERSION, ChallengePayloadOverrides, ChunkOverrides, CommitErrorReturn,
-    CommitmentConcrete, CommitmentKey, CreateCommitmentErrorReturn,
-    CreateCommitmentParamsOverrides, DECLARED_COMMITMENT_SELECTIONS, ExtractPathPayloadOverrides,
-    ICommitmentAdapter, MockICommitmentAdapterErrorReturn, MockICommitmentAdapterFailureMode,
-    OutboardOverrides, REFERENCE_CONTENT_LENGTH, RespondPayloadOverrides, VerifyChunkErrorReturn,
-    VerifyChunkPayloadOverrides, VerifyChunkSuccessReturn, VerifyErrorReturn, VerifySuccessReturn,
-    build_challenge_params, build_challenge_payload, build_chunk, build_commit_params,
-    build_commit_payload, build_create_commitment_deps, build_create_commitment_params,
-    build_create_commitment_payload, build_extract_path_params, build_extract_path_payload,
-    build_outboard, build_respond_params, build_respond_payload, build_verify_chunk_params,
-    build_verify_chunk_payload, build_verify_params, build_verify_payload, create_commitment,
-    reference_content, reference_key_bytes,
+    COMMITMENT_CONCRETES, ChallengePayloadOverrides, ChunkOverrides, CommitErrorReturn,
+    CommitmentConcrete, CommitmentConcreteOverrides, CommitmentKey, CreateCommitmentDepsOverrides,
+    CreateCommitmentParamsOverrides, ExtractPathPayloadOverrides, ICommitmentAdapter,
+    MockICommitmentAdapterErrorReturn, MockICommitmentAdapterFailureMode, OUTBOARD_HEADER_LENGTH,
+    OUTBOARD_PARENT_LENGTH, OutboardOverrides, REFERENCE_CONTENT_LENGTH, RespondPayloadOverrides,
+    VerifyChunkErrorReturn, VerifyChunkPayloadOverrides, VerifyChunkSuccessReturn,
+    VerifyErrorReturn, VerifySuccessReturn, build_challenge_params, build_challenge_payload,
+    build_chunk, build_commit_params, build_commit_payload, build_commitment_concrete,
+    build_create_commitment_deps, build_create_commitment_params, build_create_commitment_payload,
+    build_extract_path_params, build_extract_path_payload, build_outboard, build_respond_params,
+    build_respond_payload, build_verify_chunk_params, build_verify_chunk_payload,
+    build_verify_params, build_verify_payload, create_commitment, reference_content,
+    reference_key_bytes,
+};
+use crate::admit_hashing_composition::provides::admit_hashing_composition;
+use crate::lookup_hashing_declaration::provides::{
+    LookupHashingDeclarationParamsOverrides, build_lookup_hashing_declaration_deps,
+    build_lookup_hashing_declaration_params, build_lookup_hashing_declaration_payload,
+    lookup_hashing_declaration,
 };
 use domain::{SecretConstructorParamsOverrides, build_secret};
 
-/// Contract: `create_commitment` is called with the selection of a
-///   concrete and the identifier that concrete declares →
-///   `Ok(CreateCommitmentSuccessReturn { adapter })` with
-///   `adapter.declaration()` reporting the identifier required and the
-///   interface version `COMMITMENT_INTERFACE_VERSION`.
-/// Arrange: for each case, `build_create_commitment_deps`,
-///   `build_create_commitment_params` overriding `concrete` and
-///   `identifier` with the case's selection and identifier, and
-///   `build_create_commitment_payload`; the cases declare different
-///   identifiers, so a factory that constructs a concrete other than the
-///   selected one reports another identifier.
-/// Act:     `create_commitment(&deps, params, payload)` for the case.
-/// Assert:  `adapter.declaration().identifier` equals the case's
-///   identifier by `assert_eq!`, and `adapter.declaration().interface_version`
-///   equals `COMMITMENT_INTERFACE_VERSION` by `assert_eq!`.
-/// Boundary: the crate-internal path `create_commitment` through the
-///   selected concrete's `try_new`, with the declaration read through the
-///   returned adapter.
+/// Contract: the own entry
+///   `every_concrete_is_constructed_under_the_identifier_it_declares`, and
+///   the absorbed entry `hashing/admit_hashing_composition`
+///   `every_declared_member_declares_itself_through_the_public_surface`:
+///   `create_commitment` with the case's selection and the identifier the
+///   real lookup returns for it → `Ok(CreateCommitmentSuccessReturn { adapter })`,
+///   the adapter being the selected concrete.
+/// Arrange: for each case, `build_create_commitment_params` overriding
+///   `concrete` and `identifier` with the case's selection and identifier;
+///   `build_commit_payload` over the reference content with
+///   `CommitmentKey::Unkeyed`; the cases declare different chunk lengths,
+///   so the outboard length separates the concretes.
+/// Act:     `create_commitment(&deps, params, payload)` for the case,
+///   then `adapter.commit(build_commit_params(Default::default()), commit_payload)`.
+/// Assert:  the success arms are bound through `expect`;
+///   `outboard.bytes.len()` equals
+///   `OUTBOARD_HEADER_LENGTH + OUTBOARD_PARENT_LENGTH × (chunk count − 1)`
+///   by `assert_eq!`, the chunk count `REFERENCE_CONTENT_LENGTH` as a `u64`
+///   divided by `L`, rounded up, each term converted through `TryFrom`
+///   bound by `expect`, the expectation computed from the lookup's
+///   declaration and the layout constants and not from the factory.
+/// Boundary: the crate-internal path `create_commitment` through the real
+///   `admit_hashing_composition`, the real `lookup_hashing_declaration`,
+///   and the selected concrete's `try_new`, then the returned adapter's
+///   `commit`.
 /// Mocked:  nothing; the declared concretes and the mock concrete run as
-///   themselves, so this block does not prove a commitment.
+///   themselves.
 #[test]
 fn every_concrete_is_constructed_under_the_identifier_it_declares() {
     // Arrange
-    let mock_selection = build_create_commitment_params(Default::default());
-    for selection in DECLARED_COMMITMENT_SELECTIONS
+    let content = reference_content(REFERENCE_CONTENT_LENGTH);
+    let mock_concrete = CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::NoFailure);
+    for concrete in COMMITMENT_CONCRETES
         .iter()
-        .chain(core::iter::once(&mock_selection))
+        .map(|member| build_commitment_concrete(*member, CommitmentConcreteOverrides))
+        .chain(core::iter::once(mock_concrete))
     {
-        let deps = build_create_commitment_deps(Default::default());
+        let declaration = {
+            let Ok(looked_up) = lookup_hashing_declaration(
+                &build_lookup_hashing_declaration_deps(Default::default()),
+                build_lookup_hashing_declaration_params(LookupHashingDeclarationParamsOverrides {
+                    concrete: Some(concrete),
+                }),
+                build_lookup_hashing_declaration_payload(Default::default()),
+            );
+            looked_up.declaration
+        };
+        let deps = build_create_commitment_deps(CreateCommitmentDepsOverrides {
+            admit_hashing_composition: Some(admit_hashing_composition),
+            lookup_hashing_declaration: Some(lookup_hashing_declaration),
+        });
         let params = build_create_commitment_params(CreateCommitmentParamsOverrides {
-            concrete: Some(selection.concrete),
-            identifier: Some(selection.identifier),
+            concrete: Some(concrete),
+            identifier: Some(declaration.identifier),
         });
         let payload = build_create_commitment_payload(Default::default());
+        let commit_payload =
+            build_commit_payload(&content, CommitmentKey::Unkeyed, Default::default());
 
         // Act
-        let result = create_commitment(&deps, params, payload);
+        let success = create_commitment(&deps, params, payload)
+            .expect("an admitted selection returns the adapter");
+        let adapter: &dyn ICommitmentAdapter = &*success.adapter;
+        let committed = adapter
+            .commit(build_commit_params(Default::default()), commit_payload)
+            .expect("the unkeyed commit is admitted");
 
         // Assert
-        let success = result.expect("an admitted selection returns the adapter");
-        let adapter: &dyn ICommitmentAdapter = &*success.adapter;
-        assert_eq!(adapter.declaration().identifier, selection.identifier);
-        assert_eq!(
-            adapter.declaration().interface_version,
-            COMMITMENT_INTERFACE_VERSION
-        );
-    }
-}
-
-/// Contract: `create_commitment` is called with the selection of a
-///   concrete and an identifier that concrete does not declare →
-///   `Err(CreateCommitmentErrorReturn::UnsupportedCommitmentScheme)`.
-/// Arrange: for each pair of cases whose declared identifiers differ,
-///   `build_create_commitment_deps`,
-///   `build_create_commitment_params` overriding `concrete` with the
-///   first case's selection and `identifier` with the second case's
-///   identifier, and `build_create_commitment_payload`; every pairing
-///   carries an identifier the selected concrete does not declare, so an
-///   admission that compares against a constant or ignores the selection
-///   admits a pairing it must refuse.
-/// Act:     `create_commitment(&deps, params, payload)` for the pairing.
-/// Assert:  `result.err()` equals
-///   `Some(CreateCommitmentErrorReturn::UnsupportedCommitmentScheme)` by
-///   `assert_eq!`.
-/// Boundary: the crate-internal path `create_commitment`, whose
-///   admission reads the selected concrete's declaration.
-/// Mocked:  nothing.
-#[test]
-fn every_concrete_is_refused_under_an_identifier_it_does_not_declare() {
-    // Arrange
-    let mock_selection = build_create_commitment_params(Default::default());
-    for case in DECLARED_COMMITMENT_SELECTIONS
-        .iter()
-        .chain(core::iter::once(&mock_selection))
-    {
-        for other in DECLARED_COMMITMENT_SELECTIONS
-            .iter()
-            .chain(core::iter::once(&mock_selection))
-        {
-            if other.identifier == case.identifier {
-                continue;
-            }
-            let deps = build_create_commitment_deps(Default::default());
-            let params = build_create_commitment_params(CreateCommitmentParamsOverrides {
-                concrete: Some(case.concrete),
-                identifier: Some(other.identifier),
-            });
-            let payload = build_create_commitment_payload(Default::default());
-
-            // Act
-            let result = create_commitment(&deps, params, payload);
-
-            // Assert
-            assert_eq!(
-                result.err(),
-                Some(CreateCommitmentErrorReturn::UnsupportedCommitmentScheme)
-            );
-        }
+        let chunk_count = u64::try_from(REFERENCE_CONTENT_LENGTH)
+            .expect("the reference content length fits a u64")
+            .div_ceil(declaration.chunk_length);
+        let expected = OUTBOARD_HEADER_LENGTH
+            + OUTBOARD_PARENT_LENGTH
+                * usize::try_from(chunk_count - 1).expect("the chunk count fits a usize");
+        assert_eq!(committed.outboard.bytes.len(), expected);
     }
 }
 
@@ -125,9 +109,12 @@ fn every_concrete_is_refused_under_an_identifier_it_does_not_declare() {
 /// Arrange: the case is the mock selection alone, which the declared set
 ///   cannot reach; `build_create_commitment_params` with the `concrete`
 ///   override
-///   `CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::ContentLengthUnrepresentable)`;
-///   the adapter from `create_commitment` over `build_create_commitment_deps`,
-///   those params, and `build_create_commitment_payload`, bound through
+///   `CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::ContentLengthUnrepresentable)`
+///   and the `identifier` the real `lookup_hashing_declaration` returns
+///   for it; the adapter from `create_commitment` over
+///   `build_create_commitment_deps` holding the real
+///   `admit_hashing_composition` and `lookup_hashing_declaration`, those
+///   params, and `build_create_commitment_payload`, bound through
 ///   `expect`; `build_commit_params` with no override and
 ///   `build_commit_payload` over the reference content with
 ///   `CommitmentKey::Unkeyed`.
@@ -142,12 +129,25 @@ fn every_concrete_is_refused_under_an_identifier_it_does_not_declare() {
 #[test]
 fn every_concrete_returns_its_own_error_when_a_content_length_cannot_be_represented() {
     // Arrange
-    let deps = build_create_commitment_deps(Default::default());
+    let concrete =
+        CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::ContentLengthUnrepresentable);
+    let declaration = {
+        let Ok(looked_up) = lookup_hashing_declaration(
+            &build_lookup_hashing_declaration_deps(Default::default()),
+            build_lookup_hashing_declaration_params(LookupHashingDeclarationParamsOverrides {
+                concrete: Some(concrete),
+            }),
+            build_lookup_hashing_declaration_payload(Default::default()),
+        );
+        looked_up.declaration
+    };
+    let deps = build_create_commitment_deps(CreateCommitmentDepsOverrides {
+        admit_hashing_composition: Some(admit_hashing_composition),
+        lookup_hashing_declaration: Some(lookup_hashing_declaration),
+    });
     let params = build_create_commitment_params(CreateCommitmentParamsOverrides {
-        concrete: Some(CommitmentConcrete::Mock(
-            MockICommitmentAdapterFailureMode::ContentLengthUnrepresentable,
-        )),
-        ..Default::default()
+        concrete: Some(concrete),
+        identifier: Some(declaration.identifier),
     });
     let payload = build_create_commitment_payload(Default::default());
     let success =
@@ -179,9 +179,12 @@ fn every_concrete_returns_its_own_error_when_a_content_length_cannot_be_represen
 /// Arrange: the case is the mock selection alone, which the declared set
 ///   cannot reach; `build_create_commitment_params` with the `concrete`
 ///   override
-///   `CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::OffsetUnrepresentable)`;
-///   the adapter from `create_commitment` over `build_create_commitment_deps`,
-///   those params, and `build_create_commitment_payload`, bound through
+///   `CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::OffsetUnrepresentable)`
+///   and the `identifier` the real `lookup_hashing_declaration` returns
+///   for it; the adapter from `create_commitment` over
+///   `build_create_commitment_deps` holding the real
+///   `admit_hashing_composition` and `lookup_hashing_declaration`, those
+///   params, and `build_create_commitment_payload`, bound through
 ///   `expect`; `build_commit_params` with no override and
 ///   `build_commit_payload` over the reference content with
 ///   `CommitmentKey::Unkeyed`.
@@ -197,12 +200,25 @@ fn every_concrete_returns_its_own_error_when_a_content_length_cannot_be_represen
 #[test]
 fn every_concrete_returns_its_own_error_when_an_offset_cannot_be_represented() {
     // Arrange
-    let deps = build_create_commitment_deps(Default::default());
+    let concrete =
+        CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::OffsetUnrepresentable);
+    let declaration = {
+        let Ok(looked_up) = lookup_hashing_declaration(
+            &build_lookup_hashing_declaration_deps(Default::default()),
+            build_lookup_hashing_declaration_params(LookupHashingDeclarationParamsOverrides {
+                concrete: Some(concrete),
+            }),
+            build_lookup_hashing_declaration_payload(Default::default()),
+        );
+        looked_up.declaration
+    };
+    let deps = build_create_commitment_deps(CreateCommitmentDepsOverrides {
+        admit_hashing_composition: Some(admit_hashing_composition),
+        lookup_hashing_declaration: Some(lookup_hashing_declaration),
+    });
     let params = build_create_commitment_params(CreateCommitmentParamsOverrides {
-        concrete: Some(CommitmentConcrete::Mock(
-            MockICommitmentAdapterFailureMode::OffsetUnrepresentable,
-        )),
-        ..Default::default()
+        concrete: Some(concrete),
+        identifier: Some(declaration.identifier),
     });
     let payload = build_create_commitment_payload(Default::default());
     let success =
@@ -252,14 +268,32 @@ fn every_concrete_leaves_the_borrowed_key_intact() {
     // Arrange
     let secret = build_secret(reference_key_bytes(), SecretConstructorParamsOverrides);
     let content = reference_content(REFERENCE_CONTENT_LENGTH);
-    let mock_selection = build_create_commitment_params(Default::default());
-    for selection in DECLARED_COMMITMENT_SELECTIONS
+    let mock_concrete = CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::NoFailure);
+    for concrete in COMMITMENT_CONCRETES
         .iter()
-        .chain(core::iter::once(&mock_selection))
+        .map(|member| build_commitment_concrete(*member, CommitmentConcreteOverrides))
+        .chain(core::iter::once(mock_concrete))
     {
-        let deps = build_create_commitment_deps(Default::default());
+        let declaration = {
+            let Ok(looked_up) = lookup_hashing_declaration(
+                &build_lookup_hashing_declaration_deps(Default::default()),
+                build_lookup_hashing_declaration_params(LookupHashingDeclarationParamsOverrides {
+                    concrete: Some(concrete),
+                }),
+                build_lookup_hashing_declaration_payload(Default::default()),
+            );
+            looked_up.declaration
+        };
+        let deps = build_create_commitment_deps(CreateCommitmentDepsOverrides {
+            admit_hashing_composition: Some(admit_hashing_composition),
+            lookup_hashing_declaration: Some(lookup_hashing_declaration),
+        });
+        let params = build_create_commitment_params(CreateCommitmentParamsOverrides {
+            concrete: Some(concrete),
+            identifier: Some(declaration.identifier),
+        });
         let payload = build_create_commitment_payload(Default::default());
-        let success = create_commitment(&deps, *selection, payload)
+        let success = create_commitment(&deps, params, payload)
             .expect("an admitted selection returns the adapter");
         let adapter: &dyn ICommitmentAdapter = &*success.adapter;
         let commit_payload =
@@ -285,7 +319,8 @@ fn every_concrete_leaves_the_borrowed_key_intact() {
 ///   `build_create_commitment_payload`, bound through `expect`; the
 ///   reference content committed unkeyed, the success arm bound through
 ///   `expect`; a copy of the content with the byte at offset `2 × L`
-///   inverted, `L` read from the case's declaration, so the changed
+///   inverted, `L` the `chunk_length` of the declaration the real lookup
+///   returns for the case, so the changed
 ///   chunk is chunk 2 under each concrete's own chunk length.
 /// Act:     `adapter.verify` over the intact content and over the
 ///   changed copy, each with the committed root and outboard and
@@ -301,14 +336,32 @@ fn every_concrete_leaves_the_borrowed_key_intact() {
 fn every_concrete_verifies_the_content_it_committed() {
     // Arrange
     let content = reference_content(REFERENCE_CONTENT_LENGTH);
-    let mock_selection = build_create_commitment_params(Default::default());
-    for selection in DECLARED_COMMITMENT_SELECTIONS
+    let mock_concrete = CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::NoFailure);
+    for concrete in COMMITMENT_CONCRETES
         .iter()
-        .chain(core::iter::once(&mock_selection))
+        .map(|member| build_commitment_concrete(*member, CommitmentConcreteOverrides))
+        .chain(core::iter::once(mock_concrete))
     {
-        let deps = build_create_commitment_deps(Default::default());
+        let declaration = {
+            let Ok(looked_up) = lookup_hashing_declaration(
+                &build_lookup_hashing_declaration_deps(Default::default()),
+                build_lookup_hashing_declaration_params(LookupHashingDeclarationParamsOverrides {
+                    concrete: Some(concrete),
+                }),
+                build_lookup_hashing_declaration_payload(Default::default()),
+            );
+            looked_up.declaration
+        };
+        let deps = build_create_commitment_deps(CreateCommitmentDepsOverrides {
+            admit_hashing_composition: Some(admit_hashing_composition),
+            lookup_hashing_declaration: Some(lookup_hashing_declaration),
+        });
+        let params = build_create_commitment_params(CreateCommitmentParamsOverrides {
+            concrete: Some(concrete),
+            identifier: Some(declaration.identifier),
+        });
         let payload = build_create_commitment_payload(Default::default());
-        let success = create_commitment(&deps, *selection, payload)
+        let success = create_commitment(&deps, params, payload)
             .expect("an admitted selection returns the adapter");
         let adapter: &dyn ICommitmentAdapter = &*success.adapter;
         let committed = adapter
@@ -317,8 +370,8 @@ fn every_concrete_verifies_the_content_it_committed() {
                 build_commit_payload(&content, CommitmentKey::Unkeyed, Default::default()),
             )
             .expect("the unkeyed commit is admitted");
-        let chunk_length = usize::try_from(adapter.declaration().chunk_length)
-            .expect("a chunk length fits a usize");
+        let chunk_length =
+            usize::try_from(declaration.chunk_length).expect("a chunk length fits a usize");
         let mut altered = content.clone();
         altered[2 * chunk_length] ^= 0xff;
 
@@ -384,14 +437,32 @@ fn every_concrete_verifies_the_content_it_committed() {
 fn every_concrete_verifies_every_chunk_with_its_extracted_path() {
     // Arrange
     let content = reference_content(REFERENCE_CONTENT_LENGTH);
-    let mock_selection = build_create_commitment_params(Default::default());
-    for selection in DECLARED_COMMITMENT_SELECTIONS
+    let mock_concrete = CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::NoFailure);
+    for concrete in COMMITMENT_CONCRETES
         .iter()
-        .chain(core::iter::once(&mock_selection))
+        .map(|member| build_commitment_concrete(*member, CommitmentConcreteOverrides))
+        .chain(core::iter::once(mock_concrete))
     {
-        let deps = build_create_commitment_deps(Default::default());
+        let declaration = {
+            let Ok(looked_up) = lookup_hashing_declaration(
+                &build_lookup_hashing_declaration_deps(Default::default()),
+                build_lookup_hashing_declaration_params(LookupHashingDeclarationParamsOverrides {
+                    concrete: Some(concrete),
+                }),
+                build_lookup_hashing_declaration_payload(Default::default()),
+            );
+            looked_up.declaration
+        };
+        let deps = build_create_commitment_deps(CreateCommitmentDepsOverrides {
+            admit_hashing_composition: Some(admit_hashing_composition),
+            lookup_hashing_declaration: Some(lookup_hashing_declaration),
+        });
+        let params = build_create_commitment_params(CreateCommitmentParamsOverrides {
+            concrete: Some(concrete),
+            identifier: Some(declaration.identifier),
+        });
         let payload = build_create_commitment_payload(Default::default());
-        let success = create_commitment(&deps, *selection, payload)
+        let success = create_commitment(&deps, params, payload)
             .expect("an admitted selection returns the adapter");
         let adapter: &dyn ICommitmentAdapter = &*success.adapter;
         let committed = adapter
@@ -400,7 +471,7 @@ fn every_concrete_verifies_every_chunk_with_its_extracted_path() {
                 build_commit_payload(&content, CommitmentKey::Unkeyed, Default::default()),
             )
             .expect("the unkeyed commit is admitted");
-        let chunk_length = adapter.declaration().chunk_length;
+        let chunk_length = declaration.chunk_length;
         let chunk_count = u64::try_from(REFERENCE_CONTENT_LENGTH)
             .expect("the reference content length fits a u64")
             .div_ceil(chunk_length);
@@ -513,14 +584,32 @@ fn every_concrete_verifies_every_chunk_with_its_extracted_path() {
 fn every_concrete_answers_a_challenge_with_a_response_that_verifies() {
     // Arrange
     let content = reference_content(REFERENCE_CONTENT_LENGTH);
-    let mock_selection = build_create_commitment_params(Default::default());
-    for selection in DECLARED_COMMITMENT_SELECTIONS
+    let mock_concrete = CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::NoFailure);
+    for concrete in COMMITMENT_CONCRETES
         .iter()
-        .chain(core::iter::once(&mock_selection))
+        .map(|member| build_commitment_concrete(*member, CommitmentConcreteOverrides))
+        .chain(core::iter::once(mock_concrete))
     {
-        let deps = build_create_commitment_deps(Default::default());
+        let declaration = {
+            let Ok(looked_up) = lookup_hashing_declaration(
+                &build_lookup_hashing_declaration_deps(Default::default()),
+                build_lookup_hashing_declaration_params(LookupHashingDeclarationParamsOverrides {
+                    concrete: Some(concrete),
+                }),
+                build_lookup_hashing_declaration_payload(Default::default()),
+            );
+            looked_up.declaration
+        };
+        let deps = build_create_commitment_deps(CreateCommitmentDepsOverrides {
+            admit_hashing_composition: Some(admit_hashing_composition),
+            lookup_hashing_declaration: Some(lookup_hashing_declaration),
+        });
+        let params = build_create_commitment_params(CreateCommitmentParamsOverrides {
+            concrete: Some(concrete),
+            identifier: Some(declaration.identifier),
+        });
         let payload = build_create_commitment_payload(Default::default());
-        let success = create_commitment(&deps, *selection, payload)
+        let success = create_commitment(&deps, params, payload)
             .expect("an admitted selection returns the adapter");
         let adapter: &dyn ICommitmentAdapter = &*success.adapter;
         let committed = adapter
@@ -634,14 +723,32 @@ fn every_concrete_verifies_a_keyed_path_only_under_its_key() {
     // Arrange
     let secret = build_secret(reference_key_bytes(), SecretConstructorParamsOverrides);
     let content = reference_content(REFERENCE_CONTENT_LENGTH);
-    let mock_selection = build_create_commitment_params(Default::default());
-    for selection in DECLARED_COMMITMENT_SELECTIONS
+    let mock_concrete = CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::NoFailure);
+    for concrete in COMMITMENT_CONCRETES
         .iter()
-        .chain(core::iter::once(&mock_selection))
+        .map(|member| build_commitment_concrete(*member, CommitmentConcreteOverrides))
+        .chain(core::iter::once(mock_concrete))
     {
-        let deps = build_create_commitment_deps(Default::default());
+        let declaration = {
+            let Ok(looked_up) = lookup_hashing_declaration(
+                &build_lookup_hashing_declaration_deps(Default::default()),
+                build_lookup_hashing_declaration_params(LookupHashingDeclarationParamsOverrides {
+                    concrete: Some(concrete),
+                }),
+                build_lookup_hashing_declaration_payload(Default::default()),
+            );
+            looked_up.declaration
+        };
+        let deps = build_create_commitment_deps(CreateCommitmentDepsOverrides {
+            admit_hashing_composition: Some(admit_hashing_composition),
+            lookup_hashing_declaration: Some(lookup_hashing_declaration),
+        });
+        let params = build_create_commitment_params(CreateCommitmentParamsOverrides {
+            concrete: Some(concrete),
+            identifier: Some(declaration.identifier),
+        });
         let payload = build_create_commitment_payload(Default::default());
-        let success = create_commitment(&deps, *selection, payload)
+        let success = create_commitment(&deps, params, payload)
             .expect("an admitted selection returns the adapter");
         let adapter: &dyn ICommitmentAdapter = &*success.adapter;
         let committed = adapter
@@ -662,7 +769,7 @@ fn every_concrete_verifies_a_keyed_path_only_under_its_key() {
             )
             .expect("the index is in range")
             .path;
-        let chunk_length = adapter.declaration().chunk_length;
+        let chunk_length = declaration.chunk_length;
         let start = usize::try_from(2 * chunk_length).expect("a chunk offset fits a usize");
         let end = start
             + usize::try_from(chunk_length)

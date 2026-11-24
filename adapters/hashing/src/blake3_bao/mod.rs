@@ -8,10 +8,9 @@ pub(crate) mod provides;
 mod test;
 
 use crate::factory::provides::{
-    AuthenticationPath, CHAINING_VALUE_LENGTH, COMMITMENT_INTERFACE_VERSION, ChallengeParams,
-    ChallengePayload, ChallengeReturn, ChallengeSuccessReturn, Chunk, CommitErrorReturn,
-    CommitParams, CommitPayload, CommitReturn, CommitSuccessReturn, CommitmentDeclaration,
-    CommitmentKey, CommitmentSchemeIdentifier, ExtractPathErrorReturn, ExtractPathParams,
+    AuthenticationPath, CHAINING_VALUE_LENGTH, ChallengeParams, ChallengePayload, ChallengeReturn,
+    ChallengeSuccessReturn, Chunk, CommitErrorReturn, CommitParams, CommitPayload, CommitReturn,
+    CommitSuccessReturn, CommitmentKey, ExtractPathErrorReturn, ExtractPathParams,
     ExtractPathPayload, ExtractPathReturn, ExtractPathSuccessReturn, ICommitmentAdapter,
     OUTBOARD_HEADER_LENGTH, OUTBOARD_PARENT_LENGTH, Outboard, RespondErrorReturn, RespondParams,
     RespondPayload, RespondReturn, RespondSuccessReturn, Root, RootConstructorParams,
@@ -33,14 +32,6 @@ use interface::{
 use zeroize::Zeroize;
 
 impl Blake3BaoCommitment {
-    pub const DECLARATION: CommitmentDeclaration = CommitmentDeclaration {
-        identifier: CommitmentSchemeIdentifier::Blake3BaoV1,
-        chunk_length: BLAKE3_BAO_CHUNK_LENGTH,
-        key_length: BLAKE3_BAO_KEY_LENGTH,
-        adapter_version: 1,
-        interface_version: COMMITMENT_INTERFACE_VERSION,
-    };
-
     pub fn try_new(
         _params: Blake3BaoCommitmentConstructorParams,
     ) -> Blake3BaoCommitmentTryNewReturn {
@@ -404,10 +395,6 @@ impl Blake3BaoCommitment {
 }
 
 impl ICommitmentAdapter for Blake3BaoCommitment {
-    fn declaration(&self) -> CommitmentDeclaration {
-        Self::DECLARATION
-    }
-
     fn commit(&self, _params: CommitParams, payload: CommitPayload<'_>) -> CommitReturn {
         let mut key = match Self::admit_key(&payload.key) {
             Ok(key) => key,

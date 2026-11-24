@@ -86,8 +86,8 @@ fn consume_pairing_returns_the_draw_error_unchanged() {
 }
 
 /// Contract: both scalars drawn with `P::Scalar::UNIFORM_BYTES_LENGTH` bytes
-///   and sampled → `Ok(PairingBenchmarkSuccessReturn { concrete: P::CONCRETE,
-///   iterations: self.iterations, timings })`.
+///   and sampled → `Ok(PairingBenchmarkSuccessReturn { concrete:
+///   params.concrete, iterations: self.iterations, timings })`.
 /// Arrange: `params` from `build_pairing_benchmark_case_params` with no
 ///   override — the `random_source` selection at its default, the randomness
 ///   family's mock concrete drawing exactly the requested length, and the
@@ -100,10 +100,13 @@ fn consume_pairing_returns_the_draw_error_unchanged() {
 ///   `benchmark.consume_pairing(params, payload)`, the only function of its
 ///   module that runs.
 /// Assert: `result.is_ok()`, the runner's level having run;
-///   `result.ok().map(|success| success.output.err())` equals `Some(None)`,
-///   the runner's success arm present and the output's error arm empty, the
-///   whole error shown on failure; the measurement's `concrete`, `iterations`,
-///   and timings are not asserted.
+///   `result.ok().and_then(|success| success.output.ok()).map(|success|
+///   success.concrete)` equals `Some(PairingConcrete::Mock(
+///   MockIPairingAdapterFailureMode::Succeeds))`, the runner's success arm
+///   present and the measurement's `concrete` equal to the `params.concrete`
+///   the default `pairing` selection admits, proving the measurement carries
+///   the selected typed identifier with no read of `P::CONCRETE`; `iterations`
+///   and the timings are not asserted.
 #[test]
 fn consume_pairing_draws_the_length_the_sampling_bound_requires() {
     struct Consumer;
@@ -135,7 +138,15 @@ fn consume_pairing_draws_the_length_the_sampling_bound_requires() {
 
     // Assert
     assert!(result.is_ok());
-    assert_eq!(result.ok().map(|success| success.output.err()), Some(None));
+    assert_eq!(
+        result
+            .ok()
+            .and_then(|success| success.output.ok())
+            .map(|success| success.concrete),
+        Some(PairingConcrete::Mock(
+            MockIPairingAdapterFailureMode::Succeeds
+        ))
+    );
 }
 
 /// Contract: `P::Scalar::sample_from_uniform_bytes` returns `Err(error)` →

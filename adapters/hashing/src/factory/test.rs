@@ -1,10 +1,17 @@
 #![allow(clippy::expect_used)]
 
 use super::provides::{
-    CommitmentSchemeIdentifier, CreateCommitmentErrorReturn, CreateCommitmentParamsOverrides,
-    ICommitmentAdapter, Root, RootConstructorParamsOverrides, RootTryNewErrorReturn,
-    build_create_commitment_deps, build_create_commitment_params, build_create_commitment_payload,
-    build_root_constructor_params, create_commitment,
+    CommitErrorReturn, CommitmentConcrete, CommitmentKey, CommitmentSchemeIdentifier,
+    CreateCommitmentDepsOverrides, CreateCommitmentErrorReturn, CreateCommitmentParamsOverrides,
+    ICommitmentAdapter, MockICommitmentAdapterErrorReturn, MockICommitmentAdapterFailureMode,
+    REFERENCE_CONTENT_LENGTH, Root, RootConstructorParamsOverrides, RootTryNewErrorReturn,
+    build_commit_params, build_commit_payload, build_create_commitment_deps,
+    build_create_commitment_params, build_create_commitment_payload, build_root_constructor_params,
+    create_commitment, reference_content,
+};
+use crate::admit_hashing_composition::provides::{
+    AdmitHashingCompositionDeps, AdmitHashingCompositionErrorReturn, AdmitHashingCompositionParams,
+    AdmitHashingCompositionPayload, AdmitHashingCompositionReturn,
 };
 
 /// Contract: `Root::try_new`, admitted: some byte of `params.bytes` is nonzero →
@@ -58,64 +65,100 @@ fn root_try_new_refuses_all_zero_bytes() {
     assert_eq!(result, Err(RootTryNewErrorReturn::AllZero));
 }
 
-/// Contract: `create_commitment`, admitted: the named concrete's declared
-///   identifier is `params.identifier` →
-///   `Ok(CreateCommitmentSuccessReturn { adapter })` whose adapter reports
-///   the declaration of the concrete the selection names.
-/// Arrange: `build_create_commitment_deps`,
-///   `build_create_commitment_params`, and
-///   `build_create_commitment_payload`, each with no override, so the
-///   defaults select the family's mock concrete under the identifier it
-///   declares; the selected concrete declares an identifier no other
-///   concrete declares, so a factory that constructs another concrete
-///   reports another identifier.
-/// Act:     `create_commitment(&deps, params, payload)`.
-/// Assert:  the success arm is bound through `expect`;
-///   `adapter.declaration().identifier` equals
-///   `CommitmentSchemeIdentifier::MockV1`, the identifier the family's mock
-///   concrete declares, by `assert_eq!`, the expectation a literal and not
-///   read from the arrangement.
+/// Contract: `create_commitment`, composition admitted →
+///   `Ok(CreateCommitmentSuccessReturn { adapter })` whose adapter is the
+///   concrete the selection names, answering under the failure mode the
+///   selection carries.
+/// Collaborators: the family's mock concrete, reached through
+///   `create_commitment` by the `concrete` override;
+///   `build_create_commitment_deps` at its defaults, whose function mocks
+///   admit; `build_create_commitment_payload` at its default; no test names
+///   a concrete.
+/// Arrange: `build_create_commitment_params` with the `concrete` override
+///   `CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::ContentLengthUnrepresentable)`,
+///   a mode other than the `NoFailure` the default holds, so a factory
+///   that ignores the selection's mode fails; `build_commit_payload` over
+///   `reference_content(REFERENCE_CONTENT_LENGTH)` with
+///   `CommitmentKey::Unkeyed`.
+/// Act:     `create_commitment(&deps, params, payload)`, then
+///   `adapter.commit(build_commit_params(Default::default()), commit_payload)`.
+/// Assert:  the success arm is bound through `expect`; the commit result's
+///   `err()` equals
+///   `Some(CommitErrorReturn::Mock(MockICommitmentAdapterErrorReturn::ContentLengthUnrepresentable { length: REFERENCE_CONTENT_LENGTH }))`
+///   by `assert_eq!`, the expectation a literal and not read from the
+///   arrangement.
 #[test]
 fn create_commitment_returns_the_adapter_of_the_selected_concrete() {
     // Arrange
     let deps = build_create_commitment_deps(Default::default());
-    let params = build_create_commitment_params(Default::default());
+    let params = build_create_commitment_params(CreateCommitmentParamsOverrides {
+        concrete: Some(CommitmentConcrete::Mock(
+            MockICommitmentAdapterFailureMode::ContentLengthUnrepresentable,
+        )),
+        ..Default::default()
+    });
     let payload = build_create_commitment_payload(Default::default());
+    let content = reference_content(REFERENCE_CONTENT_LENGTH);
+    let commit_payload = build_commit_payload(&content, CommitmentKey::Unkeyed, Default::default());
 
     // Act
-    let result = create_commitment(&deps, params, payload);
+    let success =
+        create_commitment(&deps, params, payload).expect("the function mocks admit the selection");
+    let adapter: &dyn ICommitmentAdapter = &*success.adapter;
+    let commit_result = adapter.commit(build_commit_params(Default::default()), commit_payload);
 
     // Assert
-    let success = result.expect("the default selection is admitted");
-    let adapter: &dyn ICommitmentAdapter = &*success.adapter;
     assert_eq!(
-        adapter.declaration().identifier,
-        CommitmentSchemeIdentifier::MockV1
+        commit_result.err(),
+        Some(CommitErrorReturn::Mock(
+            MockICommitmentAdapterErrorReturn::ContentLengthUnrepresentable {
+                length: REFERENCE_CONTENT_LENGTH,
+            },
+        )),
     );
 }
 
-/// Contract: `create_commitment`, unsupported identifier: the named
-///   concrete's `DECLARATION.identifier` is not `params.identifier` →
-///   `Err(CreateCommitmentErrorReturn::UnsupportedCommitmentScheme)`.
-/// Arrange: `build_create_commitment_deps` and
-///   `build_create_commitment_payload` with no override;
-///   `build_create_commitment_params` overriding `identifier` with
-///   `CommitmentSchemeIdentifier::Blake3BaoV1` and keeping the default
-///   selection of the mock concrete, which declares
-///   `CommitmentSchemeIdentifier::MockV1`, so the declared identifier
-///   differs from the required one.
+/// Contract: `create_commitment`, composition refused: the admission
+///   returns `Err(error)` →
+///   `Err(CreateCommitmentErrorReturn::Composition(error))`, the error
+///   unchanged.
+/// Collaborators: the family's mock concrete, reached through
+///   `create_commitment` by `build_create_commitment_params` at its
+///   defaults; `build_create_commitment_deps` with the
+///   `admit_hashing_composition` override a function the block declares of
+///   the production type `AdmitHashingCompositionFn`;
+///   `build_create_commitment_payload` at its default; no test names a
+///   concrete.
+/// Arrange: the declared function returns
+///   `Err(AdmitHashingCompositionErrorReturn::Incompatible { concrete: CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::OffsetUnrepresentable), declared: CommitmentSchemeIdentifier::Blake3BaoV1, required: CommitmentSchemeIdentifier::Blake3BaoV1 })`,
+///   a `concrete` other than the default selection's, so a factory that
+///   builds its own refusal from `params.concrete` fails.
 /// Act:     `create_commitment(&deps, params, payload)`.
 /// Assert:  `result.err()` equals
-///   `Some(CreateCommitmentErrorReturn::UnsupportedCommitmentScheme)` by
-///   `assert_eq!`.
+///   `Some(CreateCommitmentErrorReturn::Composition(AdmitHashingCompositionErrorReturn::Incompatible { concrete: CommitmentConcrete::Mock(MockICommitmentAdapterFailureMode::OffsetUnrepresentable), declared: CommitmentSchemeIdentifier::Blake3BaoV1, required: CommitmentSchemeIdentifier::Blake3BaoV1 }))`
+///   by `assert_eq!`.
 #[test]
-fn create_commitment_refuses_a_concrete_that_declares_another_identifier() {
+fn create_commitment_returns_the_composition_refusal_unchanged() {
+    fn refuse(
+        _deps: &AdmitHashingCompositionDeps,
+        _params: AdmitHashingCompositionParams,
+        _payload: AdmitHashingCompositionPayload,
+    ) -> AdmitHashingCompositionReturn {
+        Err(AdmitHashingCompositionErrorReturn::Incompatible {
+            concrete: CommitmentConcrete::Mock(
+                MockICommitmentAdapterFailureMode::OffsetUnrepresentable,
+            ),
+            declared: CommitmentSchemeIdentifier::Blake3BaoV1,
+            required: CommitmentSchemeIdentifier::Blake3BaoV1,
+        })
+    }
+
     // Arrange
-    let deps = build_create_commitment_deps(Default::default());
-    let params = build_create_commitment_params(CreateCommitmentParamsOverrides {
-        identifier: Some(CommitmentSchemeIdentifier::Blake3BaoV1),
+    let deps = build_create_commitment_deps(CreateCommitmentDepsOverrides {
+        admit_hashing_composition: Some(refuse),
         ..Default::default()
     });
+    let params = build_create_commitment_params(Default::default());
     let payload = build_create_commitment_payload(Default::default());
 
     // Act
@@ -124,6 +167,14 @@ fn create_commitment_refuses_a_concrete_that_declares_another_identifier() {
     // Assert
     assert_eq!(
         result.err(),
-        Some(CreateCommitmentErrorReturn::UnsupportedCommitmentScheme)
+        Some(CreateCommitmentErrorReturn::Composition(
+            AdmitHashingCompositionErrorReturn::Incompatible {
+                concrete: CommitmentConcrete::Mock(
+                    MockICommitmentAdapterFailureMode::OffsetUnrepresentable,
+                ),
+                declared: CommitmentSchemeIdentifier::Blake3BaoV1,
+                required: CommitmentSchemeIdentifier::Blake3BaoV1,
+            },
+        )),
     );
 }

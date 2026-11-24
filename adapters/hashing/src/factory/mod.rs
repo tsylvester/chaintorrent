@@ -7,6 +7,9 @@ pub mod provides;
 #[cfg(test)]
 mod test;
 
+use crate::admit_hashing_composition::provides::{
+    AdmitHashingCompositionDeps, AdmitHashingCompositionParams, AdmitHashingCompositionPayload,
+};
 use crate::blake3_bao::provides::{Blake3BaoCommitment, Blake3BaoCommitmentConstructorParams};
 use interface::{
     CommitmentConcrete, CreateCommitmentDeps, CreateCommitmentErrorReturn, CreateCommitmentParams,
@@ -32,32 +35,39 @@ impl Root {
 }
 
 pub fn create_commitment(
-    _deps: &CreateCommitmentDeps,
+    deps: &CreateCommitmentDeps,
     params: CreateCommitmentParams,
     _payload: CreateCommitmentPayload,
 ) -> CreateCommitmentReturn {
-    match params.concrete {
-        CommitmentConcrete::Blake3Bao => {
-            if Blake3BaoCommitment::DECLARATION.identifier != params.identifier {
-                return Err(CreateCommitmentErrorReturn::UnsupportedCommitmentScheme);
+    match (deps.admit_hashing_composition)(
+        &AdmitHashingCompositionDeps {
+            lookup_hashing_declaration: deps.lookup_hashing_declaration,
+        },
+        AdmitHashingCompositionParams {
+            concrete: params.concrete,
+            identifier: params.identifier,
+        },
+        AdmitHashingCompositionPayload,
+    ) {
+        Err(error) => Err(CreateCommitmentErrorReturn::Composition(error)),
+        Ok(_) => match params.concrete {
+            CommitmentConcrete::Blake3Bao => {
+                let Ok(commitment) =
+                    Blake3BaoCommitment::try_new(Blake3BaoCommitmentConstructorParams);
+                Ok(CreateCommitmentSuccessReturn {
+                    adapter: Box::new(commitment),
+                })
             }
-            let Ok(commitment) = Blake3BaoCommitment::try_new(Blake3BaoCommitmentConstructorParams);
-            Ok(CreateCommitmentSuccessReturn {
-                adapter: Box::new(commitment),
-            })
-        }
-        #[cfg(any(test, feature = "mocks"))]
-        CommitmentConcrete::Mock(failure_mode) => {
-            if MockICommitmentAdapter::DECLARATION.identifier != params.identifier {
-                return Err(CreateCommitmentErrorReturn::UnsupportedCommitmentScheme);
+            #[cfg(any(test, feature = "mocks"))]
+            CommitmentConcrete::Mock(failure_mode) => {
+                let Ok(mock) =
+                    MockICommitmentAdapter::try_new(MockICommitmentAdapterConstructorParams {
+                        failure_mode,
+                    });
+                Ok(CreateCommitmentSuccessReturn {
+                    adapter: Box::new(mock),
+                })
             }
-            let Ok(mock) =
-                MockICommitmentAdapter::try_new(MockICommitmentAdapterConstructorParams {
-                    failure_mode,
-                });
-            Ok(CreateCommitmentSuccessReturn {
-                adapter: Box::new(mock),
-            })
-        }
+        },
     }
 }

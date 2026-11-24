@@ -12,15 +12,7 @@
 
 ## `Blake3BaoCommitment::DECLARATION`
 
-The inherent constant `CommitmentDeclaration { identifier: CommitmentSchemeIdentifier::Blake3BaoV1, chunk_length: BLAKE3_BAO_CHUNK_LENGTH, key_length: BLAKE3_BAO_KEY_LENGTH, adapter_version: 1, interface_version: COMMITMENT_INTERFACE_VERSION }`.
-
-## `ICommitmentAdapter::declaration`
-
-`Blake3BaoCommitment::declaration(&self) -> CommitmentDeclaration`
-
-| Branch | Condition | Decision | Dependency call | Outcome |
-|---|---|---|---|---|
-| declared | any adapter | none | none | `Blake3BaoCommitment::DECLARATION` |
+The interface-held constant `CommitmentDeclaration { concrete: CommitmentConcrete::Blake3Bao, identifier: CommitmentSchemeIdentifier::Blake3BaoV1, chunk_length: BLAKE3_BAO_CHUNK_LENGTH, key_length: BLAKE3_BAO_KEY_LENGTH, adapter_version: 1, interface_version: COMMITMENT_INTERFACE_VERSION }`, read through `hashing/lookup_hashing_declaration` without an instance; no `declaration()` branch exists.
 
 ## Shared terms
 
