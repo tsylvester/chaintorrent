@@ -30,14 +30,12 @@ use crate::factory::provides::{
     MulScalarParams, MulScalarPayload, MulScalarReturn, MulScalarSuccessReturn, NegG1Params,
     NegG1Payload, NegG1Return, NegG1SuccessReturn, NegG2Params, NegG2Payload, NegG2Return,
     NegG2SuccessReturn, NegScalarParams, NegScalarPayload, NegScalarReturn, NegScalarSuccessReturn,
-    PAIRING_INTERFACE_VERSION, PairingConcrete, PairingCurve, PairingDeclaration,
     PairingProductIsOneParams, PairingProductIsOnePayload, PairingProductIsOneReturn,
     PairingProductIsOneSuccessReturn, PairingProductParams, PairingProductPayload,
-    PairingProductReturn, PairingProductSuccessReturn, PrecompileEncoding,
-    SampleUniformScalarErrorReturn, SampleUniformScalarParams, SampleUniformScalarPayload,
-    SampleUniformScalarReturn, SampleUniformScalarSuccessReturn, ScalarFieldOrderParams,
-    ScalarFieldOrderPayload, ScalarFieldOrderReturn, ScalarFieldOrderSuccessReturn,
-    TargetGroupEncodingIdentifier, VerifierGroupArithmetic,
+    PairingProductReturn, PairingProductSuccessReturn, SampleUniformScalarErrorReturn,
+    SampleUniformScalarParams, SampleUniformScalarPayload, SampleUniformScalarReturn,
+    SampleUniformScalarSuccessReturn, ScalarFieldOrderParams, ScalarFieldOrderPayload,
+    ScalarFieldOrderReturn, ScalarFieldOrderSuccessReturn,
 };
 use ark_bn254::{Bn254, Fq, Fq2, Fr, G1Affine, G1Projective, G2Affine, G2Projective};
 use ark_ec::{AffineRepr, CurveGroup, VariableBaseMSM, pairing::Pairing};
@@ -56,16 +54,6 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 const BN254_SEED: u64 = 4_965_661_367_192_848_881;
 
 impl Bn254ArkworksPairing {
-    pub const DECLARATION: PairingDeclaration = PairingDeclaration {
-        concrete_name: "bn254_arkworks",
-        curve: PairingCurve::Bn254,
-        verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly,
-        precompile_encoding: PrecompileEncoding::Eip196Eip197,
-        target_group_encoding: TargetGroupEncodingIdentifier::Bn254V1,
-        adapter_version: 1,
-        interface_version: PAIRING_INTERFACE_VERSION,
-    };
-
     pub fn try_new(
         _params: Bn254ArkworksPairingConstructorParams,
     ) -> Bn254ArkworksPairingTryNewReturn {
@@ -83,8 +71,6 @@ impl Bn254ArkworksPairing {
 }
 
 impl IPairingAdapter for Bn254ArkworksPairing {
-    const DECLARATION: PairingDeclaration = Bn254ArkworksPairing::DECLARATION;
-    const CONCRETE: PairingConcrete = PairingConcrete::Bn254Arkworks;
     type Scalar = Bn254ArkworksScalar;
     type G1 = Bn254ArkworksG1;
     type G2 = Bn254ArkworksG2;

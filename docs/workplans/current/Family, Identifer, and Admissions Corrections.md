@@ -229,22 +229,21 @@ Each entry names its nodes in Work Breakdown Structure order and, per node, the 
     * `[✅]`   Start anchor: `directionality`; end anchor: that element's only bullet. Correction: preserve the existing runtime and vendor boundaries while stating the actual family dependencies: `kdf/lookup_kdf_declaration` reaches the interface-held declaration through the family's private path, `kdf/admit_kdf_selection` consumes `KdfConcrete` and `KDF_CONCRETES`, and the factory uses the admitted selection and declaration before construction; the hash-card consumes only `KdfIdentifier`'s declared wire code at its output boundary, and no consumer depends on the concrete, reads an instance declaration, or carries an identifier as text.
     * `[✅]`   Start anchor: `requirements`; end anchor: the final `requirements` bullet. Correction: retain the derivation oracle, prefix, zero-length, integration, lint, and privacy proofs; add requirements proving the typed member and value identifiers, exact real declared sets and canonical spellings, `Blake3KeyedV1`'s wire code `1`, the complete derivation-purpose spellings, the absence of mock-only values, the settings-free real selection and concrete, the declared-selection builder's no-configuration arm, and declaration lookup, selection admission, and compatibility admission before construction; remove every instance `declaration()` and `MockV1` proof and the statement that the KDF identifier has no wire-code mapping here.
 * `[✅]`   `kdf/lookup_kdf_declaration` — Halt: This node must be authored
-* `[ ]`   `kdf/admit_kdf_selection` — Halt: This node must be authored
-* `[ ]`   `kdf/factory` — Halt: This node must be revised
-* `[ ]`   `hash-to-scalar/keccak256`
-* `[ ]`   `hash-to-scalar/lookup_hash_to_scalar_declaration` — Halt: This node must be authored
-* `[ ]`   `hash-to-scalar/admit_hash_to_scalar_selection` — Halt: This node must be authored
-* `[ ]`   `hash-to-scalar/factory` — Halt: This node must be revised
-
-### Signature services (protocol core; runs beside the harness from `encoding/factory`)
-
-* `[ ]`   `signature/ed25519`
-* `[ ]`   `signature/secp256k1`
-* `[ ]`   `signature/ml_dsa_65`
-* `[ ]`   `signature/lookup_signature_declaration` — Halt: This node must be authored
-* `[ ]`   `signature/admit_signature_selection` — Halt: This node must be authored
-* `[ ]`   `signature/admit_signature_composition` — Halt: This node must be authored
-* `[ ]`   `signature/factory` — Halt: This node must be revised
+* `[✅]`   `kdf/admit_kdf_selection` — Halt: This node must be authored
+* `[✅]`   `kdf/factory` — Halt: This node must be revised
+* `[✅]`   `hash-to-scalar/keccak256`
+    * `[✅]`   Start anchor: the `hash-to-scalar/keccak256` top-level heading; end anchor: the `module` element's `Outside` bullet. Correction: revise the heading, objective, role, and module so this first family node authors the `HashToScalarConcrete` member identifier, moved here from `hash-to-scalar/factory`, and the real `HashToScalarIdentifier` value identifier, with total spellings, real declared sets, and the value identifier's `uint8` wire code; the declaration carries typed identifiers with no duplicate text name, real selections carry no settings, this concrete has no settings module, node, or table, declaration lookup, selection admission, and identifier compatibility admission precede construction, and the hash-card renders the declared wire code rather than owning its mapping; remove the value identifier's `Mock` variant.
+    * `[✅]`   Start anchor: the `HashToScalarIdentifier` bullet in `factory/interface.rs`; end anchor: the `HashToScalarDeclaration` bullet. Correction: limit `HashToScalarIdentifier` to real `Keccak256V1` with spelling `keccak256_v1`, `uint8` wire code `1`, and real-only `HASH_TO_SCALAR_IDENTIFIERS`; add `HashToScalarConcrete` with real `Keccak256` and, under mocks, `Mock(MockIHashToScalarAdapterFailureMode)`, spellings `keccak256` and `mock`, and real-only `HASH_TO_SCALAR_CONCRETES`; add `concrete: HashToScalarConcrete` to `HashToScalarDeclaration` without adding a text-name field.
+    * `[✅]`   Start anchor: the `IHashToScalarAdapter` bullet in `factory/interface.rs`; end anchor: that same bullet. Correction: remove `declaration(&self)` and the statement that a constructed adapter supplies metadata while preserving `hash_to_scalar`; declaration consumers use `hash-to-scalar/lookup_hash_to_scalar_declaration` to read the interface-held declaration, including its typed member and provided hash-to-scalar identifiers, without constructing a member.
+    * `[✅]`   Start anchor: `adapters/hash-to-scalar/src/keccak256/interface.rs`; end anchor: the `Keccak256HashToScalar::DECLARATION` branch in `keccak256/interaction.spec.md`. Correction: declare `Keccak256HashToScalar::DECLARATION` in the concrete's interface with `concrete: HashToScalarConcrete::Keccak256`, `identifier: HashToScalarIdentifier::Keccak256V1`, adapter version `1`, and `HASH_TO_SCALAR_INTERFACE_VERSION`; keep the constructor settings-free with no settings module; revise the interaction spec to expose that declaration through `hash-to-scalar/lookup_hash_to_scalar_declaration` without an instance and remove every instance-declaration surface, preserving the hashing branches and integration entries.
+    * `[✅]`   Start anchor: the `HashToScalarDeclarationOverrides` bullet in `factory/mock.rs`; end anchor: the `Enumeration of the interface's exports` bullet. Correction: render identifiers only by canonical `name()` spellings, never variant-name or diagnostic text; add `concrete` to declaration building and invalidation, defaulting to `HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::Succeeds)` and real `HashToScalarIdentifier::Keccak256V1`; add `MOCK_I_HASH_TO_SCALAR_ADAPTER_DECLARATION` with those values and the declared versions, with lookup substituting the selected mock identifier; remove the inherent mock declaration and instance method; add fieldless `HashToScalarConcreteOverrides` and `build_hash_to_scalar_concrete` over `HASH_TO_SCALAR_CONCRETES`, whose real arm returns `Keccak256` without configuration; retain the mock's input-computed hashing and failure-mode behavior.
+    * `[✅]`   Start anchor: `declaration_constant_names_the_keccak256_identifier_and_versions`; end anchor: the final `Collaborators` line of `declaration_reports_the_constant`. Correction: replace the declaration tests with a direct read of `Keccak256HashToScalar::DECLARATION` that constructs no adapter and asserts its typed concrete, real hash-to-scalar identifier, and versions; remove the instance `declaration()` test; add coverage proving the exact `HASH_TO_SCALAR_CONCRETES` and `HASH_TO_SCALAR_IDENTIFIERS` sets, distinct canonical spellings, `Keccak256V1`'s spelling `keccak256_v1` and wire code `1`, the absence of the value identifier's `Mock` variant and mock members from the real sets, and the declared-selection builder's real arm returning no configuration.
+    * `[✅]`   Start anchor: `construction`; end anchor: the final `keccak256/mod.rs` bullet. Correction: keep `Keccak256HashToScalar::try_new` as the concrete's only producer, but have the factory obtain the declaration through `hash-to-scalar/lookup_hash_to_scalar_declaration`, receive the settings-free selection through `hash-to-scalar/admit_hash_to_scalar_selection`, and complete the required hash-to-scalar-identifier compatibility admission before calling the constructor; move `DECLARATION` out of `mod.rs` into the interface, remove the instance `declaration()` implementation, and adjust imports so the interface owns the declaration and the trait carries only hashing.
+    * `[✅]`   Start anchor: `directionality`; end anchor: that element's final bullet. Correction: preserve the existing runtime, vendor, and crate boundaries while stating the actual family dependencies: `hash-to-scalar/lookup_hash_to_scalar_declaration` reaches the interface-held declaration through the family's private path, `hash-to-scalar/admit_hash_to_scalar_selection` consumes `HashToScalarConcrete` and `HASH_TO_SCALAR_CONCRETES`, and the factory uses the admitted selection, declaration, and identifier compatibility admission before construction; the hash-card consumes only `HashToScalarIdentifier`'s declared wire code at its output boundary, and no consumer depends on the concrete, reads an instance declaration, or carries an identifier as text.
+    * `[✅]`   Start anchor: `requirements`; end anchor: the final `requirements` bullet. Correction: retain the constructor, hashing oracle, integration, error-derivation, lint, and privacy proofs; add requirements proving the typed member and value identifiers, exact real declared sets and distinct canonical spellings, `Keccak256V1`'s wire code `1`, the absence of a mock-only value identifier, the settings-free real selection and concrete, selection admission's refusal of every supplied setting, the declared-selection builder's no-configuration arm, and declaration lookup, selection admission, and compatibility admission before construction; remove every instance `declaration()` proof and the statement that the hash-card owns the identifier's wire mapping.
+* `[✅]`   `hash-to-scalar/lookup_hash_to_scalar_declaration` — Halt: This node must be authored
+* `[✅]`   `hash-to-scalar/admit_hash_to_scalar_selection` — Halt: This node must be authored
+* `[✅]`   `hash-to-scalar/factory` — Halt: This node must be revised
 
 ### Credential KEM
 
@@ -365,6 +364,16 @@ Each entry names its nodes in Work Breakdown Structure order and, per node, the 
 * `[ ]`   `contracts/evm/Binding`
 * `[ ]`   `contracts/evm/Registry`
 * `[ ]`   `contracts/evm/deploy` 
+
+### Signature services (protocol core; runs beside the harness from `encoding/factory`)
+
+* `[ ]`   `signature/ed25519`
+* `[ ]`   `signature/secp256k1`
+* `[ ]`   `signature/ml_dsa_65`— Halt: This node must be authored
+* `[ ]`   `signature/lookup_signature_declaration` — Halt: This node must be authored
+* `[ ]`   `signature/admit_signature_selection` — Halt: This node must be authored
+* `[ ]`   `signature/admit_signature_composition` — Halt: This node must be authored
+* `[ ]`   `signature/factory` — Halt: This node must be revised
 
 ### Swarm transport and seed host
 

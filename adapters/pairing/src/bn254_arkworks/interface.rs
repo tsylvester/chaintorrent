@@ -1,3 +1,7 @@
+use crate::factory::provides::{
+    PAIRING_INTERFACE_VERSION, PairingConcrete, PairingCurve, PairingDeclaration,
+    PrecompileEncoding, TargetGroupEncodingIdentifier, VerifierGroupArithmetic,
+};
 use core::convert::Infallible;
 
 pub struct Bn254ArkworksPairing {
@@ -46,4 +50,16 @@ pub struct Bn254ArkworksEncodedScalar {
 
 pub struct Bn254ArkworksEncodedGt {
     pub(super) bytes: [u8; 384],
+}
+
+impl Bn254ArkworksPairing {
+    pub const DECLARATION: PairingDeclaration = PairingDeclaration {
+        concrete: PairingConcrete::Bn254Arkworks,
+        curve: PairingCurve::Bn254,
+        verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly,
+        precompile_encoding: PrecompileEncoding::Eip196Eip197,
+        target_group_encoding: TargetGroupEncodingIdentifier::Bn254V1,
+        adapter_version: 1,
+        interface_version: PAIRING_INTERFACE_VERSION,
+    };
 }

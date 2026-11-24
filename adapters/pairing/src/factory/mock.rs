@@ -43,6 +43,13 @@ use super::interface::{
     ScalarFieldOrderPayload, ScalarFieldOrderReturn, ScalarFieldOrderSuccessReturn,
     TargetGroupEncodingIdentifier, VerifierGroupArithmetic,
 };
+use crate::admit_pairing_composition::provides::{
+    AdmitPairingCompositionDeps, AdmitPairingCompositionFn,
+};
+use crate::lookup_pairing_declaration::provides::{
+    LookupPairingDeclarationDeps, LookupPairingDeclarationParams, LookupPairingDeclarationPayload,
+    lookup_pairing_declaration,
+};
 use core::cell::Cell;
 use core::convert::Infallible;
 use domain::{Secret, SecretConstructorParams, SecretConstructorParamsOverrides, build_secret};
@@ -50,7 +57,7 @@ use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[derive(Default)]
 pub struct PairingDeclarationOverrides {
-    pub concrete_name: Option<&'static str>,
+    pub concrete: Option<PairingConcrete>,
     pub curve: Option<PairingCurve>,
     pub verifier_group_arithmetic: Option<VerifierGroupArithmetic>,
     pub precompile_encoding: Option<PrecompileEncoding>,
@@ -61,7 +68,7 @@ pub struct PairingDeclarationOverrides {
 
 pub fn build_pairing_declaration(overrides: PairingDeclarationOverrides) -> PairingDeclaration {
     PairingDeclaration {
-        concrete_name: overrides.concrete_name.unwrap_or("bn254_arkworks"),
+        concrete: overrides.concrete.unwrap_or(PairingConcrete::Bn254Arkworks),
         curve: overrides.curve.unwrap_or(PairingCurve::Bn254),
         verifier_group_arithmetic: overrides
             .verifier_group_arithmetic
@@ -1154,27 +1161,25 @@ pub fn build_g2_outside_subgroup_encoding_success_return<P: IPairingAdapter>(
 }
 
 pub(crate) const MOCK_GROUP_ORDER: u64 = 65521;
-pub(crate) const MOCK_UNIFORM_BYTES_LENGTH: usize = 64;
-pub(crate) const MOCK_SHORT_UNIFORM_BYTES_LENGTH: usize = 16;
 
 #[derive(Clone)]
-pub(crate) struct MockScalar<const UNIFORM: usize> {
+pub(crate) struct MockScalar {
     residue: u64,
 }
 
-impl<const UNIFORM: usize> Zeroize for MockScalar<UNIFORM> {
+impl Zeroize for MockScalar {
     fn zeroize(&mut self) {
         self.residue.zeroize();
     }
 }
 
-impl<const UNIFORM: usize> Drop for MockScalar<UNIFORM> {
+impl Drop for MockScalar {
     fn drop(&mut self) {
         self.residue.zeroize();
     }
 }
 
-impl<const UNIFORM: usize> ZeroizeOnDrop for MockScalar<UNIFORM> {}
+impl ZeroizeOnDrop for MockScalar {}
 
 #[derive(Clone)]
 pub(crate) struct MockG1 {
@@ -1311,17 +1316,16 @@ std::thread_local! {
         const { Cell::new(MockIPairingAdapterFailureMode::Succeeds) };
 }
 
-pub(crate) struct MockIPairingAdapter<const UNIFORM: usize> {
+pub(crate) struct MockIPairingAdapter {
     pub(super) failure_mode: MockIPairingAdapterFailureMode,
 }
 
-pub(crate) type MockIPairingAdapterTryNewReturn<const UNIFORM: usize> =
-    Result<MockIPairingAdapter<UNIFORM>, Infallible>;
+pub(crate) type MockIPairingAdapterTryNewReturn = Result<MockIPairingAdapter, Infallible>;
 
-impl<const UNIFORM: usize> MockIPairingAdapter<UNIFORM> {
+impl MockIPairingAdapter {
     pub(crate) fn try_new(
         params: MockIPairingAdapterConstructorParams,
-    ) -> MockIPairingAdapterTryNewReturn<UNIFORM> {
+    ) -> MockIPairingAdapterTryNewReturn {
         MOCK_SAMPLING_MODE.with(|mode| mode.set(params.failure_mode));
         Ok(MockIPairingAdapter {
             failure_mode: params.failure_mode,
@@ -1329,31 +1333,44 @@ impl<const UNIFORM: usize> MockIPairingAdapter<UNIFORM> {
     }
 }
 
-pub(crate) fn build_mock_i_pairing_adapter<const UNIFORM: usize>(
+pub(crate) fn build_mock_i_pairing_adapter(
     overrides: MockIPairingAdapterConstructorParamsOverrides,
-) -> MockIPairingAdapter<UNIFORM> {
-    let Ok(adapter) = MockIPairingAdapter::<UNIFORM>::try_new(
-        build_mock_i_pairing_adapter_constructor_params(overrides),
-    );
+) -> MockIPairingAdapter {
+    let Ok(adapter) =
+        MockIPairingAdapter::try_new(build_mock_i_pairing_adapter_constructor_params(overrides));
     adapter
 }
 
-impl<const UNIFORM: usize> IPairingAdapter for MockIPairingAdapter<UNIFORM> {
-    const DECLARATION: PairingDeclaration = PairingDeclaration {
-        concrete_name: "mock_concrete",
-        curve: PairingCurve::Mock,
-        verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly,
-        precompile_encoding: PrecompileEncoding::Mock,
-        target_group_encoding: TargetGroupEncodingIdentifier::Mock,
-        adapter_version: 1,
-        interface_version: PAIRING_INTERFACE_VERSION,
-    };
-    const CONCRETE: PairingConcrete = if UNIFORM == MOCK_SHORT_UNIFORM_BYTES_LENGTH {
-        PairingConcrete::MockShortUniform(MockIPairingAdapterFailureMode::Succeeds)
-    } else {
-        PairingConcrete::Mock(MockIPairingAdapterFailureMode::Succeeds)
-    };
-    type Scalar = MockScalar<UNIFORM>;
+#[cfg(any(test, feature = "mocks"))]
+pub(crate) const MOCK_I_PAIRING_ADAPTER_DECLARATION: PairingDeclaration = PairingDeclaration {
+    concrete: PairingConcrete::Mock(MockIPairingAdapterFailureMode::Succeeds),
+    curve: PairingCurve::Bn254,
+    verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly,
+    precompile_encoding: PrecompileEncoding::Eip196Eip197,
+    target_group_encoding: TargetGroupEncodingIdentifier::Bn254V1,
+    adapter_version: 1,
+    interface_version: PAIRING_INTERFACE_VERSION,
+};
+
+#[derive(Default)]
+pub struct PairingConcreteOverrides;
+
+pub fn build_pairing_concrete(
+    concrete: PairingConcrete,
+    _overrides: PairingConcreteOverrides,
+) -> PairingConcrete {
+    match concrete {
+        PairingConcrete::Bn254Arkworks => PairingConcrete::Bn254Arkworks,
+        PairingConcrete::Bn254Halo2curves => PairingConcrete::Bn254Halo2curves,
+        PairingConcrete::Bls12381Arkworks => PairingConcrete::Bls12381Arkworks,
+        PairingConcrete::Bls12381Halo2curves => PairingConcrete::Bls12381Halo2curves,
+        #[cfg(any(test, feature = "mocks"))]
+        PairingConcrete::Mock(_) => PairingConcrete::Mock(MockIPairingAdapterFailureMode::Succeeds),
+    }
+}
+
+impl IPairingAdapter for MockIPairingAdapter {
+    type Scalar = MockScalar;
     type G1 = MockG1;
     type G2 = MockG2;
     type EncodedG1 = MockEncodedG1;
@@ -1585,8 +1602,8 @@ impl<const UNIFORM: usize> IPairingAdapter for MockIPairingAdapter<UNIFORM> {
     }
 }
 
-impl<const UNIFORM: usize> ISampleUniformScalar for MockScalar<UNIFORM> {
-    const UNIFORM_BYTES_LENGTH: usize = UNIFORM;
+impl ISampleUniformScalar for MockScalar {
+    const UNIFORM_BYTES_LENGTH: usize = 64;
 
     fn sample_from_uniform_bytes(
         _params: SampleUniformScalarParams,
@@ -1602,12 +1619,13 @@ impl<const UNIFORM: usize> ISampleUniformScalar for MockScalar<UNIFORM> {
                 actual,
             });
         }
-        let mut folded = 0u128;
-        for limb in payload.uniform.expose().as_chunks::<16>().0 {
-            folded = folded.wrapping_add(u128::from_be_bytes(*limb));
-        }
-        let residue = u64::try_from(folded % u128::from(MOCK_GROUP_ORDER))
-            .expect("a residue below the u64 group order fits a u64");
+        let residue = u128::from_be_bytes(
+            payload.uniform.expose()[48..]
+                .try_into()
+                .expect("a 64-byte input's low sixteen bytes are sixteen bytes"),
+        ) % u128::from(MOCK_GROUP_ORDER);
+        let residue =
+            u64::try_from(residue).expect("a residue below the u64 group order fits a u64");
         let Ok(scalar) = Secret::try_new(SecretConstructorParams {
             value: MockScalar { residue },
         });
@@ -1615,7 +1633,7 @@ impl<const UNIFORM: usize> ISampleUniformScalar for MockScalar<UNIFORM> {
     }
 }
 
-impl<const UNIFORM: usize> IPairingArithmetic for MockIPairingAdapter<UNIFORM> {
+impl IPairingArithmetic for MockIPairingAdapter {
     type Gt = MockGt;
     type EncodedGt = MockEncodedGt;
 
@@ -1735,7 +1753,7 @@ impl<const UNIFORM: usize> IPairingArithmetic for MockIPairingAdapter<UNIFORM> {
     }
 }
 
-impl<const UNIFORM: usize> IPairingReference for MockIPairingAdapter<UNIFORM> {
+impl IPairingReference for MockIPairingAdapter {
     fn scalar_field_order(
         &self,
         _params: ScalarFieldOrderParams,
@@ -1776,35 +1794,35 @@ impl<const UNIFORM: usize> IPairingReference for MockIPairingAdapter<UNIFORM> {
 #[derive(Default)]
 pub struct CreatePairingParamsOverrides {
     pub concrete: Option<PairingConcrete>,
-    pub supported_encodings: Option<Vec<PrecompileEncoding>>,
-    pub target_group_encoding: Option<TargetGroupEncodingIdentifier>,
+    pub required_curve: Option<PairingCurve>,
+    pub required_verifier_group_arithmetic: Option<VerifierGroupArithmetic>,
+    pub required_precompile_encodings: Option<Vec<PrecompileEncoding>>,
+    pub required_target_group_encoding: Option<TargetGroupEncodingIdentifier>,
 }
 
 pub fn build_create_pairing_params(overrides: CreatePairingParamsOverrides) -> CreatePairingParams {
     let concrete = overrides.concrete.unwrap_or(PairingConcrete::Mock(
         MockIPairingAdapterFailureMode::Succeeds,
     ));
-    let target_group_encoding = overrides.target_group_encoding.unwrap_or(match concrete {
-        PairingConcrete::Bn254Arkworks | PairingConcrete::Bn254Halo2curves => {
-            TargetGroupEncodingIdentifier::Bn254V1
-        }
-        PairingConcrete::Bls12381Arkworks | PairingConcrete::Bls12381Halo2curves => {
-            TargetGroupEncodingIdentifier::Bls12381V1
-        }
-        PairingConcrete::Mock(_) | PairingConcrete::MockShortUniform(_) => {
-            TargetGroupEncodingIdentifier::Mock
-        }
-    });
+    let Ok(looked_up) = lookup_pairing_declaration(
+        &LookupPairingDeclarationDeps,
+        LookupPairingDeclarationParams { concrete },
+        LookupPairingDeclarationPayload,
+    );
     CreatePairingParams {
         concrete,
-        supported_encodings: overrides.supported_encodings.unwrap_or_else(|| {
-            vec![
-                PrecompileEncoding::Eip196Eip197,
-                PrecompileEncoding::Eip2537,
-                PrecompileEncoding::Mock,
-            ]
-        }),
-        target_group_encoding,
+        required_curve: overrides
+            .required_curve
+            .unwrap_or(looked_up.declaration.curve),
+        required_verifier_group_arithmetic: overrides
+            .required_verifier_group_arithmetic
+            .unwrap_or(looked_up.declaration.verifier_group_arithmetic),
+        required_precompile_encodings: overrides
+            .required_precompile_encodings
+            .unwrap_or_else(|| vec![looked_up.declaration.precompile_encoding]),
+        required_target_group_encoding: overrides
+            .required_target_group_encoding
+            .unwrap_or(looked_up.declaration.target_group_encoding),
     }
 }
 
@@ -1843,22 +1861,19 @@ impl IPairingConsumer for MockIPairingConsumer {
 }
 
 #[derive(Default)]
-pub struct CreatePairingPayloadOverrides;
-
-pub fn build_create_pairing_payload(
-    _overrides: CreatePairingPayloadOverrides,
-) -> CreatePairingPayload {
-    CreatePairingPayload
-}
-
-#[derive(Default)]
 pub struct CreatePairingDepsOverrides;
 
 pub fn build_create_pairing_deps<C: IPairingConsumer>(
     consumer: C,
+    admit_pairing_composition: AdmitPairingCompositionFn,
+    admit_pairing_composition_deps: AdmitPairingCompositionDeps,
     _overrides: CreatePairingDepsOverrides,
 ) -> CreatePairingDeps<C> {
-    CreatePairingDeps { consumer }
+    CreatePairingDeps {
+        consumer,
+        admit_pairing_composition,
+        admit_pairing_composition_deps,
+    }
 }
 
 pub fn mock_create_pairing<C: IPairingConsumer>(
@@ -1866,7 +1881,7 @@ pub fn mock_create_pairing<C: IPairingConsumer>(
     _params: CreatePairingParams,
     _payload: CreatePairingPayload,
 ) -> CreatePairingReturn<C::Output> {
-    let adapter = build_mock_i_pairing_adapter::<MOCK_UNIFORM_BYTES_LENGTH>(Default::default());
+    let adapter = build_mock_i_pairing_adapter(Default::default());
     let output = deps.consumer.consume_pairing(
         ConsumePairingParams,
         build_consume_pairing_payload(adapter, Default::default()),

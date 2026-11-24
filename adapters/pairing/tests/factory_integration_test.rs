@@ -3,62 +3,71 @@
 
 use domain::{Secret, build_secret};
 use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides,
-    CreatePairingPayload, DecodeG1ErrorReturn, DecodeG1Params, DecodeG2ErrorReturn, DecodeG2Params,
-    EncodeGtParams, EncodeGtPayload, EncodeScalarParams, EncodeScalarPayload, G1GeneratorParams,
+    AdmitPairingCompositionErrorReturn, ConsumePairingParams, ConsumePairingPayload,
+    CreatePairingErrorReturn, CreatePairingParamsOverrides, CreatePairingPayload,
+    DecodeG1ErrorReturn, DecodeG1Params, DecodeG2ErrorReturn, DecodeG2Params, EncodeGtParams,
+    EncodeGtPayload, EncodeScalarParams, EncodeScalarPayload, G1GeneratorParams,
     G1GeneratorPayload, G1OutsideSubgroupEncodingErrorReturn, G1OutsideSubgroupEncodingParams,
     G1OutsideSubgroupEncodingPayload, G2GeneratorParams, G2GeneratorPayload,
     G2OutsideSubgroupEncodingErrorReturn, G2OutsideSubgroupEncodingParams,
     G2OutsideSubgroupEncodingPayload, IPairingAdapter, IPairingArithmetic, IPairingConsumer,
-    IPairingReference, ISampleUniformScalar, MulG1Params, MulG1Payload, PAIRING_CONCRETES,
-    PairingConcrete, PairingProductParams, PairingProductPayload, PairingProductTerm,
-    SampleUniformScalarErrorReturn, SampleUniformScalarParams, SampleUniformScalarPayload,
-    ScalarFieldOrderParams, ScalarFieldOrderPayload, TargetGroupEncodingIdentifier,
-    build_create_pairing_deps, build_create_pairing_params, create_pairing,
+    IPairingReference, ISampleUniformScalar, LookupPairingDeclarationParamsOverrides, MulG1Params,
+    MulG1Payload, PAIRING_CONCRETES, PairingDisagreement, PairingProductParams,
+    PairingProductPayload, PairingProductTerm, SampleUniformScalarErrorReturn,
+    SampleUniformScalarParams, SampleUniformScalarPayload, ScalarFieldOrderParams,
+    ScalarFieldOrderPayload, TARGET_GROUP_ENCODING_IDENTIFIERS, TargetGroupEncodingIdentifier,
+    admit_pairing_composition, build_admit_pairing_composition_deps, build_create_pairing_deps,
+    build_create_pairing_params, build_lookup_pairing_declaration_deps,
+    build_lookup_pairing_declaration_params, build_lookup_pairing_declaration_payload,
+    create_pairing, lookup_pairing_declaration,
 };
 
 /// Contract: entry `the_consumer_receives_the_concrete_the_params_name`; given
-///   `params.concrete` is a variant of `PAIRING_CONCRETES` and the admissions
-///   pass, the consumer's reading of `P::CONCRETE` equals `params.concrete`.
+///   `params.concrete` is a variant of `PAIRING_CONCRETES` and the composition
+///   admission passes, the consumer is handed the concrete `params.concrete`
+///   selects, the typed identifier the caller already holds.
 /// Boundary: the public `create_pairing`; the real chain is `create_pairing`,
 ///   the arm's `try_new`, and `consume_pairing`.
 /// Mocked:   none.
-/// Arrange:  a `Consumer` written against `IPairingAdapter` alone returning
-///   `P::CONCRETE`; every variant of the declared set in turn, including both
-///   libraries of one curve, so an arm constructing a sibling concrete fails.
-/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per concrete.
-/// Assert:   per concrete, the observed output equals the variant from the
-///   declared set.
+/// Arrange:  a `Consumer` written against `IPairingAdapter` alone; every
+///   variant of the declared set in turn, including both libraries of one
+///   curve.
+/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per
+///   concrete.
+/// Assert:   per concrete, the observed output is `()`.
 #[test]
 fn the_consumer_receives_the_concrete_the_params_name() {
     // Arrange
-    #[derive(Default)]
     struct Consumer;
 
     impl IPairingConsumer for Consumer {
-        type Output = PairingConcrete;
+        type Output = ();
 
         fn consume_pairing<P: IPairingAdapter>(
             &self,
             _params: ConsumePairingParams,
             _payload: ConsumePairingPayload<P>,
         ) -> Self::Output {
-            P::CONCRETE
         }
     }
 
-    for concrete in PAIRING_CONCRETES {
+    for concrete in PAIRING_CONCRETES.iter().copied() {
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
+            concrete: Some(concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
 
         // Assert
-        assert!(result.ok().map(|success| success.output) == Some(*concrete));
+        assert!(result.ok().map(|success| success.output) == Some(()));
     }
 }
 
@@ -74,13 +83,13 @@ fn the_consumer_receives_the_concrete_the_params_name() {
 ///   zero but the last, `7`, and encoding the sampled scalar with
 ///   `encode_scalar`; the nonzero last byte separates a sampled input from
 ///   `build_secret`'s zero default.
-/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per concrete.
+/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per
+///   concrete.
 /// Assert:   per concrete, the observed output is `Ok` holding the 32
 ///   big-endian bytes of the integer seven.
 #[test]
 fn a_sampled_scalar_encodes_through_secret() {
     // Arrange
-    #[derive(Default)]
     struct Consumer;
 
     impl IPairingConsumer for Consumer {
@@ -109,12 +118,17 @@ fn a_sampled_scalar_encodes_through_secret() {
     let mut expected = vec![0u8; 32];
     expected[31] = 7;
 
-    for concrete in PAIRING_CONCRETES {
+    for concrete in PAIRING_CONCRETES.iter().copied() {
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
+            concrete: Some(concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -137,13 +151,13 @@ fn a_sampled_scalar_encodes_through_secret() {
 ///   the uniform input one byte shorter than
 ///   `P::Scalar::UNIFORM_BYTES_LENGTH`, the last byte `7`, against the
 ///   full-length input of the entry it varies.
-/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per concrete.
+/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per
+///   concrete.
 /// Assert:   per concrete, the observed output is `Err(
 ///   SampleUniformScalarErrorReturn::WrongLength { expected: 64, actual: 63 })`.
 #[test]
 fn a_sampling_refusal_reaches_the_caller_unchanged() {
     // Arrange
-    #[derive(Default)]
     struct Consumer;
 
     impl IPairingConsumer for Consumer {
@@ -169,12 +183,17 @@ fn a_sampling_refusal_reaches_the_caller_unchanged() {
         }
     }
 
-    for concrete in PAIRING_CONCRETES {
+    for concrete in PAIRING_CONCRETES.iter().copied() {
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
+            concrete: Some(concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -206,19 +225,19 @@ fn a_sampling_refusal_reaches_the_caller_unchanged() {
 ///   generator, and encoding the product with `encode_gt`; a nonzero scalar
 ///   and two terms, so the product is neither the identity nor a single
 ///   generator pairing; every concrete of the declared set runs, collected in
-///   order.
-/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per concrete.
+///   order, each output paired with the `target_group_encoding` the public
+///   lookup returns for its `concrete`.
+/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per
+///   concrete.
 /// Assert:   an `Ok` output for every concrete; any two outputs with equal
 ///   identifiers hold equal bytes.
 #[test]
 fn libraries_sharing_an_identifier_encode_the_pairing_product_to_the_same_bytes() {
     // Arrange
-    #[derive(Default)]
     struct Consumer;
 
     impl IPairingConsumer for Consumer {
-        type Output =
-            Result<(TargetGroupEncodingIdentifier, Vec<u8>), SampleUniformScalarErrorReturn>;
+        type Output = Result<Vec<u8>, SampleUniformScalarErrorReturn>;
 
         fn consume_pairing<P: IPairingArithmetic>(
             &self,
@@ -264,41 +283,61 @@ fn libraries_sharing_an_identifier_encode_the_pairing_product_to_the_same_bytes(
                     value: product.product,
                 },
             );
-            Ok((
-                P::DECLARATION.target_group_encoding,
-                encoded.bytes.expose().as_ref().to_vec(),
-            ))
+            Ok(encoded.bytes.expose().as_ref().to_vec())
         }
     }
 
     let mut outputs = Vec::new();
-    for concrete in PAIRING_CONCRETES {
+    for concrete in PAIRING_CONCRETES.iter().copied() {
+        let Ok(declaration) = lookup_pairing_declaration(
+            &build_lookup_pairing_declaration_deps(Default::default()),
+            build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
+                concrete: Some(concrete),
+                ..Default::default()
+            }),
+            build_lookup_pairing_declaration_payload(Default::default()),
+        );
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
+            concrete: Some(concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
 
-        outputs.push(result.ok().map(|success| success.output));
+        outputs.push((
+            declaration.declaration.target_group_encoding,
+            result.ok().map(|success| success.output),
+        ));
     }
 
     // Assert
     assert_eq!(outputs.len(), PAIRING_CONCRETES.len());
-    for output in &outputs {
+    for (_, output) in &outputs {
         assert!(output.is_some());
         assert!(output.as_ref().expect("an output per concrete").is_ok());
     }
     for left in &outputs {
         for right in &outputs {
-            let left_output = left.as_ref().expect("an output per concrete");
-            let right_output = right.as_ref().expect("an output per concrete");
-            let (left_identifier, left_bytes) = left_output.as_ref().expect("an admitted concrete");
-            let (right_identifier, right_bytes) =
-                right_output.as_ref().expect("an admitted concrete");
+            let (left_identifier, left_output) = left;
+            let (right_identifier, right_output) = right;
             if left_identifier == right_identifier {
+                let left_bytes = left_output
+                    .as_ref()
+                    .expect("an output per concrete")
+                    .as_ref()
+                    .expect("an admitted concrete");
+                let right_bytes = right_output
+                    .as_ref()
+                    .expect("an output per concrete")
+                    .as_ref()
+                    .expect("an admitted concrete");
                 assert_eq!(left_bytes, right_bytes);
             }
         }
@@ -312,21 +351,21 @@ fn libraries_sharing_an_identifier_encode_the_pairing_product_to_the_same_bytes(
 ///   the arm's `try_new`, `consume_pairing`, and `scalar_field_order`.
 /// Mocked:   none.
 /// Arrange:  a `Consumer` written against `IPairingReference` calling
-///   `scalar_field_order` irrefutably and pairing
-///   `P::DECLARATION.target_group_encoding` with the order's bytes; every
+///   `scalar_field_order` irrefutably and returning the order's bytes; every
 ///   concrete of the declared set, which holds each library of each
-///   identifier, runs, collected in order.
-/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per concrete.
+///   identifier, runs, collected in order, each output paired with the
+///   `target_group_encoding` the public lookup returns for its `concrete`.
+/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per
+///   concrete.
 /// Assert:   an output for every concrete; any two outputs with equal
 ///   identifiers hold equal bytes.
 #[test]
 fn libraries_sharing_an_identifier_return_the_same_scalar_field_order() {
     // Arrange
-    #[derive(Default)]
     struct Consumer;
 
     impl IPairingConsumer for Consumer {
-        type Output = (TargetGroupEncodingIdentifier, Vec<u8>);
+        type Output = Vec<u8>;
 
         fn consume_pairing<P: IPairingReference>(
             &self,
@@ -336,31 +375,49 @@ fn libraries_sharing_an_identifier_return_the_same_scalar_field_order() {
             let Ok(order) = payload
                 .adapter
                 .scalar_field_order(ScalarFieldOrderParams, ScalarFieldOrderPayload);
-            (P::DECLARATION.target_group_encoding, order.bytes)
+            order.bytes
         }
     }
 
     let mut outputs = Vec::new();
-    for concrete in PAIRING_CONCRETES {
+    for concrete in PAIRING_CONCRETES.iter().copied() {
+        let Ok(declaration) = lookup_pairing_declaration(
+            &build_lookup_pairing_declaration_deps(Default::default()),
+            build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
+                concrete: Some(concrete),
+                ..Default::default()
+            }),
+            build_lookup_pairing_declaration_payload(Default::default()),
+        );
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
+            concrete: Some(concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
 
-        outputs.push(result.ok().map(|success| success.output));
+        outputs.push((
+            declaration.declaration.target_group_encoding,
+            result.ok().map(|success| success.output),
+        ));
     }
 
     // Assert
     assert_eq!(outputs.len(), PAIRING_CONCRETES.len());
     for left in &outputs {
         for right in &outputs {
-            let (left_identifier, left_bytes) = left.as_ref().expect("an output per concrete");
-            let (right_identifier, right_bytes) = right.as_ref().expect("an output per concrete");
+            let (left_identifier, left_output) = left;
+            let (right_identifier, right_output) = right;
             if left_identifier == right_identifier {
+                let left_bytes = left_output.as_ref().expect("an output per concrete");
+                let right_bytes = right_output.as_ref().expect("an output per concrete");
                 assert_eq!(left_bytes, right_bytes);
             }
         }
@@ -377,24 +434,22 @@ fn libraries_sharing_an_identifier_return_the_same_scalar_field_order() {
 /// Mocked:   none.
 /// Arrange:  a `Consumer` written against `IPairingReference` calling
 ///   `g1_outside_subgroup_encoding`, propagating its error unchanged, and
-///   pairing `P::DECLARATION.target_group_encoding` with the optional bytes;
-///   every concrete of the declared set runs, collected in order, so both
-///   identifiers are exercised.
-/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per concrete.
+///   returning the optional bytes; every concrete of the declared set runs,
+///   collected in order, so both identifiers are exercised, each output
+///   paired with the `target_group_encoding` the public lookup returns for
+///   its `concrete`.
+/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per
+///   concrete.
 /// Assert:   an output for every concrete; every `Bn254V1` output holds
 ///   `None`; every `Bls12381V1` output holds `Some`; any two outputs with
 ///   equal identifiers hold equal optional bytes.
 #[test]
 fn libraries_sharing_an_identifier_return_the_same_first_group_reference_encoding() {
     // Arrange
-    #[derive(Default)]
     struct Consumer;
 
     impl IPairingConsumer for Consumer {
-        type Output = Result<
-            (TargetGroupEncodingIdentifier, Option<Vec<u8>>),
-            G1OutsideSubgroupEncodingErrorReturn,
-        >;
+        type Output = Result<Option<Vec<u8>>, G1OutsideSubgroupEncodingErrorReturn>;
 
         fn consume_pairing<P: IPairingReference>(
             &self,
@@ -405,54 +460,70 @@ fn libraries_sharing_an_identifier_return_the_same_first_group_reference_encodin
                 G1OutsideSubgroupEncodingParams,
                 G1OutsideSubgroupEncodingPayload,
             )?;
-            Ok((
-                P::DECLARATION.target_group_encoding,
-                success.bytes.map(|bytes| bytes.as_ref().to_vec()),
-            ))
+            Ok(success.bytes.map(|bytes| bytes.as_ref().to_vec()))
         }
     }
 
     let mut outputs = Vec::new();
-    for concrete in PAIRING_CONCRETES {
+    for concrete in PAIRING_CONCRETES.iter().copied() {
+        let Ok(declaration) = lookup_pairing_declaration(
+            &build_lookup_pairing_declaration_deps(Default::default()),
+            build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
+                concrete: Some(concrete),
+                ..Default::default()
+            }),
+            build_lookup_pairing_declaration_payload(Default::default()),
+        );
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
+            concrete: Some(concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
 
-        outputs.push(result.ok().map(|success| success.output));
+        outputs.push((
+            declaration.declaration.target_group_encoding,
+            result.ok().map(|success| success.output),
+        ));
     }
 
     // Assert
     assert_eq!(outputs.len(), PAIRING_CONCRETES.len());
-    for output in &outputs {
-        let (identifier, bytes) = output
+    for (identifier, output) in &outputs {
+        let bytes = output
             .as_ref()
             .expect("an output per concrete")
             .as_ref()
             .expect("each concrete's encoding succeeds");
         if *identifier == TargetGroupEncodingIdentifier::Bn254V1 {
             assert_eq!(bytes, &None);
-        } else {
+        }
+        if *identifier == TargetGroupEncodingIdentifier::Bls12381V1 {
             assert!(bytes.is_some());
         }
     }
     for left in &outputs {
         for right in &outputs {
-            let (left_identifier, left_bytes) = left
-                .as_ref()
-                .expect("an output per concrete")
-                .as_ref()
-                .expect("an admitted concrete");
-            let (right_identifier, right_bytes) = right
-                .as_ref()
-                .expect("an output per concrete")
-                .as_ref()
-                .expect("an admitted concrete");
+            let (left_identifier, left_output) = left;
+            let (right_identifier, right_output) = right;
             if left_identifier == right_identifier {
+                let left_bytes = left_output
+                    .as_ref()
+                    .expect("an output per concrete")
+                    .as_ref()
+                    .expect("an admitted concrete");
+                let right_bytes = right_output
+                    .as_ref()
+                    .expect("an output per concrete")
+                    .as_ref()
+                    .expect("an admitted concrete");
                 assert_eq!(left_bytes, right_bytes);
             }
         }
@@ -468,20 +539,20 @@ fn libraries_sharing_an_identifier_return_the_same_first_group_reference_encodin
 /// Mocked:   none.
 /// Arrange:  a `Consumer` written against `IPairingReference` calling
 ///   `g2_outside_subgroup_encoding`, propagating its error unchanged, and
-///   pairing `P::DECLARATION.target_group_encoding` with the bytes; every
-///   concrete of the declared set runs, collected in order.
-/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per concrete.
+///   returning the bytes; every concrete of the declared set runs, collected
+///   in order, each output paired with the `target_group_encoding` the
+///   public lookup returns for its `concrete`.
+/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per
+///   concrete.
 /// Assert:   an output for every concrete; any two outputs with equal
 ///   identifiers hold equal bytes.
 #[test]
 fn libraries_sharing_an_identifier_return_the_same_second_group_reference_encoding() {
     // Arrange
-    #[derive(Default)]
     struct Consumer;
 
     impl IPairingConsumer for Consumer {
-        type Output =
-            Result<(TargetGroupEncodingIdentifier, Vec<u8>), G2OutsideSubgroupEncodingErrorReturn>;
+        type Output = Result<Vec<u8>, G2OutsideSubgroupEncodingErrorReturn>;
 
         fn consume_pairing<P: IPairingReference>(
             &self,
@@ -492,42 +563,57 @@ fn libraries_sharing_an_identifier_return_the_same_second_group_reference_encodi
                 G2OutsideSubgroupEncodingParams,
                 G2OutsideSubgroupEncodingPayload,
             )?;
-            Ok((
-                P::DECLARATION.target_group_encoding,
-                success.bytes.as_ref().to_vec(),
-            ))
+            Ok(success.bytes.as_ref().to_vec())
         }
     }
 
     let mut outputs = Vec::new();
-    for concrete in PAIRING_CONCRETES {
+    for concrete in PAIRING_CONCRETES.iter().copied() {
+        let Ok(declaration) = lookup_pairing_declaration(
+            &build_lookup_pairing_declaration_deps(Default::default()),
+            build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
+                concrete: Some(concrete),
+                ..Default::default()
+            }),
+            build_lookup_pairing_declaration_payload(Default::default()),
+        );
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
+            concrete: Some(concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
 
-        outputs.push(result.ok().map(|success| success.output));
+        outputs.push((
+            declaration.declaration.target_group_encoding,
+            result.ok().map(|success| success.output),
+        ));
     }
 
     // Assert
     assert_eq!(outputs.len(), PAIRING_CONCRETES.len());
     for left in &outputs {
         for right in &outputs {
-            let (left_identifier, left_bytes) = left
-                .as_ref()
-                .expect("an output per concrete")
-                .as_ref()
-                .expect("an admitted concrete");
-            let (right_identifier, right_bytes) = right
-                .as_ref()
-                .expect("an output per concrete")
-                .as_ref()
-                .expect("an admitted concrete");
+            let (left_identifier, left_output) = left;
+            let (right_identifier, right_output) = right;
             if left_identifier == right_identifier {
+                let left_bytes = left_output
+                    .as_ref()
+                    .expect("an output per concrete")
+                    .as_ref()
+                    .expect("an admitted concrete");
+                let right_bytes = right_output
+                    .as_ref()
+                    .expect("an output per concrete")
+                    .as_ref()
+                    .expect("an admitted concrete");
                 assert_eq!(left_bytes, right_bytes);
             }
         }
@@ -544,15 +630,15 @@ fn libraries_sharing_an_identifier_return_the_same_second_group_reference_encodi
 /// Mocked:   none.
 /// Arrange:  a `Consumer` written against `IPairingReference` calling
 ///   `g2_outside_subgroup_encoding`, propagating its error unchanged, passing
-///   the bytes to `decode_g2`, and returning its result with the success value
-///   replaced by `()`; every concrete of the declared set in turn.
-/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per concrete.
+///   the bytes to `decode_g2`, and returning its result with the success
+///   value replaced by `()`; every concrete of the declared set in turn.
+/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per
+///   concrete.
 /// Assert:   per concrete, the observed output is
 ///   `Ok(Err(DecodeG2ErrorReturn::NotInSubgroup))`.
 #[test]
 fn each_second_group_decoder_refuses_the_second_group_reference_encoding() {
     // Arrange
-    #[derive(Default)]
     struct Consumer;
 
     impl IPairingConsumer for Consumer {
@@ -574,12 +660,17 @@ fn each_second_group_decoder_refuses_the_second_group_reference_encoding() {
         }
     }
 
-    for concrete in PAIRING_CONCRETES {
+    for concrete in PAIRING_CONCRETES.iter().copied() {
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
+            concrete: Some(concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -605,14 +696,14 @@ fn each_second_group_decoder_refuses_the_second_group_reference_encoding() {
 ///   present bytes to `decode_g1`, and returning its result with the success
 ///   value replaced by `()`; every concrete of the declared set in turn, so a
 ///   concrete with no first-group encoding and a concrete with one both run.
-/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per concrete.
+/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per
+///   concrete.
 /// Assert:   per concrete, the observed output matches `Some(Ok(None))` or
 ///   `Some(Ok(Some(Err(DecodeG1ErrorReturn::NotInSubgroup))))`; across the
 ///   declared set at least one output is `Some(Ok(Some(_)))`.
 #[test]
 fn each_first_group_decoder_refuses_the_first_group_reference_encoding_where_one_exists() {
     // Arrange
-    #[derive(Default)]
     struct Consumer;
 
     impl IPairingConsumer for Consumer {
@@ -638,12 +729,17 @@ fn each_first_group_decoder_refuses_the_first_group_reference_encoding_where_one
     }
 
     let mut outputs = Vec::new();
-    for concrete in PAIRING_CONCRETES {
+    for concrete in PAIRING_CONCRETES.iter().copied() {
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
+            concrete: Some(concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -665,4 +761,220 @@ fn each_first_group_decoder_refuses_the_first_group_reference_encoding_where_one
             .iter()
             .any(|output| matches!(output, Some(Ok(Some(_)))))
     );
+}
+
+/// Contract: entry
+///   `a_concrete_whose_provisions_the_requirements_do_not_match_is_refused_whole_before_construction`;
+///   given the four `required_*` values are every provision the declaration
+///   the public `lookup_pairing_declaration` returns for a member of a
+///   different curve states, the factory returns `Err(CreatePairingErrorReturn::
+///   Composition(AdmitPairingCompositionErrorReturn::Incompatible { identifier,
+///   disagreements }))` naming `params.concrete`, `disagreements` holding the
+///   curve, verifier-group arithmetic, precompile encoding, and target-group
+///   encoding disagreement in that order.
+/// Boundary: the public `create_pairing`; the real chain is `create_pairing`,
+///   the public `admit_pairing_composition`, the public
+///   `lookup_pairing_declaration`, and the declaration constants they read.
+/// Mocked:   none.
+/// Arrange:  a `Consumer` written against `IPairingAdapter` with
+///   `type Output = ()`; per concrete, the other-curve member chosen from
+///   `PAIRING_CONCRETES` as the first member whose declared curve, read
+///   through the public lookup, differs from the concrete's, the
+///   requirements built from that member's declaration.
+/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per
+///   concrete.
+/// Assert:   per concrete, the observed `Err` is `Composition(Incompatible {
+///   identifier, disagreements })` with `identifier` the concrete and
+///   `disagreements` the four in order, each `declared` read from the
+///   concrete's declaration and each `required` from the other member's
+///   declaration through the public lookup.
+#[test]
+fn a_concrete_whose_provisions_the_requirements_do_not_match_is_refused_whole_before_construction()
+{
+    // Arrange
+    struct Consumer;
+
+    impl IPairingConsumer for Consumer {
+        type Output = ();
+
+        fn consume_pairing<P: IPairingAdapter>(
+            &self,
+            _params: ConsumePairingParams,
+            _payload: ConsumePairingPayload<P>,
+        ) -> Self::Output {
+        }
+    }
+
+    for concrete in PAIRING_CONCRETES.iter().copied() {
+        let Ok(declaration) = lookup_pairing_declaration(
+            &build_lookup_pairing_declaration_deps(Default::default()),
+            build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
+                concrete: Some(concrete),
+                ..Default::default()
+            }),
+            build_lookup_pairing_declaration_payload(Default::default()),
+        );
+        let other = PAIRING_CONCRETES
+            .iter()
+            .copied()
+            .find(|other| {
+                let Ok(other_declaration) = lookup_pairing_declaration(
+                    &build_lookup_pairing_declaration_deps(Default::default()),
+                    build_lookup_pairing_declaration_params(
+                        LookupPairingDeclarationParamsOverrides {
+                            concrete: Some(*other),
+                            ..Default::default()
+                        },
+                    ),
+                    build_lookup_pairing_declaration_payload(Default::default()),
+                );
+                other_declaration.declaration.curve != declaration.declaration.curve
+            })
+            .expect("a member of a different curve");
+        let Ok(other_declaration) = lookup_pairing_declaration(
+            &build_lookup_pairing_declaration_deps(Default::default()),
+            build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
+                concrete: Some(other),
+                ..Default::default()
+            }),
+            build_lookup_pairing_declaration_payload(Default::default()),
+        );
+        let params = build_create_pairing_params(CreatePairingParamsOverrides {
+            concrete: Some(concrete),
+            required_curve: Some(other_declaration.declaration.curve),
+            required_verifier_group_arithmetic: Some(
+                other_declaration.declaration.verifier_group_arithmetic,
+            ),
+            required_precompile_encodings: Some(vec![
+                other_declaration.declaration.precompile_encoding,
+            ]),
+            required_target_group_encoding: Some(
+                other_declaration.declaration.target_group_encoding,
+            ),
+        });
+        let deps = build_create_pairing_deps(
+            Consumer,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
+
+        // Act
+        let result = create_pairing(&deps, params, CreatePairingPayload);
+
+        // Assert
+        assert_eq!(
+            result.err(),
+            Some(CreatePairingErrorReturn::Composition(
+                AdmitPairingCompositionErrorReturn::Incompatible {
+                    identifier: concrete,
+                    disagreements: vec![
+                        PairingDisagreement::Curve {
+                            declared: declaration.declaration.curve,
+                            required: other_declaration.declaration.curve,
+                        },
+                        PairingDisagreement::VerifierGroupArithmetic {
+                            declared: declaration.declaration.verifier_group_arithmetic,
+                            required: other_declaration.declaration.verifier_group_arithmetic,
+                        },
+                        PairingDisagreement::PrecompileEncoding {
+                            declared: declaration.declaration.precompile_encoding,
+                            required: vec![other_declaration.declaration.precompile_encoding],
+                        },
+                        PairingDisagreement::TargetGroupEncoding {
+                            declared: declaration.declaration.target_group_encoding,
+                            required: other_declaration.declaration.target_group_encoding,
+                        },
+                    ],
+                }
+            ))
+        );
+    }
+}
+
+/// Contract: entry `a_single_disagreeing_provision_reaches_the_caller_whole`;
+///   given the four `required_*` values are the concrete's own declared
+///   provisions except the target-group encoding, replaced by a value of
+///   `TARGET_GROUP_ENCODING_IDENTIFIERS` the concrete does not declare, the
+///   factory returns `Err(CreatePairingErrorReturn::Composition(
+///   AdmitPairingCompositionErrorReturn::Incompatible { identifier,
+///   disagreements }))` naming `params.concrete`, `disagreements` holding the
+///   one `PairingDisagreement::TargetGroupEncoding` carrying the declared
+///   value and the replaced value.
+/// Boundary: the boundary of
+///   `a_concrete_whose_provisions_the_requirements_do_not_match_is_refused_whole_before_construction`.
+/// Mocked:   none.
+/// Arrange:  the `Consumer` of
+///   `a_concrete_whose_provisions_the_requirements_do_not_match_is_refused_whole_before_construction`;
+///   per concrete, the requirements read from its declaration through the
+///   public lookup, the target-group encoding replaced by the first value of
+///   `TARGET_GROUP_ENCODING_IDENTIFIERS` unequal to the declared one.
+/// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per
+///   concrete.
+/// Assert:   per concrete, the observed `Err` is `Composition(Incompatible {
+///   identifier, disagreements })` with `identifier` the concrete and
+///   `disagreements` holding only `TargetGroupEncoding { declared, required }`.
+#[test]
+fn a_single_disagreeing_provision_reaches_the_caller_whole() {
+    // Arrange
+    struct Consumer;
+
+    impl IPairingConsumer for Consumer {
+        type Output = ();
+
+        fn consume_pairing<P: IPairingAdapter>(
+            &self,
+            _params: ConsumePairingParams,
+            _payload: ConsumePairingPayload<P>,
+        ) -> Self::Output {
+        }
+    }
+
+    for concrete in PAIRING_CONCRETES.iter().copied() {
+        let Ok(declaration) = lookup_pairing_declaration(
+            &build_lookup_pairing_declaration_deps(Default::default()),
+            build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
+                concrete: Some(concrete),
+                ..Default::default()
+            }),
+            build_lookup_pairing_declaration_payload(Default::default()),
+        );
+        let required_target_group_encoding = TARGET_GROUP_ENCODING_IDENTIFIERS
+            .iter()
+            .copied()
+            .find(|identifier| *identifier != declaration.declaration.target_group_encoding)
+            .expect("a value the declaration does not state");
+        let params = build_create_pairing_params(CreatePairingParamsOverrides {
+            concrete: Some(concrete),
+            required_curve: Some(declaration.declaration.curve),
+            required_verifier_group_arithmetic: Some(
+                declaration.declaration.verifier_group_arithmetic,
+            ),
+            required_precompile_encodings: Some(vec![declaration.declaration.precompile_encoding]),
+            required_target_group_encoding: Some(required_target_group_encoding),
+        });
+        let deps = build_create_pairing_deps(
+            Consumer,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
+
+        // Act
+        let result = create_pairing(&deps, params, CreatePairingPayload);
+
+        // Assert
+        assert_eq!(
+            result.err(),
+            Some(CreatePairingErrorReturn::Composition(
+                AdmitPairingCompositionErrorReturn::Incompatible {
+                    identifier: concrete,
+                    disagreements: vec![PairingDisagreement::TargetGroupEncoding {
+                        declared: declaration.declaration.target_group_encoding,
+                        required: required_target_group_encoding,
+                    }],
+                }
+            ))
+        );
+    }
 }

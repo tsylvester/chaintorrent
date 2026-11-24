@@ -7,6 +7,9 @@ pub mod provides;
 #[cfg(test)]
 mod test;
 
+use crate::admit_pairing_composition::provides::{
+    AdmitPairingCompositionParams, AdmitPairingCompositionPayload,
+};
 use crate::bls12_381_arkworks::provides::{
     Bls12381ArkworksPairing, Bls12381ArkworksPairingConstructorParams,
 };
@@ -25,32 +28,28 @@ use interface::{
     IPairingConsumer, PairingConcrete,
 };
 #[cfg(any(test, feature = "mocks"))]
-use {
-    interface::IPairingAdapter,
-    mock::{
-        MOCK_SHORT_UNIFORM_BYTES_LENGTH, MOCK_UNIFORM_BYTES_LENGTH, MockIPairingAdapter,
-        MockIPairingAdapterConstructorParams,
-    },
-};
+use mock::{MockIPairingAdapter, MockIPairingAdapterConstructorParams};
 
 pub fn create_pairing<C: IPairingConsumer>(
     deps: &CreatePairingDeps<C>,
     params: CreatePairingParams,
     _payload: CreatePairingPayload,
 ) -> CreatePairingReturn<C::Output> {
+    if let Err(error) = (deps.admit_pairing_composition)(
+        &deps.admit_pairing_composition_deps,
+        AdmitPairingCompositionParams {
+            identifier: params.concrete,
+            required_curve: params.required_curve,
+            required_verifier_group_arithmetic: params.required_verifier_group_arithmetic,
+            required_precompile_encodings: params.required_precompile_encodings,
+            required_target_group_encoding: params.required_target_group_encoding,
+        },
+        AdmitPairingCompositionPayload,
+    ) {
+        return Err(CreatePairingErrorReturn::Composition(error));
+    }
     match params.concrete {
         PairingConcrete::Bn254Arkworks => {
-            if !params
-                .supported_encodings
-                .contains(&Bn254ArkworksPairing::DECLARATION.precompile_encoding)
-            {
-                return Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding);
-            }
-            if Bn254ArkworksPairing::DECLARATION.target_group_encoding
-                != params.target_group_encoding
-            {
-                return Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding);
-            }
             let Ok(adapter) = Bn254ArkworksPairing::try_new(Bn254ArkworksPairingConstructorParams);
             Ok(CreatePairingSuccessReturn {
                 output: deps
@@ -59,17 +58,6 @@ pub fn create_pairing<C: IPairingConsumer>(
             })
         }
         PairingConcrete::Bn254Halo2curves => {
-            if !params
-                .supported_encodings
-                .contains(&Bn254Halo2curvesPairing::DECLARATION.precompile_encoding)
-            {
-                return Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding);
-            }
-            if Bn254Halo2curvesPairing::DECLARATION.target_group_encoding
-                != params.target_group_encoding
-            {
-                return Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding);
-            }
             let Ok(adapter) =
                 Bn254Halo2curvesPairing::try_new(Bn254Halo2curvesPairingConstructorParams);
             Ok(CreatePairingSuccessReturn {
@@ -79,17 +67,6 @@ pub fn create_pairing<C: IPairingConsumer>(
             })
         }
         PairingConcrete::Bls12381Arkworks => {
-            if !params
-                .supported_encodings
-                .contains(&Bls12381ArkworksPairing::DECLARATION.precompile_encoding)
-            {
-                return Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding);
-            }
-            if Bls12381ArkworksPairing::DECLARATION.target_group_encoding
-                != params.target_group_encoding
-            {
-                return Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding);
-            }
             let Ok(adapter) =
                 Bls12381ArkworksPairing::try_new(Bls12381ArkworksPairingConstructorParams);
             Ok(CreatePairingSuccessReturn {
@@ -99,17 +76,6 @@ pub fn create_pairing<C: IPairingConsumer>(
             })
         }
         PairingConcrete::Bls12381Halo2curves => {
-            if !params
-                .supported_encodings
-                .contains(&Bls12381Halo2curvesPairing::DECLARATION.precompile_encoding)
-            {
-                return Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding);
-            }
-            if Bls12381Halo2curvesPairing::DECLARATION.target_group_encoding
-                != params.target_group_encoding
-            {
-                return Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding);
-            }
             let Ok(adapter) =
                 Bls12381Halo2curvesPairing::try_new(Bls12381Halo2curvesPairingConstructorParams);
             Ok(CreatePairingSuccessReturn {
@@ -119,43 +85,10 @@ pub fn create_pairing<C: IPairingConsumer>(
             })
         }
         #[cfg(any(test, feature = "mocks"))]
-        PairingConcrete::Mock(failure_mode) => {
-            if !params.supported_encodings.contains(
-                &MockIPairingAdapter::<MOCK_UNIFORM_BYTES_LENGTH>::DECLARATION.precompile_encoding,
-            ) {
-                return Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding);
-            }
-            if MockIPairingAdapter::<MOCK_UNIFORM_BYTES_LENGTH>::DECLARATION.target_group_encoding
-                != params.target_group_encoding
-            {
-                return Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding);
-            }
-            let Ok(adapter) = MockIPairingAdapter::<MOCK_UNIFORM_BYTES_LENGTH>::try_new(
-                MockIPairingAdapterConstructorParams { failure_mode },
-            );
-            Ok(CreatePairingSuccessReturn {
-                output: deps
-                    .consumer
-                    .consume_pairing(ConsumePairingParams, ConsumePairingPayload { adapter }),
-            })
-        }
-        #[cfg(any(test, feature = "mocks"))]
-        PairingConcrete::MockShortUniform(failure_mode) => {
-            if !params.supported_encodings.contains(
-                &MockIPairingAdapter::<MOCK_SHORT_UNIFORM_BYTES_LENGTH>::DECLARATION
-                    .precompile_encoding,
-            ) {
-                return Err(CreatePairingErrorReturn::UnsupportedPrecompileEncoding);
-            }
-            if MockIPairingAdapter::<MOCK_SHORT_UNIFORM_BYTES_LENGTH>::DECLARATION
-                .target_group_encoding
-                != params.target_group_encoding
-            {
-                return Err(CreatePairingErrorReturn::UnsupportedTargetGroupEncoding);
-            }
-            let Ok(adapter) = MockIPairingAdapter::<MOCK_SHORT_UNIFORM_BYTES_LENGTH>::try_new(
-                MockIPairingAdapterConstructorParams { failure_mode },
-            );
+        PairingConcrete::Mock(mode) => {
+            let Ok(adapter) = MockIPairingAdapter::try_new(MockIPairingAdapterConstructorParams {
+                failure_mode: mode,
+            });
             Ok(CreatePairingSuccessReturn {
                 output: deps
                     .consumer

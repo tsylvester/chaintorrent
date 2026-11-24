@@ -31,30 +31,32 @@ use crate::factory::provides::{
     MsmG2Params, MsmG2PayloadOverrides, MsmG2TermOverrides, MulG1Params, MulG1PayloadOverrides,
     MulG2Params, MulG2PayloadOverrides, MulScalarParams, MulScalarPayloadOverrides, NegG1Params,
     NegG1PayloadOverrides, NegG2Params, NegG2PayloadOverrides, NegScalarParams,
-    NegScalarPayloadOverrides, PAIRING_INTERFACE_VERSION, PairingConcrete, PairingCurve,
-    PairingProductIsOneParams, PairingProductIsOnePayloadOverrides, PairingProductParams,
-    PairingProductPayloadOverrides, PairingProductTermOverrides, PrecompileEncoding,
-    SampleUniformScalarErrorReturn, SampleUniformScalarParams, SampleUniformScalarPayloadOverrides,
-    ScalarFieldOrderParams, ScalarFieldOrderPayload, TargetGroupEncodingIdentifier,
-    VerifierGroupArithmetic, build_add_g1_payload, build_add_g2_payload, build_add_scalar_payload,
-    build_encode_g1_payload, build_encode_g2_payload, build_encode_gt_payload,
-    build_encode_scalar_payload, build_is_identity_g1_payload, build_is_identity_g2_payload,
-    build_msm_g1_payload, build_msm_g1_term, build_msm_g2_payload, build_msm_g2_term,
-    build_mul_g1_payload, build_mul_g2_payload, build_mul_scalar_payload, build_neg_g1_payload,
-    build_neg_g2_payload, build_neg_scalar_payload, build_pairing_product_is_one_payload,
-    build_pairing_product_payload, build_pairing_product_term, build_sample_uniform_scalar_payload,
+    NegScalarPayloadOverrides, PAIRING_CONCRETES, PAIRING_INTERFACE_VERSION, PairingConcrete,
+    PairingCurve, PairingProductIsOneParams, PairingProductIsOnePayloadOverrides,
+    PairingProductParams, PairingProductPayloadOverrides, PairingProductTermOverrides,
+    PrecompileEncoding, SampleUniformScalarErrorReturn, SampleUniformScalarParams,
+    SampleUniformScalarPayloadOverrides, ScalarFieldOrderParams, ScalarFieldOrderPayload,
+    TARGET_GROUP_ENCODING_IDENTIFIERS, TargetGroupEncodingIdentifier, VerifierGroupArithmetic,
+    build_add_g1_payload, build_add_g2_payload, build_add_scalar_payload, build_encode_g1_payload,
+    build_encode_g2_payload, build_encode_gt_payload, build_encode_scalar_payload,
+    build_is_identity_g1_payload, build_is_identity_g2_payload, build_msm_g1_payload,
+    build_msm_g1_term, build_msm_g2_payload, build_msm_g2_term, build_mul_g1_payload,
+    build_mul_g2_payload, build_mul_scalar_payload, build_neg_g1_payload, build_neg_g2_payload,
+    build_neg_scalar_payload, build_pairing_product_is_one_payload, build_pairing_product_payload,
+    build_pairing_product_term, build_sample_uniform_scalar_payload,
 };
 use ark_bn254::{Fq, Fq2, Fq12, Fr, G1Affine, G2Affine};
 use ark_ec::{AffineRepr, pairing::PairingOutput};
 use ark_ff::{Field, PrimeField, Zero};
 use domain::{SecretConstructorParamsOverrides, build_secret};
 use num_bigint::BigUint;
+use std::collections::HashSet;
 use zeroize::Zeroize;
 
 const _: () = assert!(
     matches!(
-        Bn254ArkworksPairing::DECLARATION.concrete_name.as_bytes(),
-        b"bn254_arkworks"
+        Bn254ArkworksPairing::DECLARATION.concrete,
+        PairingConcrete::Bn254Arkworks
     ) && matches!(Bn254ArkworksPairing::DECLARATION.curve, PairingCurve::Bn254)
         && matches!(
             Bn254ArkworksPairing::DECLARATION.verifier_group_arithmetic,
@@ -71,34 +73,6 @@ const _: () = assert!(
         && Bn254ArkworksPairing::DECLARATION.adapter_version == 1
         && Bn254ArkworksPairing::DECLARATION.interface_version == PAIRING_INTERFACE_VERSION
 );
-
-const _: () = assert!(
-    matches!(
-        <Bn254ArkworksPairing as IPairingAdapter>::DECLARATION
-            .concrete_name
-            .as_bytes(),
-        b"bn254_arkworks"
-    ) && matches!(
-        <Bn254ArkworksPairing as IPairingAdapter>::DECLARATION.curve,
-        PairingCurve::Bn254
-    ) && matches!(
-        <Bn254ArkworksPairing as IPairingAdapter>::DECLARATION.verifier_group_arithmetic,
-        VerifierGroupArithmetic::FirstGroupOnly
-    ) && matches!(
-        <Bn254ArkworksPairing as IPairingAdapter>::DECLARATION.precompile_encoding,
-        PrecompileEncoding::Eip196Eip197
-    ) && matches!(
-        <Bn254ArkworksPairing as IPairingAdapter>::DECLARATION.target_group_encoding,
-        TargetGroupEncodingIdentifier::Bn254V1
-    ) && <Bn254ArkworksPairing as IPairingAdapter>::DECLARATION.adapter_version == 1
-        && <Bn254ArkworksPairing as IPairingAdapter>::DECLARATION.interface_version
-            == PAIRING_INTERFACE_VERSION
-);
-
-const _: () = assert!(matches!(
-    <Bn254ArkworksPairing as IPairingAdapter>::CONCRETE,
-    PairingConcrete::Bn254Arkworks
-));
 
 #[test]
 fn bn254_arkworks_scalar_is_zeroize_on_drop() {
@@ -1244,4 +1218,60 @@ fn bn254_arkworks_encoded_gt_zeroize_clears_its_bytes() {
         build_bn254_arkworks_encoded_gt(Bn254ArkworksEncodedGtOverrides { bytes: None });
     encoded.zeroize();
     assert_eq!(encoded.as_ref(), zero_bytes(384).as_slice());
+}
+
+#[test]
+fn pairing_concretes_declares_only_real_members() {
+    assert!(PAIRING_CONCRETES.contains(&PairingConcrete::Bn254Arkworks));
+    assert!(
+        !PAIRING_CONCRETES
+            .iter()
+            .any(|member| matches!(member, PairingConcrete::Mock(_)))
+    );
+}
+
+#[test]
+fn target_group_encoding_identifiers_declares_only_real_values() {
+    assert!(TARGET_GROUP_ENCODING_IDENTIFIERS.contains(&TargetGroupEncodingIdentifier::Bn254V1));
+    assert!(
+        TARGET_GROUP_ENCODING_IDENTIFIERS
+            .iter()
+            .all(|identifier| matches!(
+                identifier,
+                TargetGroupEncodingIdentifier::Bn254V1 | TargetGroupEncodingIdentifier::Bls12381V1
+            ))
+    );
+}
+
+#[test]
+fn every_declared_identifier_spells_a_distinct_name() {
+    let concrete_names: HashSet<&'static str> = PAIRING_CONCRETES
+        .iter()
+        .map(|member| member.name())
+        .collect();
+    assert_eq!(concrete_names.len(), PAIRING_CONCRETES.len());
+    let encoding_names: HashSet<&'static str> = TARGET_GROUP_ENCODING_IDENTIFIERS
+        .iter()
+        .map(|identifier| identifier.name())
+        .collect();
+    assert_eq!(
+        encoding_names.len(),
+        TARGET_GROUP_ENCODING_IDENTIFIERS.len()
+    );
+}
+
+#[test]
+fn no_value_identifier_declares_a_mock_only_variant() {
+    match PairingCurve::Bn254 {
+        PairingCurve::Bn254 | PairingCurve::Bls12381 => {}
+    }
+    match VerifierGroupArithmetic::FirstGroupOnly {
+        VerifierGroupArithmetic::FirstGroupOnly | VerifierGroupArithmetic::BothGroups => {}
+    }
+    match PrecompileEncoding::Eip196Eip197 {
+        PrecompileEncoding::Eip196Eip197 | PrecompileEncoding::Eip2537 => {}
+    }
+    match TargetGroupEncodingIdentifier::Bn254V1 {
+        TargetGroupEncodingIdentifier::Bn254V1 | TargetGroupEncodingIdentifier::Bls12381V1 => {}
+    }
 }

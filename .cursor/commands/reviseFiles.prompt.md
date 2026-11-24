@@ -1,43 +1,53 @@
-In your next turn, you are going to begin the work loop against the section of the workplan the user will provide in the next message. That selection is your assignment.
+# Revise files against a node
 
-**The selection is the node, and it is the whole scope.** How a delivered selection is treated — that it is the user's instruction and not ambient context, that it bounds the work, and what to do when it cannot support the instruction — is governed by `docs/agents/scope.md`, "Context the user hands you". Read it there.
+You are handed a workplan node with this command. The node is already implemented and has been revised. Your job is to bring its files on disk into line with the node as it is written now. The node is the whole scope; `docs/agents/scope.md`, "Context the user hands you", governs how a handed selection is treated. If the selection includes the first line of the next node, that is how selecting a markdown section works. Ignore that line, and do not read the next node.
 
-In **this turn**, read `docs/agents/index.md` and all of the Process elements so you understand the basic rules of procedure for this repo.
+## First
 
-This command overrides the "edit one file per turn" provision of `docs/agents/loop.md`. This command explicitly authorizes you to edit multiple files per turn *if and only if* you are following the *exact sequence described in this prompt*. Any deviation from this sequence obviates the "edit one file per turn" override and reinstates the sequence in `docs/agents/loop.md`. 
+1. Read `docs/agents/index.md` and every Process topic it lists. Acknowledge them in one line.
+2. State your scope, as the canary: the node's path, and the file of the first element you will work. A response whose first substantive output is not this statement is discarded.
 
-Specific to this command:
+## The rule
 
-- The selection you will be given is a node. 
-- "The user's selection includes the first line of the next node" is not a discovery, it is how selecting a section in a markdown file works. Do not report it, do not halt on it, do not reason that the user "must actually want me to read the next node instead". Focus on the first node you were explicitly handed, not the incidental first line of the next node. DO NOT read the next node "just to check". 
+The node's line is the whole instruction. Make the edit the line states, in the file the element names, and nothing else. Content in the file that the node does not mention stays exactly as it is. The only removal you may make is one a line names: this item, from this file. In this command, this rule replaces the infill and completeness directives of `scope.md` and the Standards topics. You do not add what a standard requires and the line does not state, and you do not remove what the line does not name.
 
-Before you reason about anything, read. This is a gate, not a formality:
+## The loop
 
-- Read the first incomplete section of the node in full. It names the element you are evaluating.
-- In `docs/agents/index.md`, find that element's row in the Implementation routing matrix, and read every Process topic and every Standards topic that row names. "Read the rules" means **all** of them — not the first file you open.
-- Read the file the node references.
+Work the node's elements in order, one at a time:
 
-Then produce a **read manifest** — a short list of exactly what you read — before any analysis. Do not reason toward a solution until that manifest exists (`docs/agents/loop.md`).
+- Read the file the element names. If it does not exist and a line requires it, create it.
+- Walk every line of the element, marked or not. The mark is a claim; the file is the fact.
+   - A line the file does not meet: make the edit, then mark the line `[✅]`.
+   - A line the file meets: mark it `[✅]` if it is not already.
+   - A line marked `[✅]` that the file does not meet: make the edit. It stays `[✅]`.
+- Lint the file. Errors that a later element of this node resolves are expected; leave them. Report any other error, and continue.
+- When every line of the element is `[✅]`, mark the element `[✅]` and move to the next element.
 
-You cannot begin to reason against the task you've been given until **after** you've read every relevant rule and file, and produced your read manifest to prove it. You will not reason the entire node, you will not reason every section. You will only reason for the file whose section you are actively working on. Reasoning forward of the file whose section you are working on is a failure. 
+Planning sections (`objective`, `role`, `module`, `deps`, `context_slice`, `construction`, `directionality`, `requirements`) have no file. Read them as context for the file elements. Mark their lines `[✅]` when every file element of the node is `[✅]`.
 
-This is a canary: If you start to reason **before** you read every rule and every relevant file, the user will see your violation and be forced to restart. The only way to avoid being halted is to follow the procedure you've been given. Every user-initiated-halt here is a *failure*, and it is **YOUR** failure, for not complying with the required procedure.
+When every line of the node is `[✅]`, mark the node's top-level line `[✅]`. Then report that the node is complete, declare your mode, and sign.
 
-Then, to complete your turn:
+## What you may edit and read
 
-- Do not reorder or merge the node's steps (`docs/agents/tdd-ordering.md`). 
-- You will complete each line one at a time, line by line, without batching work. 
-- Obey precedence — user, then Instructions topics, then the workplan (`docs/agents/precedence.md`). Declare your mode and sign your work (`docs/agents/modes.md`, `docs/agents/traceability.md`).
-- If the node element is informative but does not have an associated file, read the node, and take note of the items that are not yet satisfied. When you read forward node elements, you will satisfy these lines. Come back and mark them at the point they are satisfied. 
-- If the node element has an associated file on disk, or is supposed to have an associated file on disk, compare the node element in the workplan to the state of its file on disk. 
-- Walk the lines of the element in the workplan in order, read against the file the element names, and judge it against the topics that govern it (`docs/agents/linting-proof.md`, `docs/agents/modes.md`). 
-- For each line in the workplan element that is not satisfied on disk, edit the file in the exact way you are instructed so that the line is satisfied, then mark the bullet in the workplan node complete. 
-- Only when every line of the element is satisfied **on disk** is the element complete. 
-- When every single line in the node is satisfied by its requirement on disk, mark the node satisfied. 
-- ***DO NOT MOVE ON TO THE NEXT ELEMENT BEFORE THE ELEMENT IS COMPLETED ON DISK AND MARKED COMPLETED!*** 
-- Select the next incomplete element in the node, and restart this command from "Before you reason about anything, read."
-- When the node is satisfied, report to the user that it is completed and you are ready for the next node whose files need revised. 
+- You may edit the file the current element names, and the checkboxes of this node in the workplan. Nothing else in either. This overrides the one-file-per-turn rule in `docs/agents/loop.md` for this command.
+- You may read the file the current element names. You may read another file only when a line names it and its edit cannot be written without that file's exact text. Then read only the named symbol.
 
-Do not edit any file other than the exact file named by the section in the node you were given to satisfy, unless the user explicitly tells you otherwise. Do not output code in chat.
+## Halt only on these
 
-Follow `docs/agents/loop.md`, `docs/agents/scope.md`, and `docs/agents/precedence.md`.
+- A line's target text or symbol does not exist in the named file, and the line does not say to create it.
+- Two lines of the node contradict each other.
+- A line cannot be met without editing a file it does not name.
+- An edit result shows content destroyed. Follow `docs/agents/output.md`.
+
+On a halt, report the line, the file, and what blocks it, following `docs/agents/discovery-halt.md`. Everything not listed here is not a halt: continue.
+
+## If you notice yourself thinking any of these, stop and make the current line's edit
+
+- "Let me check the consumers / the blast radius / the rest of the crate first." Not your concern.
+- "This file has content the node doesn't mention; I'll remove it." It stays.
+- "A later node will write this back, so I can remove it now." You are reasoning about other nodes. Stop.
+- "The standard says this element also needs X." Only the line decides.
+- "loop.md says halt after one file." This command overrides that.
+- "Let me read ahead to the next element." Finish this one on disk first.
+
+Do not output code in chat. Obey precedence (`docs/agents/precedence.md`): the user, then the Instructions topics, then the workplan.

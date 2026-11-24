@@ -12,11 +12,9 @@ The error arm has no branch: the adapter takes no configuration, so `Infallible`
 
 ## `Bls12381Halo2curvesPairing::DECLARATION`
 
-An inherent constant, readable from the type before any instance exists:
+An inherent constant held by `bls12_381_halo2curves/interface.rs`, read through `pairing/lookup_pairing_declaration` without an instance, never obtained from a constructed adapter:
 
-`PairingDeclaration { concrete_name: "bls12_381_halo2curves", curve: PairingCurve::Bls12381, verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups, precompile_encoding: PrecompileEncoding::Eip2537, target_group_encoding: TargetGroupEncodingIdentifier::Bls12381V1, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
-
-The trait constant `IPairingAdapter::DECLARATION` is this constant.
+`PairingDeclaration { concrete: PairingConcrete::Bls12381Halo2curves, curve: PairingCurve::Bls12381, verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups, precompile_encoding: PrecompileEncoding::Eip2537, target_group_encoding: TargetGroupEncodingIdentifier::Bls12381V1, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
 
 ## `Bls12381Halo2curvesPairing::CONCRETE`
 

@@ -12,15 +12,9 @@ The error arm has no branch: the adapter takes no configuration, so `Infallible`
 
 ## `Bls12381ArkworksPairing::DECLARATION`
 
-An inherent constant, readable from the type before any instance exists:
+An inherent constant held by `bls12_381_arkworks/interface.rs`, read through `pairing/lookup_pairing_declaration` without an instance, never obtained from a constructed adapter:
 
-`PairingDeclaration { concrete_name: "bls12_381_arkworks", curve: PairingCurve::Bls12381, verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups, precompile_encoding: PrecompileEncoding::Eip2537, target_group_encoding: TargetGroupEncodingIdentifier::Bls12381V1, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
-
-The trait constant `IPairingAdapter::DECLARATION` is this constant.
-
-## `Bls12381ArkworksPairing::CONCRETE`
-
-The trait constant `PairingConcrete::Bls12381Arkworks`.
+`PairingDeclaration { concrete: PairingConcrete::Bls12381Arkworks, curve: PairingCurve::Bls12381, verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups, precompile_encoding: PrecompileEncoding::Eip2537, target_group_encoding: TargetGroupEncodingIdentifier::Bls12381V1, adapter_version: 1, interface_version: PAIRING_INTERFACE_VERSION }`
 
 ## `g1_generator(&self, params: G1GeneratorParams, payload: G1GeneratorPayload) -> G1GeneratorReturn<Bls12381ArkworksG1>`
 

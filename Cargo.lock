@@ -3055,6 +3055,7 @@ dependencies = [
  "num-bigint",
  "random",
  "serde",
+ "serde_json",
  "zeroize",
 ]
 

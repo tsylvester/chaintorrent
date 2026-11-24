@@ -1,5 +1,5 @@
 mod interface;
-#[cfg(test)]
+#[cfg(any(test, feature = "mocks"))]
 mod mock;
 pub(crate) mod provides;
 #[cfg(test)]
@@ -30,14 +30,12 @@ use crate::factory::provides::{
     MulScalarParams, MulScalarPayload, MulScalarReturn, MulScalarSuccessReturn, NegG1Params,
     NegG1Payload, NegG1Return, NegG1SuccessReturn, NegG2Params, NegG2Payload, NegG2Return,
     NegG2SuccessReturn, NegScalarParams, NegScalarPayload, NegScalarReturn, NegScalarSuccessReturn,
-    PAIRING_INTERFACE_VERSION, PairingConcrete, PairingCurve, PairingDeclaration,
     PairingProductIsOneParams, PairingProductIsOnePayload, PairingProductIsOneReturn,
     PairingProductIsOneSuccessReturn, PairingProductParams, PairingProductPayload,
-    PairingProductReturn, PairingProductSuccessReturn, PrecompileEncoding,
-    SampleUniformScalarErrorReturn, SampleUniformScalarParams, SampleUniformScalarPayload,
-    SampleUniformScalarReturn, SampleUniformScalarSuccessReturn, ScalarFieldOrderParams,
-    ScalarFieldOrderPayload, ScalarFieldOrderReturn, ScalarFieldOrderSuccessReturn,
-    TargetGroupEncodingIdentifier, VerifierGroupArithmetic,
+    PairingProductReturn, PairingProductSuccessReturn, SampleUniformScalarErrorReturn,
+    SampleUniformScalarParams, SampleUniformScalarPayload, SampleUniformScalarReturn,
+    SampleUniformScalarSuccessReturn, ScalarFieldOrderParams, ScalarFieldOrderPayload,
+    ScalarFieldOrderReturn, ScalarFieldOrderSuccessReturn,
 };
 use core::hint::black_box;
 use core::iter::successors;
@@ -57,16 +55,6 @@ use interface::{
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 impl Bn254Halo2curvesPairing {
-    pub const DECLARATION: PairingDeclaration = PairingDeclaration {
-        concrete_name: "bn254_halo2curves",
-        curve: PairingCurve::Bn254,
-        verifier_group_arithmetic: VerifierGroupArithmetic::FirstGroupOnly,
-        precompile_encoding: PrecompileEncoding::Eip196Eip197,
-        target_group_encoding: TargetGroupEncodingIdentifier::Bn254V1,
-        adapter_version: 1,
-        interface_version: PAIRING_INTERFACE_VERSION,
-    };
-
     pub fn try_new(
         _params: Bn254Halo2curvesPairingConstructorParams,
     ) -> Bn254Halo2curvesPairingTryNewReturn {
@@ -75,8 +63,6 @@ impl Bn254Halo2curvesPairing {
 }
 
 impl IPairingAdapter for Bn254Halo2curvesPairing {
-    const DECLARATION: PairingDeclaration = Bn254Halo2curvesPairing::DECLARATION;
-    const CONCRETE: PairingConcrete = PairingConcrete::Bn254Halo2curves;
     type Scalar = Bn254Halo2curvesScalar;
     type G1 = Bn254Halo2curvesG1;
     type G2 = Bn254Halo2curvesG2;

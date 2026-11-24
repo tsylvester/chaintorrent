@@ -1,5 +1,5 @@
 mod interface;
-#[cfg(test)]
+#[cfg(any(test, feature = "mocks"))]
 mod mock;
 pub(crate) mod provides;
 #[cfg(test)]
@@ -30,14 +30,12 @@ use crate::factory::provides::{
     MulG2Return, MulG2SuccessReturn, MulScalarParams, MulScalarPayload, MulScalarReturn,
     MulScalarSuccessReturn, NegG1Params, NegG1Payload, NegG1Return, NegG1SuccessReturn,
     NegG2Params, NegG2Payload, NegG2Return, NegG2SuccessReturn, NegScalarParams, NegScalarPayload,
-    NegScalarReturn, NegScalarSuccessReturn, PAIRING_INTERFACE_VERSION, PairingConcrete,
-    PairingCurve, PairingDeclaration, PairingProductIsOneParams, PairingProductIsOnePayload,
+    NegScalarReturn, NegScalarSuccessReturn, PairingProductIsOneParams, PairingProductIsOnePayload,
     PairingProductIsOneReturn, PairingProductIsOneSuccessReturn, PairingProductParams,
-    PairingProductPayload, PairingProductReturn, PairingProductSuccessReturn, PrecompileEncoding,
+    PairingProductPayload, PairingProductReturn, PairingProductSuccessReturn,
     SampleUniformScalarErrorReturn, SampleUniformScalarParams, SampleUniformScalarPayload,
     SampleUniformScalarReturn, SampleUniformScalarSuccessReturn, ScalarFieldOrderParams,
     ScalarFieldOrderPayload, ScalarFieldOrderReturn, ScalarFieldOrderSuccessReturn,
-    TargetGroupEncodingIdentifier, VerifierGroupArithmetic,
 };
 use core::array::from_fn;
 use core::hint::black_box;
@@ -68,16 +66,6 @@ fn decode_coordinate(bytes: &[u8]) -> Option<Fq> {
 }
 
 impl Bls12381Halo2curvesPairing {
-    pub const DECLARATION: PairingDeclaration = PairingDeclaration {
-        concrete_name: "bls12_381_halo2curves",
-        curve: PairingCurve::Bls12381,
-        verifier_group_arithmetic: VerifierGroupArithmetic::BothGroups,
-        precompile_encoding: PrecompileEncoding::Eip2537,
-        target_group_encoding: TargetGroupEncodingIdentifier::Bls12381V1,
-        adapter_version: 1,
-        interface_version: PAIRING_INTERFACE_VERSION,
-    };
-
     pub fn try_new(
         _params: Bls12381Halo2curvesPairingConstructorParams,
     ) -> Bls12381Halo2curvesPairingTryNewReturn {
@@ -96,9 +84,6 @@ impl Bls12381Halo2curvesPairing {
 }
 
 impl IPairingAdapter for Bls12381Halo2curvesPairing {
-    const DECLARATION: PairingDeclaration = Bls12381Halo2curvesPairing::DECLARATION;
-    const CONCRETE: PairingConcrete = PairingConcrete::Bls12381Halo2curves;
-
     type Scalar = Bls12381Halo2curvesScalar;
     type G1 = Bls12381Halo2curvesG1;
     type G2 = Bls12381Halo2curvesG2;

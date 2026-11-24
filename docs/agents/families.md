@@ -27,6 +27,7 @@ The Rust form of the factory module's family-level types:
 
 ```rust
 // my_family/factory/interface.rs
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MyFamilyIdentifier {
     MyConcrete,
     OtherConcrete,
@@ -41,6 +42,7 @@ impl MyFamilyIdentifier {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum MyFamilySelection {
     MyConcrete { settings: MyConcreteSettings },       // the concrete's own settings type, declared in its settings module
     OtherConcrete,                                     // no settable value: the variant carries no settings
@@ -58,6 +60,8 @@ pub const DECLARED_MY_FAMILY_IDENTIFIERS: &[MyFamilyIdentifier] = &[
     MyFamilyIdentifier::OtherConcrete,
 ];
 ```
+
+The member identifier, every value identifier, the selection, and the mock concrete's failure mode are printable, comparable, and cloneable, because the family's own functions carry them in their errors, its tests compare them whole, and its callers hold copies of them. In Rust each derives `Clone`, `Debug`, `PartialEq`, and `Eq` in the node that authors it, and each that carries no field also derives `Copy`. A type a variant of the selection carries, a concrete's settings type among them, derives the same in its own module.
 
 The TypeScript form, each union a named type declared in the owning interface (see [types](types.md#inline-unions-are-inline-type-definitions--always-prohibited)):
 
