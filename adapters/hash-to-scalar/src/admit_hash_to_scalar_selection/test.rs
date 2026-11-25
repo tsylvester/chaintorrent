@@ -12,21 +12,18 @@ use serde_json::{Map, Value};
 
 /// Contract: `admit_hash_to_scalar_selection`, real member, null document:
 ///   `params.concrete` is `HashToScalarConcrete::Keccak256` and the payload is
-///   `Value::Null` → `Ok` whose `selection` is the `concrete` of the
-///   declaration the lookup returned.
-/// Collaborators: `lookup_hash_to_scalar_declaration` is mocked; the mock
-///   returns the declaration naming
-///   `HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::Succeeds)`.
-/// Arrange: `build_admit_hash_to_scalar_selection_deps` with no override;
-///   `build_admit_hash_to_scalar_selection_params` with the `concrete`
-///   override `HashToScalarConcrete::Keccak256`, a member the default mock
-///   declaration does not name, so the selection read from the declaration is
-///   distinguishable from the identifier given.
+///   `Value::Null` → `Ok` whose `selection` is `params.concrete` unchanged.
+/// Collaborators: none.
+/// Arrange: `build_admit_hash_to_scalar_selection_deps` with no override, the
+///   fieldless deps; `build_admit_hash_to_scalar_selection_params` with the
+///   `concrete` override `HashToScalarConcrete::Keccak256`, the member
+///   identifier independent of any declaration, so a selection read from a
+///   declaration naming another member differs from the identifier given.
 /// Act:     `admit_hash_to_scalar_selection(&deps, params, Value::Null)`.
 /// Assert:  `result.ok().map(|success| success.selection)` equals
-///   `Some(HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::Succeeds))`.
+///   `Some(HashToScalarConcrete::Keccak256)`.
 #[test]
-fn admission_returns_the_selection_the_declaration_names_for_a_null_document_for_the_real_member() {
+fn admission_returns_the_admitted_member_for_a_null_document_for_the_real_member() {
     // Arrange
     let deps = build_admit_hash_to_scalar_selection_deps(Default::default());
     let params =
@@ -40,27 +37,22 @@ fn admission_returns_the_selection_the_declaration_names_for_a_null_document_for
     // Assert
     assert_eq!(
         result.ok().map(|success| success.selection),
-        Some(HashToScalarConcrete::Mock(
-            MockIHashToScalarAdapterFailureMode::Succeeds
-        ))
+        Some(HashToScalarConcrete::Keccak256)
     );
 }
 
 /// Contract: `admit_hash_to_scalar_selection`, real member, empty object
 ///   document: `params.concrete` is `HashToScalarConcrete::Keccak256` and the
-///   payload is an empty `Value::Object` → `Ok` whose `selection` is the
-///   `concrete` of the declaration the lookup returned.
-/// Collaborators: `lookup_hash_to_scalar_declaration` is mocked; the mock
-///   returns the declaration naming
-///   `HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::Succeeds)`.
+///   payload is an empty `Value::Object` → `Ok` whose `selection` is
+///   `params.concrete` unchanged.
+/// Collaborators: none.
 /// Arrange: the same deps and params as the null-document block; payload
 ///   `Value::Object(Map::new())`.
 /// Act:     `admit_hash_to_scalar_selection(&deps, params, payload)`.
 /// Assert:  `result.ok().map(|success| success.selection)` equals
-///   `Some(HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::Succeeds))`.
+///   `Some(HashToScalarConcrete::Keccak256)`.
 #[test]
-fn admission_returns_the_selection_the_declaration_names_for_an_empty_object_document_for_the_real_member()
- {
+fn admission_returns_the_admitted_member_for_an_empty_object_document_for_the_real_member() {
     // Arrange
     let deps = build_admit_hash_to_scalar_selection_deps(Default::default());
     let params =
@@ -74,9 +66,7 @@ fn admission_returns_the_selection_the_declaration_names_for_an_empty_object_doc
     // Assert
     assert_eq!(
         result.ok().map(|success| success.selection),
-        Some(HashToScalarConcrete::Mock(
-            MockIHashToScalarAdapterFailureMode::Succeeds
-        ))
+        Some(HashToScalarConcrete::Keccak256)
     );
 }
 
@@ -84,7 +74,7 @@ fn admission_returns_the_selection_the_declaration_names_for_an_empty_object_doc
 ///   carrying a key: `params.concrete` is `HashToScalarConcrete::Keccak256`
 ///   and the payload is a `Value::Object` holding a key →
 ///   `Err(AdmitHashToScalarSelectionErrorReturn::SettingSupplied { concrete: HashToScalarConcrete::Keccak256 })`.
-/// Collaborators: none read; the refusal precedes the lookup call.
+/// Collaborators: none.
 /// Arrange: `build_admit_hash_to_scalar_selection_deps` with no override;
 ///   `build_admit_hash_to_scalar_selection_params` with the `concrete`
 ///   override `HashToScalarConcrete::Keccak256`; payload a `Value::Object`
@@ -121,7 +111,7 @@ fn admission_refuses_an_object_document_carrying_a_key_for_the_real_member() {
 ///   document: `params.concrete` is `HashToScalarConcrete::Keccak256` and the
 ///   payload is neither `Value::Null` nor an object →
 ///   `Err(AdmitHashToScalarSelectionErrorReturn::SettingSupplied { concrete: HashToScalarConcrete::Keccak256 })`.
-/// Collaborators: none read; the refusal precedes the lookup call.
+/// Collaborators: none.
 /// Arrange: `build_admit_hash_to_scalar_selection_deps` with no override;
 ///   `build_admit_hash_to_scalar_selection_params` with the `concrete`
 ///   override `HashToScalarConcrete::Keccak256`; payload `Value::from(true)`.
@@ -151,22 +141,21 @@ fn admission_refuses_a_non_object_document_for_the_real_member() {
 
 /// Contract: `admit_hash_to_scalar_selection`, mock member, null document:
 ///   `params.concrete` is `HashToScalarConcrete::Mock(mode)` and the payload is
-///   `Value::Null` → `Ok` whose `selection` is the `concrete` of the
-///   declaration the lookup returned.
-/// Collaborators: `lookup_hash_to_scalar_declaration` is mocked; the mock
-///   returns the declaration naming
-///   `HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::Succeeds)`.
+///   `Value::Null` → `Ok` whose `selection` is `params.concrete` unchanged,
+///   the selected mock member carrying the mode it was selected with.
+/// Collaborators: none.
 /// Arrange: `build_admit_hash_to_scalar_selection_deps` with no override;
 ///   `build_admit_hash_to_scalar_selection_params` with the `concrete`
 ///   override
 ///   `HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::SamplingRefused)`,
-///   a mode other than the `Succeeds` mode the default lookup's declaration
-///   names.
+///   a mode other than the `Succeeds` mode the mock constant names, so a
+///   selection that substitutes a default mock member differs from the member
+///   given.
 /// Act:     `admit_hash_to_scalar_selection(&deps, params, Value::Null)`.
 /// Assert:  `result.ok().map(|success| success.selection)` equals
-///   `Some(HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::Succeeds))`.
+///   `Some(HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::SamplingRefused))`.
 #[test]
-fn admission_returns_the_selection_the_declaration_names_for_a_null_document_for_a_mock_member() {
+fn admission_returns_the_selected_mock_member_for_a_null_document() {
     // Arrange
     let deps = build_admit_hash_to_scalar_selection_deps(Default::default());
     let params =
@@ -183,7 +172,7 @@ fn admission_returns_the_selection_the_declaration_names_for_a_null_document_for
     assert_eq!(
         result.ok().map(|success| success.selection),
         Some(HashToScalarConcrete::Mock(
-            MockIHashToScalarAdapterFailureMode::Succeeds
+            MockIHashToScalarAdapterFailureMode::SamplingRefused
         ))
     );
 }
@@ -192,7 +181,7 @@ fn admission_returns_the_selection_the_declaration_names_for_a_null_document_for
 ///   carrying a key: `params.concrete` is `HashToScalarConcrete::Mock(mode)`
 ///   and the payload is a `Value::Object` holding a key →
 ///   `Err(AdmitHashToScalarSelectionErrorReturn::SettingSupplied { concrete: HashToScalarConcrete::Mock(mode) })`.
-/// Collaborators: none read; the refusal precedes the lookup call.
+/// Collaborators: none.
 /// Arrange: `build_admit_hash_to_scalar_selection_deps` with no override;
 ///   `build_admit_hash_to_scalar_selection_params` with the `concrete`
 ///   override

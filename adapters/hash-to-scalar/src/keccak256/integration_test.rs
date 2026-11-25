@@ -103,6 +103,7 @@ fn hash_to_scalar_matches_the_oracle_for_the_reference_tag_and_message() {
         });
         let deps = build_create_pairing_deps(
             Consumer,
+            lookup_pairing_declaration,
             admit_pairing_composition,
             build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
             Default::default(),
@@ -200,6 +201,7 @@ fn hash_to_scalar_matches_the_oracle_for_the_empty_message() {
         });
         let deps = build_create_pairing_deps(
             Consumer,
+            lookup_pairing_declaration,
             admit_pairing_composition,
             build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
             Default::default(),
@@ -299,6 +301,7 @@ fn hash_to_scalar_binds_the_tag_length() {
         });
         let deps = build_create_pairing_deps(
             Consumer,
+            lookup_pairing_declaration,
             admit_pairing_composition,
             build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
             Default::default(),
@@ -395,6 +398,7 @@ fn hash_to_scalar_separates_domains() {
         });
         let deps = build_create_pairing_deps(
             Consumer,
+            lookup_pairing_declaration,
             admit_pairing_composition,
             build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
             Default::default(),

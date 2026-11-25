@@ -1,9 +1,6 @@
 use crate::factory::provides::HashToScalarConcrete;
-use crate::lookup_hash_to_scalar_declaration::provides::LookupHashToScalarDeclarationFn;
 
-pub struct AdmitHashToScalarSelectionDeps {
-    pub lookup_declaration: LookupHashToScalarDeclarationFn,
-}
+pub struct AdmitHashToScalarSelectionDeps;
 
 pub struct AdmitHashToScalarSelectionParams {
     pub concrete: HashToScalarConcrete,

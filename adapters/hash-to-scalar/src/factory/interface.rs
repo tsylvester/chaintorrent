@@ -1,6 +1,8 @@
 use crate::domain_tag::provides::DomainTag;
 use crate::keccak256::provides::Keccak256HashToScalarErrorReturn;
+use crate::lookup_hash_to_scalar_declaration::provides::LookupHashToScalarDeclarationFn;
 use core::convert::Infallible;
+use core::marker::PhantomData;
 use pairing::{ISampleUniformScalar, SampleUniformScalarErrorReturn};
 
 pub const HASH_TO_SCALAR_INTERFACE_VERSION: u32 = 1;
@@ -88,7 +90,28 @@ pub trait IHashToScalarAdapter<S: ISampleUniformScalar + Clone> {
     ) -> HashToScalarReturn<S>;
 }
 
-pub struct CreateHashToScalarDeps;
+pub trait IHashToScalarConsumer<S: ISampleUniformScalar + Clone> {
+    type Output;
+
+    fn consume_hash_to_scalar<K: IHashToScalarAdapter<S>>(
+        &self,
+        params: ConsumeHashToScalarParams,
+        payload: ConsumeHashToScalarPayload<S, K>,
+    ) -> Self::Output;
+}
+
+pub struct ConsumeHashToScalarParams;
+
+pub struct ConsumeHashToScalarPayload<S: ISampleUniformScalar + Clone, K: IHashToScalarAdapter<S>> {
+    pub adapter: K,
+    pub declaration: HashToScalarDeclaration,
+    pub(super) scalar: PhantomData<S>,
+}
+
+pub struct CreateHashToScalarDeps<C> {
+    pub consumer: C,
+    pub lookup: LookupHashToScalarDeclarationFn,
+}
 
 #[derive(Clone, Copy)]
 pub struct CreateHashToScalarParams {
@@ -97,8 +120,8 @@ pub struct CreateHashToScalarParams {
 
 pub struct CreateHashToScalarPayload;
 
-pub struct CreateHashToScalarSuccessReturn<S> {
-    pub adapter: Box<dyn IHashToScalarAdapter<S>>,
+pub struct CreateHashToScalarSuccessReturn<O> {
+    pub output: O,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -108,11 +131,12 @@ pub enum CreateHashToScalarErrorReturn {
     Mock(Infallible),
 }
 
-pub type CreateHashToScalarReturn<S> =
-    Result<CreateHashToScalarSuccessReturn<S>, CreateHashToScalarErrorReturn>;
+pub type CreateHashToScalarReturn<O> =
+    Result<CreateHashToScalarSuccessReturn<O>, CreateHashToScalarErrorReturn>;
 
-pub type CreateHashToScalarFn<S> = fn(
-    &CreateHashToScalarDeps,
-    CreateHashToScalarParams,
-    CreateHashToScalarPayload,
-) -> CreateHashToScalarReturn<S>;
+pub type CreateHashToScalarFn<S, C> =
+    fn(
+        &CreateHashToScalarDeps<C>,
+        CreateHashToScalarParams,
+        CreateHashToScalarPayload,
+    ) -> CreateHashToScalarReturn<<C as IHashToScalarConsumer<S>>::Output>;

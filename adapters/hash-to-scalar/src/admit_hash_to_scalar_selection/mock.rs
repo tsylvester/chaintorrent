@@ -5,23 +5,14 @@ use super::interface::{
     AdmitHashToScalarSelectionReturn, AdmitHashToScalarSelectionSuccessReturn,
 };
 use crate::factory::provides::{HashToScalarConcrete, MockIHashToScalarAdapterFailureMode};
-use crate::lookup_hash_to_scalar_declaration::provides::{
-    LookupHashToScalarDeclarationFn, mock_lookup_hash_to_scalar_declaration,
-};
 
 #[derive(Default)]
-pub struct AdmitHashToScalarSelectionDepsOverrides {
-    pub lookup_declaration: Option<LookupHashToScalarDeclarationFn>,
-}
+pub struct AdmitHashToScalarSelectionDepsOverrides;
 
 pub fn build_admit_hash_to_scalar_selection_deps(
-    overrides: AdmitHashToScalarSelectionDepsOverrides,
+    _overrides: AdmitHashToScalarSelectionDepsOverrides,
 ) -> AdmitHashToScalarSelectionDeps {
-    AdmitHashToScalarSelectionDeps {
-        lookup_declaration: overrides
-            .lookup_declaration
-            .unwrap_or(mock_lookup_hash_to_scalar_declaration),
-    }
+    AdmitHashToScalarSelectionDeps
 }
 
 #[derive(Default)]

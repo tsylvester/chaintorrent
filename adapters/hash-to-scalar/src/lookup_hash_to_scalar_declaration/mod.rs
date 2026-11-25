@@ -5,9 +5,11 @@ pub mod provides;
 #[cfg(test)]
 mod test;
 
+use crate::factory::provides::HashToScalarConcrete;
+#[cfg(any(test, feature = "mocks"))]
+use crate::factory::provides::HashToScalarDeclaration;
 #[cfg(any(test, feature = "mocks"))]
 use crate::factory::provides::MOCK_I_HASH_TO_SCALAR_ADAPTER_DECLARATION;
-use crate::factory::provides::{HashToScalarConcrete, HashToScalarDeclaration};
 use crate::keccak256::provides::Keccak256HashToScalar;
 use interface::{
     LookupHashToScalarDeclarationDeps, LookupHashToScalarDeclarationParams,

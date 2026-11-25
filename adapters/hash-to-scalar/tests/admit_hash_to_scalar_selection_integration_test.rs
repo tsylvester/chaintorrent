@@ -1,40 +1,34 @@
 #![cfg(feature = "mocks")]
 
 use hash_to_scalar::{
-    AdmitHashToScalarSelectionDepsOverrides, AdmitHashToScalarSelectionErrorReturn,
+    AdmitHashToScalarSelectionDeps, AdmitHashToScalarSelectionErrorReturn,
     AdmitHashToScalarSelectionParamsOverrides, HASH_TO_SCALAR_CONCRETES, HashToScalarConcrete,
     MockIHashToScalarAdapterFailureMode, admit_hash_to_scalar_selection,
     build_admit_hash_to_scalar_selection_deps, build_admit_hash_to_scalar_selection_params,
-    build_hash_to_scalar_concrete, lookup_hash_to_scalar_declaration,
+    build_hash_to_scalar_concrete,
 };
 use serde_json::{Map, Value};
 
-/// Contract: entry `every_declared_member_is_admitted_to_the_selection_that_names_it`,
-///   carrying the lookup's entry
-///   `every_declared_member_declares_itself_through_the_public_surface`; for
-///   each member of `HASH_TO_SCALAR_CONCRETES` and each of `Value::Null` and
-///   an empty `Value::Object`, the admission yields `Ok` whose `selection`
-///   equals that member.
-/// Arrange: `build_admit_hash_to_scalar_selection_deps` with the
-///   `lookup_declaration` override `lookup_hash_to_scalar_declaration`;
-///   `build_admit_hash_to_scalar_selection_params` per member with the
-///   `concrete` override
+/// Contract: entry `every_declared_member_is_admitted_to_the_selection_that_names_it`;
+///   for each member of `HASH_TO_SCALAR_CONCRETES` and each of `Value::Null`
+///   and an empty `Value::Object`, the admission yields `Ok` whose `selection`
+///   equals that member, the admitted member identifier returned unchanged.
+/// Arrange: `build_admit_hash_to_scalar_selection_deps` with no override, the
+///   fieldless deps; `build_admit_hash_to_scalar_selection_params` per member
+///   with the `concrete` override
 ///   `build_hash_to_scalar_concrete(*member, Default::default())`; the body is
 ///   written once and names no concrete.
 /// Act:     `admit_hash_to_scalar_selection(&deps, params, payload)` per
 ///   member over each of `Value::Null` and `Value::Object(Map::new())`.
 /// Assert:  per member and document,
 ///   `result.ok().map(|success| success.selection)` equals `Some(*member)`.
-/// Boundary: the public call `admit_hash_to_scalar_selection`, whose route is
-///   the module's function, the real lookup, then the member's interface-held
-///   declaration constant.
+/// Boundary: the public call `admit_hash_to_scalar_selection` alone, the
+///   function calling no collaborator.
 /// Mocked:  none.
 #[test]
 fn every_declared_member_is_admitted_to_the_selection_that_names_it() {
     // Arrange
-    let deps = build_admit_hash_to_scalar_selection_deps(AdmitHashToScalarSelectionDepsOverrides {
-        lookup_declaration: Some(lookup_hash_to_scalar_declaration),
-    });
+    let deps = build_admit_hash_to_scalar_selection_deps(Default::default());
 
     for member in HASH_TO_SCALAR_CONCRETES {
         for payload in [Value::Null, Value::Object(Map::new())] {
@@ -53,32 +47,25 @@ fn every_declared_member_is_admitted_to_the_selection_that_names_it() {
     }
 }
 
-/// Contract: entry `a_mock_member_is_admitted_to_the_selection_naming_the_selected_mock`,
-///   carrying the lookup's entry
-///   `a_mock_member_declares_the_member_selected_through_the_public_surface`;
+/// Contract: entry `a_mock_member_is_admitted_to_the_selection_naming_the_selected_mock`;
 ///   for `HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::SamplingRefused)`
 ///   and an empty `Value::Object`, the admission yields `Ok` whose `selection`
-///   equals that member.
-/// Arrange: `build_admit_hash_to_scalar_selection_deps` with the
-///   `lookup_declaration` override `lookup_hash_to_scalar_declaration`;
-///   `build_admit_hash_to_scalar_selection_params` with the `concrete`
+///   equals that member, the selected mock member carrying the mode selected.
+/// Arrange: `AdmitHashToScalarSelectionDeps` written directly, the fieldless
+///   deps; `build_admit_hash_to_scalar_selection_params` with the `concrete`
 ///   override `HashToScalarConcrete::Mock(SamplingRefused)`, a mode other than
-///   the `Succeeds` mode the mock declaration constant names; payload
+///   the `Succeeds` mode the mock constant names; payload
 ///   `Value::Object(Map::new())`.
 /// Act:     `admit_hash_to_scalar_selection(&deps, params, payload)`.
 /// Assert:  `result.ok().map(|success| success.selection)` equals
 ///   `Some(HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::SamplingRefused))`.
-/// Boundary: the public call `admit_hash_to_scalar_selection`, whose route is
-///   the module's function, the real lookup, then the mock declaration
-///   constant.
+/// Boundary: the public call `admit_hash_to_scalar_selection` alone.
 /// Mocked:  the family's mock member, selected by the params, the official
 ///   collaborator the `mocks` feature provides.
 #[test]
 fn a_mock_member_is_admitted_to_the_selection_naming_the_selected_mock() {
     // Arrange
-    let deps = build_admit_hash_to_scalar_selection_deps(AdmitHashToScalarSelectionDepsOverrides {
-        lookup_declaration: Some(lookup_hash_to_scalar_declaration),
-    });
+    let deps = AdmitHashToScalarSelectionDeps;
     let params =
         build_admit_hash_to_scalar_selection_params(AdmitHashToScalarSelectionParamsOverrides {
             concrete: Some(HashToScalarConcrete::Mock(
@@ -104,11 +91,10 @@ fn a_mock_member_is_admitted_to_the_selection_naming_the_selected_mock() {
 ///   `Value::from(true)` yields
 ///   `Err(AdmitHashToScalarSelectionErrorReturn::SettingSupplied { concrete })`
 ///   with `concrete` that member.
-/// Arrange: `build_admit_hash_to_scalar_selection_deps` with the
-///   `lookup_declaration` override `lookup_hash_to_scalar_declaration`;
-///   params per member; payloads a `Value::Object` holding the key
-///   `unrecognized_setting` with the value `Value::from(1)` and
-///   `Value::from(true)`.
+/// Arrange: `build_admit_hash_to_scalar_selection_deps` with no override, the
+///   fieldless deps; params per member; payloads a `Value::Object` holding the
+///   key `unrecognized_setting` with the value `Value::from(1)` and
+///   `Value::from(true)`, each written directly.
 /// Act:     `admit_hash_to_scalar_selection(&deps, params, payload)` per
 ///   member over each payload.
 /// Assert:  per member and payload, `result.err()` equals
@@ -118,9 +104,7 @@ fn a_mock_member_is_admitted_to_the_selection_naming_the_selected_mock() {
 #[test]
 fn a_setting_supplied_for_a_member_is_refused_naming_the_member() {
     // Arrange
-    let deps = build_admit_hash_to_scalar_selection_deps(AdmitHashToScalarSelectionDepsOverrides {
-        lookup_declaration: Some(lookup_hash_to_scalar_declaration),
-    });
+    let deps = build_admit_hash_to_scalar_selection_deps(Default::default());
 
     for member in HASH_TO_SCALAR_CONCRETES {
         let mut map = Map::new();

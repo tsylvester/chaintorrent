@@ -1,14 +1,17 @@
 #![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 use super::interface::{
-    CreateHashToScalarDeps, CreateHashToScalarFn, CreateHashToScalarParams,
-    CreateHashToScalarPayload, CreateHashToScalarReturn, CreateHashToScalarSuccessReturn,
-    HASH_TO_SCALAR_INTERFACE_VERSION, HashToScalarConcrete, HashToScalarDeclaration,
-    HashToScalarErrorReturn, HashToScalarIdentifier, HashToScalarParams, HashToScalarPayload,
-    HashToScalarReturn, HashToScalarSuccessReturn, IHashToScalarAdapter,
-    MockIHashToScalarAdapterFailureMode,
+    ConsumeHashToScalarParams, ConsumeHashToScalarPayload, CreateHashToScalarDeps,
+    CreateHashToScalarFn, CreateHashToScalarParams, CreateHashToScalarPayload,
+    CreateHashToScalarReturn, CreateHashToScalarSuccessReturn, HASH_TO_SCALAR_INTERFACE_VERSION,
+    HashToScalarConcrete, HashToScalarDeclaration, HashToScalarErrorReturn, HashToScalarIdentifier,
+    HashToScalarParams, HashToScalarPayload, HashToScalarReturn, HashToScalarSuccessReturn,
+    IHashToScalarAdapter, IHashToScalarConsumer, MockIHashToScalarAdapterFailureMode,
 };
 use crate::domain_tag::provides::{DomainTag, build_domain_tag};
+use crate::lookup_hash_to_scalar_declaration::provides::{
+    LookupHashToScalarDeclarationFn, mock_lookup_hash_to_scalar_declaration,
+};
 use core::convert::Infallible;
 use core::iter::once;
 use core::marker::PhantomData;
@@ -278,13 +281,65 @@ pub fn build_hash_to_scalar_concrete(
     }
 }
 
-#[derive(Default)]
-pub struct CreateHashToScalarDepsOverrides;
+pub struct MockIHashToScalarConsumer;
 
-pub fn build_create_hash_to_scalar_deps(
-    _overrides: CreateHashToScalarDepsOverrides,
-) -> CreateHashToScalarDeps {
-    CreateHashToScalarDeps
+impl<S: ISampleUniformScalar + Clone> IHashToScalarConsumer<S> for MockIHashToScalarConsumer {
+    type Output = HashToScalarDeclaration;
+
+    fn consume_hash_to_scalar<K: IHashToScalarAdapter<S>>(
+        &self,
+        _params: ConsumeHashToScalarParams,
+        payload: ConsumeHashToScalarPayload<S, K>,
+    ) -> Self::Output {
+        payload.declaration
+    }
+}
+
+#[derive(Default)]
+pub struct ConsumeHashToScalarParamsOverrides;
+
+pub fn build_consume_hash_to_scalar_params(
+    _overrides: ConsumeHashToScalarParamsOverrides,
+) -> ConsumeHashToScalarParams {
+    ConsumeHashToScalarParams
+}
+
+#[derive(Default)]
+pub struct ConsumeHashToScalarPayloadOverrides {
+    pub declaration: Option<HashToScalarDeclaration>,
+}
+
+pub fn build_consume_hash_to_scalar_payload<
+    S: ISampleUniformScalar + Clone,
+    K: IHashToScalarAdapter<S>,
+>(
+    adapter: K,
+    overrides: ConsumeHashToScalarPayloadOverrides,
+) -> ConsumeHashToScalarPayload<S, K> {
+    ConsumeHashToScalarPayload {
+        adapter,
+        declaration: overrides
+            .declaration
+            .unwrap_or_else(|| build_hash_to_scalar_declaration(Default::default())),
+        scalar: PhantomData,
+    }
+}
+
+#[derive(Default)]
+pub struct CreateHashToScalarDepsOverrides {
+    pub lookup: Option<LookupHashToScalarDeclarationFn>,
+}
+
+pub fn build_create_hash_to_scalar_deps<C>(
+    consumer: C,
+    overrides: CreateHashToScalarDepsOverrides,
+) -> CreateHashToScalarDeps<C> {
+    CreateHashToScalarDeps {
+        consumer,
+        lookup: overrides
+            .lookup
+            .unwrap_or(mock_lookup_hash_to_scalar_declaration),
+    }
 }
 
 #[derive(Default)]
@@ -314,25 +369,29 @@ pub fn build_create_hash_to_scalar_payload(
 #[derive(Default)]
 pub struct CreateHashToScalarSuccessReturnOverrides;
 
-pub fn build_create_hash_to_scalar_success_return<S: ISampleUniformScalar + Clone>(
-    adapter: Box<dyn IHashToScalarAdapter<S>>,
+pub fn build_create_hash_to_scalar_success_return<O>(
+    output: O,
     _overrides: CreateHashToScalarSuccessReturnOverrides,
-) -> CreateHashToScalarSuccessReturn<S> {
-    CreateHashToScalarSuccessReturn { adapter }
+) -> CreateHashToScalarSuccessReturn<O> {
+    CreateHashToScalarSuccessReturn { output }
 }
 
-pub fn mock_create_hash_to_scalar<S: ISampleUniformScalar + Clone>(
-    _deps: &CreateHashToScalarDeps,
+pub fn mock_create_hash_to_scalar<S: ISampleUniformScalar + Clone, C: IHashToScalarConsumer<S>>(
+    deps: &CreateHashToScalarDeps<C>,
     _params: CreateHashToScalarParams,
     _payload: CreateHashToScalarPayload,
-) -> CreateHashToScalarReturn<S> {
-    let _: CreateHashToScalarFn<S> = mock_create_hash_to_scalar::<S>;
+) -> CreateHashToScalarReturn<C::Output> {
+    let _: CreateHashToScalarFn<S, C> = mock_create_hash_to_scalar::<S, C>;
     let Ok(adapter) =
         MockIHashToScalarAdapter::<S>::try_new(MockIHashToScalarAdapterConstructorParams {
             failure_mode: MockIHashToScalarAdapterFailureMode::Succeeds,
         });
+    let output = deps.consumer.consume_hash_to_scalar(
+        build_consume_hash_to_scalar_params(Default::default()),
+        build_consume_hash_to_scalar_payload(adapter, Default::default()),
+    );
     Ok(build_create_hash_to_scalar_success_return(
-        Box::new(adapter),
+        output,
         Default::default(),
     ))
 }
