@@ -3,78 +3,70 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
-   Compiling arrayvec v0.7.8
-   Compiling blake3 v1.8.7
-   Compiling kdf v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kdf)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.95s
-     Running unittests src\lib.rs (target\debug\deps\kdf-f1eb6c22299558ac.exe)
+    Blocking waiting for file lock on build directory
+   Compiling random v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\random)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.29s
+     Running unittests src\lib.rs (target\debug\deps\random-ec041f6175d2104b.exe)
 
-running 29 tests
-test admit_kdf_selection::test::admit_kdf_selection_returns_the_blake3_keyed_selection_for_an_empty_settings_table ... ok
-test admit_kdf_selection::test::admit_kdf_selection_refuses_a_document_that_is_not_a_table ... ok
-test admit_kdf_selection::test::admit_kdf_selection_returns_the_selected_mock_selection_carrying_its_failure_mode ... ok
-test admit_kdf_selection::test::admit_kdf_selection_returns_the_blake3_keyed_selection_for_an_absent_document ... ok
-test admit_kdf_selection::test::admit_kdf_selection_refuses_a_supplied_setting_naming_the_selected_mock_member ... ok
-test admit_kdf_selection::test::admit_kdf_selection_refuses_a_supplied_setting_naming_the_blake3_keyed_member ... ok
-test blake3_keyed::test::declaration_returns_the_blake3_keyed_declaration ... ok
-test blake3_keyed::integration_test::derive_key_returns_a_key_that_outlives_the_key_material ... ok
-test blake3_keyed::integration_test::derive_key_leaves_the_borrowed_key_material_intact ... ok
-test blake3_keyed::test::derive_key_for_identity_bases_matches_the_expected_derived_key ... ok
-test blake3_keyed::test::derive_key_for_capsule_randomness_matches_the_expected_derived_key ... ok
-test blake3_keyed::test::derive_key_for_piece_group_key_matches_the_expected_derived_key ... ok
-test blake3_keyed::test::derive_key_for_asset_root_matches_the_expected_derived_key ... ok
-test blake3_keyed::test::derive_key_for_master_scalar_matches_the_expected_derived_key ... ok
-test blake3_keyed::test::derive_key_for_plaintext_root_key_matches_the_expected_derived_key ... ok
-test blake3_keyed::test::derive_key_for_publisher_root_matches_the_expected_derived_key ... ok
-test blake3_keyed::test::derive_key_for_wrapping_key_matches_the_expected_derived_key ... ok
-test blake3_keyed::test::derive_key_of_the_prefix_length_is_the_prefix_of_the_reference_length_output ... ok
-test blake3_keyed::test::derive_key_of_zero_bytes_returns_an_empty_key ... ok
-test blake3_keyed::test::the_declared_sets_and_spellings_are_total_and_real ... ok
-test blake3_keyed::test::try_new_returns_the_adapter ... ok
-test factory::integration_test::every_concrete_derives_a_key_of_the_requested_length ... ok
-test factory::integration_test::every_concrete_leaves_the_borrowed_key_material_intact ... ok
-test factory::integration_test::every_concrete_returns_its_own_error_when_the_key_material_length_cannot_be_framed ... ok
-test factory::integration_test::every_concrete_returns_a_key_that_outlives_the_key_material ... ok
-test factory::test::create_key_derivation_constructs_the_mock_concrete_under_the_failure_mode_the_selection_carries ... ok
-test lookup_kdf_declaration::test::lookup_kdf_declaration_carries_the_selected_failure_mode_for_the_mock_member ... ok
-test lookup_kdf_declaration::test::lookup_kdf_declaration_returns_the_blake3_keyed_declaration_for_the_real_member ... ok
-test lookup_kdf_declaration::test::lookup_kdf_declaration_returns_the_mock_declaration_for_the_no_failure_mock_member ... ok
+running 27 tests
+test admit_random_selection::test::the_mock_member_with_an_absent_document_returns_a_selection_carrying_its_failure_mode ... ok
+test admit_random_selection::test::the_mock_member_with_a_document_holding_an_entry_is_refused_naming_the_member_and_its_failure_mode ... ok
+test admit_random_selection::test::the_mock_member_with_an_empty_object_document_returns_a_selection_carrying_its_failure_mode ... ok
+test admit_random_selection::test::the_mock_member_with_the_succeeds_mode_returns_a_selection_carrying_that_mode ... ok
+test admit_random_selection::test::the_operating_system_member_with_a_boolean_document_is_refused_naming_the_member ... ok
+test admit_random_selection::test::the_operating_system_member_with_a_document_holding_an_entry_is_refused_naming_the_member ... ok
+test admit_random_selection::test::the_operating_system_member_with_a_number_document_is_refused_naming_the_member ... ok
+test admit_random_selection::test::the_operating_system_member_with_a_string_document_is_refused_naming_the_member ... ok
+test admit_random_selection::test::the_operating_system_member_with_an_absent_document_returns_its_own_selection ... ok
+test factory::test::create_random_source_returns_the_consumers_output_for_the_mock_selections_succeeds_mode ... ok
+test admit_random_selection::test::the_operating_system_member_with_an_empty_array_document_is_refused_naming_the_member ... ok
+test admit_random_selection::test::the_operating_system_member_with_an_empty_object_document_returns_its_own_selection ... ok
+test factory::integration_test::every_source_the_factory_constructs_draws_an_empty_buffer_for_a_zero_length ... ok
+test factory::integration_test::every_source_the_factory_constructs_draws_exactly_the_bytes_requested ... ok
+test factory::integration_test::the_mock_source_returns_the_family_mock_error_when_its_failure_mode_refuses ... ok
+test factory::test::create_random_source_returns_the_consumers_output_for_the_mock_selections_refused_mode ... ok
+test factory::test::every_member_of_the_declared_set_constructs_the_selected_source_and_returns_the_consumers_output ... ok
+test os::test::fill_bytes_returns_an_empty_draw_for_a_zero_length ... ok
+test lookup_random_declaration::test::the_mock_source_returns_a_declaration_naming_the_identifier_it_was_given ... ok
+test os::test::fill_bytes_returns_the_number_of_bytes_requested ... ok
+test lookup_random_declaration::test::the_operating_system_source_returns_the_declaration_its_member_owns ... ok
+test os::test::random_source_kinds_declares_only_real_members ... ok
+test os::test::os_random_source_declares_its_adapter_and_interface_versions ... ok
+test os::test::try_new_returns_the_operating_system_source ... ok
+test os::test::fill_bytes_draws_pairwise_distinct_segments_within_a_draw ... ok
+test os::test::fill_bytes_fills_a_draw_with_more_than_one_distinct_byte_value ... ok
+test os::test::every_declared_kind_spells_a_distinct_name ... ok
 
-test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests\admit_kdf_selection_integration_test.rs (target\debug\deps\admit_kdf_selection_integration_test-6e6d9b65f63a1285.exe)
+     Running tests\admit_random_selection_integration_test.rs (target\debug\deps\admit_random_selection_integration_test-50813949173d0fef.exe)
 
-running 6 tests
-test admit_kdf_selection_carries_the_selected_mock_member_through_the_crate_surface ... ok
-test admit_kdf_selection_refuses_a_document_that_is_not_a_table_through_the_crate_surface ... ok
-test admit_kdf_selection_refuses_a_supplied_setting_naming_the_selected_mock_member_through_the_crate_surface ... ok
-test admit_kdf_selection_refuses_a_supplied_setting_naming_each_declared_member_through_the_crate_surface ... ok
-test admit_kdf_selection_returns_the_selection_for_an_absent_document_through_the_crate_surface ... ok
-test admit_kdf_selection_returns_the_selection_naming_each_declared_member_through_the_crate_surface ... ok
+running 3 tests
+test admit_random_selection_returns_each_declared_member_its_own_selection_for_an_outside_caller ... ok
+test admit_random_selection_refuses_a_document_supplying_a_setting_naming_the_member_for_an_outside_caller ... ok
+test admit_random_selection_returns_the_mock_member_a_selection_carrying_its_failure_mode_for_an_outside_caller ... ok
 
-test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests\factory_integration_test.rs (target\debug\deps\factory_integration_test-78d4288c1b79d31d.exe)
+     Running tests\factory_integration_test.rs (target\debug\deps\factory_integration_test-8c16cafffa0bae71.exe)
 
-running 6 tests
-test every_concrete_returns_its_own_error_when_the_key_material_length_cannot_be_framed ... ok
-test every_declared_concrete_providing_the_blake3_keyed_identifier_derives_the_wrapping_key_over_the_reference_inputs ... ok
-test every_concrete_returns_a_key_that_outlives_the_key_material ... ok
-test every_concrete_leaves_the_borrowed_key_material_intact ... ok
-test every_concrete_derives_a_key_of_the_requested_length ... ok
-test every_declared_concrete_providing_the_blake3_keyed_identifier_derives_the_wrapping_key_over_the_context_the_encoding_factory_encodes ... ok
+running 4 tests
+test a_selection_admitted_for_each_declared_member_constructs_the_source_that_member_names ... ok
+test a_mock_selection_admitted_with_its_failure_mode_constructs_the_source_failing_in_that_mode ... ok
+test a_source_from_the_factory_draws_an_empty_buffer_for_a_zero_length ... ok
+test a_source_from_the_factory_draws_random_bytes_through_the_family_trait ... ok
 
-test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests\lookup_kdf_declaration_integration_test.rs (target\debug\deps\lookup_kdf_declaration_integration_test-77dfd78242c778da.exe)
+     Running tests\lookup_random_declaration_integration_test.rs (target\debug\deps\lookup_random_declaration_integration_test-f4a44aac9be34093.exe)
 
 running 2 tests
-test lookup_kdf_declaration_carries_the_selected_mock_member_through_the_crate_surface ... ok
-test lookup_kdf_declaration_is_reachable_through_the_crate_surface_without_a_constructed_member ... ok
+test lookup_random_declaration_returns_the_mock_source_a_declaration_naming_its_identifier_for_an_outside_caller ... ok
+test lookup_random_declaration_returns_the_operating_system_source_its_own_declaration_for_an_outside_caller ... ok
 
 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-   Doc-tests kdf
+   Doc-tests random
 
 running 0 tests
 

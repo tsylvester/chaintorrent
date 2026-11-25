@@ -60,7 +60,25 @@ pub trait IRandomSourceAdapter {
     fn fill_bytes(&self, params: FillBytesParams, payload: FillBytesPayload) -> FillBytesReturn;
 }
 
-pub struct CreateRandomSourceDeps;
+pub struct ConsumeRandomSourceParams;
+
+pub struct ConsumeRandomSourcePayload<K: IRandomSourceAdapter> {
+    pub source: K,
+}
+
+pub trait IRandomSourceConsumer {
+    type Output;
+
+    fn consume_random_source<K: IRandomSourceAdapter>(
+        &self,
+        params: ConsumeRandomSourceParams,
+        payload: ConsumeRandomSourcePayload<K>,
+    ) -> Self::Output;
+}
+
+pub struct CreateRandomSourceDeps<C: IRandomSourceConsumer> {
+    pub consumer: C,
+}
 
 pub struct CreateRandomSourceParams {
     pub kind: RandomSourceKind,
@@ -68,8 +86,8 @@ pub struct CreateRandomSourceParams {
 
 pub struct CreateRandomSourcePayload;
 
-pub struct CreateRandomSourceSuccessReturn {
-    pub adapter: Box<dyn IRandomSourceAdapter>,
+pub struct CreateRandomSourceSuccessReturn<O> {
+    pub output: O,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -79,13 +97,14 @@ pub enum CreateRandomSourceErrorReturn {
     MockIRandomSourceAdapter(Infallible),
 }
 
-pub type CreateRandomSourceReturn =
-    Result<CreateRandomSourceSuccessReturn, CreateRandomSourceErrorReturn>;
+pub type CreateRandomSourceReturn<O> =
+    Result<CreateRandomSourceSuccessReturn<O>, CreateRandomSourceErrorReturn>;
 
-pub type CreateRandomSourceFn = fn(
-    &CreateRandomSourceDeps,
-    CreateRandomSourceParams,
-    CreateRandomSourcePayload,
-) -> CreateRandomSourceReturn;
+pub type CreateRandomSourceFn<C> =
+    fn(
+        &CreateRandomSourceDeps<C>,
+        CreateRandomSourceParams,
+        CreateRandomSourcePayload,
+    ) -> CreateRandomSourceReturn<<C as IRandomSourceConsumer>::Output>;
 
 pub const RANDOM_SOURCE_KINDS: &[RandomSourceKind] = &[RandomSourceKind::OperatingSystem];

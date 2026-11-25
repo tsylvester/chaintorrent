@@ -7,24 +7,28 @@ pub mod provides;
 #[cfg(test)]
 mod test;
 
-#[cfg(any(test, feature = "mocks"))]
-use crate::factory::mock::{MockIRandomSourceAdapter, MockIRandomSourceAdapterConstructorParams};
 use crate::os::provides::{OsRandomSource, OsRandomSourceConstructorParams};
 use interface::{
-    CreateRandomSourceDeps, CreateRandomSourceParams, CreateRandomSourcePayload,
-    CreateRandomSourceReturn, CreateRandomSourceSuccessReturn, RandomSourceKind,
+    ConsumeRandomSourceParams, ConsumeRandomSourcePayload, CreateRandomSourceDeps,
+    CreateRandomSourceParams, CreateRandomSourcePayload, CreateRandomSourceReturn,
+    CreateRandomSourceSuccessReturn, IRandomSourceConsumer, RandomSourceKind,
 };
+#[cfg(any(test, feature = "mocks"))]
+use mock::{MockIRandomSourceAdapter, MockIRandomSourceAdapterConstructorParams};
 
-pub fn create_random_source(
-    _deps: &CreateRandomSourceDeps,
+pub fn create_random_source<C: IRandomSourceConsumer>(
+    deps: &CreateRandomSourceDeps<C>,
     params: CreateRandomSourceParams,
     _payload: CreateRandomSourcePayload,
-) -> CreateRandomSourceReturn {
+) -> CreateRandomSourceReturn<C::Output> {
     match params.kind {
         RandomSourceKind::OperatingSystem => {
             let Ok(source) = OsRandomSource::try_new(OsRandomSourceConstructorParams);
             Ok(CreateRandomSourceSuccessReturn {
-                adapter: Box::new(source),
+                output: deps.consumer.consume_random_source(
+                    ConsumeRandomSourceParams,
+                    ConsumeRandomSourcePayload { source },
+                ),
             })
         }
         #[cfg(any(test, feature = "mocks"))]
@@ -34,7 +38,10 @@ pub fn create_random_source(
                     failure_mode: mode,
                 });
             Ok(CreateRandomSourceSuccessReturn {
-                adapter: Box::new(source),
+                output: deps.consumer.consume_random_source(
+                    ConsumeRandomSourceParams,
+                    ConsumeRandomSourcePayload { source },
+                ),
             })
         }
     }

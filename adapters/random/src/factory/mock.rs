@@ -7,11 +7,12 @@
 )]
 
 use super::interface::{
-    CreateRandomSourceDeps, CreateRandomSourceParams, CreateRandomSourcePayload,
-    CreateRandomSourceReturn, CreateRandomSourceSuccessReturn, FillBytesErrorReturn,
-    FillBytesParams, FillBytesPayload, FillBytesReturn, FillBytesSuccessReturn,
-    IRandomSourceAdapter, MockIRandomSourceAdapterFailureMode, RANDOM_SOURCE_INTERFACE_VERSION,
-    RandomSourceDeclaration, RandomSourceKind,
+    ConsumeRandomSourceParams, ConsumeRandomSourcePayload, CreateRandomSourceDeps,
+    CreateRandomSourceParams, CreateRandomSourcePayload, CreateRandomSourceReturn,
+    CreateRandomSourceSuccessReturn, FillBytesErrorReturn, FillBytesParams, FillBytesPayload,
+    FillBytesReturn, FillBytesSuccessReturn, IRandomSourceAdapter, IRandomSourceConsumer,
+    MockIRandomSourceAdapterFailureMode, RANDOM_SOURCE_INTERFACE_VERSION, RandomSourceDeclaration,
+    RandomSourceKind,
 };
 use core::cell::Cell;
 use core::convert::Infallible;
@@ -36,13 +37,6 @@ pub fn build_random_source_declaration(
             .interface_version
             .unwrap_or(RANDOM_SOURCE_INTERFACE_VERSION),
     }
-}
-
-#[derive(Default)]
-pub struct FillBytesParamsOverrides;
-
-pub fn build_fill_bytes_params(_overrides: FillBytesParamsOverrides) -> FillBytesParams {
-    FillBytesParams
 }
 
 #[derive(Default)]
@@ -166,13 +160,46 @@ pub fn build_random_source_kind(
     }
 }
 
+pub struct MockIRandomSourceConsumer;
+
+impl IRandomSourceConsumer for MockIRandomSourceConsumer {
+    type Output = ();
+
+    fn consume_random_source<K: IRandomSourceAdapter>(
+        &self,
+        _params: ConsumeRandomSourceParams,
+        _payload: ConsumeRandomSourcePayload<K>,
+    ) -> Self::Output {
+    }
+}
+
+#[derive(Default)]
+pub struct ConsumeRandomSourceParamsOverrides;
+
+pub fn build_consume_random_source_params(
+    _overrides: ConsumeRandomSourceParamsOverrides,
+) -> ConsumeRandomSourceParams {
+    ConsumeRandomSourceParams
+}
+
+#[derive(Default)]
+pub struct ConsumeRandomSourcePayloadOverrides;
+
+pub fn build_consume_random_source_payload<K: IRandomSourceAdapter>(
+    source: K,
+    _overrides: ConsumeRandomSourcePayloadOverrides,
+) -> ConsumeRandomSourcePayload<K> {
+    ConsumeRandomSourcePayload { source }
+}
+
 #[derive(Default)]
 pub struct CreateRandomSourceDepsOverrides;
 
-pub fn build_create_random_source_deps(
+pub fn build_create_random_source_deps<C: IRandomSourceConsumer>(
+    consumer: C,
     _overrides: CreateRandomSourceDepsOverrides,
-) -> CreateRandomSourceDeps {
-    CreateRandomSourceDeps
+) -> CreateRandomSourceDeps<C> {
+    CreateRandomSourceDeps { consumer }
 }
 
 #[derive(Default)]
@@ -202,21 +229,25 @@ pub fn build_create_random_source_payload(
 #[derive(Default)]
 pub struct CreateRandomSourceSuccessReturnOverrides;
 
-pub fn build_create_random_source_success_return(
-    adapter: Box<dyn IRandomSourceAdapter>,
+pub fn build_create_random_source_success_return<O>(
+    output: O,
     _overrides: CreateRandomSourceSuccessReturnOverrides,
-) -> CreateRandomSourceSuccessReturn {
-    CreateRandomSourceSuccessReturn { adapter }
+) -> CreateRandomSourceSuccessReturn<O> {
+    CreateRandomSourceSuccessReturn { output }
 }
 
-pub fn mock_create_random_source(
-    _deps: &CreateRandomSourceDeps,
+pub fn mock_create_random_source<C: IRandomSourceConsumer>(
+    deps: &CreateRandomSourceDeps<C>,
     _params: CreateRandomSourceParams,
     _payload: CreateRandomSourcePayload,
-) -> CreateRandomSourceReturn {
-    let adapter = build_mock_i_random_source_adapter(Default::default());
+) -> CreateRandomSourceReturn<C::Output> {
+    let source = build_mock_i_random_source_adapter(Default::default());
+    let output = deps.consumer.consume_random_source(
+        ConsumeRandomSourceParams,
+        ConsumeRandomSourcePayload { source },
+    );
     Ok(build_create_random_source_success_return(
-        Box::new(adapter),
+        output,
         Default::default(),
     ))
 }
