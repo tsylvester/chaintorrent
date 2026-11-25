@@ -12,15 +12,7 @@
 
 ## `Blake3KeyedKdf::DECLARATION`
 
-The inherent constant `KdfDeclaration { identifier: KdfIdentifier::Blake3KeyedV1, adapter_version: 1, interface_version: KDF_INTERFACE_VERSION }`.
-
-## `IKeyDerivationAdapter::declaration`
-
-`Blake3KeyedKdf::declaration(&self) -> KdfDeclaration`
-
-| Branch | Condition | Decision | Dependency call | Outcome |
-|---|---|---|---|---|
-| declared | any adapter | none | none | `Blake3KeyedKdf::DECLARATION` |
+The interface-held constant `KdfDeclaration { concrete: KdfConcrete::Blake3Keyed, identifier: KdfIdentifier::Blake3KeyedV1, adapter_version: 1, interface_version: KDF_INTERFACE_VERSION }`, read through `kdf/lookup_kdf_declaration` without an instance; no `declaration()` branch exists.
 
 ## Purpose mapping
 

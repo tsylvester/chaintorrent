@@ -1,3 +1,4 @@
+use crate::factory::provides::{KDF_INTERFACE_VERSION, KdfConcrete, KdfDeclaration, KdfIdentifier};
 use core::convert::Infallible;
 
 pub struct Blake3KeyedKdf;
@@ -18,4 +19,13 @@ pub const BLAKE3_KEYED_PLAINTEXT_ROOT_KEY_CONTEXT: &str = "ChainTorrent v1 plain
 #[derive(Debug, PartialEq, Eq)]
 pub enum Blake3KeyedKdfDeriveKeyErrorReturn {
     KeyMaterialLengthExceedsPrefix { length: usize },
+}
+
+impl Blake3KeyedKdf {
+    pub const DECLARATION: KdfDeclaration = KdfDeclaration {
+        concrete: KdfConcrete::Blake3Keyed,
+        identifier: KdfIdentifier::Blake3KeyedV1,
+        adapter_version: 1,
+        interface_version: KDF_INTERFACE_VERSION,
+    };
 }

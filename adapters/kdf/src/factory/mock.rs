@@ -39,6 +39,7 @@ pub const REFERENCE_PREFIX_LENGTH: usize = 32;
 
 #[derive(Default)]
 pub struct KdfDeclarationOverrides {
+    pub concrete: Option<KdfConcrete>,
     pub identifier: Option<KdfIdentifier>,
     pub adapter_version: Option<u32>,
     pub interface_version: Option<u32>,
@@ -46,16 +47,18 @@ pub struct KdfDeclarationOverrides {
 
 pub fn build_kdf_declaration(overrides: KdfDeclarationOverrides) -> KdfDeclaration {
     KdfDeclaration {
-        identifier: overrides.identifier.unwrap_or(KdfIdentifier::MockV1),
-        adapter_version: overrides
-            .adapter_version
-            .unwrap_or(MockIKeyDerivationAdapter::DECLARATION.adapter_version),
+        concrete: overrides.concrete.unwrap_or(KdfConcrete::Mock(
+            MockIKeyDerivationAdapterFailureMode::NoFailure,
+        )),
+        identifier: overrides.identifier.unwrap_or(KdfIdentifier::Blake3KeyedV1),
+        adapter_version: overrides.adapter_version.unwrap_or(1),
         interface_version: overrides.interface_version.unwrap_or(KDF_INTERFACE_VERSION),
     }
 }
 
 #[derive(Default)]
 pub struct KdfDeclarationCorruptions {
+    pub concrete: Option<Value>,
     pub identifier: Option<Value>,
     pub adapter_version: Option<Value>,
     pub interface_version: Option<Value>,
@@ -65,11 +68,12 @@ pub fn invalidate_kdf_declaration(corruptions: KdfDeclarationCorruptions) -> Val
     let declaration = build_kdf_declaration(Default::default());
     let mut fields = Map::new();
     fields.insert(
+        "concrete".to_string(),
+        Value::from(declaration.concrete.name()),
+    );
+    fields.insert(
         "identifier".to_string(),
-        Value::from(match declaration.identifier {
-            KdfIdentifier::Blake3KeyedV1 => "Blake3KeyedV1",
-            KdfIdentifier::MockV1 => "MockV1",
-        }),
+        Value::from(declaration.identifier.name()),
     );
     fields.insert(
         "adapter_version".to_string(),
@@ -79,6 +83,9 @@ pub fn invalidate_kdf_declaration(corruptions: KdfDeclarationCorruptions) -> Val
         "interface_version".to_string(),
         Value::from(declaration.interface_version),
     );
+    if let Some(concrete) = corruptions.concrete {
+        fields.insert("concrete".to_string(), concrete);
+    }
     if let Some(identifier) = corruptions.identifier {
         fields.insert("identifier".to_string(), identifier);
     }
@@ -113,19 +120,7 @@ pub struct DeriveKeyParamsCorruptions {
 pub fn invalidate_derive_key_params(corruptions: DeriveKeyParamsCorruptions) -> Value {
     let params = build_derive_key_params(Default::default());
     let mut fields = Map::new();
-    fields.insert(
-        "purpose".to_string(),
-        Value::from(match params.purpose {
-            DerivationPurpose::WrappingKey => "WrappingKey",
-            DerivationPurpose::PublisherRoot => "PublisherRoot",
-            DerivationPurpose::AssetRoot => "AssetRoot",
-            DerivationPurpose::MasterScalar => "MasterScalar",
-            DerivationPurpose::IdentityBases => "IdentityBases",
-            DerivationPurpose::CapsuleRandomness => "CapsuleRandomness",
-            DerivationPurpose::PieceGroupKey => "PieceGroupKey",
-            DerivationPurpose::PlaintextRootKey => "PlaintextRootKey",
-        }),
-    );
+    fields.insert("purpose".to_string(), Value::from(params.purpose.name()));
     fields.insert("length".to_string(), Value::from(params.length));
     if let Some(purpose) = corruptions.purpose {
         fields.insert("purpose".to_string(), purpose);
@@ -251,12 +246,6 @@ pub(crate) struct MockIKeyDerivationAdapter {
 }
 
 impl MockIKeyDerivationAdapter {
-    pub const DECLARATION: KdfDeclaration = KdfDeclaration {
-        identifier: KdfIdentifier::MockV1,
-        adapter_version: 1,
-        interface_version: KDF_INTERFACE_VERSION,
-    };
-
     pub fn try_new(
         params: MockIKeyDerivationAdapterConstructorParams,
     ) -> MockIKeyDerivationAdapterTryNewReturn {
@@ -267,10 +256,6 @@ impl MockIKeyDerivationAdapter {
 }
 
 impl IKeyDerivationAdapter for MockIKeyDerivationAdapter {
-    fn declaration(&self) -> KdfDeclaration {
-        Self::DECLARATION
-    }
-
     fn derive_key(
         &self,
         params: DeriveKeyParams,
@@ -318,6 +303,24 @@ impl IKeyDerivationAdapter for MockIKeyDerivationAdapter {
     }
 }
 
+pub const MOCK_I_KEY_DERIVATION_ADAPTER_DECLARATION: KdfDeclaration = KdfDeclaration {
+    concrete: KdfConcrete::Mock(MockIKeyDerivationAdapterFailureMode::NoFailure),
+    identifier: KdfIdentifier::Blake3KeyedV1,
+    adapter_version: 1,
+    interface_version: KDF_INTERFACE_VERSION,
+};
+
+#[derive(Default)]
+pub struct KdfConcreteOverrides;
+
+pub fn build_kdf_concrete(concrete: KdfConcrete, _overrides: KdfConcreteOverrides) -> KdfConcrete {
+    match concrete {
+        KdfConcrete::Blake3Keyed => KdfConcrete::Blake3Keyed,
+        #[cfg(any(test, feature = "mocks"))]
+        KdfConcrete::Mock(_) => KdfConcrete::Mock(MockIKeyDerivationAdapterFailureMode::NoFailure),
+    }
+}
+
 #[derive(Default)]
 pub struct CreateKeyDerivationDepsOverrides;
 
@@ -329,25 +332,22 @@ pub fn build_create_key_derivation_deps(
 
 #[derive(Default)]
 pub struct CreateKeyDerivationParamsOverrides {
-    pub concrete: Option<KdfConcrete>,
-    pub identifier: Option<KdfIdentifier>,
+    pub selection: Option<KdfConcrete>,
 }
 
 pub fn build_create_key_derivation_params(
     overrides: CreateKeyDerivationParamsOverrides,
 ) -> CreateKeyDerivationParams {
     CreateKeyDerivationParams {
-        concrete: overrides.concrete.unwrap_or(KdfConcrete::Mock(
+        selection: overrides.selection.unwrap_or(KdfConcrete::Mock(
             MockIKeyDerivationAdapterFailureMode::NoFailure,
         )),
-        identifier: overrides.identifier.unwrap_or(KdfIdentifier::MockV1),
     }
 }
 
 #[derive(Default)]
 pub struct CreateKeyDerivationParamsCorruptions {
-    pub concrete: Option<Value>,
-    pub identifier: Option<Value>,
+    pub selection: Option<Value>,
 }
 
 pub fn invalidate_create_key_derivation_params(
@@ -355,37 +355,13 @@ pub fn invalidate_create_key_derivation_params(
 ) -> Value {
     let params = build_create_key_derivation_params(Default::default());
     let mut fields = Map::new();
-    fields.insert(
-        "concrete".to_string(),
-        match params.concrete {
-            KdfConcrete::Blake3Keyed => Value::from("Blake3Keyed"),
-            KdfConcrete::Mock(failure_mode) => {
-                let mut entry = Map::new();
-                entry.insert(
-                    "Mock".to_string(),
-                    Value::from(match failure_mode {
-                        MockIKeyDerivationAdapterFailureMode::NoFailure => "NoFailure",
-                        MockIKeyDerivationAdapterFailureMode::KeyMaterialLengthUnrepresentable => {
-                            "KeyMaterialLengthUnrepresentable"
-                        }
-                    }),
-                );
-                Value::Object(entry)
-            }
-        },
-    );
-    fields.insert(
-        "identifier".to_string(),
-        Value::from(match params.identifier {
-            KdfIdentifier::Blake3KeyedV1 => "Blake3KeyedV1",
-            KdfIdentifier::MockV1 => "MockV1",
-        }),
-    );
-    if let Some(concrete) = corruptions.concrete {
-        fields.insert("concrete".to_string(), concrete);
-    }
-    if let Some(identifier) = corruptions.identifier {
-        fields.insert("identifier".to_string(), identifier);
+    let selection = match params.selection {
+        KdfConcrete::Blake3Keyed => KdfConcrete::Blake3Keyed.name(),
+        KdfConcrete::Mock(failure_mode) => KdfConcrete::Mock(failure_mode).name(),
+    };
+    fields.insert("selection".to_string(), Value::from(selection));
+    if let Some(selection) = corruptions.selection {
+        fields.insert("selection".to_string(), selection);
     }
     Value::Object(fields)
 }

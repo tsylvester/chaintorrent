@@ -3,117 +3,78 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
-   Compiling const-hex v1.19.3
-   Compiling serde_core v1.0.229
-   Compiling digest v0.11.3
-   Compiling derive_more v2.1.1
-   Compiling sha3 v0.11.0
-   Compiling alloy-sol-macro-input v1.7.3
-   Compiling alloy-sol-macro-expander v1.7.3
-   Compiling serde v1.0.229
-   Compiling ruint v1.20.1
-   Compiling serde_json v1.0.154
-   Compiling alloy-sol-macro v1.7.3
-   Compiling bytes v1.12.1
-   Compiling alloy-sol-type-parser v1.7.3
-   Compiling alloy-primitives v1.7.3
-   Compiling alloy-json-abi v1.7.3
-   Compiling alloy-sol-types v1.7.3
-   Compiling alloy-dyn-abi v1.7.3
-   Compiling alloy-core v1.7.3
-   Compiling alloy v2.5.0
-   Compiling encoding v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\encoding)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.92s
-     Running unittests src\lib.rs (target\debug\deps\encoding-8ce92af10d08ea44.exe)
+   Compiling arrayvec v0.7.8
+   Compiling blake3 v1.8.7
+   Compiling kdf v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kdf)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.95s
+     Running unittests src\lib.rs (target\debug\deps\kdf-f1eb6c22299558ac.exe)
 
-running 52 tests
-test abi::test::canonical_field_value_kind_returns_the_like_named_kind ... ok
-test abi::test::try_new_returns_the_adapter ... ok
-test abi::test::type_name_gives_each_canonical_field_kind_its_abi_type_name ... ok
-test abi::test::encode_carries_the_readers_refusal ... ok
-test abi::test::type_name_gives_every_kind_exactly_one_distinct_name ... ok
-test abi::test::type_name_names_the_twenty_byte_kind_bytes20 ... ok
-test admit_encoding_selection::test::admission_returns_the_abi_selection_for_an_absent_document ... ok
-test admit_encoding_selection::test::admission_returns_the_abi_selection_for_an_empty_document ... ok
-test admit_encoding_selection::test::admission_refuses_a_document_that_is_not_an_object_for_the_abi_member ... ok
-test admit_encoding_selection::test::admission_returns_the_mock_selection_for_an_absent_document ... ok
-test abi::test::decode_rejects_a_uint16_word_wider_than_sixteen_bits ... ok
-test abi::test::decode_rejects_nonzero_string_padding ... ok
-test abi::test::decode_reads_the_vector_as_its_value ... ok
-test abi::test::encode_writes_every_kind_as_its_abi_parameter_encoding ... ok
-test abi::test::decode_rejects_nonzero_byte_string_padding ... ok
-test abi::test::decode_rejects_a_uint32_word_wider_than_thirty_two_bits ... ok
-test abi::test::decode_rejects_a_non_canonical_offset ... ok
-test abi::test::decode_rejects_a_uint64_word_wider_than_sixty_four_bits ... ok
-test canonical_field_reader::test::build_encoding_concrete_returns_the_real_selection_without_configuration ... ok
-test admit_encoding_selection::test::admission_refuses_a_setting_for_the_abi_member ... ok
-test abi::test::decode_rejects_trailing_bytes ... ok
-test abi::test::decode_rejects_nonzero_fixed_bytes20_padding ... ok
-test canonical_field_reader::test::canonical_field_value_kind_returns_the_like_named_kind ... ok
-test admit_encoding_selection::test::admission_refuses_a_setting_for_the_mock_member ... ok
-test canonical_field_reader::test::canonical_field_kind_names_codes_and_declared_set_order_are_exact ... ok
-test abi::test::decode_rejects_input_truncated_to_the_head ... ok
-test canonical_field_reader::test::each_kind_read_refuses_a_value_of_another_variant ... ok
-test canonical_field_reader::test::encoding_concretes_holds_only_abi_with_exact_member_spellings ... ok
-test abi::test::decode_rejects_the_encoding_of_one_field_too_many ... ok
-test canonical_field_reader::test::each_kind_read_returns_its_contents ... ok
-test canonical_field_reader::test::encoding_identifiers_holds_only_ethereum_abi_v1 ... ok
-test canonical_field_reader::test::encoding_type_names_holds_the_eight_declared_values ... ok
-test canonical_field_reader::test::read_form_carries_the_forms_refusal_with_its_index ... ok
-test canonical_field_reader::test::read_form_returns_the_form ... ok
-test canonical_field_reader::test::read_value_refuses_a_read_past_the_last_field ... ok
-test canonical_field_reader::test::read_value_refuses_a_wrong_kind_at_its_index ... ok
-test canonical_field_reader::test::read_value_reports_the_index_after_a_successful_read ... ok
-test canonical_field_reader::test::read_value_returns_each_value_in_order ... ok
-test canonical_field_reader::test::reads_report_the_lowest_wrong_value ... ok
-test canonical_field_reader::test::try_new_checks_the_count_before_any_kind ... ok
-test canonical_field_reader::test::try_new_refuses_a_list_one_value_long ... ok
-test canonical_field_reader::test::try_new_refuses_a_list_one_value_short ... ok
-test factory::integration_test::every_concrete_carries_the_readers_refusal_of_a_field_list_one_value_short ... ok
-test factory::integration_test::every_concrete_decodes_what_it_encodes ... ok
-test factory::integration_test::every_concrete_is_handed_to_the_consumer_under_its_own_declaration ... ok
-test factory::integration_test::every_concrete_names_every_canonical_field_kind ... ok
-test factory::integration_test::every_concrete_refuses_bytes_past_a_complete_encoding ... ok
-test factory::test::create_encoding_reads_the_declaration_for_the_mock_selection_and_hands_it_to_the_consumer ... ok
-test factory::integration_test::every_concrete_refuses_bytes_that_end_inside_an_encoding ... ok
-test factory::test::create_encoding_reads_the_declaration_for_the_abi_selection_and_hands_it_to_the_consumer ... ok
-test lookup_encoding_declaration::test::lookup_returns_the_abi_member_declaration ... ok
-test lookup_encoding_declaration::test::lookup_returns_the_mock_member_declaration ... ok
+running 29 tests
+test admit_kdf_selection::test::admit_kdf_selection_returns_the_blake3_keyed_selection_for_an_empty_settings_table ... ok
+test admit_kdf_selection::test::admit_kdf_selection_refuses_a_document_that_is_not_a_table ... ok
+test admit_kdf_selection::test::admit_kdf_selection_returns_the_selected_mock_selection_carrying_its_failure_mode ... ok
+test admit_kdf_selection::test::admit_kdf_selection_returns_the_blake3_keyed_selection_for_an_absent_document ... ok
+test admit_kdf_selection::test::admit_kdf_selection_refuses_a_supplied_setting_naming_the_selected_mock_member ... ok
+test admit_kdf_selection::test::admit_kdf_selection_refuses_a_supplied_setting_naming_the_blake3_keyed_member ... ok
+test blake3_keyed::test::declaration_returns_the_blake3_keyed_declaration ... ok
+test blake3_keyed::integration_test::derive_key_returns_a_key_that_outlives_the_key_material ... ok
+test blake3_keyed::integration_test::derive_key_leaves_the_borrowed_key_material_intact ... ok
+test blake3_keyed::test::derive_key_for_identity_bases_matches_the_expected_derived_key ... ok
+test blake3_keyed::test::derive_key_for_capsule_randomness_matches_the_expected_derived_key ... ok
+test blake3_keyed::test::derive_key_for_piece_group_key_matches_the_expected_derived_key ... ok
+test blake3_keyed::test::derive_key_for_asset_root_matches_the_expected_derived_key ... ok
+test blake3_keyed::test::derive_key_for_master_scalar_matches_the_expected_derived_key ... ok
+test blake3_keyed::test::derive_key_for_plaintext_root_key_matches_the_expected_derived_key ... ok
+test blake3_keyed::test::derive_key_for_publisher_root_matches_the_expected_derived_key ... ok
+test blake3_keyed::test::derive_key_for_wrapping_key_matches_the_expected_derived_key ... ok
+test blake3_keyed::test::derive_key_of_the_prefix_length_is_the_prefix_of_the_reference_length_output ... ok
+test blake3_keyed::test::derive_key_of_zero_bytes_returns_an_empty_key ... ok
+test blake3_keyed::test::the_declared_sets_and_spellings_are_total_and_real ... ok
+test blake3_keyed::test::try_new_returns_the_adapter ... ok
+test factory::integration_test::every_concrete_derives_a_key_of_the_requested_length ... ok
+test factory::integration_test::every_concrete_leaves_the_borrowed_key_material_intact ... ok
+test factory::integration_test::every_concrete_returns_its_own_error_when_the_key_material_length_cannot_be_framed ... ok
+test factory::integration_test::every_concrete_returns_a_key_that_outlives_the_key_material ... ok
+test factory::test::create_key_derivation_constructs_the_mock_concrete_under_the_failure_mode_the_selection_carries ... ok
+test lookup_kdf_declaration::test::lookup_kdf_declaration_carries_the_selected_failure_mode_for_the_mock_member ... ok
+test lookup_kdf_declaration::test::lookup_kdf_declaration_returns_the_blake3_keyed_declaration_for_the_real_member ... ok
+test lookup_kdf_declaration::test::lookup_kdf_declaration_returns_the_mock_declaration_for_the_no_failure_mock_member ... ok
 
-test result: ok. 52 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests\admit_encoding_selection_integration_test.rs (target\debug\deps\admit_encoding_selection_integration_test-8f1f4d31c72a3336.exe)
+     Running tests\admit_kdf_selection_integration_test.rs (target\debug\deps\admit_kdf_selection_integration_test-6e6d9b65f63a1285.exe)
+
+running 6 tests
+test admit_kdf_selection_carries_the_selected_mock_member_through_the_crate_surface ... ok
+test admit_kdf_selection_refuses_a_document_that_is_not_a_table_through_the_crate_surface ... ok
+test admit_kdf_selection_refuses_a_supplied_setting_naming_the_selected_mock_member_through_the_crate_surface ... ok
+test admit_kdf_selection_refuses_a_supplied_setting_naming_each_declared_member_through_the_crate_surface ... ok
+test admit_kdf_selection_returns_the_selection_for_an_absent_document_through_the_crate_surface ... ok
+test admit_kdf_selection_returns_the_selection_naming_each_declared_member_through_the_crate_surface ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\factory_integration_test.rs (target\debug\deps\factory_integration_test-78d4288c1b79d31d.exe)
+
+running 6 tests
+test every_concrete_returns_its_own_error_when_the_key_material_length_cannot_be_framed ... ok
+test every_declared_concrete_providing_the_blake3_keyed_identifier_derives_the_wrapping_key_over_the_reference_inputs ... ok
+test every_concrete_returns_a_key_that_outlives_the_key_material ... ok
+test every_concrete_leaves_the_borrowed_key_material_intact ... ok
+test every_concrete_derives_a_key_of_the_requested_length ... ok
+test every_declared_concrete_providing_the_blake3_keyed_identifier_derives_the_wrapping_key_over_the_context_the_encoding_factory_encodes ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\lookup_kdf_declaration_integration_test.rs (target\debug\deps\lookup_kdf_declaration_integration_test-77dfd78242c778da.exe)
 
 running 2 tests
-test admission_returns_each_declared_member_as_its_selection ... ok
-test admission_refuses_a_supplied_setting_for_each_declared_member ... ok
+test lookup_kdf_declaration_carries_the_selected_mock_member_through_the_crate_surface ... ok
+test lookup_kdf_declaration_is_reachable_through_the_crate_surface_without_a_constructed_member ... ok
 
 test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests\factory_integration_test.rs (target\debug\deps\factory_integration_test-09ed53bd5505e85e.exe)
-
-running 10 tests
-test every_concrete_carries_the_readers_refusal_of_a_field_list_one_value_short ... ok
-test every_concrete_declaring_the_ethereum_abi_identifier_decodes_the_reference_vector_to_the_reference_fields ... ok
-test every_concrete_refuses_bytes_that_end_inside_an_encoding ... ok
-test every_concrete_refuses_bytes_past_a_complete_encoding ... ok
-test every_concrete_decodes_what_it_encodes ... ok
-test every_concrete_names_every_canonical_field_kind ... ok
-test every_concrete_declaring_the_ethereum_abi_identifier_names_every_kind_by_its_abi_type ... ok
-test an_admitted_selection_is_handed_to_the_consumer_under_its_declaration ... ok
-test every_concrete_is_handed_to_the_consumer_under_its_own_declaration ... ok
-test every_concrete_declaring_the_ethereum_abi_identifier_encodes_the_reference_fields_to_the_reference_vector ... ok
-
-test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-     Running tests\lookup_encoding_declaration_integration_test.rs (target\debug\deps\lookup_encoding_declaration_integration_test-f438010947ea5eb9.exe)
-
-running 1 test
-test lookup_returns_each_declared_member_its_own_declaration ... ok
-
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-   Doc-tests encoding
+   Doc-tests kdf
 
 running 0 tests
 

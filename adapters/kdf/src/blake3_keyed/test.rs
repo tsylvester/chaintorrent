@@ -5,9 +5,10 @@ use super::provides::{
     expected_derived_key,
 };
 use crate::factory::provides::{
-    DerivationPurpose, DeriveKeyParamsOverrides, IKeyDerivationAdapter, KDF_INTERFACE_VERSION,
-    KdfIdentifier, REFERENCE_LENGTH, REFERENCE_PREFIX_LENGTH, build_derive_key_params,
-    build_derive_key_payload, reference_context,
+    DERIVATION_PURPOSES, DerivationPurpose, DeriveKeyParamsOverrides, IKeyDerivationAdapter,
+    KDF_CONCRETES, KDF_IDENTIFIERS, KDF_INTERFACE_VERSION, KdfConcrete, KdfConcreteOverrides,
+    KdfDeclaration, KdfIdentifier, REFERENCE_LENGTH, REFERENCE_PREFIX_LENGTH,
+    build_derive_key_params, build_derive_key_payload, build_kdf_concrete, reference_context,
 };
 
 /// Contract: `Blake3KeyedKdf::try_new(params)`, one branch: any params →
@@ -25,28 +26,93 @@ fn try_new_returns_the_adapter() {
     let result = Blake3KeyedKdf::try_new(params);
 
     // Assert
-    assert!(result.is_ok());
+    assert!(matches!(result, Ok(Blake3KeyedKdf)));
 }
 
-/// Contract: `declaration()`, one branch: any adapter →
-///   `Blake3KeyedKdf::DECLARATION`.
-/// Arrange: the adapter from `build_blake3_keyed_kdf`.
-/// Act:     `adapter.declaration()`.
-/// Assert:  the identifier equals `KdfIdentifier::Blake3KeyedV1`, the adapter
-///   version equals the literal `1` the interaction spec's `DECLARATION`
-///   entry states, and the interface version equals `KDF_INTERFACE_VERSION`.
+/// Contract: a direct read of `Blake3KeyedKdf::DECLARATION` →
+///   `KdfDeclaration { concrete: KdfConcrete::Blake3Keyed,
+///   identifier: KdfIdentifier::Blake3KeyedV1, adapter_version: 1,
+///   interface_version: KDF_INTERFACE_VERSION }`, no adapter constructed.
+/// Arrange: none; `Blake3KeyedKdf::DECLARATION` is the interface-held
+///   constant.
+/// Act:     `Blake3KeyedKdf::DECLARATION` is read.
+/// Assert:  the concrete matches `KdfConcrete::Blake3Keyed`, the identifier
+///   matches `KdfIdentifier::Blake3KeyedV1`, the adapter version equals the
+///   literal `1`, and the interface version equals `KDF_INTERFACE_VERSION`.
 #[test]
 fn declaration_returns_the_blake3_keyed_declaration() {
     // Arrange
-    let adapter = build_blake3_keyed_kdf(Default::default());
-
     // Act
-    let declaration = adapter.declaration();
+    let declaration: KdfDeclaration = Blake3KeyedKdf::DECLARATION;
 
     // Assert
-    assert!(declaration.identifier == KdfIdentifier::Blake3KeyedV1);
+    assert!(matches!(declaration.concrete, KdfConcrete::Blake3Keyed));
+    assert!(matches!(
+        declaration.identifier,
+        KdfIdentifier::Blake3KeyedV1
+    ));
     assert_eq!(declaration.adapter_version, 1);
     assert_eq!(declaration.interface_version, KDF_INTERFACE_VERSION);
+}
+
+/// Contract: `KDF_CONCRETES` contains only `KdfConcrete::Blake3Keyed`;
+///   `KDF_IDENTIFIERS` contains only `KdfIdentifier::Blake3KeyedV1`;
+///   `DERIVATION_PURPOSES` contains exactly the eight purposes in
+///   declaration order; every member and value `name()` spelling is
+///   distinct; `Blake3KeyedV1` spells `blake3_keyed_v1` with `uint8` wire
+///   code `1`; no `MockV1` or mock member exists in a real set;
+///   `build_kdf_concrete` returns the real selection without configuration.
+/// Arrange: `KDF_CONCRETES`, `KDF_IDENTIFIERS`, and `DERIVATION_PURPOSES`;
+///   `build_kdf_concrete` over `KdfConcrete::Blake3Keyed` with fieldless
+///   overrides.
+/// Act:     each declared set and each member's and value's `name()` is
+///   read; the declared-selection builder is run.
+/// Assert:  the concrete set is exactly `Blake3Keyed`, the identifier set
+///   exactly `Blake3KeyedV1`, and the purpose set exactly the eight
+///   variants; the spellings are pairwise distinct; `Blake3KeyedV1` spells
+///   `blake3_keyed_v1` and its `uint8` wire code is `1`; no `MockV1` exists
+///   and no mock member appears in a real set; the builder returns
+///   `KdfConcrete::Blake3Keyed` carrying no configuration.
+#[test]
+fn the_declared_sets_and_spellings_are_total_and_real() {
+    // Arrange
+    // Act
+    let selection = build_kdf_concrete(KdfConcrete::Blake3Keyed, KdfConcreteOverrides);
+
+    // Assert
+    assert!(matches!(KDF_CONCRETES, [KdfConcrete::Blake3Keyed]));
+    assert!(matches!(KDF_IDENTIFIERS, [KdfIdentifier::Blake3KeyedV1]));
+    assert!(matches!(
+        DERIVATION_PURPOSES,
+        [
+            DerivationPurpose::WrappingKey,
+            DerivationPurpose::PublisherRoot,
+            DerivationPurpose::AssetRoot,
+            DerivationPurpose::MasterScalar,
+            DerivationPurpose::IdentityBases,
+            DerivationPurpose::CapsuleRandomness,
+            DerivationPurpose::PieceGroupKey,
+            DerivationPurpose::PlaintextRootKey,
+        ]
+    ));
+    let spellings = [
+        KdfConcrete::Blake3Keyed.name(),
+        KdfIdentifier::Blake3KeyedV1.name(),
+        DerivationPurpose::WrappingKey.name(),
+        DerivationPurpose::PublisherRoot.name(),
+        DerivationPurpose::AssetRoot.name(),
+        DerivationPurpose::MasterScalar.name(),
+        DerivationPurpose::IdentityBases.name(),
+        DerivationPurpose::CapsuleRandomness.name(),
+        DerivationPurpose::PieceGroupKey.name(),
+        DerivationPurpose::PlaintextRootKey.name(),
+    ];
+    for (index, spelling) in spellings.iter().enumerate() {
+        assert!(spellings[..index].iter().all(|earlier| earlier != spelling));
+    }
+    assert_eq!(KdfIdentifier::Blake3KeyedV1.name(), "blake3_keyed_v1");
+    assert_eq!(KdfIdentifier::Blake3KeyedV1.wire_code(), 1);
+    assert!(matches!(selection, KdfConcrete::Blake3Keyed));
 }
 
 /// Contract: `derive_key`, derived: the length converts →

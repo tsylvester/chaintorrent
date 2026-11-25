@@ -9,8 +9,7 @@ mod test;
 
 use crate::factory::provides::{
     DerivationPurpose, DeriveKeyErrorReturn, DeriveKeyParams, DeriveKeyPayload, DeriveKeyReturn,
-    DeriveKeySuccessReturn, IKeyDerivationAdapter, KDF_INTERFACE_VERSION, KdfDeclaration,
-    KdfIdentifier,
+    DeriveKeySuccessReturn, IKeyDerivationAdapter,
 };
 use blake3::Hasher;
 use domain::{Secret, SecretConstructorParams};
@@ -25,22 +24,12 @@ use interface::{
 use zeroize::Zeroize;
 
 impl Blake3KeyedKdf {
-    pub const DECLARATION: KdfDeclaration = KdfDeclaration {
-        identifier: KdfIdentifier::Blake3KeyedV1,
-        adapter_version: 1,
-        interface_version: KDF_INTERFACE_VERSION,
-    };
-
     pub fn try_new(_params: Blake3KeyedKdfConstructorParams) -> Blake3KeyedKdfTryNewReturn {
         Ok(Blake3KeyedKdf)
     }
 }
 
 impl IKeyDerivationAdapter for Blake3KeyedKdf {
-    fn declaration(&self) -> KdfDeclaration {
-        Self::DECLARATION
-    }
-
     fn derive_key(
         &self,
         params: DeriveKeyParams,
