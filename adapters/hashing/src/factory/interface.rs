@@ -302,7 +302,25 @@ impl CommitmentConcrete {
     }
 }
 
-pub struct CreateCommitmentDeps {
+pub trait ICommitmentConsumer {
+    type Output;
+
+    fn consume_commitment<A: ICommitmentAdapter>(
+        &self,
+        params: ConsumeCommitmentParams,
+        payload: ConsumeCommitmentPayload<A>,
+    ) -> Self::Output;
+}
+
+pub struct ConsumeCommitmentParams;
+
+pub struct ConsumeCommitmentPayload<A: ICommitmentAdapter> {
+    pub adapter: A,
+    pub declaration: CommitmentDeclaration,
+}
+
+pub struct CreateCommitmentDeps<C: ICommitmentConsumer> {
+    pub consumer: C,
     pub admit_hashing_composition: AdmitHashingCompositionFn,
     pub lookup_hashing_declaration: LookupHashingDeclarationFn,
 }
@@ -315,8 +333,8 @@ pub struct CreateCommitmentParams {
 
 pub struct CreateCommitmentPayload;
 
-pub struct CreateCommitmentSuccessReturn {
-    pub adapter: Box<dyn ICommitmentAdapter>,
+pub struct CreateCommitmentSuccessReturn<O> {
+    pub output: O,
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -327,14 +345,14 @@ pub enum CreateCommitmentErrorReturn {
     Mock(Infallible),
 }
 
-pub type CreateCommitmentReturn =
-    Result<CreateCommitmentSuccessReturn, CreateCommitmentErrorReturn>;
+pub type CreateCommitmentReturn<O> =
+    Result<CreateCommitmentSuccessReturn<O>, CreateCommitmentErrorReturn>;
 
-pub type CreateCommitmentFn = fn(
-    &CreateCommitmentDeps,
+pub type CreateCommitmentFn<C> = fn(
+    &CreateCommitmentDeps<C>,
     CreateCommitmentParams,
     CreateCommitmentPayload,
-) -> CreateCommitmentReturn;
+) -> CreateCommitmentReturn<<C as ICommitmentConsumer>::Output>;
 
 pub const DECLARED_COMMITMENT_SELECTIONS: &[CreateCommitmentParams] = &[CreateCommitmentParams {
     concrete: CommitmentConcrete::Blake3Bao,

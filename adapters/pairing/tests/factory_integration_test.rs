@@ -246,7 +246,8 @@ fn libraries_sharing_an_identifier_encode_the_pairing_product_to_the_same_bytes(
     struct Consumer;
 
     impl IPairingConsumer for Consumer {
-        type Output = Result<(TargetGroupEncodingIdentifier, Vec<u8>), SampleUniformScalarErrorReturn>;
+        type Output =
+            Result<(TargetGroupEncodingIdentifier, Vec<u8>), SampleUniformScalarErrorReturn>;
 
         fn consume_pairing<P: IPairingArithmetic>(
             &self,
@@ -404,10 +405,8 @@ fn libraries_sharing_an_identifier_return_the_same_scalar_field_order() {
     assert_eq!(outputs.len(), PAIRING_CONCRETES.len());
     for left in &outputs {
         for right in &outputs {
-            let (left_identifier, left_bytes) =
-                left.as_ref().expect("an output per concrete");
-            let (right_identifier, right_bytes) =
-                right.as_ref().expect("an output per concrete");
+            let (left_identifier, left_bytes) = left.as_ref().expect("an output per concrete");
+            let (right_identifier, right_bytes) = right.as_ref().expect("an output per concrete");
             if left_identifier == right_identifier {
                 assert_eq!(left_bytes, right_bytes);
             }
@@ -440,8 +439,10 @@ fn libraries_sharing_an_identifier_return_the_same_first_group_reference_encodin
     struct Consumer;
 
     impl IPairingConsumer for Consumer {
-        type Output =
-            Result<(TargetGroupEncodingIdentifier, Option<Vec<u8>>), G1OutsideSubgroupEncodingErrorReturn>;
+        type Output = Result<
+            (TargetGroupEncodingIdentifier, Option<Vec<u8>>),
+            G1OutsideSubgroupEncodingErrorReturn,
+        >;
 
         fn consume_pairing<P: IPairingReference>(
             &self,
@@ -535,7 +536,8 @@ fn libraries_sharing_an_identifier_return_the_same_second_group_reference_encodi
     struct Consumer;
 
     impl IPairingConsumer for Consumer {
-        type Output = Result<(TargetGroupEncodingIdentifier, Vec<u8>), G2OutsideSubgroupEncodingErrorReturn>;
+        type Output =
+            Result<(TargetGroupEncodingIdentifier, Vec<u8>), G2OutsideSubgroupEncodingErrorReturn>;
 
         fn consume_pairing<P: IPairingReference>(
             &self,

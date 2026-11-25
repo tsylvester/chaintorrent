@@ -4,10 +4,11 @@ use super::interface::{
     AuthenticationPath, CHAINING_VALUE_LENGTH, COMMITMENT_INTERFACE_VERSION, ChallengeParams,
     ChallengePayload, ChallengeReturn, ChallengeSuccessReturn, Chunk, CommitErrorReturn,
     CommitParams, CommitPayload, CommitReturn, CommitSuccessReturn, CommitmentConcrete,
-    CommitmentDeclaration, CommitmentKey, CommitmentSchemeIdentifier, CreateCommitmentDeps,
-    CreateCommitmentParams, CreateCommitmentPayload, CreateCommitmentReturn,
-    CreateCommitmentSuccessReturn, ExtractPathErrorReturn, ExtractPathParams, ExtractPathPayload,
-    ExtractPathReturn, ExtractPathSuccessReturn, ICommitmentAdapter,
+    CommitmentDeclaration, CommitmentKey, CommitmentSchemeIdentifier, ConsumeCommitmentParams,
+    ConsumeCommitmentPayload, CreateCommitmentDeps, CreateCommitmentParams,
+    CreateCommitmentPayload, CreateCommitmentReturn, CreateCommitmentSuccessReturn,
+    ExtractPathErrorReturn, ExtractPathParams, ExtractPathPayload, ExtractPathReturn,
+    ExtractPathSuccessReturn, ICommitmentAdapter, ICommitmentConsumer,
     MockICommitmentAdapterFailureMode, OUTBOARD_HEADER_LENGTH, OUTBOARD_PARENT_LENGTH, Outboard,
     RespondErrorReturn, RespondParams, RespondPayload, RespondReturn, RespondSuccessReturn, Root,
     RootConstructorParams, VerifyChunkErrorReturn, VerifyChunkParams, VerifyChunkPayload,
@@ -1131,16 +1132,58 @@ pub fn build_commitment_concrete(
     }
 }
 
+pub struct MockICommitmentConsumer;
+
+impl ICommitmentConsumer for MockICommitmentConsumer {
+    type Output = CommitmentDeclaration;
+
+    fn consume_commitment<A: ICommitmentAdapter>(
+        &self,
+        _params: ConsumeCommitmentParams,
+        payload: ConsumeCommitmentPayload<A>,
+    ) -> Self::Output {
+        payload.declaration
+    }
+}
+
+#[derive(Default)]
+pub struct ConsumeCommitmentParamsOverrides;
+
+pub fn build_consume_commitment_params(
+    _overrides: ConsumeCommitmentParamsOverrides,
+) -> ConsumeCommitmentParams {
+    ConsumeCommitmentParams
+}
+
+#[derive(Default)]
+pub struct ConsumeCommitmentPayloadOverrides {
+    pub declaration: Option<CommitmentDeclaration>,
+}
+
+pub fn build_consume_commitment_payload<A: ICommitmentAdapter>(
+    adapter: A,
+    overrides: ConsumeCommitmentPayloadOverrides,
+) -> ConsumeCommitmentPayload<A> {
+    ConsumeCommitmentPayload {
+        adapter,
+        declaration: overrides
+            .declaration
+            .unwrap_or(MOCK_I_COMMITMENT_ADAPTER_DECLARATION),
+    }
+}
+
 #[derive(Default)]
 pub struct CreateCommitmentDepsOverrides {
     pub admit_hashing_composition: Option<AdmitHashingCompositionFn>,
     pub lookup_hashing_declaration: Option<LookupHashingDeclarationFn>,
 }
 
-pub fn build_create_commitment_deps(
+pub fn build_create_commitment_deps<C: ICommitmentConsumer>(
+    consumer: C,
     overrides: CreateCommitmentDepsOverrides,
-) -> CreateCommitmentDeps {
+) -> CreateCommitmentDeps<C> {
     CreateCommitmentDeps {
+        consumer,
         admit_hashing_composition: overrides
             .admit_hashing_composition
             .unwrap_or(mock_admit_hashing_composition),
@@ -1179,71 +1222,32 @@ pub fn build_create_commitment_params(
 }
 
 #[derive(Default)]
-pub struct CreateCommitmentParamsCorruptions {
-    pub concrete: Option<Value>,
-    pub identifier: Option<Value>,
-}
-
-pub fn invalidate_create_commitment_params(
-    corruptions: CreateCommitmentParamsCorruptions,
-) -> Value {
-    let params = build_create_commitment_params(Default::default());
-    let mut fields = Map::new();
-    fields.insert(
-        "concrete".to_string(),
-        match params.concrete {
-            CommitmentConcrete::Blake3Bao => Value::from(params.concrete.name()),
-            CommitmentConcrete::Mock(failure_mode) => {
-                let mut entry = Map::new();
-                entry.insert(
-                    params.concrete.name().to_string(),
-                    Value::from(match failure_mode {
-                        MockICommitmentAdapterFailureMode::NoFailure => "NoFailure",
-                        MockICommitmentAdapterFailureMode::ContentLengthUnrepresentable => {
-                            "ContentLengthUnrepresentable"
-                        }
-                        MockICommitmentAdapterFailureMode::OffsetUnrepresentable => {
-                            "OffsetUnrepresentable"
-                        }
-                    }),
-                );
-                Value::Object(entry)
-            }
-        },
-    );
-    fields.insert(
-        "identifier".to_string(),
-        Value::from(params.identifier.name()),
-    );
-    if let Some(concrete) = corruptions.concrete {
-        fields.insert("concrete".to_string(), concrete);
-    }
-    if let Some(identifier) = corruptions.identifier {
-        fields.insert("identifier".to_string(), identifier);
-    }
-    Value::Object(fields)
-}
-
-#[derive(Default)]
 pub struct CreateCommitmentSuccessReturnOverrides;
 
-pub fn build_create_commitment_success_return(
-    adapter: Box<dyn ICommitmentAdapter>,
+pub fn build_create_commitment_success_return<O>(
+    output: O,
     _overrides: CreateCommitmentSuccessReturnOverrides,
-) -> CreateCommitmentSuccessReturn {
-    CreateCommitmentSuccessReturn { adapter }
+) -> CreateCommitmentSuccessReturn<O> {
+    CreateCommitmentSuccessReturn { output }
 }
 
-pub fn mock_create_commitment(
-    _deps: &CreateCommitmentDeps,
+pub fn mock_create_commitment<C: ICommitmentConsumer>(
+    deps: &CreateCommitmentDeps<C>,
     _params: CreateCommitmentParams,
     _payload: CreateCommitmentPayload,
-) -> CreateCommitmentReturn {
+) -> CreateCommitmentReturn<C::Output> {
     let Ok(adapter) = MockICommitmentAdapter::try_new(MockICommitmentAdapterConstructorParams {
         failure_mode: MockICommitmentAdapterFailureMode::NoFailure,
     });
+    let output = deps.consumer.consume_commitment(
+        ConsumeCommitmentParams,
+        ConsumeCommitmentPayload {
+            adapter,
+            declaration: MOCK_I_COMMITMENT_ADAPTER_DECLARATION,
+        },
+    );
     Ok(build_create_commitment_success_return(
-        Box::new(adapter),
+        output,
         Default::default(),
     ))
 }

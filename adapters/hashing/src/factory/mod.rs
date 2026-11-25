@@ -11,9 +11,13 @@ use crate::admit_hashing_composition::provides::{
     AdmitHashingCompositionDeps, AdmitHashingCompositionParams, AdmitHashingCompositionPayload,
 };
 use crate::blake3_bao::provides::{Blake3BaoCommitment, Blake3BaoCommitmentConstructorParams};
+use crate::lookup_hashing_declaration::provides::{
+    LookupHashingDeclarationDeps, LookupHashingDeclarationParams, LookupHashingDeclarationPayload,
+};
 use interface::{
-    CommitmentConcrete, CreateCommitmentDeps, CreateCommitmentErrorReturn, CreateCommitmentParams,
-    CreateCommitmentPayload, CreateCommitmentReturn, CreateCommitmentSuccessReturn, Root,
+    CommitmentConcrete, ConsumeCommitmentParams, ConsumeCommitmentPayload, CreateCommitmentDeps,
+    CreateCommitmentErrorReturn, CreateCommitmentParams, CreateCommitmentPayload,
+    CreateCommitmentReturn, CreateCommitmentSuccessReturn, ICommitmentConsumer, Root,
     RootConstructorParams, RootTryNewErrorReturn, RootTryNewReturn,
 };
 #[cfg(any(test, feature = "mocks"))]
@@ -34,11 +38,11 @@ impl Root {
     }
 }
 
-pub fn create_commitment(
-    deps: &CreateCommitmentDeps,
+pub fn create_commitment<C: ICommitmentConsumer>(
+    deps: &CreateCommitmentDeps<C>,
     params: CreateCommitmentParams,
     _payload: CreateCommitmentPayload,
-) -> CreateCommitmentReturn {
+) -> CreateCommitmentReturn<C::Output> {
     match (deps.admit_hashing_composition)(
         &AdmitHashingCompositionDeps {
             lookup_hashing_declaration: deps.lookup_hashing_declaration,
@@ -50,24 +54,46 @@ pub fn create_commitment(
         AdmitHashingCompositionPayload,
     ) {
         Err(error) => Err(CreateCommitmentErrorReturn::Composition(error)),
-        Ok(_) => match params.concrete {
-            CommitmentConcrete::Blake3Bao => {
-                let Ok(commitment) =
-                    Blake3BaoCommitment::try_new(Blake3BaoCommitmentConstructorParams);
-                Ok(CreateCommitmentSuccessReturn {
-                    adapter: Box::new(commitment),
-                })
+        Ok(_) => {
+            let Ok(lookup_success) = (deps.lookup_hashing_declaration)(
+                &LookupHashingDeclarationDeps,
+                LookupHashingDeclarationParams {
+                    concrete: params.concrete,
+                },
+                LookupHashingDeclarationPayload,
+            );
+            let declaration = lookup_success.declaration;
+            match params.concrete {
+                CommitmentConcrete::Blake3Bao => {
+                    let Ok(commitment) =
+                        Blake3BaoCommitment::try_new(Blake3BaoCommitmentConstructorParams);
+                    Ok(CreateCommitmentSuccessReturn {
+                        output: deps.consumer.consume_commitment(
+                            ConsumeCommitmentParams,
+                            ConsumeCommitmentPayload {
+                                adapter: commitment,
+                                declaration,
+                            },
+                        ),
+                    })
+                }
+                #[cfg(any(test, feature = "mocks"))]
+                CommitmentConcrete::Mock(failure_mode) => {
+                    let Ok(mock) =
+                        MockICommitmentAdapter::try_new(MockICommitmentAdapterConstructorParams {
+                            failure_mode,
+                        });
+                    Ok(CreateCommitmentSuccessReturn {
+                        output: deps.consumer.consume_commitment(
+                            ConsumeCommitmentParams,
+                            ConsumeCommitmentPayload {
+                                adapter: mock,
+                                declaration,
+                            },
+                        ),
+                    })
+                }
             }
-            #[cfg(any(test, feature = "mocks"))]
-            CommitmentConcrete::Mock(failure_mode) => {
-                let Ok(mock) =
-                    MockICommitmentAdapter::try_new(MockICommitmentAdapterConstructorParams {
-                        failure_mode,
-                    });
-                Ok(CreateCommitmentSuccessReturn {
-                    adapter: Box::new(mock),
-                })
-            }
-        },
+        }
     }
 }
