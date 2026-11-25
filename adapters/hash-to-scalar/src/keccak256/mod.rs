@@ -8,8 +8,7 @@ pub(crate) mod provides;
 mod test;
 
 use crate::factory::provides::{
-    HASH_TO_SCALAR_INTERFACE_VERSION, HashToScalarDeclaration, HashToScalarErrorReturn,
-    HashToScalarIdentifier, HashToScalarParams, HashToScalarPayload, HashToScalarReturn,
+    HashToScalarErrorReturn, HashToScalarParams, HashToScalarPayload, HashToScalarReturn,
     HashToScalarSuccessReturn, IHashToScalarAdapter,
 };
 use domain::{Secret, SecretConstructorParams};
@@ -21,12 +20,6 @@ use pairing::{ISampleUniformScalar, SampleUniformScalarParams, SampleUniformScal
 use sha3::{Digest, Keccak256};
 
 impl Keccak256HashToScalar {
-    pub const DECLARATION: HashToScalarDeclaration = HashToScalarDeclaration {
-        identifier: HashToScalarIdentifier::Keccak256V1,
-        adapter_version: 1,
-        interface_version: HASH_TO_SCALAR_INTERFACE_VERSION,
-    };
-
     pub fn try_new(
         _params: Keccak256HashToScalarConstructorParams,
     ) -> Keccak256HashToScalarTryNewReturn {
@@ -35,10 +28,6 @@ impl Keccak256HashToScalar {
 }
 
 impl<S: ISampleUniformScalar + Clone> IHashToScalarAdapter<S> for Keccak256HashToScalar {
-    fn declaration(&self) -> HashToScalarDeclaration {
-        Self::DECLARATION
-    }
-
     fn hash_to_scalar(
         &self,
         params: HashToScalarParams<'_>,

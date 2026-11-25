@@ -14,8 +14,9 @@ use pairing::{
     ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides,
     CreatePairingPayload, EncodeScalarParams, EncodeScalarPayload, IPairingArithmetic,
     IPairingConsumer, IPairingReference, ISampleUniformScalar, PAIRING_CONCRETES,
-    SampleUniformScalarParams, SampleUniformScalarPayload, build_create_pairing_deps,
-    build_create_pairing_params, create_pairing,
+    SampleUniformScalarParams, SampleUniformScalarPayload, admit_pairing_composition,
+    build_admit_pairing_composition_deps, build_create_pairing_deps, build_create_pairing_params,
+    create_pairing, lookup_pairing_declaration,
 };
 
 /// Contract: entry `hash_to_scalar_matches_the_oracle_for_the_reference_tag_and_message`;
@@ -100,7 +101,12 @@ fn hash_to_scalar_matches_the_oracle_for_the_reference_tag_and_message() {
             concrete: Some(*concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -192,7 +198,12 @@ fn hash_to_scalar_matches_the_oracle_for_the_empty_message() {
             concrete: Some(*concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -286,7 +297,12 @@ fn hash_to_scalar_binds_the_tag_length() {
             concrete: Some(*concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -377,7 +393,12 @@ fn hash_to_scalar_separates_domains() {
             concrete: Some(*concrete),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);

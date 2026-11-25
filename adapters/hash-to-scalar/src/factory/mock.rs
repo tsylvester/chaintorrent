@@ -1,31 +1,25 @@
 #![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 use super::interface::{
-    CreateHashToScalarCaseDeps, CreateHashToScalarCaseErrorReturn, CreateHashToScalarCaseParams,
-    CreateHashToScalarCasePayload, CreateHashToScalarCaseReturn,
-    CreateHashToScalarCaseSuccessReturn, CreateHashToScalarDeps, CreateHashToScalarParams,
+    CreateHashToScalarDeps, CreateHashToScalarFn, CreateHashToScalarParams,
     CreateHashToScalarPayload, CreateHashToScalarReturn, CreateHashToScalarSuccessReturn,
     HASH_TO_SCALAR_INTERFACE_VERSION, HashToScalarConcrete, HashToScalarDeclaration,
     HashToScalarErrorReturn, HashToScalarIdentifier, HashToScalarParams, HashToScalarPayload,
-    HashToScalarReturn, HashToScalarSuccessReturn, ICreateHashToScalarCaseConsumer,
-    IHashToScalarAdapter, MockIHashToScalarAdapterFailureMode, RunCreateHashToScalarCaseFn,
+    HashToScalarReturn, HashToScalarSuccessReturn, IHashToScalarAdapter,
+    MockIHashToScalarAdapterFailureMode,
 };
 use crate::domain_tag::provides::{DomainTag, build_domain_tag};
 use core::convert::Infallible;
 use core::iter::once;
 use core::marker::PhantomData;
 use domain::{Secret, SecretConstructorParams, build_secret};
-use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingParams, CreatePairingPayload,
-    IPairingAdapter, IPairingConsumer, ISampleUniformScalar, SampleUniformScalarParams,
-    SampleUniformScalarPayload, build_create_pairing_deps, build_create_pairing_params,
-    create_pairing,
-};
+use pairing::{ISampleUniformScalar, SampleUniformScalarParams, SampleUniformScalarPayload};
 use serde_json::{Map, Value};
 use std::sync::OnceLock;
 
 #[derive(Default)]
 pub struct HashToScalarDeclarationOverrides {
+    pub concrete: Option<HashToScalarConcrete>,
     pub identifier: Option<HashToScalarIdentifier>,
     pub adapter_version: Option<u32>,
     pub interface_version: Option<u32>,
@@ -35,6 +29,9 @@ pub fn build_hash_to_scalar_declaration(
     overrides: HashToScalarDeclarationOverrides,
 ) -> HashToScalarDeclaration {
     HashToScalarDeclaration {
+        concrete: overrides.concrete.unwrap_or(HashToScalarConcrete::Mock(
+            MockIHashToScalarAdapterFailureMode::Succeeds,
+        )),
         identifier: overrides
             .identifier
             .unwrap_or(HashToScalarIdentifier::Keccak256V1),
@@ -47,6 +44,7 @@ pub fn build_hash_to_scalar_declaration(
 
 #[derive(Default)]
 pub struct HashToScalarDeclarationCorruptions {
+    pub concrete: Option<Value>,
     pub identifier: Option<Value>,
     pub adapter_version: Option<Value>,
     pub interface_version: Option<Value>,
@@ -58,12 +56,12 @@ pub fn invalidate_hash_to_scalar_declaration(
     let declaration = build_hash_to_scalar_declaration(Default::default());
     let mut fields = Map::new();
     fields.insert(
+        "concrete".to_string(),
+        Value::from(declaration.concrete.name()),
+    );
+    fields.insert(
         "identifier".to_string(),
-        Value::from(match declaration.identifier {
-            HashToScalarIdentifier::Keccak256V1 => "Keccak256V1",
-            #[cfg(any(test, feature = "mocks"))]
-            HashToScalarIdentifier::Mock => "Mock",
-        }),
+        Value::from(declaration.identifier.name()),
     );
     fields.insert(
         "adapter_version".to_string(),
@@ -73,6 +71,9 @@ pub fn invalidate_hash_to_scalar_declaration(
         "interface_version".to_string(),
         Value::from(declaration.interface_version),
     );
+    if let Some(concrete) = corruptions.concrete {
+        fields.insert("concrete".to_string(), concrete);
+    }
     if let Some(identifier) = corruptions.identifier {
         fields.insert("identifier".to_string(), identifier);
     }
@@ -196,7 +197,7 @@ pub fn invalidate_hash_to_scalar_success_return(
 
 pub(crate) struct MockIHashToScalarAdapter<S> {
     failure_mode: MockIHashToScalarAdapterFailureMode,
-    pub scalar: PhantomData<S>,
+    scalar: PhantomData<S>,
 }
 
 pub(crate) struct MockIHashToScalarAdapterConstructorParams {
@@ -207,12 +208,6 @@ pub(crate) type MockIHashToScalarAdapterTryNewReturn<S> =
     Result<MockIHashToScalarAdapter<S>, Infallible>;
 
 impl<S> MockIHashToScalarAdapter<S> {
-    pub(crate) const DECLARATION: HashToScalarDeclaration = HashToScalarDeclaration {
-        identifier: HashToScalarIdentifier::Mock,
-        adapter_version: 1,
-        interface_version: HASH_TO_SCALAR_INTERFACE_VERSION,
-    };
-
     pub(crate) fn try_new(
         params: MockIHashToScalarAdapterConstructorParams,
     ) -> MockIHashToScalarAdapterTryNewReturn<S> {
@@ -224,10 +219,6 @@ impl<S> MockIHashToScalarAdapter<S> {
 }
 
 impl<S: ISampleUniformScalar + Clone> IHashToScalarAdapter<S> for MockIHashToScalarAdapter<S> {
-    fn declaration(&self) -> HashToScalarDeclaration {
-        Self::DECLARATION
-    }
-
     fn hash_to_scalar(
         &self,
         params: HashToScalarParams<'_>,
@@ -263,6 +254,30 @@ impl<S: ISampleUniformScalar + Clone> IHashToScalarAdapter<S> for MockIHashToSca
     }
 }
 
+pub const MOCK_I_HASH_TO_SCALAR_ADAPTER_DECLARATION: HashToScalarDeclaration =
+    HashToScalarDeclaration {
+        concrete: HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::Succeeds),
+        identifier: HashToScalarIdentifier::Keccak256V1,
+        adapter_version: 1,
+        interface_version: HASH_TO_SCALAR_INTERFACE_VERSION,
+    };
+
+#[derive(Default)]
+pub struct HashToScalarConcreteOverrides;
+
+pub fn build_hash_to_scalar_concrete(
+    concrete: HashToScalarConcrete,
+    _overrides: HashToScalarConcreteOverrides,
+) -> HashToScalarConcrete {
+    match concrete {
+        HashToScalarConcrete::Keccak256 => HashToScalarConcrete::Keccak256,
+        #[cfg(any(test, feature = "mocks"))]
+        HashToScalarConcrete::Mock(_) => {
+            HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::Succeeds)
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct CreateHashToScalarDepsOverrides;
 
@@ -275,7 +290,6 @@ pub fn build_create_hash_to_scalar_deps(
 #[derive(Default)]
 pub struct CreateHashToScalarParamsOverrides {
     pub concrete: Option<HashToScalarConcrete>,
-    pub identifier: Option<HashToScalarIdentifier>,
 }
 
 pub fn build_create_hash_to_scalar_params(
@@ -285,44 +299,7 @@ pub fn build_create_hash_to_scalar_params(
         concrete: overrides.concrete.unwrap_or(HashToScalarConcrete::Mock(
             MockIHashToScalarAdapterFailureMode::Succeeds,
         )),
-        identifier: overrides.identifier.unwrap_or(HashToScalarIdentifier::Mock),
     }
-}
-
-#[derive(Default)]
-pub struct CreateHashToScalarParamsCorruptions {
-    pub concrete: Option<Value>,
-    pub identifier: Option<Value>,
-}
-
-pub fn invalidate_create_hash_to_scalar_params(
-    corruptions: CreateHashToScalarParamsCorruptions,
-) -> Value {
-    let params = build_create_hash_to_scalar_params(Default::default());
-    let mut fields = Map::new();
-    fields.insert(
-        "concrete".to_string(),
-        Value::from(match params.concrete {
-            HashToScalarConcrete::Keccak256 => "Keccak256",
-            #[cfg(any(test, feature = "mocks"))]
-            HashToScalarConcrete::Mock(_) => "Mock",
-        }),
-    );
-    fields.insert(
-        "identifier".to_string(),
-        Value::from(match params.identifier {
-            HashToScalarIdentifier::Keccak256V1 => "Keccak256V1",
-            #[cfg(any(test, feature = "mocks"))]
-            HashToScalarIdentifier::Mock => "Mock",
-        }),
-    );
-    if let Some(concrete) = corruptions.concrete {
-        fields.insert("concrete".to_string(), concrete);
-    }
-    if let Some(identifier) = corruptions.identifier {
-        fields.insert("identifier".to_string(), identifier);
-    }
-    Value::Object(fields)
 }
 
 #[derive(Default)]
@@ -349,6 +326,7 @@ pub fn mock_create_hash_to_scalar<S: ISampleUniformScalar + Clone>(
     _params: CreateHashToScalarParams,
     _payload: CreateHashToScalarPayload,
 ) -> CreateHashToScalarReturn<S> {
+    let _: CreateHashToScalarFn<S> = mock_create_hash_to_scalar::<S>;
     let Ok(adapter) =
         MockIHashToScalarAdapter::<S>::try_new(MockIHashToScalarAdapterConstructorParams {
             failure_mode: MockIHashToScalarAdapterFailureMode::Succeeds,
@@ -357,90 +335,4 @@ pub fn mock_create_hash_to_scalar<S: ISampleUniformScalar + Clone>(
         Box::new(adapter),
         Default::default(),
     ))
-}
-
-#[derive(Default)]
-pub struct CreateHashToScalarCaseParamsOverrides {
-    pub pairing: Option<CreatePairingParams>,
-}
-
-pub fn build_create_hash_to_scalar_case_params(
-    overrides: CreateHashToScalarCaseParamsOverrides,
-) -> CreateHashToScalarCaseParams {
-    CreateHashToScalarCaseParams {
-        pairing: overrides
-            .pairing
-            .unwrap_or_else(|| build_create_pairing_params(Default::default())),
-    }
-}
-
-#[derive(Default)]
-pub struct CreateHashToScalarCaseDepsOverrides;
-
-pub fn build_create_hash_to_scalar_case_deps<C: ICreateHashToScalarCaseConsumer>(
-    consumer: C,
-    _overrides: CreateHashToScalarCaseDepsOverrides,
-) -> CreateHashToScalarCaseDeps<C> {
-    CreateHashToScalarCaseDeps { consumer }
-}
-
-#[derive(Default)]
-pub struct CreateHashToScalarCasePayloadOverrides;
-
-pub fn build_create_hash_to_scalar_case_payload(
-    _overrides: CreateHashToScalarCasePayloadOverrides,
-) -> CreateHashToScalarCasePayload {
-    CreateHashToScalarCasePayload
-}
-
-#[derive(Default)]
-pub struct CreateHashToScalarCaseSuccessReturnOverrides;
-
-pub fn build_create_hash_to_scalar_case_success_return<O>(
-    output: O,
-    _overrides: CreateHashToScalarCaseSuccessReturnOverrides,
-) -> CreateHashToScalarCaseSuccessReturn<O> {
-    CreateHashToScalarCaseSuccessReturn { output }
-}
-
-struct CaseAtPairing<'a, C: ICreateHashToScalarCaseConsumer> {
-    consumer: &'a C,
-    case_payload: &'a CreateHashToScalarCasePayload,
-}
-
-impl<C: ICreateHashToScalarCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
-    type Output = CreateHashToScalarCaseReturn<C::Output>;
-
-    fn consume_pairing<P: IPairingAdapter>(
-        &self,
-        _params: ConsumePairingParams,
-        payload: ConsumePairingPayload<P>,
-    ) -> Self::Output {
-        let output = self
-            .consumer
-            .consume_create_hash_to_scalar_case(&payload.adapter, self.case_payload);
-        Ok(CreateHashToScalarCaseSuccessReturn { output })
-    }
-}
-
-pub fn run_create_hash_to_scalar_case<C: ICreateHashToScalarCaseConsumer>(
-    deps: &CreateHashToScalarCaseDeps<C>,
-    params: CreateHashToScalarCaseParams,
-    payload: CreateHashToScalarCasePayload,
-) -> CreateHashToScalarCaseReturn<C::Output> {
-    let _: RunCreateHashToScalarCaseFn<C> = run_create_hash_to_scalar_case;
-    match create_pairing(
-        &build_create_pairing_deps(
-            CaseAtPairing {
-                consumer: &deps.consumer,
-                case_payload: &payload,
-            },
-            Default::default(),
-        ),
-        params.pairing,
-        CreatePairingPayload,
-    ) {
-        Ok(success) => success.output,
-        Err(error) => Err(CreateHashToScalarCaseErrorReturn::CreatePairing(error)),
-    }
 }

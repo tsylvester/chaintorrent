@@ -2247,7 +2247,6 @@ version = "0.0.0"
 dependencies = [
  "domain",
  "encoding",
- "hex",
  "pairing 0.0.0",
  "serde",
  "serde_json",

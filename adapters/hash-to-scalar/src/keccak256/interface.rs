@@ -1,3 +1,7 @@
+use crate::factory::provides::{
+    HASH_TO_SCALAR_INTERFACE_VERSION, HashToScalarConcrete, HashToScalarDeclaration,
+    HashToScalarIdentifier,
+};
 use core::convert::Infallible;
 
 pub const KECCAK256_DIGEST_LENGTH: usize = 32;
@@ -17,4 +21,13 @@ pub enum Keccak256HashToScalarErrorReturn {
         uniform_length: usize,
         digest_length: usize,
     },
+}
+
+impl Keccak256HashToScalar {
+    pub const DECLARATION: HashToScalarDeclaration = HashToScalarDeclaration {
+        concrete: HashToScalarConcrete::Keccak256,
+        identifier: HashToScalarIdentifier::Keccak256V1,
+        adapter_version: 1,
+        interface_version: HASH_TO_SCALAR_INTERFACE_VERSION,
+    };
 }

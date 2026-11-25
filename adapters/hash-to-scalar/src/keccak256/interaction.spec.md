@@ -10,7 +10,7 @@ Branch contract for the `keccak256` module of the `hash-to-scalar` crate: the Ke
 
 ## `Keccak256HashToScalar::DECLARATION`
 
-The inherent constant `HashToScalarDeclaration { identifier: HashToScalarIdentifier::Keccak256V1, adapter_version: 1, interface_version: HASH_TO_SCALAR_INTERFACE_VERSION }`, readable before any instance exists.
+The interface-held constant `HashToScalarDeclaration { concrete: HashToScalarConcrete::Keccak256, identifier: HashToScalarIdentifier::Keccak256V1, adapter_version: 1, interface_version: HASH_TO_SCALAR_INTERFACE_VERSION }`, read through `hash-to-scalar/lookup_hash_to_scalar_declaration` without an instance; no `declaration()` branch exists.
 
 ## `IHashToScalarAdapter::<S>::hash_to_scalar(&self, params: HashToScalarParams<'_>, payload: HashToScalarPayload<'_>) -> HashToScalarReturn<S>`
 

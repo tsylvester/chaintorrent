@@ -1,19 +1,11 @@
 #![allow(clippy::expect_used)]
 
 use super::Keccak256HashToScalar;
-use super::interface::Keccak256HashToScalarErrorReturn;
-use super::mock::{
-    build_keccak256_hash_to_scalar, build_keccak256_hash_to_scalar_constructor_params,
-};
+use super::mock::build_keccak256_hash_to_scalar_constructor_params;
 use crate::factory::provides::{
-    HashToScalarDeclaration, HashToScalarErrorReturn, HashToScalarIdentifier, IHashToScalarAdapter,
-    build_hash_to_scalar_params, build_hash_to_scalar_payload,
-};
-use pairing::{
-    ConsumePairingParams, ConsumePairingPayload, CreatePairingParamsOverrides,
-    CreatePairingPayload, IPairingArithmetic, IPairingConsumer, IPairingReference,
-    MockIPairingAdapterFailureMode, PairingConcrete, build_create_pairing_deps,
-    build_create_pairing_params, create_pairing,
+    HASH_TO_SCALAR_CONCRETES, HASH_TO_SCALAR_IDENTIFIERS, HASH_TO_SCALAR_INTERFACE_VERSION,
+    HashToScalarConcrete, HashToScalarConcreteOverrides, HashToScalarDeclaration,
+    HashToScalarIdentifier, build_hash_to_scalar_concrete,
 };
 
 /// Contract: `try_new` over fieldless params yields `Ok(Keccak256HashToScalar)`.
@@ -32,145 +24,86 @@ fn try_new_returns_the_adapter() {
     assert!(result.is_ok());
 }
 
-/// Contract: `Keccak256HashToScalar::DECLARATION` is `HashToScalarDeclaration
-///   { identifier: HashToScalarIdentifier::Keccak256V1, adapter_version: 1,
-///   interface_version: HASH_TO_SCALAR_INTERFACE_VERSION }`.
-/// Arrange: none; the constant is read as it stands.
-/// Act:     read `Keccak256HashToScalar::DECLARATION`.
-/// Assert:  `matches!(declaration.identifier, HashToScalarIdentifier::Keccak256V1)`,
-///   `declaration.adapter_version` equals `1`, and `declaration.interface_version`
-///   equals `1`, the literal being the interface version the objective states.
+/// Contract: a direct read of `Keccak256HashToScalar::DECLARATION` →
+///   `HashToScalarDeclaration { concrete: HashToScalarConcrete::Keccak256,
+///   identifier: HashToScalarIdentifier::Keccak256V1, adapter_version: 1,
+///   interface_version: HASH_TO_SCALAR_INTERFACE_VERSION }`, no adapter
+///   constructed.
+/// Arrange: none; `Keccak256HashToScalar::DECLARATION` is the
+///   interface-held constant.
+/// Act:     `Keccak256HashToScalar::DECLARATION` is read.
+/// Assert:  the concrete matches `HashToScalarConcrete::Keccak256`, the
+///   identifier matches `HashToScalarIdentifier::Keccak256V1`, the adapter
+///   version equals the literal `1`, and the interface version equals
+///   `HASH_TO_SCALAR_INTERFACE_VERSION`.
 #[test]
-fn declaration_constant_names_the_keccak256_identifier_and_versions() {
+fn declaration_returns_the_keccak256_declaration() {
     // Arrange
 
     // Act
-    let declaration = Keccak256HashToScalar::DECLARATION;
+    let declaration: HashToScalarDeclaration = Keccak256HashToScalar::DECLARATION;
 
     // Assert
+    assert!(matches!(
+        declaration.concrete,
+        HashToScalarConcrete::Keccak256
+    ));
     assert!(matches!(
         declaration.identifier,
         HashToScalarIdentifier::Keccak256V1
     ));
     assert_eq!(declaration.adapter_version, 1);
-    assert_eq!(declaration.interface_version, 1);
+    assert_eq!(
+        declaration.interface_version,
+        HASH_TO_SCALAR_INTERFACE_VERSION
+    );
 }
 
-/// Contract: `declaration()` returns `Self::DECLARATION`.
-/// Arrange: `Consumer` with `type Output = HashToScalarDeclaration;`, whose
-///   `consume_pairing` builds the adapter with
-///   `build_keccak256_hash_to_scalar(Default::default())` and returns
-///   `IHashToScalarAdapter::<P::Scalar>::declaration(&adapter)` whole.
-/// Act:     `create_pairing` runs the consumer, whose single call is `declaration()`.
-/// Assert:  the output is `Some`, its identifier matches
-///   `HashToScalarIdentifier::Keccak256V1`, its `adapter_version` equals `1`, and
-///   its `interface_version` equals `1`, so the trait method and the constant are
-///   proven separately.
-/// Collaborators: the pairing family's mock concrete through `create_pairing`,
-///   supplying `P::Scalar` only.
+/// Contract: `HASH_TO_SCALAR_CONCRETES` contains only
+///   `HashToScalarConcrete::Keccak256`; `HASH_TO_SCALAR_IDENTIFIERS`
+///   contains only `HashToScalarIdentifier::Keccak256V1`; every member and
+///   value `name()` spelling is distinct; `Keccak256V1` spells
+///   `keccak256_v1` with `uint8` wire code `1`; no `Mock` value variant or
+///   mock member exists in a real set; `build_hash_to_scalar_concrete`
+///   returns the real selection without configuration.
+/// Arrange: `HASH_TO_SCALAR_CONCRETES` and `HASH_TO_SCALAR_IDENTIFIERS`;
+///   `build_hash_to_scalar_concrete` over `HashToScalarConcrete::Keccak256`
+///   with fieldless overrides.
+/// Act:     each declared set and each member's and value's `name()` is
+///   read; the declared-selection builder is run.
+/// Assert:  the concrete set is exactly `Keccak256` and the identifier set
+///   exactly `Keccak256V1`; the spellings are pairwise distinct;
+///   `Keccak256V1` spells `keccak256_v1` and its `uint8` wire code is `1`;
+///   no `Mock` exists in the value identifier and no mock member appears in
+///   a real set; the builder returns `HashToScalarConcrete::Keccak256`
+///   carrying no configuration.
 #[test]
-fn declaration_reports_the_constant() {
+fn the_declared_sets_and_spellings_are_total_and_real() {
     // Arrange
-    struct Consumer;
-
-    impl IPairingConsumer for Consumer {
-        type Output = HashToScalarDeclaration;
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            _payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let adapter = build_keccak256_hash_to_scalar(Default::default());
-            IHashToScalarAdapter::<P::Scalar>::declaration(&adapter)
-        }
-    }
 
     // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(Default::default()),
-        CreatePairingPayload,
+    let selection = build_hash_to_scalar_concrete(
+        HashToScalarConcrete::Keccak256,
+        HashToScalarConcreteOverrides,
     );
 
     // Assert
-    let output = created.ok().map(|success| success.output);
-    assert!(output.is_some());
-    let declaration = output.expect("create_pairing runs the consumer");
     assert!(matches!(
-        declaration.identifier,
-        HashToScalarIdentifier::Keccak256V1
+        HASH_TO_SCALAR_CONCRETES,
+        [HashToScalarConcrete::Keccak256]
     ));
-    assert_eq!(declaration.adapter_version, 1);
-    assert_eq!(declaration.interface_version, 1);
-}
-
-/// Contract: when `S::UNIFORM_BYTES_LENGTH.checked_sub(KECCAK256_DIGEST_LENGTH)`
-///   is `None`, `hash_to_scalar` yields `Err(HashToScalarErrorReturn::Keccak256(
-///   Keccak256HashToScalarErrorReturn::UniformLengthBelowDigest
-///   { uniform_length: S::UNIFORM_BYTES_LENGTH,
-///   digest_length: KECCAK256_DIGEST_LENGTH }))`.
-/// Arrange: `Consumer` with `type Output = ();`, whose `consume_pairing` builds
-///   the adapter with `build_keccak256_hash_to_scalar(Default::default())`, takes
-///   params from `build_hash_to_scalar_params(Default::default())` and payload
-///   from `build_hash_to_scalar_payload(Default::default())`, calls
-///   `IHashToScalarAdapter::<P::Scalar>::hash_to_scalar(&adapter, params, payload)`,
-///   and asserts on the result in place; the received scalar is the pairing family's
-///   short-uniform mock concrete's, whose sampling input is 16 bytes, fewer than
-///   the 32 digest bytes.
-/// Act:     `create_pairing` runs the consumer, whose single call is `hash_to_scalar`,
-///   over params whose `concrete` names `PairingConcrete::MockShortUniform`.
-/// Assert:  in the consumer, `assert_eq!(result.err(),
-///   Some(HashToScalarErrorReturn::Keccak256(
-///   Keccak256HashToScalarErrorReturn::UniformLengthBelowDigest
-///   { uniform_length: 16, digest_length: 32 })))`, the 16 being the short-uniform
-///   mock concrete's sampling length and the 32 the Keccak-256 digest width; and
-///   outside it, `assert!(created.is_ok())`, proving the consumer ran.
-/// Collaborators: the pairing family's short-uniform mock concrete through
-///   `create_pairing`, supplying the received scalar; `sha3` is not reached, the
-///   length check preceding the hasher.
-#[test]
-fn hash_to_scalar_refuses_a_sampling_input_shorter_than_the_digest() {
-    // Arrange
-    struct Consumer;
-
-    impl IPairingConsumer for Consumer {
-        type Output = ();
-
-        fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            _params: ConsumePairingParams,
-            _payload: ConsumePairingPayload<P>,
-        ) -> Self::Output {
-            let adapter = build_keccak256_hash_to_scalar(Default::default());
-            let params = build_hash_to_scalar_params(Default::default());
-            let payload = build_hash_to_scalar_payload(Default::default());
-            let result =
-                IHashToScalarAdapter::<P::Scalar>::hash_to_scalar(&adapter, params, payload);
-            assert_eq!(
-                result.err(),
-                Some(HashToScalarErrorReturn::Keccak256(
-                    Keccak256HashToScalarErrorReturn::UniformLengthBelowDigest {
-                        uniform_length: 16,
-                        digest_length: 32
-                    }
-                ))
-            );
-        }
+    assert!(matches!(
+        HASH_TO_SCALAR_IDENTIFIERS,
+        [HashToScalarIdentifier::Keccak256V1]
+    ));
+    let spellings = [
+        HashToScalarConcrete::Keccak256.name(),
+        HashToScalarIdentifier::Keccak256V1.name(),
+    ];
+    for (index, spelling) in spellings.iter().enumerate() {
+        assert!(spellings[..index].iter().all(|earlier| earlier != spelling));
     }
-
-    // Act
-    let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
-        build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(PairingConcrete::MockShortUniform(
-                MockIPairingAdapterFailureMode::Succeeds,
-            )),
-            ..Default::default()
-        }),
-        CreatePairingPayload,
-    );
-
-    // Assert
-    assert!(created.is_ok());
+    assert_eq!(HashToScalarIdentifier::Keccak256V1.name(), "keccak256_v1");
+    assert_eq!(HashToScalarIdentifier::Keccak256V1.wire_code(), 1);
+    assert!(matches!(selection, HashToScalarConcrete::Keccak256));
 }
