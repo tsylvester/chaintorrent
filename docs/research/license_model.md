@@ -86,6 +86,22 @@ No certificate can prove an untrusted binary has not been modified without a tru
 
 For the MVP, ChainTorrent is the only anticipated client distributor and no public production release is available. The immediate requirement is therefore the resolved protocol position: every production client distribution identifies its accountable distributor through a registration-backed credential. Designing issuance workflows for licensed alternative distributors, certificate delegation, and multi-distributor governance is deferred until an alternative distributor is a real implementation need.
 
+## Summary of license requirements 
+
+| Requirement | Potential resolution |
+|---|---|
+| Public source | Publicly inspectable on GitHub; not OSI open source. |
+| No-fee rights | Inspect, evaluate, study, modify, and test outside production. |
+| Mainnet use | Always requires conforming patent/protocol participation—regardless of revenue. |
+| Commercial use | Requires the commercial patent/protocol license; royalties arise from the transaction split, not source access. |
+| Redistribution | Decide whether public forks/redistribution are permitted only for research/contribution, or require approval except for GitHub’s service-level fork mechanics. |
+| Access-control removal | A modified implementation may be studied/tested privately; distributing or operating one that bypasses entitlement controls is forbidden and receives no production-network/patent grant. |
+| Patent rights | State expressly that the source license grants no commercial patent license; that grant lives only in the separate protocol license. |
+| Branding | Reserve ChainTorrent names, marks, and “conforming/certified” representations for authorized distributions. |
+| Contributions | Choose whether external contributors assign copyright, grant an irrevocable contributor license, or contribute only through a CLA. This is important because enforcement depends on a clean rights chain. |
+| License changes | Version the source license. New releases can adopt new terms; existing grants should not be retroactively narrowed. |
+| Enforcement mechanics | Define termination, cure, notice, jurisdiction, and remedies with counsel. |
+
 ## Deferred matters
 
 The following are intentionally not settled here:
