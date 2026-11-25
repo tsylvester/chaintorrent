@@ -2,27 +2,53 @@ use super::create_pairing;
 use super::provides::{
     CreatePairingErrorReturn, CreatePairingParamsOverrides, CreatePairingPayload,
     MockIPairingAdapterFailureMode, MockIPairingConsumer, PairingConcrete, PairingCurve,
-    PrecompileEncoding, TargetGroupEncodingIdentifier, VerifierGroupArithmetic,
-    build_create_pairing_deps, build_create_pairing_params,
+    PairingDeclarationOverrides, PrecompileEncoding, TargetGroupEncodingIdentifier,
+    VerifierGroupArithmetic, build_create_pairing_deps, build_create_pairing_params,
+    build_pairing_declaration,
 };
 use crate::admit_pairing_composition::provides::{
     AdmitPairingCompositionErrorReturn, AdmitPairingCompositionFn, PairingDisagreement,
     build_admit_pairing_composition_deps, mock_admit_pairing_composition,
 };
-use crate::lookup_pairing_declaration::provides::mock_lookup_pairing_declaration;
+use crate::lookup_pairing_declaration::provides::{
+    LookupPairingDeclarationFn, LookupPairingDeclarationSuccessReturn,
+    mock_lookup_pairing_declaration,
+};
 
 /// Contract: given `params.concrete` is `Bn254Arkworks` and the composition admission
-///   returns `Ok`, the factory returns the success arm.
+///   returns `Ok`, the factory calls its declaration lookup once for `params.concrete`,
+///   constructs the arm's concrete, hands the consumer the adapter and the declaration
+///   the lookup returned in `ConsumePairingPayload`, and returns `Ok` whose `output` is
+///   that declaration — the consumer's return of `payload.declaration` — whose
+///   `concrete` equals `params.concrete`.
 /// Arrange: `build_create_pairing_params` with only `concrete` overridden to
-///   `Bn254Arkworks`; the deps of the block's lead line, whose admission is the official
-///   function mock returning `Ok`.
+///   `Bn254Arkworks`; a declaration lookup the block declares, typed
+///   `LookupPairingDeclarationFn`, returning `Ok(LookupPairingDeclarationSuccessReturn {
+///   declaration })` whose `declaration` `build_pairing_declaration` builds with
+///   `concrete` overridden to the `concrete` the call's `LookupPairingDeclarationParams`
+///   carries, so the assert proves the factory called the lookup with `params.concrete`
+///   and handed its return to the consumer, and a factory that looks up a sibling or
+///   skips the lookup fails; deps built with `MockIPairingConsumer`, that lookup, the
+///   official admission mock returning `Ok`, and
+///   `build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, _)`.
 /// Act:     `create_pairing(&deps, params, CreatePairingPayload)`.
-/// Assert:  `result.is_ok()`.
+/// Assert:  `result.ok().map(|success| success.output)` equals
+///   `build_pairing_declaration` with `concrete` overridden to `Bn254Arkworks` — the
+///   payload declaration whose `concrete` equals `params.concrete`.
 #[test]
 fn create_pairing_admits_the_bn254_arkworks_concrete() {
     // Arrange
+    let lookup: LookupPairingDeclarationFn = |_deps, params, _payload| {
+        Ok(LookupPairingDeclarationSuccessReturn {
+            declaration: build_pairing_declaration(PairingDeclarationOverrides {
+                concrete: Some(params.concrete),
+                ..Default::default()
+            }),
+        })
+    };
     let deps = build_create_pairing_deps(
         MockIPairingConsumer,
+        lookup,
         mock_admit_pairing_composition,
         build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, Default::default()),
         Default::default(),
@@ -36,21 +62,49 @@ fn create_pairing_admits_the_bn254_arkworks_concrete() {
     let result = create_pairing(&deps, params, CreatePairingPayload);
 
     // Assert
-    assert!(result.is_ok());
+    assert_eq!(
+        result.ok().map(|success| success.output),
+        Some(build_pairing_declaration(PairingDeclarationOverrides {
+            concrete: Some(PairingConcrete::Bn254Arkworks),
+            ..Default::default()
+        }))
+    );
 }
 
 /// Contract: given `params.concrete` is `Bn254Halo2curves` and the composition admission
-///   returns `Ok`, the factory returns the success arm.
+///   returns `Ok`, the factory calls its declaration lookup once for `params.concrete`,
+///   constructs the arm's concrete, hands the consumer the adapter and the declaration
+///   the lookup returned in `ConsumePairingPayload`, and returns `Ok` whose `output` is
+///   that declaration — the consumer's return of `payload.declaration` — whose
+///   `concrete` equals `params.concrete`.
 /// Arrange: `build_create_pairing_params` with only `concrete` overridden to
-///   `Bn254Halo2curves`; the deps of the block's lead line, whose admission is the
-///   official function mock returning `Ok`.
+///   `Bn254Halo2curves`; a declaration lookup the block declares, typed
+///   `LookupPairingDeclarationFn`, returning `Ok(LookupPairingDeclarationSuccessReturn {
+///   declaration })` whose `declaration` `build_pairing_declaration` builds with
+///   `concrete` overridden to the `concrete` the call's `LookupPairingDeclarationParams`
+///   carries, so the assert proves the factory called the lookup with `params.concrete`
+///   and handed its return to the consumer, and a factory that looks up a sibling or
+///   skips the lookup fails; deps built with `MockIPairingConsumer`, that lookup, the
+///   official admission mock returning `Ok`, and
+///   `build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, _)`.
 /// Act:     `create_pairing(&deps, params, CreatePairingPayload)`.
-/// Assert:  `result.is_ok()`.
+/// Assert:  `result.ok().map(|success| success.output)` equals
+///   `build_pairing_declaration` with `concrete` overridden to `Bn254Halo2curves` — the
+///   payload declaration whose `concrete` equals `params.concrete`.
 #[test]
 fn create_pairing_admits_the_bn254_halo2curves_concrete() {
     // Arrange
+    let lookup: LookupPairingDeclarationFn = |_deps, params, _payload| {
+        Ok(LookupPairingDeclarationSuccessReturn {
+            declaration: build_pairing_declaration(PairingDeclarationOverrides {
+                concrete: Some(params.concrete),
+                ..Default::default()
+            }),
+        })
+    };
     let deps = build_create_pairing_deps(
         MockIPairingConsumer,
+        lookup,
         mock_admit_pairing_composition,
         build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, Default::default()),
         Default::default(),
@@ -64,21 +118,49 @@ fn create_pairing_admits_the_bn254_halo2curves_concrete() {
     let result = create_pairing(&deps, params, CreatePairingPayload);
 
     // Assert
-    assert!(result.is_ok());
+    assert_eq!(
+        result.ok().map(|success| success.output),
+        Some(build_pairing_declaration(PairingDeclarationOverrides {
+            concrete: Some(PairingConcrete::Bn254Halo2curves),
+            ..Default::default()
+        }))
+    );
 }
 
 /// Contract: given `params.concrete` is `Bls12381Arkworks` and the composition admission
-///   returns `Ok`, the factory returns the success arm.
+///   returns `Ok`, the factory calls its declaration lookup once for `params.concrete`,
+///   constructs the arm's concrete, hands the consumer the adapter and the declaration
+///   the lookup returned in `ConsumePairingPayload`, and returns `Ok` whose `output` is
+///   that declaration — the consumer's return of `payload.declaration` — whose
+///   `concrete` equals `params.concrete`.
 /// Arrange: `build_create_pairing_params` with only `concrete` overridden to
-///   `Bls12381Arkworks`; the deps of the block's lead line, whose admission is the
-///   official function mock returning `Ok`.
+///   `Bls12381Arkworks`; a declaration lookup the block declares, typed
+///   `LookupPairingDeclarationFn`, returning `Ok(LookupPairingDeclarationSuccessReturn {
+///   declaration })` whose `declaration` `build_pairing_declaration` builds with
+///   `concrete` overridden to the `concrete` the call's `LookupPairingDeclarationParams`
+///   carries, so the assert proves the factory called the lookup with `params.concrete`
+///   and handed its return to the consumer, and a factory that looks up a sibling or
+///   skips the lookup fails; deps built with `MockIPairingConsumer`, that lookup, the
+///   official admission mock returning `Ok`, and
+///   `build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, _)`.
 /// Act:     `create_pairing(&deps, params, CreatePairingPayload)`.
-/// Assert:  `result.is_ok()`.
+/// Assert:  `result.ok().map(|success| success.output)` equals
+///   `build_pairing_declaration` with `concrete` overridden to `Bls12381Arkworks` — the
+///   payload declaration whose `concrete` equals `params.concrete`.
 #[test]
 fn create_pairing_admits_the_bls12_381_arkworks_concrete() {
     // Arrange
+    let lookup: LookupPairingDeclarationFn = |_deps, params, _payload| {
+        Ok(LookupPairingDeclarationSuccessReturn {
+            declaration: build_pairing_declaration(PairingDeclarationOverrides {
+                concrete: Some(params.concrete),
+                ..Default::default()
+            }),
+        })
+    };
     let deps = build_create_pairing_deps(
         MockIPairingConsumer,
+        lookup,
         mock_admit_pairing_composition,
         build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, Default::default()),
         Default::default(),
@@ -92,21 +174,49 @@ fn create_pairing_admits_the_bls12_381_arkworks_concrete() {
     let result = create_pairing(&deps, params, CreatePairingPayload);
 
     // Assert
-    assert!(result.is_ok());
+    assert_eq!(
+        result.ok().map(|success| success.output),
+        Some(build_pairing_declaration(PairingDeclarationOverrides {
+            concrete: Some(PairingConcrete::Bls12381Arkworks),
+            ..Default::default()
+        }))
+    );
 }
 
 /// Contract: given `params.concrete` is `Bls12381Halo2curves` and the composition
-///   admission returns `Ok`, the factory returns the success arm.
+///   admission returns `Ok`, the factory calls its declaration lookup once for
+///   `params.concrete`, constructs the arm's concrete, hands the consumer the adapter
+///   and the declaration the lookup returned in `ConsumePairingPayload`, and returns
+///   `Ok` whose `output` is that declaration — the consumer's return of
+///   `payload.declaration` — whose `concrete` equals `params.concrete`.
 /// Arrange: `build_create_pairing_params` with only `concrete` overridden to
-///   `Bls12381Halo2curves`; the deps of the block's lead line, whose admission is the
-///   official function mock returning `Ok`.
+///   `Bls12381Halo2curves`; a declaration lookup the block declares, typed
+///   `LookupPairingDeclarationFn`, returning `Ok(LookupPairingDeclarationSuccessReturn {
+///   declaration })` whose `declaration` `build_pairing_declaration` builds with
+///   `concrete` overridden to the `concrete` the call's `LookupPairingDeclarationParams`
+///   carries, so the assert proves the factory called the lookup with `params.concrete`
+///   and handed its return to the consumer, and a factory that looks up a sibling or
+///   skips the lookup fails; deps built with `MockIPairingConsumer`, that lookup, the
+///   official admission mock returning `Ok`, and
+///   `build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, _)`.
 /// Act:     `create_pairing(&deps, params, CreatePairingPayload)`.
-/// Assert:  `result.is_ok()`.
+/// Assert:  `result.ok().map(|success| success.output)` equals
+///   `build_pairing_declaration` with `concrete` overridden to `Bls12381Halo2curves` —
+///   the payload declaration whose `concrete` equals `params.concrete`.
 #[test]
 fn create_pairing_admits_the_bls12_381_halo2curves_concrete() {
     // Arrange
+    let lookup: LookupPairingDeclarationFn = |_deps, params, _payload| {
+        Ok(LookupPairingDeclarationSuccessReturn {
+            declaration: build_pairing_declaration(PairingDeclarationOverrides {
+                concrete: Some(params.concrete),
+                ..Default::default()
+            }),
+        })
+    };
     let deps = build_create_pairing_deps(
         MockIPairingConsumer,
+        lookup,
         mock_admit_pairing_composition,
         build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, Default::default()),
         Default::default(),
@@ -120,21 +230,50 @@ fn create_pairing_admits_the_bls12_381_halo2curves_concrete() {
     let result = create_pairing(&deps, params, CreatePairingPayload);
 
     // Assert
-    assert!(result.is_ok());
+    assert_eq!(
+        result.ok().map(|success| success.output),
+        Some(build_pairing_declaration(PairingDeclarationOverrides {
+            concrete: Some(PairingConcrete::Bls12381Halo2curves),
+            ..Default::default()
+        }))
+    );
 }
 
 /// Contract: given `params.concrete` is `Mock(Succeeds)` and the composition admission
-///   returns `Ok`, the factory returns the success arm.
+///   returns `Ok`, the factory calls its declaration lookup once for `params.concrete`,
+///   constructs the arm's concrete, hands the consumer the adapter and the declaration
+///   the lookup returned in `ConsumePairingPayload`, and returns `Ok` whose `output` is
+///   that declaration — the consumer's return of `payload.declaration` — whose
+///   `concrete` equals `params.concrete`.
 /// Arrange: `build_create_pairing_params` with only `concrete` overridden to
-///   `Mock(MockIPairingAdapterFailureMode::Succeeds)`; the deps of the block's lead
-///   line, whose admission is the official function mock returning `Ok`.
+///   `Mock(MockIPairingAdapterFailureMode::Succeeds)`; a declaration lookup the block
+///   declares, typed `LookupPairingDeclarationFn`, returning
+///   `Ok(LookupPairingDeclarationSuccessReturn { declaration })` whose `declaration`
+///   `build_pairing_declaration` builds with `concrete` overridden to the `concrete` the
+///   call's `LookupPairingDeclarationParams` carries, so the assert proves the factory
+///   called the lookup with `params.concrete` and handed its return to the consumer, and
+///   a factory that looks up a sibling or skips the lookup fails; deps built with
+///   `MockIPairingConsumer`, that lookup, the official admission mock returning `Ok`,
+///   and `build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, _)`.
 /// Act:     `create_pairing(&deps, params, CreatePairingPayload)`.
-/// Assert:  `result.is_ok()`.
+/// Assert:  `result.ok().map(|success| success.output)` equals
+///   `build_pairing_declaration` with `concrete` overridden to
+///   `Mock(MockIPairingAdapterFailureMode::Succeeds)` — the payload declaration whose
+///   `concrete` equals `params.concrete`.
 #[test]
 fn create_pairing_admits_the_mock_concrete() {
     // Arrange
+    let lookup: LookupPairingDeclarationFn = |_deps, params, _payload| {
+        Ok(LookupPairingDeclarationSuccessReturn {
+            declaration: build_pairing_declaration(PairingDeclarationOverrides {
+                concrete: Some(params.concrete),
+                ..Default::default()
+            }),
+        })
+    };
     let deps = build_create_pairing_deps(
         MockIPairingConsumer,
+        lookup,
         mock_admit_pairing_composition,
         build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, Default::default()),
         Default::default(),
@@ -150,7 +289,15 @@ fn create_pairing_admits_the_mock_concrete() {
     let result = create_pairing(&deps, params, CreatePairingPayload);
 
     // Assert
-    assert!(result.is_ok());
+    assert_eq!(
+        result.ok().map(|success| success.output),
+        Some(build_pairing_declaration(PairingDeclarationOverrides {
+            concrete: Some(PairingConcrete::Mock(
+                MockIPairingAdapterFailureMode::Succeeds,
+            )),
+            ..Default::default()
+        }))
+    );
 }
 
 /// Contract: given the composition admission refuses `Bn254Arkworks`, the factory
@@ -161,8 +308,11 @@ fn create_pairing_admits_the_mock_concrete() {
 ///   returning `Err(Incompatible { identifier: params.identifier, disagreements })`
 ///   whose `disagreements` restates what the factory passed; `build_create_pairing_params`
 ///   with `concrete` overridden to `Bn254Arkworks` and the four `required_*` overridden
-///   to the values of the curve the variant is not of; deps built with that admission
-///   and `build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, _)`.
+///   to the values of the curve the variant is not of; deps built with
+///   `MockIPairingConsumer`, `mock_lookup_pairing_declaration` as the factory's own
+///   lookup handle, that admission, and
+///   `build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, _)`, the
+///   lookup unreached and the consumer uncalled on the refusal.
 /// Act:     `create_pairing(&deps, params, CreatePairingPayload)`.
 /// Assert:  `result.err()` is the interaction spec's outcome as a literal.
 #[test]
@@ -193,6 +343,7 @@ fn create_pairing_returns_the_composition_refusal_whole_for_the_bn254_arkworks_c
     };
     let deps = build_create_pairing_deps(
         MockIPairingConsumer,
+        mock_lookup_pairing_declaration,
         admission,
         build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, Default::default()),
         Default::default(),
@@ -245,8 +396,11 @@ fn create_pairing_returns_the_composition_refusal_whole_for_the_bn254_arkworks_c
 ///   returning `Err(Incompatible { identifier: params.identifier, disagreements })`
 ///   whose `disagreements` restates what the factory passed; `build_create_pairing_params`
 ///   with `concrete` overridden to `Bn254Halo2curves` and the four `required_*` overridden
-///   to the values of the curve the variant is not of; deps built with that admission
-///   and `build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, _)`.
+///   to the values of the curve the variant is not of; deps built with
+///   `MockIPairingConsumer`, `mock_lookup_pairing_declaration` as the factory's own
+///   lookup handle, that admission, and
+///   `build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, _)`, the
+///   lookup unreached and the consumer uncalled on the refusal.
 /// Act:     `create_pairing(&deps, params, CreatePairingPayload)`.
 /// Assert:  `result.err()` is the interaction spec's outcome as a literal.
 #[test]
@@ -277,6 +431,7 @@ fn create_pairing_returns_the_composition_refusal_whole_for_the_bn254_halo2curve
     };
     let deps = build_create_pairing_deps(
         MockIPairingConsumer,
+        mock_lookup_pairing_declaration,
         admission,
         build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, Default::default()),
         Default::default(),
@@ -329,8 +484,11 @@ fn create_pairing_returns_the_composition_refusal_whole_for_the_bn254_halo2curve
 ///   returning `Err(Incompatible { identifier: params.identifier, disagreements })`
 ///   whose `disagreements` restates what the factory passed; `build_create_pairing_params`
 ///   with `concrete` overridden to `Bls12381Arkworks` and the four `required_*` overridden
-///   to the values of the curve the variant is not of; deps built with that admission
-///   and `build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, _)`.
+///   to the values of the curve the variant is not of; deps built with
+///   `MockIPairingConsumer`, `mock_lookup_pairing_declaration` as the factory's own
+///   lookup handle, that admission, and
+///   `build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, _)`, the
+///   lookup unreached and the consumer uncalled on the refusal.
 /// Act:     `create_pairing(&deps, params, CreatePairingPayload)`.
 /// Assert:  `result.err()` is the interaction spec's outcome as a literal.
 #[test]
@@ -361,6 +519,7 @@ fn create_pairing_returns_the_composition_refusal_whole_for_the_bls12_381_arkwor
     };
     let deps = build_create_pairing_deps(
         MockIPairingConsumer,
+        mock_lookup_pairing_declaration,
         admission,
         build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, Default::default()),
         Default::default(),
@@ -413,8 +572,11 @@ fn create_pairing_returns_the_composition_refusal_whole_for_the_bls12_381_arkwor
 ///   returning `Err(Incompatible { identifier: params.identifier, disagreements })`
 ///   whose `disagreements` restates what the factory passed; `build_create_pairing_params`
 ///   with `concrete` overridden to `Bls12381Halo2curves` and the four `required_*`
-///   overridden to the values of the curve the variant is not of; deps built with that
-///   admission and `build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, _)`.
+///   overridden to the values of the curve the variant is not of; deps built with
+///   `MockIPairingConsumer`, `mock_lookup_pairing_declaration` as the factory's own
+///   lookup handle, that admission, and
+///   `build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, _)`, the
+///   lookup unreached and the consumer uncalled on the refusal.
 /// Act:     `create_pairing(&deps, params, CreatePairingPayload)`.
 /// Assert:  `result.err()` is the interaction spec's outcome as a literal.
 #[test]
@@ -445,6 +607,7 @@ fn create_pairing_returns_the_composition_refusal_whole_for_the_bls12_381_halo2c
     };
     let deps = build_create_pairing_deps(
         MockIPairingConsumer,
+        mock_lookup_pairing_declaration,
         admission,
         build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, Default::default()),
         Default::default(),
@@ -498,8 +661,10 @@ fn create_pairing_returns_the_composition_refusal_whole_for_the_bls12_381_halo2c
 ///   whose `disagreements` restates what the factory passed; `build_create_pairing_params`
 ///   with `concrete` overridden to `Mock(MockIPairingAdapterFailureMode::Succeeds)` and
 ///   the four `required_*` overridden to the values of the curve the variant is not of;
-///   deps built with that admission and
-///   `build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, _)`.
+///   deps built with `MockIPairingConsumer`, `mock_lookup_pairing_declaration` as the
+///   factory's own lookup handle, that admission, and
+///   `build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, _)`, the
+///   lookup unreached and the consumer uncalled on the refusal.
 /// Act:     `create_pairing(&deps, params, CreatePairingPayload)`.
 /// Assert:  `result.err()` is the interaction spec's outcome as a literal.
 #[test]
@@ -530,6 +695,7 @@ fn create_pairing_returns_the_composition_refusal_whole_for_the_mock_concrete() 
     };
     let deps = build_create_pairing_deps(
         MockIPairingConsumer,
+        mock_lookup_pairing_declaration,
         admission,
         build_admit_pairing_composition_deps(mock_lookup_pairing_declaration, Default::default()),
         Default::default(),

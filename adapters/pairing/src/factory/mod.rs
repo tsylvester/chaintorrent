@@ -22,6 +22,9 @@ use crate::bn254_arkworks::provides::{
 use crate::bn254_halo2curves::provides::{
     Bn254Halo2curvesPairing, Bn254Halo2curvesPairingConstructorParams,
 };
+use crate::lookup_pairing_declaration::provides::{
+    LookupPairingDeclarationDeps, LookupPairingDeclarationParams, LookupPairingDeclarationPayload,
+};
 use interface::{
     ConsumePairingParams, ConsumePairingPayload, CreatePairingDeps, CreatePairingErrorReturn,
     CreatePairingParams, CreatePairingPayload, CreatePairingReturn, CreatePairingSuccessReturn,
@@ -48,13 +51,24 @@ pub fn create_pairing<C: IPairingConsumer>(
     ) {
         return Err(CreatePairingErrorReturn::Composition(error));
     }
+    let Ok(looked_up) = (deps.lookup_pairing_declaration)(
+        &LookupPairingDeclarationDeps,
+        LookupPairingDeclarationParams {
+            concrete: params.concrete,
+        },
+        LookupPairingDeclarationPayload,
+    );
+    let declaration = looked_up.declaration;
     match params.concrete {
         PairingConcrete::Bn254Arkworks => {
             let Ok(adapter) = Bn254ArkworksPairing::try_new(Bn254ArkworksPairingConstructorParams);
             Ok(CreatePairingSuccessReturn {
                 output: deps
                     .consumer
-                    .consume_pairing(ConsumePairingParams, ConsumePairingPayload { adapter }),
+                    .consume_pairing(
+                        ConsumePairingParams,
+                        ConsumePairingPayload { adapter, declaration },
+                    ),
             })
         }
         PairingConcrete::Bn254Halo2curves => {
@@ -63,7 +77,10 @@ pub fn create_pairing<C: IPairingConsumer>(
             Ok(CreatePairingSuccessReturn {
                 output: deps
                     .consumer
-                    .consume_pairing(ConsumePairingParams, ConsumePairingPayload { adapter }),
+                    .consume_pairing(
+                        ConsumePairingParams,
+                        ConsumePairingPayload { adapter, declaration },
+                    ),
             })
         }
         PairingConcrete::Bls12381Arkworks => {
@@ -72,7 +89,10 @@ pub fn create_pairing<C: IPairingConsumer>(
             Ok(CreatePairingSuccessReturn {
                 output: deps
                     .consumer
-                    .consume_pairing(ConsumePairingParams, ConsumePairingPayload { adapter }),
+                    .consume_pairing(
+                        ConsumePairingParams,
+                        ConsumePairingPayload { adapter, declaration },
+                    ),
             })
         }
         PairingConcrete::Bls12381Halo2curves => {
@@ -81,7 +101,10 @@ pub fn create_pairing<C: IPairingConsumer>(
             Ok(CreatePairingSuccessReturn {
                 output: deps
                     .consumer
-                    .consume_pairing(ConsumePairingParams, ConsumePairingPayload { adapter }),
+                    .consume_pairing(
+                        ConsumePairingParams,
+                        ConsumePairingPayload { adapter, declaration },
+                    ),
             })
         }
         #[cfg(any(test, feature = "mocks"))]
@@ -92,7 +115,10 @@ pub fn create_pairing<C: IPairingConsumer>(
             Ok(CreatePairingSuccessReturn {
                 output: deps
                     .consumer
-                    .consume_pairing(ConsumePairingParams, ConsumePairingPayload { adapter }),
+                    .consume_pairing(
+                        ConsumePairingParams,
+                        ConsumePairingPayload { adapter, declaration },
+                    ),
             })
         }
     }

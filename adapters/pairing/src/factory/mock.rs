@@ -47,8 +47,8 @@ use crate::admit_pairing_composition::provides::{
     AdmitPairingCompositionDeps, AdmitPairingCompositionFn,
 };
 use crate::lookup_pairing_declaration::provides::{
-    LookupPairingDeclarationDeps, LookupPairingDeclarationParams, LookupPairingDeclarationPayload,
-    lookup_pairing_declaration,
+    LookupPairingDeclarationDeps, LookupPairingDeclarationFn, LookupPairingDeclarationParams,
+    LookupPairingDeclarationPayload, lookup_pairing_declaration,
 };
 use core::cell::Cell;
 use core::convert::Infallible;
@@ -1837,26 +1837,34 @@ pub fn build_create_pairing_success_return<O>(
 }
 
 #[derive(Default)]
-pub(crate) struct ConsumePairingPayloadOverrides;
+pub(crate) struct ConsumePairingPayloadOverrides {
+    pub declaration: Option<PairingDeclaration>,
+}
 
 pub(crate) fn build_consume_pairing_payload<P: IPairingAdapter>(
     adapter: P,
-    _overrides: ConsumePairingPayloadOverrides,
+    overrides: ConsumePairingPayloadOverrides,
 ) -> ConsumePairingPayload<P> {
-    ConsumePairingPayload { adapter }
+    ConsumePairingPayload {
+        adapter,
+        declaration: overrides
+            .declaration
+            .unwrap_or(MOCK_I_PAIRING_ADAPTER_DECLARATION),
+    }
 }
 
 #[derive(Default)]
 pub struct MockIPairingConsumer;
 
 impl IPairingConsumer for MockIPairingConsumer {
-    type Output = ();
+    type Output = PairingDeclaration;
 
     fn consume_pairing<P: IPairingAdapter>(
         &self,
         _params: ConsumePairingParams,
-        _payload: ConsumePairingPayload<P>,
+        payload: ConsumePairingPayload<P>,
     ) -> Self::Output {
+        payload.declaration
     }
 }
 
@@ -1865,12 +1873,14 @@ pub struct CreatePairingDepsOverrides;
 
 pub fn build_create_pairing_deps<C: IPairingConsumer>(
     consumer: C,
+    lookup_pairing_declaration: LookupPairingDeclarationFn,
     admit_pairing_composition: AdmitPairingCompositionFn,
     admit_pairing_composition_deps: AdmitPairingCompositionDeps,
     _overrides: CreatePairingDepsOverrides,
 ) -> CreatePairingDeps<C> {
     CreatePairingDeps {
         consumer,
+        lookup_pairing_declaration,
         admit_pairing_composition,
         admit_pairing_composition_deps,
     }

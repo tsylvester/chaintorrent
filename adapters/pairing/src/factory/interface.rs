@@ -1,6 +1,7 @@
 use crate::admit_pairing_composition::provides::{
     AdmitPairingCompositionDeps, AdmitPairingCompositionErrorReturn, AdmitPairingCompositionFn,
 };
+use crate::lookup_pairing_declaration::provides::LookupPairingDeclarationFn;
 use core::convert::Infallible;
 use domain::Secret;
 use zeroize::{Zeroize, ZeroizeOnDrop};
@@ -81,6 +82,7 @@ impl TargetGroupEncodingIdentifier {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PairingDeclaration {
     pub concrete: PairingConcrete,
     pub curve: PairingCurve,
@@ -690,10 +692,12 @@ pub struct ConsumePairingParams;
 
 pub struct ConsumePairingPayload<P: IPairingAdapter> {
     pub adapter: P,
+    pub declaration: PairingDeclaration,
 }
 
 pub struct CreatePairingDeps<C> {
     pub consumer: C,
+    pub lookup_pairing_declaration: LookupPairingDeclarationFn,
     pub admit_pairing_composition: AdmitPairingCompositionFn,
     pub admit_pairing_composition_deps: AdmitPairingCompositionDeps,
 }
