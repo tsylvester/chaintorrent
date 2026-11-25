@@ -34,7 +34,6 @@ fn lookup_returns_the_bn254_arkworks_declaration() {
     let deps = build_lookup_pairing_declaration_deps(Default::default());
     let params = build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
         concrete: Some(PairingConcrete::Bn254Arkworks),
-        ..Default::default()
     });
     let payload = build_lookup_pairing_declaration_payload(Default::default());
 
@@ -87,7 +86,6 @@ fn lookup_returns_the_bn254_halo2curves_declaration() {
     let deps = build_lookup_pairing_declaration_deps(Default::default());
     let params = build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
         concrete: Some(PairingConcrete::Bn254Halo2curves),
-        ..Default::default()
     });
     let payload = build_lookup_pairing_declaration_payload(Default::default());
 
@@ -140,7 +138,6 @@ fn lookup_returns_the_bls12_381_arkworks_declaration() {
     let deps = build_lookup_pairing_declaration_deps(Default::default());
     let params = build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
         concrete: Some(PairingConcrete::Bls12381Arkworks),
-        ..Default::default()
     });
     let payload = build_lookup_pairing_declaration_payload(Default::default());
 
@@ -193,7 +190,6 @@ fn lookup_returns_the_bls12_381_halo2curves_declaration() {
     let deps = build_lookup_pairing_declaration_deps(Default::default());
     let params = build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
         concrete: Some(PairingConcrete::Bls12381Halo2curves),
-        ..Default::default()
     });
     let payload = build_lookup_pairing_declaration_payload(Default::default());
 
@@ -249,7 +245,6 @@ fn lookup_returns_the_mock_declaration_carrying_the_identifier_looked_up() {
         concrete: Some(PairingConcrete::Mock(
             MockIPairingAdapterFailureMode::DecodeG1NotOnCurve,
         )),
-        ..Default::default()
     });
     let payload = build_lookup_pairing_declaration_payload(Default::default());
 

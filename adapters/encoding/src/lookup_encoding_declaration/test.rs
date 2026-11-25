@@ -33,7 +33,7 @@ fn lookup_returns_the_abi_member_declaration() {
         build_lookup_encoding_declaration_params(LookupEncodingDeclarationParamsOverrides {
             concrete: Some(build_encoding_concrete(
                 EncodingConcrete::Abi,
-                EncodingConcreteOverrides::default(),
+                EncodingConcreteOverrides,
             )),
         });
     let payload =

@@ -29,7 +29,7 @@ pub fn build_lookup_encoding_declaration_params(
 ) -> LookupEncodingDeclarationParams {
     LookupEncodingDeclarationParams {
         concrete: overrides.concrete.unwrap_or_else(|| {
-            build_encoding_concrete(EncodingConcrete::Abi, EncodingConcreteOverrides::default())
+            build_encoding_concrete(EncodingConcrete::Abi, EncodingConcreteOverrides)
         }),
     }
 }

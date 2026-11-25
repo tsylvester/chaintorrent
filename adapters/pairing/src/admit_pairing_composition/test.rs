@@ -57,7 +57,6 @@ fn admit_returns_the_identifier_when_every_provision_agrees() {
         Ok(build_admit_pairing_composition_success_return(
             AdmitPairingCompositionSuccessReturnOverrides {
                 identifier: Some(PairingConcrete::Bls12381Arkworks),
-                ..Default::default()
             }
         ))
     );
@@ -288,7 +287,6 @@ fn admit_names_every_disagreeing_provision_in_order() {
         required_verifier_group_arithmetic: Some(VerifierGroupArithmetic::BothGroups),
         required_precompile_encodings: Some(vec![PrecompileEncoding::Eip2537]),
         required_target_group_encoding: Some(TargetGroupEncodingIdentifier::Bls12381V1),
-        ..Default::default()
     });
     let payload = build_admit_pairing_composition_payload(Default::default());
 

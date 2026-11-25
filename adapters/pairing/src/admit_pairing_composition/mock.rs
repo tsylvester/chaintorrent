@@ -72,10 +72,7 @@ pub fn build_admit_pairing_composition_success_return(
 ) -> AdmitPairingCompositionSuccessReturn {
     AdmitPairingCompositionSuccessReturn {
         identifier: overrides.identifier.unwrap_or_else(|| {
-            build_pairing_concrete(
-                PairingConcrete::Bn254Arkworks,
-                PairingConcreteOverrides::default(),
-            )
+            build_pairing_concrete(PairingConcrete::Bn254Arkworks, PairingConcreteOverrides)
         }),
     }
 }

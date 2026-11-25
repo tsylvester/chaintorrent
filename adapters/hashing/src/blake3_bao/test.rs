@@ -102,10 +102,8 @@ fn the_declared_set_and_spellings_are_total_and_real() {
 
     // Act
     let spellings: Vec<&'static str> = declared.iter().map(|member| member.name()).collect();
-    let selected = build_commitment_concrete(
-        CommitmentConcrete::Blake3Bao,
-        CommitmentConcreteOverrides::default(),
-    );
+    let selected =
+        build_commitment_concrete(CommitmentConcrete::Blake3Bao, CommitmentConcreteOverrides);
 
     // Assert
     assert_eq!(declared, &[CommitmentConcrete::Blake3Bao]);

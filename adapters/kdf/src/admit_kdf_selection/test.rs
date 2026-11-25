@@ -1,13 +1,11 @@
 #![allow(clippy::expect_used)]
 
 use super::provides::{
-    AdmitKdfSelectionErrorReturn, AdmitKdfSelectionParamsOverrides,
-    AdmitKdfSelectionPayloadCorruptions, AdmitKdfSelectionPayloadError, admit_kdf_selection,
+    AdmitKdfSelectionErrorReturn, AdmitKdfSelectionParamsOverrides, admit_kdf_selection,
     build_admit_kdf_selection_deps, build_admit_kdf_selection_params,
-    invalidate_admit_kdf_selection_payload,
 };
 use crate::factory::provides::{KdfConcrete, MockIKeyDerivationAdapterFailureMode};
-use serde_json::Value;
+use serde_json::{Map, Value, json};
 
 /// Contract: `admit_kdf_selection`, real member, admitted: `params.concrete`
 ///   is `KdfConcrete::Blake3Keyed` and the document is an empty table →
@@ -15,10 +13,9 @@ use serde_json::Value;
 /// Collaborators: none.
 /// Arrange: `build_admit_kdf_selection_deps` with no override;
 ///   `build_admit_kdf_selection_params` with no override, whose default
-///   member is the real `Blake3Keyed`; the document from
-///   `invalidate_admit_kdf_selection_payload` with no corruption, the empty
-///   table, so the document differs from the documents the refusal blocks
-///   supply.
+///   member is the real `Blake3Keyed`; the document `Value::Object` over an
+///   empty `serde_json::Map`, written directly, so the document differs
+///   from the documents the refusal blocks supply.
 /// Act:     `admit_kdf_selection(&deps, params, document)`.
 /// Assert:  the success arm is bound through `expect` naming the invariant
 ///   that an empty table supplies no setting; `success.selection` matches
@@ -28,7 +25,7 @@ fn admit_kdf_selection_returns_the_blake3_keyed_selection_for_an_empty_settings_
     // Arrange
     let deps = build_admit_kdf_selection_deps(Default::default());
     let params = build_admit_kdf_selection_params(Default::default());
-    let document = invalidate_admit_kdf_selection_payload(Default::default());
+    let document = Value::Object(Map::new());
 
     // Act
     let result = admit_kdf_selection(&deps, params, document);
@@ -43,8 +40,7 @@ fn admit_kdf_selection_returns_the_blake3_keyed_selection_for_an_empty_settings_
 ///   `Ok` whose `selection` is `KdfConcrete::Blake3Keyed`.
 /// Collaborators: none.
 /// Arrange: the built deps and params as in the empty-table block; the
-///   document from `invalidate_admit_kdf_selection_payload` with the
-///   `settings` corruption `Some(Value::Null)`, so the document is absent
+///   document `Value::Null`, written directly, so the document is absent
 ///   rather than an empty table.
 /// Act:     `admit_kdf_selection(&deps, params, document)`.
 /// Assert:  the success arm is bound through `expect` naming the invariant
@@ -55,9 +51,7 @@ fn admit_kdf_selection_returns_the_blake3_keyed_selection_for_an_absent_document
     // Arrange
     let deps = build_admit_kdf_selection_deps(Default::default());
     let params = build_admit_kdf_selection_params(Default::default());
-    let document = invalidate_admit_kdf_selection_payload(AdmitKdfSelectionPayloadCorruptions {
-        settings: Some(Value::Null),
-    });
+    let document = Value::Null;
 
     // Act
     let result = admit_kdf_selection(&deps, params, document);
@@ -92,7 +86,7 @@ fn admit_kdf_selection_returns_the_selected_mock_selection_carrying_its_failure_
             MockIKeyDerivationAdapterFailureMode::KeyMaterialLengthUnrepresentable,
         )),
     });
-    let document = invalidate_admit_kdf_selection_payload(Default::default());
+    let document = Value::Object(Map::new());
 
     // Act
     let result = admit_kdf_selection(&deps, params, document);
@@ -111,10 +105,10 @@ fn admit_kdf_selection_returns_the_selected_mock_selection_carrying_its_failure_
 ///   `Err(AdmitKdfSelectionErrorReturn::SettingSupplied { concrete:
 ///   KdfConcrete::Blake3Keyed })`.
 /// Collaborators: none.
-/// Arrange: the built deps and params with no override; the document from
-///   `invalidate_admit_kdf_selection_payload` with the `settings`
-///   corruption the table `{"a_setting": 1}`, so the document supplies a
-///   setting the empty-table block's document does not.
+/// Arrange: the built deps and params with no override; the document
+///   `serde_json::json!({ "a_setting": 1 })`, written directly, so the
+///   document supplies a setting the empty-table block's document does
+///   not.
 /// Act:     `admit_kdf_selection(&deps, params, document)`.
 /// Assert:  `result.err()` equals
 ///   `Some(AdmitKdfSelectionErrorReturn::SettingSupplied { concrete:
@@ -124,9 +118,7 @@ fn admit_kdf_selection_refuses_a_supplied_setting_naming_the_blake3_keyed_member
     // Arrange
     let deps = build_admit_kdf_selection_deps(Default::default());
     let params = build_admit_kdf_selection_params(Default::default());
-    let document = invalidate_admit_kdf_selection_payload(AdmitKdfSelectionPayloadCorruptions {
-        settings: Some(serde_json::json!({ "a_setting": 1 })),
-    });
+    let document = json!({ "a_setting": 1 });
 
     // Act
     let result = admit_kdf_selection(&deps, params, document);
@@ -165,9 +157,7 @@ fn admit_kdf_selection_refuses_a_supplied_setting_naming_the_selected_mock_membe
             MockIKeyDerivationAdapterFailureMode::KeyMaterialLengthUnrepresentable,
         )),
     });
-    let document = invalidate_admit_kdf_selection_payload(AdmitKdfSelectionPayloadCorruptions {
-        settings: Some(serde_json::json!({ "a_setting": 1 })),
-    });
+    let document = json!({ "a_setting": 1 });
 
     // Act
     let result = admit_kdf_selection(&deps, params, document);
@@ -184,24 +174,23 @@ fn admit_kdf_selection_refuses_a_supplied_setting_naming_the_selected_mock_membe
 }
 
 /// Contract: `admit_kdf_selection`, document refused: the document is the
-///   JSON number `7`, neither null nor a table →
-///   `Err(AdmitKdfSelectionErrorReturn::Document(AdmitKdfSelectionPayloadError::NotATable))`.
+///   JSON number `7`, neither `Value::Null` nor a `Value::Object`, so it
+///   supplies a setting →
+///   `Err(AdmitKdfSelectionErrorReturn::SettingSupplied { concrete:
+///   KdfConcrete::Blake3Keyed })`.
 /// Collaborators: none mocked.
-/// Arrange: the built deps and params with no override; the document from
-///   `invalidate_admit_kdf_selection_payload` with the `settings`
-///   corruption `Some(Value::from(7))`.
+/// Arrange: the built deps and params with no override; the document
+///   `Value::from(7)`, written directly.
 /// Act:     `admit_kdf_selection(&deps, params, document)`.
 /// Assert:  `result.err()` equals
-///   `Some(AdmitKdfSelectionErrorReturn::Document(AdmitKdfSelectionPayloadError::NotATable))`,
-///   the whole error.
+///   `Some(AdmitKdfSelectionErrorReturn::SettingSupplied { concrete:
+///   KdfConcrete::Blake3Keyed })`, the whole error.
 #[test]
-fn admit_kdf_selection_refuses_a_document_that_is_not_a_table() {
+fn admit_kdf_selection_refuses_a_non_object_document_as_a_supplied_setting() {
     // Arrange
     let deps = build_admit_kdf_selection_deps(Default::default());
     let params = build_admit_kdf_selection_params(Default::default());
-    let document = invalidate_admit_kdf_selection_payload(AdmitKdfSelectionPayloadCorruptions {
-        settings: Some(Value::from(7)),
-    });
+    let document = Value::from(7);
 
     // Act
     let result = admit_kdf_selection(&deps, params, document);
@@ -209,8 +198,8 @@ fn admit_kdf_selection_refuses_a_document_that_is_not_a_table() {
     // Assert
     assert_eq!(
         result.err(),
-        Some(AdmitKdfSelectionErrorReturn::Document(
-            AdmitKdfSelectionPayloadError::NotATable
-        ))
+        Some(AdmitKdfSelectionErrorReturn::SettingSupplied {
+            concrete: KdfConcrete::Blake3Keyed,
+        })
     );
 }

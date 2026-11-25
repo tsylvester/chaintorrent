@@ -1,11 +1,15 @@
 #![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 use super::interface::{
-    CreateKeyDerivationDeps, CreateKeyDerivationParams, CreateKeyDerivationPayload,
-    CreateKeyDerivationReturn, CreateKeyDerivationSuccessReturn, DerivationPurpose,
-    DeriveKeyErrorReturn, DeriveKeyParams, DeriveKeyPayload, DeriveKeyReturn,
-    DeriveKeySuccessReturn, IKeyDerivationAdapter, KDF_INTERFACE_VERSION, KdfConcrete,
-    KdfDeclaration, KdfIdentifier, MockIKeyDerivationAdapterFailureMode,
+    ConsumeKeyDerivationParams, ConsumeKeyDerivationPayload, CreateKeyDerivationDeps,
+    CreateKeyDerivationParams, CreateKeyDerivationPayload, CreateKeyDerivationReturn,
+    CreateKeyDerivationSuccessReturn, DerivationPurpose, DeriveKeyErrorReturn, DeriveKeyParams,
+    DeriveKeyPayload, DeriveKeyReturn, DeriveKeySuccessReturn, IKeyDerivationAdapter,
+    IKeyDerivationConsumer, KDF_INTERFACE_VERSION, KdfConcrete, KdfDeclaration, KdfIdentifier,
+    MockIKeyDerivationAdapterFailureMode,
+};
+use crate::lookup_kdf_declaration::provides::{
+    LookupKdfDeclarationFn, mock_lookup_kdf_declaration,
 };
 use core::convert::Infallible;
 use domain::{Secret, SecretConstructorParamsOverrides, build_secret};
@@ -321,13 +325,59 @@ pub fn build_kdf_concrete(concrete: KdfConcrete, _overrides: KdfConcreteOverride
     }
 }
 
-#[derive(Default)]
-pub struct CreateKeyDerivationDepsOverrides;
+pub struct MockIKeyDerivationConsumer;
 
-pub fn build_create_key_derivation_deps(
-    _overrides: CreateKeyDerivationDepsOverrides,
-) -> CreateKeyDerivationDeps {
-    CreateKeyDerivationDeps
+impl IKeyDerivationConsumer for MockIKeyDerivationConsumer {
+    type Output = KdfDeclaration;
+
+    fn consume_key_derivation<A: IKeyDerivationAdapter>(
+        &self,
+        _params: ConsumeKeyDerivationParams,
+        payload: ConsumeKeyDerivationPayload<A>,
+    ) -> Self::Output {
+        payload.declaration
+    }
+}
+
+#[derive(Default)]
+pub struct ConsumeKeyDerivationParamsOverrides;
+
+pub fn build_consume_key_derivation_params(
+    _overrides: ConsumeKeyDerivationParamsOverrides,
+) -> ConsumeKeyDerivationParams {
+    ConsumeKeyDerivationParams
+}
+
+#[derive(Default)]
+pub struct ConsumeKeyDerivationPayloadOverrides {
+    pub declaration: Option<KdfDeclaration>,
+}
+
+pub fn build_consume_key_derivation_payload<A: IKeyDerivationAdapter>(
+    adapter: A,
+    overrides: ConsumeKeyDerivationPayloadOverrides,
+) -> ConsumeKeyDerivationPayload<A> {
+    ConsumeKeyDerivationPayload {
+        adapter,
+        declaration: overrides
+            .declaration
+            .unwrap_or_else(|| build_kdf_declaration(Default::default())),
+    }
+}
+
+#[derive(Default)]
+pub struct CreateKeyDerivationDepsOverrides {
+    pub lookup: Option<LookupKdfDeclarationFn>,
+}
+
+pub fn build_create_key_derivation_deps<C: IKeyDerivationConsumer>(
+    consumer: C,
+    overrides: CreateKeyDerivationDepsOverrides,
+) -> CreateKeyDerivationDeps<C> {
+    CreateKeyDerivationDeps {
+        consumer,
+        lookup: overrides.lookup.unwrap_or(mock_lookup_kdf_declaration),
+    }
 }
 
 #[derive(Default)]
@@ -346,27 +396,6 @@ pub fn build_create_key_derivation_params(
 }
 
 #[derive(Default)]
-pub struct CreateKeyDerivationParamsCorruptions {
-    pub selection: Option<Value>,
-}
-
-pub fn invalidate_create_key_derivation_params(
-    corruptions: CreateKeyDerivationParamsCorruptions,
-) -> Value {
-    let params = build_create_key_derivation_params(Default::default());
-    let mut fields = Map::new();
-    let selection = match params.selection {
-        KdfConcrete::Blake3Keyed => KdfConcrete::Blake3Keyed.name(),
-        KdfConcrete::Mock(failure_mode) => KdfConcrete::Mock(failure_mode).name(),
-    };
-    fields.insert("selection".to_string(), Value::from(selection));
-    if let Some(selection) = corruptions.selection {
-        fields.insert("selection".to_string(), selection);
-    }
-    Value::Object(fields)
-}
-
-#[derive(Default)]
 pub struct CreateKeyDerivationPayloadOverrides;
 
 pub fn build_create_key_derivation_payload(
@@ -378,24 +407,31 @@ pub fn build_create_key_derivation_payload(
 #[derive(Default)]
 pub struct CreateKeyDerivationSuccessReturnOverrides;
 
-pub fn build_create_key_derivation_success_return(
-    adapter: Box<dyn IKeyDerivationAdapter>,
+pub fn build_create_key_derivation_success_return<O>(
+    output: O,
     _overrides: CreateKeyDerivationSuccessReturnOverrides,
-) -> CreateKeyDerivationSuccessReturn {
-    CreateKeyDerivationSuccessReturn { adapter }
+) -> CreateKeyDerivationSuccessReturn<O> {
+    CreateKeyDerivationSuccessReturn { output }
 }
 
-pub fn mock_create_key_derivation(
-    _deps: &CreateKeyDerivationDeps,
+pub fn mock_create_key_derivation<C: IKeyDerivationConsumer>(
+    deps: &CreateKeyDerivationDeps<C>,
     _params: CreateKeyDerivationParams,
     _payload: CreateKeyDerivationPayload,
-) -> CreateKeyDerivationReturn {
+) -> CreateKeyDerivationReturn<C::Output> {
     let Ok(adapter) =
         MockIKeyDerivationAdapter::try_new(MockIKeyDerivationAdapterConstructorParams {
             failure_mode: MockIKeyDerivationAdapterFailureMode::NoFailure,
         });
+    let output = deps.consumer.consume_key_derivation(
+        ConsumeKeyDerivationParams,
+        ConsumeKeyDerivationPayload {
+            adapter,
+            declaration: build_kdf_declaration(Default::default()),
+        },
+    );
     Ok(build_create_key_derivation_success_return(
-        Box::new(adapter),
+        output,
         Default::default(),
     ))
 }

@@ -122,7 +122,7 @@ fn create_encoding_reads_the_declaration_for_the_abi_selection_and_hands_it_to_t
     let params = build_create_encoding_params(CreateEncodingParamsOverrides {
         selection: Some(build_encoding_concrete(
             EncodingConcrete::Abi,
-            EncodingConcreteOverrides::default(),
+            EncodingConcreteOverrides,
         )),
     });
     let payload = build_create_encoding_payload(Default::default());

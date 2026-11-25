@@ -134,10 +134,8 @@ fn no_value_identifier_declares_a_mock_only_variant() {
 
 #[test]
 fn bn254_halo2curves_declared_selection_builds_without_configuration() {
-    let concrete = build_pairing_concrete(
-        PairingConcrete::Bn254Halo2curves,
-        PairingConcreteOverrides::default(),
-    );
+    let concrete =
+        build_pairing_concrete(PairingConcrete::Bn254Halo2curves, PairingConcreteOverrides);
     assert_eq!(concrete, PairingConcrete::Bn254Halo2curves);
 }
 

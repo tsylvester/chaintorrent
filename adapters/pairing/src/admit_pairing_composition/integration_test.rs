@@ -52,7 +52,6 @@ fn a_bn254_member_is_admitted_against_bn254_requirements() {
         Ok(build_admit_pairing_composition_success_return(
             AdmitPairingCompositionSuccessReturnOverrides {
                 identifier: Some(PairingConcrete::Bn254Halo2curves),
-                ..Default::default()
             }
         ))
     );
@@ -97,7 +96,6 @@ fn a_bls12_381_member_is_admitted_against_bls12_381_requirements() {
         Ok(build_admit_pairing_composition_success_return(
             AdmitPairingCompositionSuccessReturnOverrides {
                 identifier: Some(PairingConcrete::Bls12381Arkworks),
-                ..Default::default()
             }
         ))
     );
@@ -279,7 +277,6 @@ fn the_mock_member_is_admitted_against_the_provisions_its_declaration_states() {
                 identifier: Some(PairingConcrete::Mock(
                     MockIPairingAdapterFailureMode::DecodeG1NotOnCurve,
                 )),
-                ..Default::default()
             }
         ))
     );

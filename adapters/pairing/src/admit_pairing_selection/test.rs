@@ -27,7 +27,6 @@ fn admit_returns_the_bn254_arkworks_selection_for_an_empty_document() {
     let deps = build_admit_pairing_selection_deps(Default::default());
     let params = build_admit_pairing_selection_params(AdmitPairingSelectionParamsOverrides {
         identifier: Some(PairingConcrete::Bn254Arkworks),
-        ..Default::default()
     });
     let document = Value::Object(Map::new());
 
@@ -40,7 +39,6 @@ fn admit_returns_the_bn254_arkworks_selection_for_an_empty_document() {
         Ok(build_admit_pairing_selection_success_return(
             AdmitPairingSelectionSuccessReturnOverrides {
                 selection: Some(PairingConcrete::Bn254Arkworks),
-                ..Default::default()
             }
         ))
     );
@@ -64,7 +62,6 @@ fn admit_returns_the_bn254_halo2curves_selection_for_an_empty_document() {
     let deps = build_admit_pairing_selection_deps(Default::default());
     let params = build_admit_pairing_selection_params(AdmitPairingSelectionParamsOverrides {
         identifier: Some(PairingConcrete::Bn254Halo2curves),
-        ..Default::default()
     });
     let document = Value::Object(Map::new());
 
@@ -77,7 +74,6 @@ fn admit_returns_the_bn254_halo2curves_selection_for_an_empty_document() {
         Ok(build_admit_pairing_selection_success_return(
             AdmitPairingSelectionSuccessReturnOverrides {
                 selection: Some(PairingConcrete::Bn254Halo2curves),
-                ..Default::default()
             }
         ))
     );
@@ -101,7 +97,6 @@ fn admit_returns_the_bls12_381_arkworks_selection_for_an_empty_document() {
     let deps = build_admit_pairing_selection_deps(Default::default());
     let params = build_admit_pairing_selection_params(AdmitPairingSelectionParamsOverrides {
         identifier: Some(PairingConcrete::Bls12381Arkworks),
-        ..Default::default()
     });
     let document = Value::Object(Map::new());
 
@@ -114,7 +109,6 @@ fn admit_returns_the_bls12_381_arkworks_selection_for_an_empty_document() {
         Ok(build_admit_pairing_selection_success_return(
             AdmitPairingSelectionSuccessReturnOverrides {
                 selection: Some(PairingConcrete::Bls12381Arkworks),
-                ..Default::default()
             }
         ))
     );
@@ -138,7 +132,6 @@ fn admit_returns_the_bls12_381_halo2curves_selection_for_an_empty_document() {
     let deps = build_admit_pairing_selection_deps(Default::default());
     let params = build_admit_pairing_selection_params(AdmitPairingSelectionParamsOverrides {
         identifier: Some(PairingConcrete::Bls12381Halo2curves),
-        ..Default::default()
     });
     let document = Value::Object(Map::new());
 
@@ -151,7 +144,6 @@ fn admit_returns_the_bls12_381_halo2curves_selection_for_an_empty_document() {
         Ok(build_admit_pairing_selection_success_return(
             AdmitPairingSelectionSuccessReturnOverrides {
                 selection: Some(PairingConcrete::Bls12381Halo2curves),
-                ..Default::default()
             }
         ))
     );
@@ -174,7 +166,6 @@ fn admit_returns_the_selection_for_a_null_document() {
     let deps = build_admit_pairing_selection_deps(Default::default());
     let params = build_admit_pairing_selection_params(AdmitPairingSelectionParamsOverrides {
         identifier: Some(PairingConcrete::Bls12381Arkworks),
-        ..Default::default()
     });
     let document = Value::Null;
 
@@ -187,7 +178,6 @@ fn admit_returns_the_selection_for_a_null_document() {
         Ok(build_admit_pairing_selection_success_return(
             AdmitPairingSelectionSuccessReturnOverrides {
                 selection: Some(PairingConcrete::Bls12381Arkworks),
-                ..Default::default()
             }
         ))
     );
@@ -213,7 +203,6 @@ fn admit_refuses_an_object_that_holds_an_entry() {
     let deps = build_admit_pairing_selection_deps(Default::default());
     let params = build_admit_pairing_selection_params(AdmitPairingSelectionParamsOverrides {
         identifier: Some(PairingConcrete::Bn254Arkworks),
-        ..Default::default()
     });
     let mut entries = Map::new();
     entries.insert("endpoint".to_string(), Value::Bool(true));
@@ -249,7 +238,6 @@ fn admit_refuses_a_boolean_document() {
     let deps = build_admit_pairing_selection_deps(Default::default());
     let params = build_admit_pairing_selection_params(AdmitPairingSelectionParamsOverrides {
         identifier: Some(PairingConcrete::Bn254Halo2curves),
-        ..Default::default()
     });
     let document = Value::Bool(false);
 
@@ -283,7 +271,6 @@ fn admit_refuses_a_number_document() {
     let deps = build_admit_pairing_selection_deps(Default::default());
     let params = build_admit_pairing_selection_params(AdmitPairingSelectionParamsOverrides {
         identifier: Some(PairingConcrete::Bls12381Arkworks),
-        ..Default::default()
     });
     let document = Value::Number(0.into());
 
@@ -318,7 +305,6 @@ fn admit_refuses_a_string_document() {
     let deps = build_admit_pairing_selection_deps(Default::default());
     let params = build_admit_pairing_selection_params(AdmitPairingSelectionParamsOverrides {
         identifier: Some(PairingConcrete::Bls12381Halo2curves),
-        ..Default::default()
     });
     let document = Value::String(String::new());
 
@@ -353,7 +339,6 @@ fn admit_refuses_an_array_document() {
     let deps = build_admit_pairing_selection_deps(Default::default());
     let params = build_admit_pairing_selection_params(AdmitPairingSelectionParamsOverrides {
         identifier: Some(PairingConcrete::Bn254Arkworks),
-        ..Default::default()
     });
     let document = Value::Array(Vec::new());
 
@@ -390,7 +375,6 @@ fn admit_returns_the_mock_selection_carrying_its_failure_mode() {
         identifier: Some(PairingConcrete::Mock(
             MockIPairingAdapterFailureMode::DecodeG1NotOnCurve,
         )),
-        ..Default::default()
     });
     let document = Value::Object(Map::new());
 
@@ -405,7 +389,6 @@ fn admit_returns_the_mock_selection_carrying_its_failure_mode() {
                 selection: Some(PairingConcrete::Mock(
                     MockIPairingAdapterFailureMode::DecodeG1NotOnCurve,
                 )),
-                ..Default::default()
             }
         ))
     );
@@ -432,7 +415,6 @@ fn admit_refuses_a_setting_for_the_mock_member_naming_it() {
         identifier: Some(PairingConcrete::Mock(
             MockIPairingAdapterFailureMode::DecodeG2NotOnCurve,
         )),
-        ..Default::default()
     });
     let mut entries = Map::new();
     entries.insert("endpoint".to_string(), Value::Bool(true));

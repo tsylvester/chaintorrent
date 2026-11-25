@@ -32,13 +32,11 @@ use random::{
 fn lookup_random_declaration_returns_the_operating_system_source_its_own_declaration_for_an_outside_caller()
  {
     // Arrange
-    let deps =
-        build_lookup_random_declaration_deps(LookupRandomDeclarationDepsOverrides::default());
+    let deps = build_lookup_random_declaration_deps(LookupRandomDeclarationDepsOverrides);
     let params = build_lookup_random_declaration_params(LookupRandomDeclarationParamsOverrides {
         identifier: Some(RandomSourceKind::OperatingSystem),
     });
-    let payload =
-        build_lookup_random_declaration_payload(LookupRandomDeclarationPayloadOverrides::default());
+    let payload = build_lookup_random_declaration_payload(LookupRandomDeclarationPayloadOverrides);
 
     // Act
     let result = lookup_random_declaration(&deps, params, payload);
@@ -84,8 +82,7 @@ fn lookup_random_declaration_returns_the_operating_system_source_its_own_declara
 fn lookup_random_declaration_returns_the_mock_source_a_declaration_naming_its_identifier_for_an_outside_caller()
  {
     // Arrange
-    let deps =
-        build_lookup_random_declaration_deps(LookupRandomDeclarationDepsOverrides::default());
+    let deps = build_lookup_random_declaration_deps(LookupRandomDeclarationDepsOverrides);
     let mock_identifier =
         RandomSourceKind::Mock(MockIRandomSourceAdapterFailureMode::FillBytesRefused);
     let mock_params =
@@ -101,12 +98,12 @@ fn lookup_random_declaration_returns_the_mock_source_a_declaration_naming_its_id
     let mock_result = lookup_random_declaration(
         &deps,
         mock_params,
-        build_lookup_random_declaration_payload(LookupRandomDeclarationPayloadOverrides::default()),
+        build_lookup_random_declaration_payload(LookupRandomDeclarationPayloadOverrides),
     );
     let declared_result = lookup_random_declaration(
         &deps,
         declared_params,
-        build_lookup_random_declaration_payload(LookupRandomDeclarationPayloadOverrides::default()),
+        build_lookup_random_declaration_payload(LookupRandomDeclarationPayloadOverrides),
     );
 
     // Assert

@@ -3,114 +3,77 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
-   Compiling hashing v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\hashing)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.45s
-     Running unittests src\lib.rs (target\debug\deps\hashing-37477b9205692235.exe)
+   Compiling kdf v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\kdf)
+   Compiling encoding v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\encoding)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.21s
+     Running unittests src\lib.rs (target\debug\deps\kdf-f1eb6c22299558ac.exe)
 
-running 71 tests
-test admit_hashing_composition::test::admit_returns_ok_when_the_required_identifier_equals_the_declared_identifier ... ok
-test admit_hashing_composition::test::admit_returns_ok_for_the_mock_member_naming_the_required_identifier ... ok
-test admit_hashing_selection::test::admit_refuses_a_document_that_is_not_an_object ... ok
-test admit_hashing_selection::test::admit_refuses_a_supplied_setting_naming_the_mock_member ... ok
-test admit_hashing_selection::test::admit_refuses_a_supplied_setting_naming_the_blake3_bao_member ... ok
-test admit_hashing_selection::test::admit_returns_the_blake3_bao_selection_for_an_empty_document ... ok
-test blake3_bao::test::challenge_maps_uniform_bytes_to_a_chunk_index ... ok
-test admit_hashing_selection::test::admit_returns_the_blake3_bao_selection_for_an_absent_document ... ok
-test blake3_bao::integration_test::commit_under_a_key_leaves_the_borrowed_key_intact ... ok
-test blake3_bao::integration_test::committed_outboard_verifies_its_content ... ok
-test blake3_bao::test::challenge_of_empty_content_returns_index_zero ... ok
-test blake3_bao::integration_test::a_challenge_response_verifies_against_the_root ... ok
-test blake3_bao::integration_test::keyed_paths_verify_only_under_their_key ... ok
-test blake3_bao::integration_test::extracted_paths_verify_every_chunk ... ok
-test blake3_bao::test::commit_of_0_bytes_returns_the_bao_hash_test_vector ... ok
-test admit_hashing_selection::test::admit_returns_the_mock_selection_naming_the_selected_failure_mode ... ok
-test blake3_bao::test::commit_of_1025_bytes_returns_the_bao_outboard_test_vector ... ok
-test blake3_bao::test::commit_of_1023_bytes_returns_the_bao_hash_test_vector ... ok
-test blake3_bao::test::commit_of_3072_bytes_returns_the_bao_hash_test_vector ... ok
-test blake3_bao::test::commit_of_3073_bytes_returns_the_bao_outboard_test_vector ... ok
-test blake3_bao::test::commit_of_1_bytes_returns_the_bao_hash_test_vector ... ok
-test blake3_bao::test::commit_of_2048_bytes_returns_the_bao_hash_test_vector ... ok
-test blake3_bao::test::commit_of_1024_bytes_returns_the_bao_hash_test_vector ... ok
-test blake3_bao::test::commit_of_13312_bytes_returns_the_bao_hash_test_vector ... ok
-test blake3_bao::test::commit_of_1025_bytes_returns_the_bao_hash_test_vector ... ok
-test blake3_bao::test::commit_of_2049_bytes_returns_the_bao_hash_test_vector ... ok
-test blake3_bao::test::declaration_returns_the_blake3_bao_declaration ... ok
-test blake3_bao::test::commit_of_3073_bytes_returns_the_bao_hash_test_vector ... ok
-test blake3_bao::test::commit_under_a_key_of_the_wrong_length_returns_key_length_mismatch ... ok
-test blake3_bao::test::extract_path_returns_chunk_index_out_of_range ... ok
-test blake3_bao::test::extract_path_returns_outboard_length_mismatch ... ok
-test blake3_bao::test::commit_under_a_key_returns_the_keyed_root_and_outboard ... ok
-test blake3_bao::test::extract_path_returns_outboard_truncated ... ok
-test blake3_bao::test::respond_returns_chunk_index_out_of_range ... ok
-test blake3_bao::test::respond_returns_outboard_truncated ... ok
-test blake3_bao::test::extract_path_returns_the_siblings_of_the_chunk ... ok
-test blake3_bao::test::the_declared_set_and_spellings_are_total_and_real ... ok
-test blake3_bao::test::respond_returns_content_length_mismatch ... ok
-test blake3_bao::test::respond_returns_the_chunk_and_its_path ... ok
-test blake3_bao::test::try_new_returns_the_adapter ... ok
-test blake3_bao::test::verify_accepts_content_matching_its_root_and_outboard ... ok
-test blake3_bao::test::verify_chunk_accepts_a_chunk_with_its_path ... ok
-test blake3_bao::test::verify_chunk_accepts_a_keyed_chunk_with_its_keyed_path ... ok
-test blake3_bao::test::verify_chunk_returns_chunk_index_out_of_range ... ok
-test blake3_bao::test::verify_chunk_returns_chunk_length_mismatch ... ok
-test blake3_bao::test::verify_chunk_returns_key_length_mismatch ... ok
-test blake3_bao::test::verify_chunk_returns_path_length_mismatch ... ok
-test blake3_bao::test::verify_chunk_returns_root_mismatch_for_a_changed_chunk ... ok
-test blake3_bao::test::verify_chunk_returns_root_mismatch_for_a_changed_sibling ... ok
-test blake3_bao::test::verify_returns_chunk_mismatch_for_the_first_changed_chunk ... ok
-test blake3_bao::test::verify_returns_chunk_mismatch_when_two_chunks_are_swapped ... ok
-test blake3_bao::test::verify_returns_content_length_mismatch ... ok
-test blake3_bao::test::verify_returns_key_length_mismatch ... ok
-test blake3_bao::test::verify_returns_outboard_length_mismatch ... ok
-test blake3_bao::test::verify_returns_outboard_truncated ... ok
-test blake3_bao::test::verify_returns_parent_mismatch_for_a_changed_parent_node ... ok
-test blake3_bao::test::verify_returns_root_mismatch_for_another_root ... ok
-test factory::integration_test::every_concrete_returns_its_own_error_when_a_content_length_cannot_be_represented ... ok
-test factory::integration_test::every_concrete_returns_its_own_error_when_an_offset_cannot_be_represented ... ok
-test factory::integration_test::every_concrete_is_constructed_under_the_identifier_it_declares ... ok
-test factory::integration_test::every_concrete_answers_a_challenge_with_a_response_that_verifies ... ok
-test factory::integration_test::every_concrete_leaves_the_borrowed_key_intact ... ok
-test factory::test::create_commitment_constructs_the_selected_concrete_and_returns_the_consumers_output ... ok
-test factory::test::create_commitment_returns_the_composition_refusal_unchanged ... ok
-test factory::test::root_try_new_holds_nonzero_bytes ... ok
-test factory::test::root_try_new_refuses_all_zero_bytes ... ok
-test factory::integration_test::every_concrete_verifies_a_keyed_path_only_under_its_key ... ok
-test lookup_hashing_declaration::test::lookup_returns_the_blake3_bao_declaration ... ok
-test lookup_hashing_declaration::test::lookup_returns_the_mock_declaration_naming_the_selected_failure_mode ... ok
-test factory::integration_test::every_concrete_verifies_the_content_it_committed ... ok
-test factory::integration_test::every_concrete_verifies_every_chunk_with_its_extracted_path ... ok
+running 29 tests
+test admit_kdf_selection::test::admit_kdf_selection_refuses_a_non_object_document_as_a_supplied_setting ... ok
+test admit_kdf_selection::test::admit_kdf_selection_returns_the_blake3_keyed_selection_for_an_empty_settings_table ... ok
+test admit_kdf_selection::test::admit_kdf_selection_returns_the_blake3_keyed_selection_for_an_absent_document ... ok
+test admit_kdf_selection::test::admit_kdf_selection_refuses_a_supplied_setting_naming_the_selected_mock_member ... ok
+test admit_kdf_selection::test::admit_kdf_selection_refuses_a_supplied_setting_naming_the_blake3_keyed_member ... ok
+test admit_kdf_selection::test::admit_kdf_selection_returns_the_selected_mock_selection_carrying_its_failure_mode ... ok
+test blake3_keyed::test::declaration_returns_the_blake3_keyed_declaration ... ok
+test blake3_keyed::integration_test::derive_key_leaves_the_borrowed_key_material_intact ... ok
+test blake3_keyed::integration_test::derive_key_returns_a_key_that_outlives_the_key_material ... ok
+test blake3_keyed::test::derive_key_for_identity_bases_matches_the_expected_derived_key ... ok
+test blake3_keyed::test::derive_key_for_asset_root_matches_the_expected_derived_key ... ok
+test blake3_keyed::test::derive_key_for_capsule_randomness_matches_the_expected_derived_key ... ok
+test blake3_keyed::test::derive_key_for_master_scalar_matches_the_expected_derived_key ... ok
+test blake3_keyed::test::derive_key_for_publisher_root_matches_the_expected_derived_key ... ok
+test blake3_keyed::test::derive_key_for_wrapping_key_matches_the_expected_derived_key ... ok
+test blake3_keyed::test::derive_key_for_plaintext_root_key_matches_the_expected_derived_key ... ok
+test blake3_keyed::test::derive_key_of_zero_bytes_returns_an_empty_key ... ok
+test blake3_keyed::test::derive_key_for_piece_group_key_matches_the_expected_derived_key ... ok
+test blake3_keyed::test::the_declared_sets_and_spellings_are_total_and_real ... ok
+test blake3_keyed::test::derive_key_of_the_prefix_length_is_the_prefix_of_the_reference_length_output ... ok
+test blake3_keyed::test::try_new_returns_the_adapter ... ok
+test factory::integration_test::every_concrete_derives_a_key_of_the_requested_length ... ok
+test factory::test::create_key_derivation_constructs_the_selected_concrete_and_returns_the_consumers_output ... ok
+test lookup_kdf_declaration::test::lookup_kdf_declaration_carries_the_selected_failure_mode_for_the_mock_member ... ok
+test lookup_kdf_declaration::test::lookup_kdf_declaration_returns_the_blake3_keyed_declaration_for_the_real_member ... ok
+test factory::integration_test::every_concrete_returns_its_own_error_when_the_key_material_length_cannot_be_framed ... ok
+test factory::integration_test::every_concrete_leaves_the_borrowed_key_material_intact ... ok
+test factory::integration_test::every_concrete_returns_a_key_that_outlives_the_key_material ... ok
+test lookup_kdf_declaration::test::lookup_kdf_declaration_returns_the_mock_declaration_for_the_no_failure_mock_member ... ok
 
-test result: ok. 71 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests\admit_hashing_composition_integration_test.rs (target\debug\deps\admit_hashing_composition_integration_test-a5f025cbafdf2735.exe)
+     Running tests\admit_kdf_selection_integration_test.rs (target\debug\deps\admit_kdf_selection_integration_test-6e6d9b65f63a1285.exe)
 
-running 1 test
-test every_declared_member_declares_itself_through_the_public_surface ... ok
+running 6 tests
+test admit_kdf_selection_carries_the_selected_mock_member_through_the_crate_surface ... ok
+test admit_kdf_selection_refuses_a_non_object_document_as_a_supplied_setting_through_the_crate_surface ... ok
+test admit_kdf_selection_refuses_a_supplied_setting_naming_each_declared_member_through_the_crate_surface ... ok
+test admit_kdf_selection_refuses_a_supplied_setting_naming_the_selected_mock_member_through_the_crate_surface ... ok
+test admit_kdf_selection_returns_the_selection_naming_each_declared_member_through_the_crate_surface ... ok
+test admit_kdf_selection_returns_the_selection_for_an_absent_document_through_the_crate_surface ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests\admit_hashing_selection_integration_test.rs (target\debug\deps\admit_hashing_selection_integration_test-bab1155f19e337b4.exe)
+     Running tests\factory_integration_test.rs (target\debug\deps\factory_integration_test-78d4288c1b79d31d.exe)
 
-running 1 test
-test every_declared_member_is_selected_through_the_public_surface ... ok
+running 6 tests
+test every_concrete_returns_its_own_error_when_the_key_material_length_cannot_be_framed ... ok
+test every_declared_concrete_providing_the_blake3_keyed_identifier_derives_the_wrapping_key_over_the_reference_inputs ... ok
+test every_concrete_leaves_the_borrowed_key_material_intact ... ok
+test every_concrete_returns_a_key_that_outlives_the_key_material ... ok
+test every_concrete_derives_a_key_of_the_requested_length ... ok
+test every_declared_concrete_providing_the_blake3_keyed_identifier_derives_the_wrapping_key_over_the_context_the_encoding_factory_encodes ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests\factory_integration_test.rs (target\debug\deps\factory_integration_test-9087125e677a8fd5.exe)
+     Running tests\lookup_kdf_declaration_integration_test.rs (target\debug\deps\lookup_kdf_declaration_integration_test-77dfd78242c778da.exe)
 
-running 1 test
-test every_concrete_declaring_the_blake3_bao_identifier_commits_the_reference_content_to_the_bao_hash_and_outboard ... ok
+running 2 tests
+test lookup_kdf_declaration_carries_the_selected_mock_member_through_the_crate_surface ... ok
+test lookup_kdf_declaration_is_reachable_through_the_crate_surface_without_a_constructed_member ... ok
 
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests\lookup_hashing_declaration_integration_test.rs (target\debug\deps\lookup_hashing_declaration_integration_test-8de43fe41eaf34a0.exe)
-
-running 1 test
-test every_declared_member_declares_itself_through_the_public_surface ... ok
-
-test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-
-   Doc-tests hashing
+   Doc-tests kdf
 
 running 0 tests
 

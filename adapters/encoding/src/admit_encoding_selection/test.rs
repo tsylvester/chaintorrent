@@ -30,7 +30,7 @@ fn admission_returns_the_abi_selection_for_an_absent_document() {
     let params = build_admit_encoding_selection_params(AdmitEncodingSelectionParamsOverrides {
         concrete: Some(build_encoding_concrete(
             EncodingConcrete::Abi,
-            EncodingConcreteOverrides::default(),
+            EncodingConcreteOverrides,
         )),
     });
     let payload = Value::Null;
@@ -65,7 +65,7 @@ fn admission_returns_the_abi_selection_for_an_empty_document() {
     let params = build_admit_encoding_selection_params(AdmitEncodingSelectionParamsOverrides {
         concrete: Some(build_encoding_concrete(
             EncodingConcrete::Abi,
-            EncodingConcreteOverrides::default(),
+            EncodingConcreteOverrides,
         )),
     });
     let payload = serde_json::json!({});
@@ -100,7 +100,7 @@ fn admission_refuses_a_setting_for_the_abi_member() {
     let params = build_admit_encoding_selection_params(AdmitEncodingSelectionParamsOverrides {
         concrete: Some(build_encoding_concrete(
             EncodingConcrete::Abi,
-            EncodingConcreteOverrides::default(),
+            EncodingConcreteOverrides,
         )),
     });
     let payload = serde_json::json!({ "limit": 1 });
@@ -135,7 +135,7 @@ fn admission_refuses_a_document_that_is_not_an_object_for_the_abi_member() {
     let params = build_admit_encoding_selection_params(AdmitEncodingSelectionParamsOverrides {
         concrete: Some(build_encoding_concrete(
             EncodingConcrete::Abi,
-            EncodingConcreteOverrides::default(),
+            EncodingConcreteOverrides,
         )),
     });
     let payload = serde_json::json!("limit");

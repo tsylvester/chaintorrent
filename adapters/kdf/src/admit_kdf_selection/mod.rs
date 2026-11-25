@@ -8,55 +8,40 @@ mod test;
 use crate::factory::provides::KdfConcrete;
 use interface::{
     AdmitKdfSelectionDeps, AdmitKdfSelectionErrorReturn, AdmitKdfSelectionParams,
-    AdmitKdfSelectionPayload, AdmitKdfSelectionPayloadError, AdmitKdfSelectionReturn,
-    AdmitKdfSelectionSuccessReturn,
+    AdmitKdfSelectionReturn, AdmitKdfSelectionSuccessReturn,
 };
-use serde_json::{Map, Value};
-
-impl TryFrom<Value> for AdmitKdfSelectionPayload {
-    type Error = AdmitKdfSelectionPayloadError;
-
-    fn try_from(payload: Value) -> Result<AdmitKdfSelectionPayload, AdmitKdfSelectionPayloadError> {
-        match payload {
-            Value::Null => Ok(AdmitKdfSelectionPayload {
-                settings: Map::new(),
-            }),
-            Value::Object(table) => Ok(AdmitKdfSelectionPayload { settings: table }),
-            _ => Err(AdmitKdfSelectionPayloadError::NotATable),
-        }
-    }
-}
+use serde_json::Value;
 
 pub fn admit_kdf_selection(
     _deps: &AdmitKdfSelectionDeps,
     params: AdmitKdfSelectionParams,
     payload: Value,
 ) -> AdmitKdfSelectionReturn {
-    let payload = match AdmitKdfSelectionPayload::try_from(payload) {
-        Ok(payload) => payload,
-        Err(error) => return Err(AdmitKdfSelectionErrorReturn::Document(error)),
-    };
+    let supplies_setting = !(payload.is_null()
+        || payload
+            .as_object()
+            .is_some_and(|document| document.is_empty()));
     match params.concrete {
         KdfConcrete::Blake3Keyed => {
-            if payload.settings.is_empty() {
-                Ok(AdmitKdfSelectionSuccessReturn {
-                    selection: KdfConcrete::Blake3Keyed,
-                })
-            } else {
+            if supplies_setting {
                 Err(AdmitKdfSelectionErrorReturn::SettingSupplied {
                     concrete: KdfConcrete::Blake3Keyed,
+                })
+            } else {
+                Ok(AdmitKdfSelectionSuccessReturn {
+                    selection: KdfConcrete::Blake3Keyed,
                 })
             }
         }
         #[cfg(any(test, feature = "mocks"))]
         KdfConcrete::Mock(failure_mode) => {
-            if payload.settings.is_empty() {
-                Ok(AdmitKdfSelectionSuccessReturn {
-                    selection: KdfConcrete::Mock(failure_mode),
-                })
-            } else {
+            if supplies_setting {
                 Err(AdmitKdfSelectionErrorReturn::SettingSupplied {
                     concrete: KdfConcrete::Mock(failure_mode),
+                })
+            } else {
+                Ok(AdmitKdfSelectionSuccessReturn {
+                    selection: KdfConcrete::Mock(failure_mode),
                 })
             }
         }

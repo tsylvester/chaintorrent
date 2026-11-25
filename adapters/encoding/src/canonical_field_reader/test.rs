@@ -792,7 +792,7 @@ fn encoding_type_names_holds_the_eight_declared_values() {
 #[test]
 fn build_encoding_concrete_returns_the_real_selection_without_configuration() {
     // Arrange
-    let overrides = EncodingConcreteOverrides::default();
+    let overrides = EncodingConcreteOverrides;
 
     // Act
     let selected = build_encoding_concrete(EncodingConcrete::Abi, overrides);

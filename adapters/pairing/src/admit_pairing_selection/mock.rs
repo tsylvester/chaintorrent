@@ -41,10 +41,7 @@ pub fn build_admit_pairing_selection_success_return(
 ) -> AdmitPairingSelectionSuccessReturn {
     AdmitPairingSelectionSuccessReturn {
         selection: overrides.selection.unwrap_or_else(|| {
-            build_pairing_concrete(
-                PairingConcrete::Bn254Arkworks,
-                PairingConcreteOverrides::default(),
-            )
+            build_pairing_concrete(PairingConcrete::Bn254Arkworks, PairingConcreteOverrides)
         }),
     }
 }

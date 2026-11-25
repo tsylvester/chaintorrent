@@ -135,10 +135,8 @@ fn no_value_identifier_declares_a_mock_only_variant() {
 
 #[test]
 fn bls12_381_arkworks_declared_selection_builds_without_configuration() {
-    let concrete = build_pairing_concrete(
-        PairingConcrete::Bls12381Arkworks,
-        PairingConcreteOverrides::default(),
-    );
+    let concrete =
+        build_pairing_concrete(PairingConcrete::Bls12381Arkworks, PairingConcreteOverrides);
     assert_eq!(concrete, PairingConcrete::Bls12381Arkworks);
 }
 

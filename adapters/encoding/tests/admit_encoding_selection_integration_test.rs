@@ -13,7 +13,7 @@ use encoding::{
 ///   setting → `Ok` of the selection naming that member.
 /// Arrange: for each member of `ENCODING_CONCRETES`, the params from
 ///   `build_admit_encoding_selection_params` overriding `concrete` with
-///   `build_encoding_concrete(member, EncodingConcreteOverrides::default())`;
+///   `build_encoding_concrete(member, EncodingConcreteOverrides)`;
 ///   the deps from their builder; the payload `json!({})`; the declared
 ///   members are the input variation.
 /// Act: `admit_encoding_selection(&deps, params, payload)` for each member,
@@ -32,10 +32,7 @@ fn admission_returns_each_declared_member_as_its_selection() {
         // Arrange
         let deps = build_admit_encoding_selection_deps(Default::default());
         let params = build_admit_encoding_selection_params(AdmitEncodingSelectionParamsOverrides {
-            concrete: Some(build_encoding_concrete(
-                *member,
-                EncodingConcreteOverrides::default(),
-            )),
+            concrete: Some(build_encoding_concrete(*member, EncodingConcreteOverrides)),
         });
         let payload = serde_json::json!({});
 
@@ -74,10 +71,7 @@ fn admission_refuses_a_supplied_setting_for_each_declared_member() {
         // Arrange
         let deps = build_admit_encoding_selection_deps(Default::default());
         let params = build_admit_encoding_selection_params(AdmitEncodingSelectionParamsOverrides {
-            concrete: Some(build_encoding_concrete(
-                *member,
-                EncodingConcreteOverrides::default(),
-            )),
+            concrete: Some(build_encoding_concrete(*member, EncodingConcreteOverrides)),
         });
         let payload = serde_json::json!({ "limit": 1 });
 

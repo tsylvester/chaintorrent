@@ -27,7 +27,7 @@ pub fn build_admit_encoding_selection_params(
 ) -> AdmitEncodingSelectionParams {
     AdmitEncodingSelectionParams {
         concrete: overrides.concrete.unwrap_or_else(|| {
-            build_encoding_concrete(EncodingConcrete::Abi, EncodingConcreteOverrides::default())
+            build_encoding_concrete(EncodingConcrete::Abi, EncodingConcreteOverrides)
         }),
     }
 }
@@ -42,7 +42,7 @@ pub fn build_admit_encoding_selection_success_return(
 ) -> AdmitEncodingSelectionSuccessReturn {
     AdmitEncodingSelectionSuccessReturn {
         selection: overrides.selection.unwrap_or_else(|| {
-            build_encoding_concrete(EncodingConcrete::Abi, EncodingConcreteOverrides::default())
+            build_encoding_concrete(EncodingConcrete::Abi, EncodingConcreteOverrides)
         }),
     }
 }

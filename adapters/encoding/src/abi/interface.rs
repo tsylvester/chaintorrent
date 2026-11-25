@@ -1,6 +1,6 @@
 use crate::factory::provides::{
     CanonicalFieldKind, ENCODING_INTERFACE_VERSION, EncodingConcrete, EncodingDeclaration,
-    EncodingIdentifier, TypeNameFn,
+    EncodingIdentifier,
 };
 use core::convert::Infallible;
 
@@ -12,7 +12,7 @@ impl AbiEncoding {
         identifier: EncodingIdentifier::EthereumAbiV1,
         adapter_version: 1,
         interface_version: ENCODING_INTERFACE_VERSION,
-        type_name: AbiEncoding::type_name as TypeNameFn,
+        type_name: AbiEncoding::type_name,
     };
 }
 

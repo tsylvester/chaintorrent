@@ -29,14 +29,12 @@ fn admission_returns_each_declared_member_for_a_document_without_a_setting() {
         let deps = build_admit_pairing_selection_deps(Default::default());
         let params = build_admit_pairing_selection_params(AdmitPairingSelectionParamsOverrides {
             identifier: Some(*member),
-            ..Default::default()
         });
         let document = Value::Object(Map::new());
         let expected: AdmitPairingSelectionSuccessReturn =
             build_admit_pairing_selection_success_return(
                 AdmitPairingSelectionSuccessReturnOverrides {
                     selection: Some(*member),
-                    ..Default::default()
                 },
             );
 
@@ -69,7 +67,6 @@ fn admission_refuses_a_setting_for_each_declared_member() {
         let deps = build_admit_pairing_selection_deps(Default::default());
         let params = build_admit_pairing_selection_params(AdmitPairingSelectionParamsOverrides {
             identifier: Some(*member),
-            ..Default::default()
         });
         let mut entries = Map::new();
         entries.insert("endpoint".to_string(), Value::Bool(true));
@@ -115,7 +112,6 @@ fn mock_admission_names_the_identifier_admitted() {
         identifier: Some(PairingConcrete::Mock(
             MockIPairingAdapterFailureMode::DecodeG1NotOnCurve,
         )),
-        ..Default::default()
     });
     let document = Value::Object(Map::new());
     let expected: AdmitPairingSelectionSuccessReturn =
@@ -123,7 +119,6 @@ fn mock_admission_names_the_identifier_admitted() {
             selection: Some(PairingConcrete::Mock(
                 MockIPairingAdapterFailureMode::DecodeG1NotOnCurve,
             )),
-            ..Default::default()
         });
 
     // Act
@@ -137,7 +132,6 @@ fn mock_admission_names_the_identifier_admitted() {
         identifier: Some(PairingConcrete::Mock(
             MockIPairingAdapterFailureMode::DecodeG1NotOnCurve,
         )),
-        ..Default::default()
     });
     let mut entries = Map::new();
     entries.insert("endpoint".to_string(), Value::Bool(true));
@@ -175,14 +169,12 @@ fn admission_returns_each_declared_member_for_a_null_document() {
         let deps = build_admit_pairing_selection_deps(Default::default());
         let params = build_admit_pairing_selection_params(AdmitPairingSelectionParamsOverrides {
             identifier: Some(*member),
-            ..Default::default()
         });
         let document = Value::Null;
         let expected: AdmitPairingSelectionSuccessReturn =
             build_admit_pairing_selection_success_return(
                 AdmitPairingSelectionSuccessReturnOverrides {
                     selection: Some(*member),
-                    ..Default::default()
                 },
             );
 
@@ -226,7 +218,6 @@ fn admission_refuses_each_non_object_document_for_each_declared_member() {
             let params =
                 build_admit_pairing_selection_params(AdmitPairingSelectionParamsOverrides {
                     identifier: Some(*member),
-                    ..Default::default()
                 });
 
             // Act

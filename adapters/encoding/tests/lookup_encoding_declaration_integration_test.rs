@@ -14,7 +14,7 @@ use encoding::{
 ///   crate's public surface → `Ok` of that member's own declaration.
 /// Arrange: for each member of `ENCODING_CONCRETES`, the params from
 ///   `build_lookup_encoding_declaration_params` overriding `concrete` with
-///   `build_encoding_concrete(member, EncodingConcreteOverrides::default())`; the deps
+///   `build_encoding_concrete(member, EncodingConcreteOverrides)`; the deps
 ///   and payload from their builders; the declared members are the input variation.
 /// Act: `lookup_encoding_declaration(&deps, params, payload)` for each member, imported
 ///   from the crate root.
@@ -33,10 +33,7 @@ fn lookup_returns_each_declared_member_its_own_declaration() {
         let deps = build_lookup_encoding_declaration_deps(LookupEncodingDeclarationDepsOverrides);
         let params =
             build_lookup_encoding_declaration_params(LookupEncodingDeclarationParamsOverrides {
-                concrete: Some(build_encoding_concrete(
-                    *member,
-                    EncodingConcreteOverrides::default(),
-                )),
+                concrete: Some(build_encoding_concrete(*member, EncodingConcreteOverrides)),
             });
         let payload =
             build_lookup_encoding_declaration_payload(LookupEncodingDeclarationPayloadOverrides);

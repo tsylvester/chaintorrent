@@ -15,7 +15,7 @@ use std::collections::BTreeSet;
 fn cases() -> impl Iterator<Item = EncodingConcrete> {
     ENCODING_CONCRETES
         .iter()
-        .map(|member| build_encoding_concrete(*member, EncodingConcreteOverrides::default()))
+        .map(|member| build_encoding_concrete(*member, EncodingConcreteOverrides))
         .chain(core::iter::once(EncodingConcrete::Mock))
 }
 

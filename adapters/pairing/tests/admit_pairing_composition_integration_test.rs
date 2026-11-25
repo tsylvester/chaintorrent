@@ -53,7 +53,6 @@ fn admission_compares_the_provisions_of_the_member_named() {
             &build_lookup_pairing_declaration_deps(Default::default()),
             build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
                 concrete: Some(*member),
-                ..Default::default()
             }),
             build_lookup_pairing_declaration_payload(Default::default()),
         );
@@ -90,7 +89,6 @@ fn admission_compares_the_provisions_of_the_member_named() {
             Ok(build_admit_pairing_composition_success_return(
                 AdmitPairingCompositionSuccessReturnOverrides {
                     identifier: Some(*member),
-                    ..Default::default()
                 }
             ))
         );
@@ -171,7 +169,6 @@ fn admission_names_each_disagreeing_provision_for_each_declared_member() {
             &build_lookup_pairing_declaration_deps(Default::default()),
             build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
                 concrete: Some(*member),
-                ..Default::default()
             }),
             build_lookup_pairing_declaration_payload(Default::default()),
         );
@@ -182,7 +179,6 @@ fn admission_names_each_disagreeing_provision_for_each_declared_member() {
                 &build_lookup_pairing_declaration_deps(Default::default()),
                 build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
                     concrete: Some(*other),
-                    ..Default::default()
                 }),
                 build_lookup_pairing_declaration_payload(Default::default()),
             );
@@ -348,7 +344,6 @@ fn admission_names_every_disagreeing_provision_in_order_for_each_declared_member
             &build_lookup_pairing_declaration_deps(Default::default()),
             build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
                 concrete: Some(*member),
-                ..Default::default()
             }),
             build_lookup_pairing_declaration_payload(Default::default()),
         );
@@ -359,7 +354,6 @@ fn admission_names_every_disagreeing_provision_in_order_for_each_declared_member
                 &build_lookup_pairing_declaration_deps(Default::default()),
                 build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
                     concrete: Some(*other),
-                    ..Default::default()
                 }),
                 build_lookup_pairing_declaration_payload(Default::default()),
             );
@@ -475,7 +469,6 @@ fn mock_admission_compares_the_mock_declaration() {
                 identifier: Some(PairingConcrete::Mock(
                     MockIPairingAdapterFailureMode::DecodeG1NotOnCurve,
                 )),
-                ..Default::default()
             }
         ))
     );

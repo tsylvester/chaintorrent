@@ -38,7 +38,7 @@ fn reference_vector() -> Vec<u8> {
 fn cases() -> impl Iterator<Item = EncodingConcrete> {
     ENCODING_CONCRETES
         .iter()
-        .map(|member| build_encoding_concrete(*member, EncodingConcreteOverrides::default()))
+        .map(|member| build_encoding_concrete(*member, EncodingConcreteOverrides))
 }
 
 fn ethereum_abi_cases() -> impl Iterator<Item = EncodingConcrete> {

@@ -142,7 +142,7 @@ fn no_value_identifier_declares_a_mock_only_variant() {
 fn bls12_381_halo2curves_declared_selection_builds_without_configuration() {
     let concrete = build_pairing_concrete(
         PairingConcrete::Bls12381Halo2curves,
-        PairingConcreteOverrides::default(),
+        PairingConcreteOverrides,
     );
     assert_eq!(concrete, PairingConcrete::Bls12381Halo2curves);
 }

@@ -27,7 +27,6 @@ fn declaration_names_the_member_looked_up() {
         let params =
             build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
                 concrete: Some(*concrete),
-                ..Default::default()
             });
         let payload = build_lookup_pairing_declaration_payload(Default::default());
 
@@ -63,7 +62,6 @@ fn mock_declaration_names_the_identifier_looked_up() {
         concrete: Some(PairingConcrete::Mock(
             MockIPairingAdapterFailureMode::DecodeG1NotOnCurve,
         )),
-        ..Default::default()
     });
     let payload = build_lookup_pairing_declaration_payload(Default::default());
 

@@ -6,9 +6,7 @@ use super::interface::{
 };
 use crate::factory::provides::{
     KdfConcrete, KdfDeclaration, build_kdf_concrete, build_kdf_declaration,
-    invalidate_kdf_declaration,
 };
-use serde_json::{Map, Value};
 
 #[derive(Default)]
 pub struct LookupKdfDeclarationDepsOverrides;
@@ -35,23 +33,6 @@ pub fn build_lookup_kdf_declaration_params(
 }
 
 #[derive(Default)]
-pub struct LookupKdfDeclarationParamsCorruptions {
-    pub concrete: Option<Value>,
-}
-
-pub fn invalidate_lookup_kdf_declaration_params(
-    corruptions: LookupKdfDeclarationParamsCorruptions,
-) -> Value {
-    let params = build_lookup_kdf_declaration_params(Default::default());
-    let mut fields = Map::new();
-    fields.insert("concrete".to_string(), Value::from(params.concrete.name()));
-    if let Some(concrete) = corruptions.concrete {
-        fields.insert("concrete".to_string(), concrete);
-    }
-    Value::Object(fields)
-}
-
-#[derive(Default)]
 pub struct LookupKdfDeclarationPayloadOverrides;
 
 pub fn build_lookup_kdf_declaration_payload(
@@ -73,25 +54,6 @@ pub fn build_lookup_kdf_declaration_success_return(
             .declaration
             .unwrap_or_else(|| build_kdf_declaration(Default::default())),
     }
-}
-
-#[derive(Default)]
-pub struct LookupKdfDeclarationSuccessReturnCorruptions {
-    pub declaration: Option<Value>,
-}
-
-pub fn invalidate_lookup_kdf_declaration_success_return(
-    corruptions: LookupKdfDeclarationSuccessReturnCorruptions,
-) -> Value {
-    let mut fields = Map::new();
-    fields.insert(
-        "declaration".to_string(),
-        invalidate_kdf_declaration(Default::default()),
-    );
-    if let Some(declaration) = corruptions.declaration {
-        fields.insert("declaration".to_string(), declaration);
-    }
-    Value::Object(fields)
 }
 
 pub fn mock_lookup_kdf_declaration(
