@@ -2,19 +2,11 @@
 
 Branch contract for the `abi` module of the `encoding` crate: `AbiEncoding`, the encoding family's first concrete, the adapter over `alloy`'s dynamic ABI implementing `IEncoderAdapter` and `IDecoderAdapter`. Each branch states condition, decision, dependency call, and the exact return outcome.
 
-## `IEncoderAdapter::type_name(params: TypeNameParams, payload: CanonicalFieldKind) -> TypeNameReturn`
+## `AbiEncoding::type_name(params: TypeNameParams, payload: CanonicalFieldKind) -> TypeNameReturn`
 
 | Branch | Condition | Decision | Dependency call | Outcome |
 |---|---|---|---|---|
-| kind named | any `CanonicalFieldKind` | a `match` on the kind, exhaustive, so a kind with no arm fails to compile | none | `Ok(TypeNameSuccessReturn { name })`, `name` the `EncodingTypeName` built from the table `FixedBytes32` `bytes32`, `Unsigned16` `uint16`, `Unsigned32` `uint32`, `Unsigned64` `uint64`, `Text` `string`, `Bytes` `bytes`, `FixedBytes20` `bytes20` — never `address`, and `Unsigned256` `uint256`, each built by `EncodingTypeName::try_new` over the name the table states, its success destructured irrefutably; the error arm has no branch |
-
-## `EncodingTypeName::try_new(params: EncodingTypeNameConstructorParams) -> EncodingTypeNameTryNewReturn`
-
-| Branch | Condition | Decision | Dependency call | Outcome |
-|---|---|---|---|---|
-| empty name | `params.name` has no characters | the empty check, first | none | `Err(EncodingTypeNameErrorReturn::Empty)` |
-| non-alphanumeric name | `params.name` holds a character other than an ASCII letter or digit | the character check, decided after the empty check | none | `Err(EncodingTypeNameErrorReturn::NotAlphanumeric)` |
-| admitted name | `params.name` is non-empty and holds only ASCII letters and digits | both checks pass | none | `Ok(EncodingTypeName)` holding the text |
+| kind named | any `CanonicalFieldKind` | a `match` on the kind, exhaustive, so a kind with no arm fails to compile | none | `Ok(TypeNameSuccessReturn { name })`, `name` the `EncodingTypeName` variant from the mapping `FixedBytes32` `Bytes32`, `Unsigned16` `Uint16`, `Unsigned32` `Uint32`, `Unsigned64` `Uint64`, `Text` `String`, `Bytes` `Bytes`, `FixedBytes20` `Bytes20` — never `address`, and `Unsigned256` `Uint256`, in canonical-kind order with no constructor or text table; the trait method invokes the function its interface-held declaration carries; the error arm has no branch |
 
 ## `CanonicalFieldValue::kind(&self) -> CanonicalFieldKind`
 
@@ -30,7 +22,7 @@ Branch contract for the `abi` module of the `encoding` crate: `AbiEncoding`, the
 
 ## `AbiEncoding::DECLARATION`
 
-The inherent constant `EncodingDeclaration { name: "abi", identifier: EncodingIdentifier::EthereumAbiV1, adapter_version: 1, interface_version: ENCODING_INTERFACE_VERSION }`.
+The inherent constant `EncodingDeclaration { concrete: EncodingConcrete::Abi, identifier: EncodingIdentifier::EthereumAbiV1, adapter_version: 1, interface_version: ENCODING_INTERFACE_VERSION, type_name: AbiEncoding::type_name }`, read by family consumers through `encoding/lookup_encoding_declaration` without constructing an adapter.
 
 ## `IEncoderAdapter::encode<D: IEncodingContract>(&self, params: EncodeParams<'_, D>, payload: &D::Described) -> EncodeReturn`
 

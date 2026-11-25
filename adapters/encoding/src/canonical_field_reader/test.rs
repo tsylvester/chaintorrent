@@ -2,9 +2,11 @@
 
 use super::provides::{CanonicalFieldReader, CanonicalFieldReaderErrorReturn};
 use crate::factory::provides::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides, FromFieldErrorReturn,
+    CANONICAL_FIELD_KINDS, CanonicalFieldKind, CanonicalFieldValue, CanonicalFieldsOverrides,
+    ENCODING_CONCRETES, ENCODING_IDENTIFIERS, ENCODING_TYPE_NAMES, EncodingConcrete,
+    EncodingConcreteOverrides, EncodingIdentifier, EncodingTypeName, FromFieldErrorReturn,
     MockICanonicalField, MockICanonicalFieldOverrides, build_canonical_fields,
-    build_mock_i_canonical_field,
+    build_encoding_concrete, build_mock_i_canonical_field,
 };
 
 /// Contract: `CanonicalFieldValue::kind`, one total branch: every
@@ -637,3 +639,165 @@ fn read_form_carries_the_forms_refusal_with_its_index() {
     );
 }
 // read_form_carries_the_forms_refusal_with_its_index
+
+/// Contract: `CanonicalFieldKind::name` and its declared `uint8` wire-code
+///   mapping: each variant → its declared spelling and code;
+///   `CANONICAL_FIELD_KINDS` holds the eight values in declaration order.
+/// Arrange: the expected triples written as independent literals,
+///   `FixedBytes32` `fixed_bytes32` `1`, `Unsigned16` `unsigned16` `2`,
+///   `Unsigned32` `unsigned32` `3`, `Unsigned64` `unsigned64` `4`, `Text`
+///   `text` `5`, `Bytes` `bytes` `6`, `FixedBytes20` `fixed_bytes20` `7`, and
+///   `Unsigned256` `unsigned256` `8`.
+/// Act:     `kind.name()` and `kind.wire_code()` for each of the eight
+///   variants, and `CANONICAL_FIELD_KINDS`.
+/// Assert:  each spelling and code equals its literal by `assert_eq!`, each
+///   compared apart, and `CANONICAL_FIELD_KINDS` equals the declaration-order
+///   list by `assert_eq!`, so a renamed, recoded, or reordered value fails.
+#[test]
+fn canonical_field_kind_names_codes_and_declared_set_order_are_exact() {
+    // Arrange & Act & Assert — each spelling and code an independent literal
+    assert_eq!(CanonicalFieldKind::FixedBytes32.name(), "fixed_bytes32");
+    assert_eq!(CanonicalFieldKind::FixedBytes32.wire_code(), 1);
+    assert_eq!(CanonicalFieldKind::Unsigned16.name(), "unsigned16");
+    assert_eq!(CanonicalFieldKind::Unsigned16.wire_code(), 2);
+    assert_eq!(CanonicalFieldKind::Unsigned32.name(), "unsigned32");
+    assert_eq!(CanonicalFieldKind::Unsigned32.wire_code(), 3);
+    assert_eq!(CanonicalFieldKind::Unsigned64.name(), "unsigned64");
+    assert_eq!(CanonicalFieldKind::Unsigned64.wire_code(), 4);
+    assert_eq!(CanonicalFieldKind::Text.name(), "text");
+    assert_eq!(CanonicalFieldKind::Text.wire_code(), 5);
+    assert_eq!(CanonicalFieldKind::Bytes.name(), "bytes");
+    assert_eq!(CanonicalFieldKind::Bytes.wire_code(), 6);
+    assert_eq!(CanonicalFieldKind::FixedBytes20.name(), "fixed_bytes20");
+    assert_eq!(CanonicalFieldKind::FixedBytes20.wire_code(), 7);
+    assert_eq!(CanonicalFieldKind::Unsigned256.name(), "unsigned256");
+    assert_eq!(CanonicalFieldKind::Unsigned256.wire_code(), 8);
+    assert_eq!(
+        CANONICAL_FIELD_KINDS,
+        &[
+            CanonicalFieldKind::FixedBytes32,
+            CanonicalFieldKind::Unsigned16,
+            CanonicalFieldKind::Unsigned32,
+            CanonicalFieldKind::Unsigned64,
+            CanonicalFieldKind::Text,
+            CanonicalFieldKind::Bytes,
+            CanonicalFieldKind::FixedBytes20,
+            CanonicalFieldKind::Unsigned256,
+        ]
+    );
+}
+// canonical_field_kind_names_codes_and_declared_set_order_are_exact
+
+/// Contract: `ENCODING_CONCRETES` holds the real `Abi` member alone;
+///   `EncodingConcrete::name` spells each member exactly.
+/// Arrange: the expected spellings written as independent literals, `Abi`
+///   `abi` and `Mock` `mock`.
+/// Act:     `ENCODING_CONCRETES`, and `concrete.name()` for each member.
+/// Assert:  `ENCODING_CONCRETES` equals `&[EncodingConcrete::Abi]` by
+///   `assert_eq!`, each member's spelling equals its literal by `assert_eq!`,
+///   and the two spellings differ, so a mock value in the declared set or a
+///   renamed spelling fails.
+#[test]
+fn encoding_concretes_holds_only_abi_with_exact_member_spellings() {
+    // Arrange & Act & Assert
+    assert_eq!(ENCODING_CONCRETES, &[EncodingConcrete::Abi]);
+    assert_eq!(EncodingConcrete::Abi.name(), "abi");
+    assert_eq!(EncodingConcrete::Mock.name(), "mock");
+    assert_ne!(EncodingConcrete::Abi.name(), EncodingConcrete::Mock.name());
+}
+// encoding_concretes_holds_only_abi_with_exact_member_spellings
+
+/// Contract: `ENCODING_IDENTIFIERS` holds `EthereumAbiV1` alone;
+///   `EncodingIdentifier::name` and its declared `uint8` wire-code mapping
+///   give `ethereum_abi_v1` and `1`.
+/// Arrange: the literals `ethereum_abi_v1` and `1` written independently of
+///   the enum declaration.
+/// Act:     `ENCODING_IDENTIFIERS`, `EncodingIdentifier::EthereumAbiV1.name()`,
+///   and the wire code.
+/// Assert:  `ENCODING_IDENTIFIERS` equals `&[EncodingIdentifier::EthereumAbiV1]`
+///   by `assert_eq!`, and the spelling and code equal their literals, so a
+///   second value or a renamed or recoded identifier fails.
+#[test]
+fn encoding_identifiers_holds_only_ethereum_abi_v1() {
+    // Arrange & Act & Assert
+    assert_eq!(ENCODING_IDENTIFIERS, &[EncodingIdentifier::EthereumAbiV1]);
+    assert_eq!(EncodingIdentifier::EthereumAbiV1.name(), "ethereum_abi_v1");
+    assert_eq!(EncodingIdentifier::EthereumAbiV1.wire_code(), 1);
+}
+// encoding_identifiers_holds_only_ethereum_abi_v1
+
+/// Contract: `ENCODING_TYPE_NAMES` holds the eight real values in declaration
+///   order; `EncodingTypeName::name` and its declared `uint8` wire-code
+///   mapping spell each value exactly and distinctly.
+/// Arrange: the expected triples written as independent literals, `Bytes32`
+///   `bytes32` `1`, `Bytes20` `bytes20` `2`, `Uint16` `uint16` `3`, `Uint32`
+///   `uint32` `4`, `Uint64` `uint64` `5`, `Uint256` `uint256` `6`, `String`
+///   `string` `7`, and `Bytes` `bytes` `8`.
+/// Act:     `ENCODING_TYPE_NAMES`, and `name()` and `wire_code()` for each of
+///   the eight values.
+/// Assert:  `ENCODING_TYPE_NAMES` equals the declaration-order list by
+///   `assert_eq!`, each spelling and code equals its literal by `assert_eq!`,
+///   each compared apart, and the eight spellings are pairwise distinct, so a
+///   duplicated or mock-only value fails.
+#[test]
+fn encoding_type_names_holds_the_eight_declared_values() {
+    // Arrange & Act & Assert
+    assert_eq!(
+        ENCODING_TYPE_NAMES,
+        &[
+            EncodingTypeName::Bytes32,
+            EncodingTypeName::Bytes20,
+            EncodingTypeName::Uint16,
+            EncodingTypeName::Uint32,
+            EncodingTypeName::Uint64,
+            EncodingTypeName::Uint256,
+            EncodingTypeName::String,
+            EncodingTypeName::Bytes,
+        ]
+    );
+    assert_eq!(EncodingTypeName::Bytes32.name(), "bytes32");
+    assert_eq!(EncodingTypeName::Bytes32.wire_code(), 1);
+    assert_eq!(EncodingTypeName::Bytes20.name(), "bytes20");
+    assert_eq!(EncodingTypeName::Bytes20.wire_code(), 2);
+    assert_eq!(EncodingTypeName::Uint16.name(), "uint16");
+    assert_eq!(EncodingTypeName::Uint16.wire_code(), 3);
+    assert_eq!(EncodingTypeName::Uint32.name(), "uint32");
+    assert_eq!(EncodingTypeName::Uint32.wire_code(), 4);
+    assert_eq!(EncodingTypeName::Uint64.name(), "uint64");
+    assert_eq!(EncodingTypeName::Uint64.wire_code(), 5);
+    assert_eq!(EncodingTypeName::Uint256.name(), "uint256");
+    assert_eq!(EncodingTypeName::Uint256.wire_code(), 6);
+    assert_eq!(EncodingTypeName::String.name(), "string");
+    assert_eq!(EncodingTypeName::String.wire_code(), 7);
+    assert_eq!(EncodingTypeName::Bytes.name(), "bytes");
+    assert_eq!(EncodingTypeName::Bytes.wire_code(), 8);
+    let spellings: Vec<&'static str> = ENCODING_TYPE_NAMES
+        .iter()
+        .map(|value| value.name())
+        .collect();
+    let mut unique = spellings.clone();
+    unique.sort_unstable();
+    unique.dedup();
+    assert_eq!(unique.len(), spellings.len());
+}
+// encoding_type_names_holds_the_eight_declared_values
+
+/// Contract: `build_encoding_concrete`, real selection → the declared
+///   concrete, no configuration returned.
+/// Arrange: the selection `EncodingConcrete::Abi` and
+///   `EncodingConcreteOverrides::default()`.
+/// Act:     `build_encoding_concrete(EncodingConcrete::Abi, overrides)`.
+/// Assert:  the result equals `EncodingConcrete::Abi` by `assert_eq!`, and the
+///   call yields no configuration for the real arm.
+#[test]
+fn build_encoding_concrete_returns_the_real_selection_without_configuration() {
+    // Arrange
+    let overrides = EncodingConcreteOverrides::default();
+
+    // Act
+    let selected = build_encoding_concrete(EncodingConcrete::Abi, overrides);
+
+    // Assert
+    assert_eq!(selected, EncodingConcrete::Abi);
+}
+// build_encoding_concrete_returns_the_real_selection_without_configuration

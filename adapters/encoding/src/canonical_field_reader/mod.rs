@@ -6,7 +6,8 @@ pub mod provides;
 mod test;
 
 use crate::factory::provides::{
-    CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, FromFieldParams, ICanonicalField,
+    CanonicalFieldKind, CanonicalFieldValue, CanonicalFields, EncodingConcrete, EncodingIdentifier,
+    EncodingTypeName, FromFieldParams, ICanonicalField,
 };
 use interface::{
     CanonicalFieldReader, CanonicalFieldReaderErrorReturn, CanonicalFieldReaderReadReturn,
@@ -233,6 +234,101 @@ impl CanonicalFieldReader {
                 self.index += 1;
                 Ok(success.value)
             }
+        }
+    }
+}
+
+impl CanonicalFieldValue {
+    pub fn kind(&self) -> CanonicalFieldKind {
+        match self {
+            CanonicalFieldValue::FixedBytes32(_) => CanonicalFieldKind::FixedBytes32,
+            CanonicalFieldValue::Unsigned16(_) => CanonicalFieldKind::Unsigned16,
+            CanonicalFieldValue::Unsigned32(_) => CanonicalFieldKind::Unsigned32,
+            CanonicalFieldValue::Unsigned64(_) => CanonicalFieldKind::Unsigned64,
+            CanonicalFieldValue::Text(_) => CanonicalFieldKind::Text,
+            CanonicalFieldValue::Bytes(_) => CanonicalFieldKind::Bytes,
+            CanonicalFieldValue::FixedBytes20(_) => CanonicalFieldKind::FixedBytes20,
+            CanonicalFieldValue::Unsigned256(_) => CanonicalFieldKind::Unsigned256,
+        }
+    }
+}
+
+impl CanonicalFieldKind {
+    pub const fn name(self) -> &'static str {
+        match self {
+            CanonicalFieldKind::FixedBytes32 => "fixed_bytes32",
+            CanonicalFieldKind::Unsigned16 => "unsigned16",
+            CanonicalFieldKind::Unsigned32 => "unsigned32",
+            CanonicalFieldKind::Unsigned64 => "unsigned64",
+            CanonicalFieldKind::Text => "text",
+            CanonicalFieldKind::Bytes => "bytes",
+            CanonicalFieldKind::FixedBytes20 => "fixed_bytes20",
+            CanonicalFieldKind::Unsigned256 => "unsigned256",
+        }
+    }
+
+    pub const fn wire_code(self) -> u8 {
+        match self {
+            CanonicalFieldKind::FixedBytes32 => 1,
+            CanonicalFieldKind::Unsigned16 => 2,
+            CanonicalFieldKind::Unsigned32 => 3,
+            CanonicalFieldKind::Unsigned64 => 4,
+            CanonicalFieldKind::Text => 5,
+            CanonicalFieldKind::Bytes => 6,
+            CanonicalFieldKind::FixedBytes20 => 7,
+            CanonicalFieldKind::Unsigned256 => 8,
+        }
+    }
+}
+
+impl EncodingConcrete {
+    pub const fn name(self) -> &'static str {
+        match self {
+            EncodingConcrete::Abi => "abi",
+            #[cfg(any(test, feature = "mocks"))]
+            EncodingConcrete::Mock => "mock",
+        }
+    }
+}
+
+impl EncodingIdentifier {
+    pub const fn name(self) -> &'static str {
+        match self {
+            EncodingIdentifier::EthereumAbiV1 => "ethereum_abi_v1",
+        }
+    }
+
+    pub const fn wire_code(self) -> u8 {
+        match self {
+            EncodingIdentifier::EthereumAbiV1 => 1,
+        }
+    }
+}
+
+impl EncodingTypeName {
+    pub const fn name(self) -> &'static str {
+        match self {
+            EncodingTypeName::Bytes32 => "bytes32",
+            EncodingTypeName::Bytes20 => "bytes20",
+            EncodingTypeName::Uint16 => "uint16",
+            EncodingTypeName::Uint32 => "uint32",
+            EncodingTypeName::Uint64 => "uint64",
+            EncodingTypeName::Uint256 => "uint256",
+            EncodingTypeName::String => "string",
+            EncodingTypeName::Bytes => "bytes",
+        }
+    }
+
+    pub const fn wire_code(self) -> u8 {
+        match self {
+            EncodingTypeName::Bytes32 => 1,
+            EncodingTypeName::Bytes20 => 2,
+            EncodingTypeName::Uint16 => 3,
+            EncodingTypeName::Uint32 => 4,
+            EncodingTypeName::Uint64 => 5,
+            EncodingTypeName::Uint256 => 6,
+            EncodingTypeName::String => 7,
+            EncodingTypeName::Bytes => 8,
         }
     }
 }

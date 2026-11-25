@@ -8,6 +8,30 @@ Branch contract for the `canonical_field_reader` module of the `encoding` crate:
 |---|---|---|---|---|
 | kind stated | any `CanonicalFieldValue` | a `match` on `self`, exhaustive with no wildcard arm, so a variant with no arm fails to compile | none | the like-named `CanonicalFieldKind` variant, `FixedBytes32(_)` to `FixedBytes32`, `Unsigned16(_)` to `Unsigned16`, `Unsigned32(_)` to `Unsigned32`, `Unsigned64(_)` to `Unsigned64`, `Text(_)` to `Text`, `Bytes(_)` to `Bytes`, `FixedBytes20(_)` to `FixedBytes20`, and `Unsigned256(_)` to `Unsigned256`; the function has no error arm |
 
+## `CanonicalFieldKind::name(self) -> &'static str` and `CanonicalFieldKind::wire_code(self) -> u8`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| spelled and coded | any `CanonicalFieldKind` | each a `match` on `self`, exhaustive with no wildcard arm and no `Debug` or `Display` rendering | none | the declared spelling and code, `FixedBytes32` to `fixed_bytes32` and `1`, `Unsigned16` to `unsigned16` and `2`, `Unsigned32` to `unsigned32` and `3`, `Unsigned64` to `unsigned64` and `4`, `Text` to `text` and `5`, `Bytes` to `bytes` and `6`, `FixedBytes20` to `fixed_bytes20` and `7`, and `Unsigned256` to `unsigned256` and `8`; `CANONICAL_FIELD_KINDS` holds the eight real values in declaration order and no mock-only variant |
+
+## `EncodingConcrete::name(self) -> &'static str`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| spelled | any `EncodingConcrete` | a `match` on `self`, exhaustive with no wildcard arm and no `Debug` or `Display` rendering | none | `Abi` to `abi` and, under the mocks feature, `Mock` to `mock`; `ENCODING_CONCRETES` holds the real `Abi` member alone, `EncodingConcrete::Mock` excluded |
+
+## `EncodingIdentifier::name(self) -> &'static str` and `EncodingIdentifier::wire_code(self) -> u8`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| spelled and coded | any `EncodingIdentifier` | each a `match` on `self`, exhaustive with no wildcard arm and no `Debug` or `Display` rendering | none | `EthereumAbiV1` to `ethereum_abi_v1` and `1`; `ENCODING_IDENTIFIERS` holds the real value alone and the identifier carries no mock-only variant |
+
+## `EncodingTypeName::name(self) -> &'static str` and `EncodingTypeName::wire_code(self) -> u8`
+
+| Branch | Condition | Decision | Dependency call | Outcome |
+|---|---|---|---|---|
+| spelled and coded | any `EncodingTypeName` | each a `match` on `self`, exhaustive with no wildcard arm and no `Debug` or `Display` rendering | none | `Bytes32` to `bytes32` and `1`, `Bytes20` to `bytes20` and `2`, `Uint16` to `uint16` and `3`, `Uint32` to `uint32` and `4`, `Uint64` to `uint64` and `5`, `Uint256` to `uint256` and `6`, `String` to `string` and `7`, and `Bytes` to `bytes` and `8`; `ENCODING_TYPE_NAMES` holds the eight real values alone and the identifier carries no mock-only variant |
+
 ## `CanonicalFieldReader::try_new(payload: CanonicalFields, fields: &'static [CanonicalFieldKind]) -> CanonicalFieldReaderTryNewReturn`
 
 | Branch | Condition | Decision | Dependency call | Outcome |

@@ -1,5 +1,6 @@
 use crate::abi::provides::AbiDecoderErrorReturn;
 use crate::canonical_field_reader::provides::CanonicalFieldReaderErrorReturn;
+use crate::lookup_encoding_declaration::provides::LookupEncodingDeclarationFn;
 use core::convert::Infallible;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -13,6 +14,17 @@ pub enum CanonicalFieldKind {
     FixedBytes20,
     Unsigned256,
 }
+
+pub const CANONICAL_FIELD_KINDS: &[CanonicalFieldKind] = &[
+    CanonicalFieldKind::FixedBytes32,
+    CanonicalFieldKind::Unsigned16,
+    CanonicalFieldKind::Unsigned32,
+    CanonicalFieldKind::Unsigned64,
+    CanonicalFieldKind::Text,
+    CanonicalFieldKind::Bytes,
+    CanonicalFieldKind::FixedBytes20,
+    CanonicalFieldKind::Unsigned256,
+];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum CanonicalFieldValue {
@@ -106,15 +118,16 @@ pub const ENCODING_INTERFACE_VERSION: u32 = 1;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EncodingIdentifier {
     EthereumAbiV1,
-    #[cfg(any(test, feature = "mocks"))]
-    Mock,
 }
 
+pub const ENCODING_IDENTIFIERS: &[EncodingIdentifier] = &[EncodingIdentifier::EthereumAbiV1];
+
 pub struct EncodingDeclaration {
-    pub name: &'static str,
+    pub concrete: EncodingConcrete,
     pub identifier: EncodingIdentifier,
     pub adapter_version: u32,
     pub interface_version: u32,
+    pub type_name: TypeNameFn,
 }
 
 pub struct EncodeParams<'a, D> {
@@ -132,22 +145,28 @@ pub enum EncodeErrorReturn {
 
 pub type EncodeReturn = Result<EncodeSuccessReturn, EncodeErrorReturn>;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct EncodingTypeName {
-    pub(super) name: String,
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EncodingTypeName {
+    Bytes32,
+    Bytes20,
+    Uint16,
+    Uint32,
+    Uint64,
+    Uint256,
+    String,
+    Bytes,
 }
 
-pub struct EncodingTypeNameConstructorParams {
-    pub name: String,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum EncodingTypeNameErrorReturn {
-    Empty,
-    NotAlphanumeric,
-}
-
-pub type EncodingTypeNameTryNewReturn = Result<EncodingTypeName, EncodingTypeNameErrorReturn>;
+pub const ENCODING_TYPE_NAMES: &[EncodingTypeName] = &[
+    EncodingTypeName::Bytes32,
+    EncodingTypeName::Bytes20,
+    EncodingTypeName::Uint16,
+    EncodingTypeName::Uint32,
+    EncodingTypeName::Uint64,
+    EncodingTypeName::Uint256,
+    EncodingTypeName::String,
+    EncodingTypeName::Bytes,
+];
 
 pub struct TypeNameParams;
 
@@ -157,9 +176,9 @@ pub struct TypeNameSuccessReturn {
 
 pub type TypeNameReturn = Result<TypeNameSuccessReturn, Infallible>;
 
-pub trait IEncoderAdapter {
-    const DECLARATION: EncodingDeclaration;
+pub type TypeNameFn = fn(TypeNameParams, CanonicalFieldKind) -> TypeNameReturn;
 
+pub trait IEncoderAdapter {
     fn encode<D: IEncodingContract>(
         &self,
         params: EncodeParams<'_, D>,
@@ -202,6 +221,8 @@ pub enum EncodingConcrete {
     Mock,
 }
 
+pub const ENCODING_CONCRETES: &[EncodingConcrete] = &[EncodingConcrete::Abi];
+
 pub trait IEncodingConsumer {
     type Output;
 
@@ -216,15 +237,16 @@ pub struct ConsumeEncodingParams;
 
 pub struct ConsumeEncodingPayload<E: IEncoderAdapter> {
     pub adapter: E,
+    pub declaration: EncodingDeclaration,
 }
 
 pub struct CreateEncodingDeps<C> {
     pub consumer: C,
+    pub lookup: LookupEncodingDeclarationFn,
 }
 
 pub struct CreateEncodingParams {
-    pub concrete: EncodingConcrete,
-    pub identifier: EncodingIdentifier,
+    pub selection: EncodingConcrete,
 }
 
 pub struct CreateEncodingPayload;
@@ -235,7 +257,6 @@ pub struct CreateEncodingSuccessReturn<O> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum CreateEncodingErrorReturn {
-    UnsupportedEncodingIdentifier,
     Abi(Infallible),
 }
 
@@ -249,8 +270,7 @@ pub type CreateEncodingFn<C> = fn(
 ) -> CreateEncodingReturn<<C as IEncodingConsumer>::Output>;
 
 pub const DECLARED_ENCODING_SELECTIONS: &[CreateEncodingParams] = &[CreateEncodingParams {
-    concrete: EncodingConcrete::Abi,
-    identifier: EncodingIdentifier::EthereumAbiV1,
+    selection: EncodingConcrete::Abi,
 }];
 
 #[cfg(any(test, feature = "mocks"))]

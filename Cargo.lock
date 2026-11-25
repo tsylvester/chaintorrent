@@ -1860,6 +1860,7 @@ version = "0.0.0"
 dependencies = [
  "alloy",
  "hex",
+ "serde_json",
 ]
 
 [[package]]

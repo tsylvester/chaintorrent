@@ -7,9 +7,8 @@ mod test;
 
 use crate::factory::provides::{
     CanonicalFieldKind, CanonicalFieldReader, CanonicalFieldValue, CanonicalFields,
-    DecodeErrorReturn, DecodeParams, DecodeReturn, DecodeSuccessReturn, ENCODING_INTERFACE_VERSION,
-    EncodeErrorReturn, EncodeParams, EncodeReturn, EncodeSuccessReturn, EncodingDeclaration,
-    EncodingIdentifier, EncodingTypeName, EncodingTypeNameConstructorParams, FromFieldsParams,
+    DecodeErrorReturn, DecodeParams, DecodeReturn, DecodeSuccessReturn, EncodeErrorReturn,
+    EncodeParams, EncodeReturn, EncodeSuccessReturn, EncodingTypeName, FromFieldsParams,
     IDecoderAdapter, IEncoderAdapter, IEncodingContract, ToFieldsParams, TypeNameParams,
     TypeNameReturn, TypeNameSuccessReturn,
 };
@@ -20,12 +19,19 @@ use interface::{
 };
 
 impl AbiEncoding {
-    pub const DECLARATION: EncodingDeclaration = EncodingDeclaration {
-        name: "abi",
-        identifier: EncodingIdentifier::EthereumAbiV1,
-        adapter_version: 1,
-        interface_version: ENCODING_INTERFACE_VERSION,
-    };
+    pub const fn type_name(_params: TypeNameParams, payload: CanonicalFieldKind) -> TypeNameReturn {
+        let name = match payload {
+            CanonicalFieldKind::FixedBytes32 => EncodingTypeName::Bytes32,
+            CanonicalFieldKind::Unsigned16 => EncodingTypeName::Uint16,
+            CanonicalFieldKind::Unsigned32 => EncodingTypeName::Uint32,
+            CanonicalFieldKind::Unsigned64 => EncodingTypeName::Uint64,
+            CanonicalFieldKind::Text => EncodingTypeName::String,
+            CanonicalFieldKind::Bytes => EncodingTypeName::Bytes,
+            CanonicalFieldKind::FixedBytes20 => EncodingTypeName::Bytes20,
+            CanonicalFieldKind::Unsigned256 => EncodingTypeName::Uint256,
+        };
+        Ok(TypeNameSuccessReturn { name })
+    }
 
     pub fn try_new(_params: AbiEncodingConstructorParams) -> AbiEncodingTryNewReturn {
         Ok(AbiEncoding)
@@ -33,8 +39,6 @@ impl AbiEncoding {
 }
 
 impl IEncoderAdapter for AbiEncoding {
-    const DECLARATION: EncodingDeclaration = AbiEncoding::DECLARATION;
-
     fn encode<D: IEncodingContract>(
         &self,
         params: EncodeParams<'_, D>,
@@ -74,23 +78,8 @@ impl IEncoderAdapter for AbiEncoding {
         })
     }
 
-    fn type_name(&self, _params: TypeNameParams, payload: CanonicalFieldKind) -> TypeNameReturn {
-        let name = match payload {
-            CanonicalFieldKind::FixedBytes32 => "bytes32",
-            CanonicalFieldKind::Unsigned16 => "uint16",
-            CanonicalFieldKind::Unsigned32 => "uint32",
-            CanonicalFieldKind::Unsigned64 => "uint64",
-            CanonicalFieldKind::Text => "string",
-            CanonicalFieldKind::Bytes => "bytes",
-            CanonicalFieldKind::FixedBytes20 => "bytes20",
-            CanonicalFieldKind::Unsigned256 => "uint256",
-        };
-        let Ok(name) = EncodingTypeName::try_new(EncodingTypeNameConstructorParams {
-            name: name.to_string(),
-        }) else {
-            unreachable!("every name the table states is a valid encoding type name")
-        };
-        Ok(TypeNameSuccessReturn { name })
+    fn type_name(&self, params: TypeNameParams, payload: CanonicalFieldKind) -> TypeNameReturn {
+        (Self::DECLARATION.type_name)(params, payload)
     }
 }
 
