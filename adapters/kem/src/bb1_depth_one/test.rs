@@ -1,8 +1,9 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
 use super::interface::{
-    Bb1DepthOneCapsule, Bb1DepthOneCasePayload, Bb1DepthOneKem, Bb1DepthOneParameterSetScope,
-    IBb1DepthOneCaseConsumer,
+    BB1_DEPTH_ONE_DECLARATION, BB1_DEPTH_ONE_IDENTITY_TAG, Bb1DepthOneCapsule,
+    Bb1DepthOneCasePayload, Bb1DepthOneKem, Bb1DepthOneParameterSetScope,
+    ConsumeBb1DepthOneCaseParams, ConsumeBb1DepthOneCasePayload, IBb1DepthOneCaseConsumer,
 };
 use super::mock::{
     Bb1DepthOneCaseParamsOverrides, Bb1DepthOneCredentialOverrides,
@@ -16,7 +17,8 @@ use crate::factory::provides::{
     CapsuleComponents, CapsuleFromComponentsPayloadOverrides, CredentialComponentsOverrides,
     CredentialFromComponentsPayloadOverrides, DeriveIdentityErrorReturn,
     DeriveIdentityPayloadOverrides, EncapsulateErrorReturn, EncapsulatePayloadOverrides,
-    ICredentialKemAdapter, IssueErrorReturn, IssuePayloadOverrides, KemIdentity,
+    ICredentialKemAdapter, IDENTITY_SCOPES, IdentityScope, IssueErrorReturn, IssuePayloadOverrides,
+    KEM_CONCRETES, KEM_IDENTIFIERS, KEM_INTERFACE_VERSION, KemConcrete, KemIdentifier, KemIdentity,
     MasterScalarComponentsOverrides, MasterScalarFromComponentsPayloadOverrides,
     ParameterSetComponentsOverrides, ParameterSetFromComponentsPayloadOverrides,
     ParameterSetScopeComponents, RerandomizeErrorReturn, RerandomizePayloadOverrides,
@@ -30,12 +32,13 @@ use crate::factory::provides::{
     build_encapsulate_payload, build_identity_element_components_params,
     build_identity_element_components_payload, build_is_valid_params, build_is_valid_payload,
     build_is_well_formed_params, build_is_well_formed_payload, build_issue_params,
-    build_issue_payload, build_master_scalar_components, build_master_scalar_components_params,
-    build_master_scalar_components_payload, build_master_scalar_from_components_params,
-    build_master_scalar_from_components_payload, build_parameter_set_components,
-    build_parameter_set_components_params, build_parameter_set_components_payload,
-    build_parameter_set_from_components_params, build_parameter_set_from_components_payload,
-    build_rerandomize_params, build_rerandomize_payload, build_setup_params, build_setup_payload,
+    build_issue_payload, build_kem_concrete, build_master_scalar_components,
+    build_master_scalar_components_params, build_master_scalar_components_payload,
+    build_master_scalar_from_components_params, build_master_scalar_from_components_payload,
+    build_parameter_set_components, build_parameter_set_components_params,
+    build_parameter_set_components_payload, build_parameter_set_from_components_params,
+    build_parameter_set_from_components_payload, build_rerandomize_params,
+    build_rerandomize_payload, build_setup_params, build_setup_payload,
 };
 use domain::{Secret, build_secret};
 use hash_to_scalar::{
@@ -187,12 +190,17 @@ fn try_new_holds_the_tag_the_declaration_names() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let Bb1DepthOneCasePayload = *payload.case;
             // Arrange
             let params = build_bb1_depth_one_kem_constructor_params(
                 pairing,
@@ -219,7 +227,7 @@ fn try_new_holds_the_tag_the_declaration_names() {
     );
 
     // Assert
-    assert!(created.is_ok());
+    assert_eq!(created.expect("the case ran").output, ());
 }
 // try_new_holds_the_tag_the_declaration_names
 
@@ -244,12 +252,16 @@ fn setup_returns_the_master_sampling_refusal_whole() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -307,12 +319,16 @@ fn setup_returns_the_u0_sampling_refusal_whole() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -368,12 +384,16 @@ fn setup_returns_the_u1_sampling_refusal_whole() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -430,12 +450,16 @@ fn setup_returns_the_master_refusal_when_the_master_and_u0_bytes_are_both_refuse
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -494,12 +518,16 @@ fn setup_fixes_an_entitlement_scope_set_to_no_identity() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -550,12 +578,16 @@ fn setup_fixes_an_asset_scope_set_to_its_identity_element() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -616,12 +648,16 @@ fn setup_returns_the_hash_refusal_whole_under_the_asset_scope() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -662,7 +698,6 @@ fn setup_returns_the_hash_refusal_whole_under_the_asset_scope() {
                     concrete: Some(HashToScalarConcrete::Mock(
                         MockIHashToScalarAdapterFailureMode::SamplingRefused,
                     )),
-                    ..Default::default()
                 },
             )),
             ..Default::default()
@@ -693,12 +728,16 @@ fn setup_refuses_a_trivial_identity_element_under_the_asset_scope() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -760,12 +799,16 @@ fn derive_identity_refuses_an_asset_identity_under_an_entitlement_set_before_has
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -802,7 +845,6 @@ fn derive_identity_refuses_an_asset_identity_under_an_entitlement_set_before_has
                     concrete: Some(HashToScalarConcrete::Mock(
                         MockIHashToScalarAdapterFailureMode::SamplingRefused,
                     )),
-                    ..Default::default()
                 },
             )),
             ..Default::default()
@@ -837,12 +879,16 @@ fn derive_identity_refuses_an_entitlement_identity_under_an_asset_set_before_has
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -888,7 +934,6 @@ fn derive_identity_refuses_an_entitlement_identity_under_an_asset_set_before_has
                     concrete: Some(HashToScalarConcrete::Mock(
                         MockIHashToScalarAdapterFailureMode::SamplingRefused,
                     )),
-                    ..Default::default()
                 },
             )),
             ..Default::default()
@@ -921,12 +966,16 @@ fn derive_identity_returns_the_hash_refusal_whole() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -963,7 +1012,6 @@ fn derive_identity_returns_the_hash_refusal_whole() {
                     concrete: Some(HashToScalarConcrete::Mock(
                         MockIHashToScalarAdapterFailureMode::SamplingRefused,
                     )),
-                    ..Default::default()
                 },
             )),
             ..Default::default()
@@ -996,12 +1044,16 @@ fn derive_identity_refuses_a_trivial_identity_element() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -1061,12 +1113,16 @@ fn derive_identity_refuses_an_element_outside_the_asset_scope() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -1135,12 +1191,16 @@ fn derive_identity_derives_the_element_under_the_asset_scope() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -1210,12 +1270,16 @@ fn derive_identity_derives_the_element_under_the_entitlement_scope() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -1276,12 +1340,16 @@ fn issue_returns_the_sampling_refusal_whole() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -1348,12 +1416,16 @@ fn issue_returns_the_default_credential_for_unit_randomness() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -1412,12 +1484,16 @@ fn issue_derives_b_as_the_identity_element_for_zero_randomness() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -1476,12 +1552,16 @@ fn issue_returns_the_sampled_randomness() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -1545,12 +1625,16 @@ fn rerandomize_returns_the_sampling_refusal_whole() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -1613,12 +1697,16 @@ fn rerandomize_leaves_a_unchanged_for_a_zero_offset() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -1674,12 +1762,16 @@ fn rerandomize_leaves_b_unchanged_for_a_zero_offset() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -1736,12 +1828,16 @@ fn rerandomize_returns_the_sampled_offset() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -1800,12 +1896,16 @@ fn is_valid_accepts_a_credential_that_satisfies_the_check() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -1858,12 +1958,16 @@ fn is_valid_rejects_a_credential_with_another_a() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -1925,12 +2029,16 @@ fn encapsulate_returns_the_sampling_refusal_whole() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -1989,12 +2097,16 @@ fn encapsulate_returns_u_as_g2_for_unit_randomness() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -2049,12 +2161,16 @@ fn encapsulate_returns_v_as_u0_for_unit_randomness_under_the_entitlement_scope()
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -2109,12 +2225,16 @@ fn encapsulate_returns_w_as_u1_for_unit_randomness_under_the_entitlement_scope()
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -2171,12 +2291,16 @@ fn encapsulate_returns_v_as_the_fixed_element_for_unit_randomness_under_the_asse
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -2244,12 +2368,16 @@ fn encapsulate_returns_the_pairing_of_g1_and_hpub_as_the_encapsulated_value_for_
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -2313,12 +2441,16 @@ fn is_well_formed_accepts_an_entitlement_capsule_of_the_set() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -2368,12 +2500,16 @@ fn is_well_formed_rejects_an_entitlement_capsule_with_another_v() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -2423,12 +2559,16 @@ fn is_well_formed_rejects_an_entitlement_capsule_with_another_w() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -2482,12 +2622,16 @@ fn is_well_formed_accepts_an_asset_capsule_of_the_set() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -2546,12 +2690,16 @@ fn is_well_formed_rejects_an_asset_capsule_with_another_v() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -2613,12 +2761,16 @@ fn is_well_formed_rejects_an_asset_capsule_under_an_entitlement_set() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -2668,12 +2820,16 @@ fn is_well_formed_rejects_an_entitlement_capsule_under_an_asset_set() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -2741,12 +2897,16 @@ fn decapsulate_recovers_the_pairing_of_g1_and_hpub_from_an_entitlement_capsule_f
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -2818,12 +2978,16 @@ fn decapsulate_recovers_the_pairing_of_g1_and_hpub_from_an_asset_capsule_for_uni
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -2890,12 +3054,16 @@ fn parameter_set_components_maps_the_entitlement_scope_to_the_entitlement_compon
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -2946,12 +3114,16 @@ fn parameter_set_components_maps_the_asset_scope_to_the_asset_components() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -3012,12 +3184,16 @@ fn parameter_set_from_components_maps_the_entitlement_components_back() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -3073,12 +3249,16 @@ fn parameter_set_from_components_maps_the_asset_components_back() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -3143,12 +3323,16 @@ fn capsule_components_maps_the_entitlement_capsule_to_the_entitlement_components
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -3201,12 +3385,16 @@ fn capsule_components_maps_the_asset_capsule_to_the_asset_components() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -3260,12 +3448,16 @@ fn capsule_from_components_maps_the_entitlement_components_to_the_entitlement_ca
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -3322,12 +3514,16 @@ fn capsule_from_components_maps_the_asset_components_to_the_asset_capsule() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -3382,12 +3578,16 @@ fn credential_components_returns_the_a_and_b_of_the_credential() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -3442,12 +3642,16 @@ fn credential_from_components_moves_the_components_into_the_credential() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -3512,12 +3716,16 @@ fn parameter_set_components_returns_the_fields_of_the_parameter_set() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -3585,12 +3793,16 @@ fn parameter_set_from_components_moves_the_components_into_the_parameter_set() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -3663,12 +3875,16 @@ fn identity_element_components_returns_the_scalar_and_the_element() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -3723,12 +3939,16 @@ fn master_scalar_components_returns_a_secret_of_the_value() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -3779,12 +3999,16 @@ fn master_scalar_from_components_moves_the_secret_into_the_master_scalar() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -3842,12 +4066,16 @@ fn capsule_components_returns_the_entitlement_elements_in_their_slots() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -3904,12 +4132,16 @@ fn capsule_from_components_moves_the_entitlement_elements_into_their_slots() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
 
@@ -3952,3 +4184,84 @@ fn capsule_from_components_moves_the_entitlement_elements_into_their_slots() {
     assert!(created.is_ok());
 }
 // capsule_from_components_moves_the_entitlement_elements_into_their_slots
+
+/// Contract: `BB1_DEPTH_ONE_DECLARATION` carries `concrete:
+///   KemConcrete::Bb1DepthOne`, `identifier: KemIdentifier::Bb1DepthOneV1`,
+///   `identity_scopes` holding `IdentityScope::Entitlement` and
+///   `IdentityScope::Asset`, `identity_tag` equal to
+///   `BB1_DEPTH_ONE_IDENTITY_TAG`, `adapter_version` `1`, and
+///   `interface_version` equal to `KEM_INTERFACE_VERSION`.
+/// Arrange: none; the constant is read from the interface with no adapter
+///   constructed.
+/// Act:     the read of `BB1_DEPTH_ONE_DECLARATION`.
+/// Assert:  each field equals its stated value.
+#[test]
+fn bb1_depth_one_declaration_is_read_without_an_instance() {
+    // Arrange — none; the constant is read with no adapter constructed.
+
+    // Act
+    let declaration = BB1_DEPTH_ONE_DECLARATION;
+
+    // Assert
+    assert!(matches!(declaration.concrete, KemConcrete::Bb1DepthOne));
+    assert!(matches!(
+        declaration.identifier,
+        KemIdentifier::Bb1DepthOneV1
+    ));
+    assert_eq!(
+        declaration.identity_scopes,
+        [IdentityScope::Entitlement, IdentityScope::Asset].as_slice()
+    );
+    assert_eq!(declaration.identity_tag, BB1_DEPTH_ONE_IDENTITY_TAG);
+    assert_eq!(declaration.adapter_version, 1);
+    assert_eq!(declaration.interface_version, KEM_INTERFACE_VERSION);
+}
+// bb1_depth_one_declaration_is_read_without_an_instance
+
+/// Contract: `KEM_CONCRETES` contains only `KemConcrete::Bb1DepthOne`,
+///   `KEM_IDENTIFIERS` contains only `KemIdentifier::Bb1DepthOneV1`, and
+///   `IDENTITY_SCOPES` contains `IdentityScope::Entitlement` and
+///   `IdentityScope::Asset`; every member's and value's `name()` spelling is
+///   distinct; `IdentityScope::Entitlement.wire_code()` is `0` and
+///   `IdentityScope::Asset.wire_code()` is `1`; no real set contains a mock
+///   member; `build_kem_concrete` returns the real selection without
+///   configuration.
+/// Arrange: the three declared sets and `build_kem_concrete` over
+///   `KemConcrete::Bb1DepthOne` with fieldless overrides.
+/// Act:     read each declared set, each `name()`, and each `wire_code()`,
+///   and run the declared-selection builder.
+/// Assert:  the sets are exactly the stated members, the spellings are
+///   pairwise distinct, the wire codes are `0` and `1`, no `Mock` value or
+///   mock member appears in a real set, and the builder returns
+///   `KemConcrete::Bb1DepthOne` carrying no configuration.
+#[test]
+fn the_declared_sets_and_spellings_are_total_and_real() {
+    // Arrange
+    let selected = build_kem_concrete(KemConcrete::Bb1DepthOne, Default::default());
+    let mut spellings: Vec<&'static str> = KEM_CONCRETES
+        .iter()
+        .map(|concrete| concrete.name())
+        .collect();
+    spellings.extend(KEM_IDENTIFIERS.iter().map(|identifier| identifier.name()));
+    spellings.extend(IDENTITY_SCOPES.iter().map(|scope| scope.name()));
+    let mut distinct = spellings.clone();
+    distinct.sort_unstable();
+    distinct.dedup();
+
+    // Act — each set, spelling, and wire code read; the builder ran.
+
+    // Assert
+    assert_eq!(KEM_CONCRETES, [KemConcrete::Bb1DepthOne].as_slice());
+    assert_eq!(KEM_IDENTIFIERS, [KemIdentifier::Bb1DepthOneV1].as_slice());
+    assert_eq!(
+        IDENTITY_SCOPES,
+        [IdentityScope::Entitlement, IdentityScope::Asset].as_slice()
+    );
+    assert_eq!(distinct.len(), spellings.len());
+    assert_eq!(IdentityScope::Entitlement.wire_code(), 0);
+    assert_eq!(IdentityScope::Asset.wire_code(), 1);
+    assert!(!KEM_CONCRETES.contains(&KemConcrete::Mock));
+    assert!(!spellings.contains(&"mock"));
+    assert_eq!(selected, KemConcrete::Bb1DepthOne);
+}
+// the_declared_sets_and_spellings_are_total_and_real

@@ -9,27 +9,57 @@ use hashing::Root;
 #[cfg(any(test, feature = "mocks"))]
 use pairing::{CreatePairingErrorReturn, CreatePairingParams, IPairingReference};
 use pairing::{IPairingAdapter, IPairingArithmetic, SampleUniformScalarErrorReturn};
-use serde::Serialize;
 use zeroize::Zeroize;
 
+use crate::admit_kem_composition::provides::{
+    AdmitKemCompositionErrorReturn, AdmitKemCompositionFn,
+};
 use crate::bb1_depth_one::provides::Bb1DepthOneKemTryNewErrorReturn;
+use crate::lookup_kem_declaration::provides::LookupKemDeclarationFn;
 
 pub const KEM_INTERFACE_VERSION: u32 = 1;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum KemIdentifier {
     Bb1DepthOneV1,
-    #[cfg(any(test, feature = "mocks"))]
-    Mock,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+impl KemIdentifier {
+    pub const fn name(self) -> &'static str {
+        match self {
+            KemIdentifier::Bb1DepthOneV1 => "bb1_depth_one_v1",
+        }
+    }
+}
+
+pub const KEM_IDENTIFIERS: &[KemIdentifier] = &[KemIdentifier::Bb1DepthOneV1];
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum IdentityScope {
     Entitlement,
     Asset,
 }
 
+impl IdentityScope {
+    pub const fn name(self) -> &'static str {
+        match self {
+            IdentityScope::Entitlement => "entitlement",
+            IdentityScope::Asset => "asset",
+        }
+    }
+
+    pub const fn wire_code(self) -> u8 {
+        match self {
+            IdentityScope::Entitlement => 0,
+            IdentityScope::Asset => 1,
+        }
+    }
+}
+
+pub const IDENTITY_SCOPES: &[IdentityScope] = &[IdentityScope::Entitlement, IdentityScope::Asset];
+
 pub struct KemDeclaration {
+    pub concrete: KemConcrete,
     pub identifier: KemIdentifier,
     pub identity_scopes: &'static [IdentityScope],
     pub identity_tag: &'static [u8],
@@ -354,8 +384,6 @@ pub type MasterScalarFromComponentsReturn<M> =
     Result<MasterScalarFromComponentsSuccessReturn<M>, Infallible>;
 
 pub trait ICredentialKemAdapter {
-    const DECLARATION: KemDeclaration;
-
     type Pairing: IPairingAdapter;
     type ParameterSet;
     type MasterScalar;
@@ -492,12 +520,24 @@ pub trait ICredentialKemAdapter {
     ) -> MasterScalarFromComponentsReturn<Self::MasterScalar>;
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum KemConcrete {
     Bb1DepthOne,
     #[cfg(any(test, feature = "mocks"))]
     Mock,
 }
+
+impl KemConcrete {
+    pub const fn name(self) -> &'static str {
+        match self {
+            KemConcrete::Bb1DepthOne => "bb1_depth_one",
+            #[cfg(any(test, feature = "mocks"))]
+            KemConcrete::Mock => "mock",
+        }
+    }
+}
+
+pub const KEM_CONCRETES: &[KemConcrete] = &[KemConcrete::Bb1DepthOne];
 
 pub trait IKemConsumer<P: IPairingAdapter> {
     type Output;
@@ -526,12 +566,13 @@ pub struct CreateKemDeps<'a, P: IPairingArithmetic, C> {
     pub pairing: &'a P,
     pub hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
     pub consumer: C,
+    pub admit_kem_composition: AdmitKemCompositionFn,
+    pub lookup_kem_declaration: LookupKemDeclarationFn,
 }
 
 #[derive(Clone, Copy)]
 pub struct CreateKemParams {
     pub concrete: KemConcrete,
-    pub identifier: KemIdentifier,
     pub scope: IdentityScope,
 }
 
@@ -543,8 +584,7 @@ pub struct CreateKemSuccessReturn<O> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum CreateKemErrorReturn {
-    UnsupportedKemIdentifier,
-    UnsupportedIdentityScope,
+    Composition(AdmitKemCompositionErrorReturn),
     Bb1DepthOne(Bb1DepthOneKemTryNewErrorReturn),
     #[cfg(any(test, feature = "mocks"))]
     MockICredentialKemAdapter(DomainTagTryNewErrorReturn),
@@ -561,12 +601,10 @@ pub type CreateKemFn<'a, P, C> = fn(
 pub const DECLARED_KEM_SELECTIONS: &[CreateKemParams] = &[
     CreateKemParams {
         concrete: KemConcrete::Bb1DepthOne,
-        identifier: KemIdentifier::Bb1DepthOneV1,
         scope: IdentityScope::Entitlement,
     },
     CreateKemParams {
         concrete: KemConcrete::Bb1DepthOne,
-        identifier: KemIdentifier::Bb1DepthOneV1,
         scope: IdentityScope::Asset,
     },
 ];
@@ -575,12 +613,28 @@ pub const DECLARED_KEM_SELECTIONS: &[CreateKemParams] = &[
 pub trait ICreateKemCaseConsumer {
     type Output;
 
-    fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+    fn consume_create_kem_case<
+        P: IPairingArithmetic + IPairingReference,
+        H: IHashToScalarAdapter<P::Scalar>,
+    >(
         &self,
-        pairing: &P,
-        hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-        payload: &CreateKemCasePayload,
+        params: ConsumeCreateKemCaseParams,
+        payload: ConsumeCreateKemCasePayload<'_, P, H>,
     ) -> Self::Output;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeCreateKemCaseParams;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeCreateKemCasePayload<
+    'a,
+    P: IPairingArithmetic + IPairingReference,
+    H: IHashToScalarAdapter<P::Scalar>,
+> {
+    pub pairing: &'a P,
+    pub hash_to_scalar: &'a H,
+    pub case: &'a CreateKemCasePayload,
 }
 
 #[cfg(any(test, feature = "mocks"))]

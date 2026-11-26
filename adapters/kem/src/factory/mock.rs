@@ -3,16 +3,16 @@
 use super::interface::{
     CapsuleComponents, CapsuleComponentsParams, CapsuleComponentsPayload, CapsuleComponentsReturn,
     CapsuleComponentsSuccessReturn, CapsuleFromComponentsParams, CapsuleFromComponentsPayload,
-    CapsuleFromComponentsReturn, CapsuleFromComponentsSuccessReturn, ConsumeKemParams,
-    ConsumeKemPayload, CreateKemCaseDeps, CreateKemCaseErrorReturn, CreateKemCaseParams,
-    CreateKemCasePayload, CreateKemCaseReturn, CreateKemCaseSuccessReturn, CreateKemDeps,
-    CreateKemFn, CreateKemParams, CreateKemPayload, CreateKemReturn, CreateKemSuccessReturn,
-    CredentialComponents, CredentialComponentsParams, CredentialComponentsPayload,
-    CredentialComponentsReturn, CredentialComponentsSuccessReturn, CredentialFromComponentsParams,
-    CredentialFromComponentsPayload, CredentialFromComponentsReturn,
-    CredentialFromComponentsSuccessReturn, DecapsulateParams, DecapsulatePayload,
-    DecapsulateReturn, DecapsulateSuccessReturn, DeriveIdentityErrorReturn, DeriveIdentityParams,
-    DeriveIdentityPayload, DeriveIdentityReturn, DeriveIdentitySuccessReturn,
+    CapsuleFromComponentsReturn, CapsuleFromComponentsSuccessReturn, ConsumeCreateKemCaseParams,
+    ConsumeCreateKemCasePayload, ConsumeKemParams, ConsumeKemPayload, CreateKemCaseDeps,
+    CreateKemCaseErrorReturn, CreateKemCaseParams, CreateKemCasePayload, CreateKemCaseReturn,
+    CreateKemCaseSuccessReturn, CreateKemDeps, CreateKemFn, CreateKemParams, CreateKemPayload,
+    CreateKemReturn, CreateKemSuccessReturn, CredentialComponents, CredentialComponentsParams,
+    CredentialComponentsPayload, CredentialComponentsReturn, CredentialComponentsSuccessReturn,
+    CredentialFromComponentsParams, CredentialFromComponentsPayload,
+    CredentialFromComponentsReturn, CredentialFromComponentsSuccessReturn, DecapsulateParams,
+    DecapsulatePayload, DecapsulateReturn, DecapsulateSuccessReturn, DeriveIdentityErrorReturn,
+    DeriveIdentityParams, DeriveIdentityPayload, DeriveIdentityReturn, DeriveIdentitySuccessReturn,
     EncapsulateErrorReturn, EncapsulateParams, EncapsulatePayload, EncapsulateReturn,
     EncapsulateSuccessReturn, EncapsulatedValue, ICreateKemCaseConsumer, ICredentialKemAdapter,
     IKemConsumer, IdentityElementComponents, IdentityElementComponentsParams,
@@ -34,14 +34,19 @@ use super::interface::{
     RunCreateKemCaseFn, SetupErrorReturn, SetupParams, SetupPayload, SetupReturn, SetupScope,
     SetupSuccessReturn,
 };
+use crate::admit_kem_composition::provides::{AdmitKemCompositionFn, mock_admit_kem_composition};
+use crate::lookup_kem_declaration::provides::{
+    LookupKemDeclarationFn, mock_lookup_kem_declaration,
+};
 use core::convert::Infallible;
 use domain::{Secret, SecretConstructorParams, build_secret};
 use hash_to_scalar::{
+    ConsumeHashToScalarParams, ConsumeHashToScalarPayload, CreateHashToScalarDeps,
     CreateHashToScalarErrorReturn, CreateHashToScalarParams, DomainTag,
     DomainTagConstructorParamsOverrides, HashToScalarErrorReturn, HashToScalarParams,
-    HashToScalarPayload, IHashToScalarAdapter, build_create_hash_to_scalar_deps,
-    build_create_hash_to_scalar_params, build_create_hash_to_scalar_payload, build_domain_tag,
-    create_hash_to_scalar,
+    HashToScalarPayload, IHashToScalarAdapter, IHashToScalarConsumer,
+    build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
+    build_create_hash_to_scalar_payload, build_domain_tag, create_hash_to_scalar,
 };
 use pairing::{
     AddG1Params, AddG1Payload, AddG2Params, AddG2Payload, ConsumePairingParams,
@@ -63,7 +68,8 @@ pub(crate) const MOCK_I_CREDENTIAL_KEM_ADAPTER_IDENTITY_TAG: &[u8] =
     b"ChainTorrent-v1-kem-identity-mock";
 
 pub(crate) const MOCK_I_CREDENTIAL_KEM_ADAPTER_DECLARATION: KemDeclaration = KemDeclaration {
-    identifier: KemIdentifier::Mock,
+    concrete: KemConcrete::Mock,
+    identifier: KemIdentifier::Bb1DepthOneV1,
     identity_scopes: &[IdentityScope::Entitlement, IdentityScope::Asset],
     identity_tag: MOCK_I_CREDENTIAL_KEM_ADAPTER_IDENTITY_TAG,
     adapter_version: 1,
@@ -172,8 +178,6 @@ impl<'a, P: IPairingArithmetic> MockICredentialKemAdapter<'a, P> {
 }
 
 impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for MockICredentialKemAdapter<'a, P> {
-    const DECLARATION: KemDeclaration = MOCK_I_CREDENTIAL_KEM_ADAPTER_DECLARATION;
-
     type Pairing = P;
     type ParameterSet = MockICredentialKemAdapterParameterSet<P>;
     type MasterScalar = MockICredentialKemAdapterMasterScalar<P>;
@@ -979,6 +983,7 @@ fn master_scalar_components_value<P: IPairingAdapter>(
 
 #[derive(Default)]
 pub struct KemDeclarationOverrides {
+    pub concrete: Option<KemConcrete>,
     pub identifier: Option<KemIdentifier>,
     pub identity_scopes: Option<&'static [IdentityScope]>,
     pub identity_tag: Option<&'static [u8]>,
@@ -988,6 +993,9 @@ pub struct KemDeclarationOverrides {
 
 pub fn build_kem_declaration(overrides: KemDeclarationOverrides) -> KemDeclaration {
     KemDeclaration {
+        concrete: overrides
+            .concrete
+            .unwrap_or(MOCK_I_CREDENTIAL_KEM_ADAPTER_DECLARATION.concrete),
         identifier: overrides
             .identifier
             .unwrap_or(MOCK_I_CREDENTIAL_KEM_ADAPTER_DECLARATION.identifier),
@@ -1008,6 +1016,7 @@ pub fn build_kem_declaration(overrides: KemDeclarationOverrides) -> KemDeclarati
 
 #[derive(Default)]
 pub struct KemDeclarationCorruptions {
+    pub concrete: Option<Value>,
     pub identifier: Option<Value>,
     pub identity_scopes: Option<Value>,
     pub identity_tag: Option<Value>,
@@ -1019,11 +1028,12 @@ pub fn invalidate_kem_declaration(corruptions: KemDeclarationCorruptions) -> Val
     let declaration = build_kem_declaration(Default::default());
     let mut fields = Map::new();
     fields.insert(
+        "concrete".to_string(),
+        Value::from(declaration.concrete.name()),
+    );
+    fields.insert(
         "identifier".to_string(),
-        Value::from(match declaration.identifier {
-            KemIdentifier::Bb1DepthOneV1 => "Bb1DepthOneV1",
-            KemIdentifier::Mock => "Mock",
-        }),
+        Value::from(declaration.identifier.name()),
     );
     fields.insert(
         "identity_scopes".to_string(),
@@ -1031,12 +1041,7 @@ pub fn invalidate_kem_declaration(corruptions: KemDeclarationCorruptions) -> Val
             declaration
                 .identity_scopes
                 .iter()
-                .map(|scope| {
-                    Value::from(match scope {
-                        IdentityScope::Entitlement => "Entitlement",
-                        IdentityScope::Asset => "Asset",
-                    })
-                })
+                .map(|scope| Value::from(scope.name()))
                 .collect(),
         ),
     );
@@ -1052,6 +1057,9 @@ pub fn invalidate_kem_declaration(corruptions: KemDeclarationCorruptions) -> Val
         "interface_version".to_string(),
         Value::from(declaration.interface_version),
     );
+    if let Some(concrete) = corruptions.concrete {
+        fields.insert("concrete".to_string(), concrete);
+    }
     if let Some(identifier) = corruptions.identifier {
         fields.insert("identifier".to_string(), identifier);
     }
@@ -1068,6 +1076,13 @@ pub fn invalidate_kem_declaration(corruptions: KemDeclarationCorruptions) -> Val
         fields.insert("interface_version".to_string(), interface_version);
     }
     Value::Object(fields)
+}
+
+#[derive(Default)]
+pub struct KemConcreteOverrides;
+
+pub fn build_kem_concrete(concrete: KemConcrete, _overrides: KemConcreteOverrides) -> KemConcrete {
+    concrete
 }
 
 #[derive(Default)]
@@ -2374,34 +2389,39 @@ pub fn build_consume_kem_payload<K: ICredentialKemAdapter>(
 }
 
 #[derive(Default)]
-pub struct CreateKemDepsOverrides;
+pub struct CreateKemDepsOverrides {
+    pub admit_kem_composition: Option<AdmitKemCompositionFn>,
+    pub lookup_kem_declaration: Option<LookupKemDeclarationFn>,
+}
 
 pub fn build_create_kem_deps<'a, P: IPairingArithmetic, C: IKemConsumer<P>>(
     pairing: &'a P,
     hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
     consumer: C,
-    _overrides: CreateKemDepsOverrides,
+    overrides: CreateKemDepsOverrides,
 ) -> CreateKemDeps<'a, P, C> {
     CreateKemDeps {
         pairing,
         hash_to_scalar,
         consumer,
+        admit_kem_composition: overrides
+            .admit_kem_composition
+            .unwrap_or(mock_admit_kem_composition),
+        lookup_kem_declaration: overrides
+            .lookup_kem_declaration
+            .unwrap_or(mock_lookup_kem_declaration),
     }
 }
 
 #[derive(Default)]
 pub struct CreateKemParamsOverrides {
     pub concrete: Option<KemConcrete>,
-    pub identifier: Option<KemIdentifier>,
     pub scope: Option<IdentityScope>,
 }
 
 pub fn build_create_kem_params(overrides: CreateKemParamsOverrides) -> CreateKemParams {
     CreateKemParams {
         concrete: overrides.concrete.unwrap_or(KemConcrete::Mock),
-        identifier: overrides
-            .identifier
-            .unwrap_or(MOCK_I_CREDENTIAL_KEM_ADAPTER_DECLARATION.identifier),
         scope: overrides.scope.unwrap_or(IdentityScope::Entitlement),
     }
 }
@@ -2409,7 +2429,6 @@ pub fn build_create_kem_params(overrides: CreateKemParamsOverrides) -> CreateKem
 #[derive(Default)]
 pub struct CreateKemParamsCorruptions {
     pub concrete: Option<Value>,
-    pub identifier: Option<Value>,
     pub scope: Option<Value>,
 }
 
@@ -2424,13 +2443,6 @@ pub fn invalidate_create_kem_params(corruptions: CreateKemParamsCorruptions) -> 
         }),
     );
     fields.insert(
-        "identifier".to_string(),
-        Value::from(match params.identifier {
-            KemIdentifier::Bb1DepthOneV1 => "Bb1DepthOneV1",
-            KemIdentifier::Mock => "Mock",
-        }),
-    );
-    fields.insert(
         "scope".to_string(),
         Value::from(match params.scope {
             IdentityScope::Entitlement => "Entitlement",
@@ -2439,9 +2451,6 @@ pub fn invalidate_create_kem_params(corruptions: CreateKemParamsCorruptions) -> 
     );
     if let Some(concrete) = corruptions.concrete {
         fields.insert("concrete".to_string(), concrete);
-    }
-    if let Some(identifier) = corruptions.identifier {
-        fields.insert("identifier".to_string(), identifier);
     }
     if let Some(scope) = corruptions.scope {
         fields.insert("scope".to_string(), scope);
@@ -2536,10 +2545,68 @@ pub fn build_create_kem_case_success_return<O>(
     CreateKemCaseSuccessReturn { output }
 }
 
+#[derive(Default)]
+pub struct ConsumeCreateKemCaseParamsOverrides;
+
+pub fn build_consume_create_kem_case_params(
+    _overrides: ConsumeCreateKemCaseParamsOverrides,
+) -> ConsumeCreateKemCaseParams {
+    ConsumeCreateKemCaseParams
+}
+
+#[derive(Default)]
+pub struct ConsumeCreateKemCasePayloadOverrides;
+
+pub fn build_consume_create_kem_case_payload<
+    'a,
+    P: IPairingArithmetic + IPairingReference,
+    H: IHashToScalarAdapter<P::Scalar>,
+>(
+    pairing: &'a P,
+    hash_to_scalar: &'a H,
+    case: &'a CreateKemCasePayload,
+    _overrides: ConsumeCreateKemCasePayloadOverrides,
+) -> ConsumeCreateKemCasePayload<'a, P, H> {
+    ConsumeCreateKemCasePayload {
+        pairing,
+        hash_to_scalar,
+        case,
+    }
+}
+
 struct CaseAtPairing<'a, C: ICreateKemCaseConsumer> {
     consumer: &'a C,
     case_payload: &'a CreateKemCasePayload,
     hash_to_scalar_params: CreateHashToScalarParams,
+}
+
+struct CaseAtHashToScalar<'a, C: ICreateKemCaseConsumer, P: IPairingArithmetic + IPairingReference>
+{
+    consumer: &'a C,
+    pairing: &'a P,
+    case_payload: &'a CreateKemCasePayload,
+}
+
+impl<C: ICreateKemCaseConsumer, P: IPairingArithmetic + IPairingReference>
+    IHashToScalarConsumer<P::Scalar> for CaseAtHashToScalar<'_, C, P>
+{
+    type Output = CreateKemCaseReturn<C::Output>;
+
+    fn consume_hash_to_scalar<K: IHashToScalarAdapter<P::Scalar>>(
+        &self,
+        _params: ConsumeHashToScalarParams,
+        payload: ConsumeHashToScalarPayload<P::Scalar, K>,
+    ) -> Self::Output {
+        let output = self.consumer.consume_create_kem_case(
+            ConsumeCreateKemCaseParams,
+            ConsumeCreateKemCasePayload {
+                pairing: self.pairing,
+                hash_to_scalar: &payload.adapter,
+                case: self.case_payload,
+            },
+        );
+        Ok(CreateKemCaseSuccessReturn { output })
+    }
 }
 
 impl<C: ICreateKemCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
@@ -2550,23 +2617,24 @@ impl<C: ICreateKemCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
         _params: ConsumePairingParams,
         payload: ConsumePairingPayload<P>,
     ) -> Self::Output {
-        let hashed: Result<_, CreateHashToScalarErrorReturn> = create_hash_to_scalar::<P::Scalar>(
-            &build_create_hash_to_scalar_deps(Default::default()),
-            self.hash_to_scalar_params,
-            build_create_hash_to_scalar_payload(Default::default()),
+        let hash_deps: CreateHashToScalarDeps<_> = build_create_hash_to_scalar_deps(
+            CaseAtHashToScalar {
+                consumer: self.consumer,
+                pairing: &payload.adapter,
+                case_payload: self.case_payload,
+            },
+            Default::default(),
         );
-        let hashed = match hashed {
-            Ok(hashed) => hashed,
-            Err(error) => {
-                return Err(CreateKemCaseErrorReturn::CreateHashToScalar(error));
-            }
-        };
-        let output = self.consumer.consume_create_kem_case(
-            &payload.adapter,
-            &*hashed.adapter,
-            self.case_payload,
-        );
-        Ok(CreateKemCaseSuccessReturn { output })
+        let hashed: Result<_, CreateHashToScalarErrorReturn> =
+            create_hash_to_scalar::<P::Scalar, CaseAtHashToScalar<'_, C, P>>(
+                &hash_deps,
+                self.hash_to_scalar_params,
+                build_create_hash_to_scalar_payload(Default::default()),
+            );
+        match hashed {
+            Ok(success) => success.output,
+            Err(error) => Err(CreateKemCaseErrorReturn::CreateHashToScalar(error)),
+        }
     }
 }
 
@@ -2583,6 +2651,12 @@ pub fn run_create_kem_case<C: ICreateKemCaseConsumer>(
                 case_payload: &payload,
                 hash_to_scalar_params: params.hash_to_scalar,
             },
+            pairing::lookup_pairing_declaration,
+            pairing::admit_pairing_composition,
+            pairing::build_admit_pairing_composition_deps(
+                pairing::lookup_pairing_declaration,
+                Default::default(),
+            ),
             Default::default(),
         ),
         params.pairing,

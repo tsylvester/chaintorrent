@@ -5,12 +5,15 @@ use super::interface::{
     Bb1DepthOneCaseReturn, Bb1DepthOneCaseSuccessReturn, Bb1DepthOneCredential,
     Bb1DepthOneIdentityElement, Bb1DepthOneKem, Bb1DepthOneKemConstructorParams,
     Bb1DepthOneMasterScalar, Bb1DepthOneParameterSet, Bb1DepthOneParameterSetScope,
-    IBb1DepthOneCaseConsumer, RunBb1DepthOneCaseFn,
+    ConsumeBb1DepthOneCaseParams, ConsumeBb1DepthOneCasePayload, IBb1DepthOneCaseConsumer,
+    RunBb1DepthOneCaseFn,
 };
 use domain::{Secret, SecretConstructorParams, build_secret};
 use hash_to_scalar::{
-    CreateHashToScalarParams, IHashToScalarAdapter, build_create_hash_to_scalar_deps,
-    build_create_hash_to_scalar_params, build_create_hash_to_scalar_payload, create_hash_to_scalar,
+    ConsumeHashToScalarParams, ConsumeHashToScalarPayload, CreateHashToScalarDeps,
+    CreateHashToScalarErrorReturn, CreateHashToScalarParams, IHashToScalarAdapter,
+    IHashToScalarConsumer, build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
+    build_create_hash_to_scalar_payload, create_hash_to_scalar,
 };
 use pairing::{
     AddG1Params, AddG1Payload, AddG2Params, AddG2Payload, ConsumePairingParams,
@@ -467,13 +470,70 @@ pub fn build_bb1_depth_one_case_success_return<O>(
     Bb1DepthOneCaseSuccessReturn { output }
 }
 
+#[derive(Default)]
+pub struct ConsumeBb1DepthOneCaseParamsOverrides;
+
+pub fn build_consume_bb1_depth_one_case_params(
+    _overrides: ConsumeBb1DepthOneCaseParamsOverrides,
+) -> ConsumeBb1DepthOneCaseParams {
+    ConsumeBb1DepthOneCaseParams
+}
+
+#[derive(Default)]
+pub struct ConsumeBb1DepthOneCasePayloadOverrides;
+
+pub fn build_consume_bb1_depth_one_case_payload<'a, P, H>(
+    pairing: &'a P,
+    hash_to_scalar: &'a H,
+    case: &'a Bb1DepthOneCasePayload,
+    _overrides: ConsumeBb1DepthOneCasePayloadOverrides,
+) -> ConsumeBb1DepthOneCasePayload<'a, P, H> {
+    ConsumeBb1DepthOneCasePayload {
+        pairing,
+        hash_to_scalar,
+        case,
+    }
+}
+
 struct CaseAtPairing<'a, C: IBb1DepthOneCaseConsumer> {
     consumer: &'a C,
     case_payload: &'a Bb1DepthOneCasePayload,
     hash_to_scalar_params: CreateHashToScalarParams,
 }
 
-impl<'a, C: IBb1DepthOneCaseConsumer> IPairingConsumer for CaseAtPairing<'a, C> {
+struct CaseAtHashToScalar<
+    'a,
+    C: IBb1DepthOneCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+> {
+    consumer: &'a C,
+    pairing: &'a P,
+    case_payload: &'a Bb1DepthOneCasePayload,
+}
+
+impl<C: IBb1DepthOneCaseConsumer, P: IPairingArithmetic + IPairingReference>
+    IHashToScalarConsumer<P::Scalar> for CaseAtHashToScalar<'_, C, P>
+{
+    type Output = Bb1DepthOneCaseReturn<C::Output>;
+
+    fn consume_hash_to_scalar<K: IHashToScalarAdapter<P::Scalar>>(
+        &self,
+        _params: ConsumeHashToScalarParams,
+        payload: ConsumeHashToScalarPayload<P::Scalar, K>,
+    ) -> Self::Output {
+        let output = self.consumer.consume_bb1_depth_one_case(
+            ConsumeBb1DepthOneCaseParams,
+            ConsumeBb1DepthOneCasePayload {
+                pairing: self.pairing,
+                hash_to_scalar: &payload.adapter,
+                case: self.case_payload,
+            },
+        );
+        Ok(Bb1DepthOneCaseSuccessReturn { output })
+    }
+}
+
+impl<C: IBb1DepthOneCaseConsumer> IPairingConsumer for CaseAtPairing<'_, C> {
     type Output = Bb1DepthOneCaseReturn<C::Output>;
 
     fn consume_pairing<P: IPairingArithmetic + IPairingReference>(
@@ -481,19 +541,22 @@ impl<'a, C: IBb1DepthOneCaseConsumer> IPairingConsumer for CaseAtPairing<'a, C> 
         _params: ConsumePairingParams,
         payload: ConsumePairingPayload<P>,
     ) -> Self::Output {
-        match create_hash_to_scalar::<P::Scalar>(
-            &build_create_hash_to_scalar_deps(Default::default()),
-            self.hash_to_scalar_params,
-            build_create_hash_to_scalar_payload(Default::default()),
-        ) {
-            Ok(made) => {
-                let output = self.consumer.consume_bb1_depth_one_case(
-                    &payload.adapter,
-                    &*made.adapter,
-                    self.case_payload,
-                );
-                Ok(Bb1DepthOneCaseSuccessReturn { output })
-            }
+        let hash_deps: CreateHashToScalarDeps<_> = build_create_hash_to_scalar_deps(
+            CaseAtHashToScalar {
+                consumer: self.consumer,
+                pairing: &payload.adapter,
+                case_payload: self.case_payload,
+            },
+            Default::default(),
+        );
+        let hashed: Result<_, CreateHashToScalarErrorReturn> =
+            create_hash_to_scalar::<P::Scalar, CaseAtHashToScalar<'_, C, P>>(
+                &hash_deps,
+                self.hash_to_scalar_params,
+                build_create_hash_to_scalar_payload(Default::default()),
+            );
+        match hashed {
+            Ok(success) => success.output,
             Err(error) => Err(Bb1DepthOneCaseErrorReturn::CreateHashToScalar(error)),
         }
     }
@@ -512,17 +575,18 @@ pub fn run_bb1_depth_one_case<C: IBb1DepthOneCaseConsumer>(
                 case_payload: &payload,
                 hash_to_scalar_params: params.hash_to_scalar,
             },
+            pairing::lookup_pairing_declaration,
+            pairing::admit_pairing_composition,
+            pairing::build_admit_pairing_composition_deps(
+                pairing::lookup_pairing_declaration,
+                Default::default(),
+            ),
             Default::default(),
         ),
         params.pairing,
         CreatePairingPayload,
     ) {
-        Ok(created) => match created.output {
-            Ok(Bb1DepthOneCaseSuccessReturn { output }) => {
-                Ok(Bb1DepthOneCaseSuccessReturn { output })
-            }
-            Err(error) => Err(error),
-        },
+        Ok(success) => success.output,
         Err(error) => Err(Bb1DepthOneCaseErrorReturn::CreatePairing(error)),
     }
 }

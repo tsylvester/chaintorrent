@@ -2,38 +2,48 @@
 
 use super::create_kem;
 use super::provides::{
-    CapsuleComponents, CapsuleFromComponentsPayloadOverrides, ConsumeKemParams, ConsumeKemPayload,
-    CreateKemCaseParamsOverrides, CreateKemCasePayload, CreateKemErrorReturn, CreateKemParams,
-    CreateKemParamsOverrides, CredentialFromComponentsPayloadOverrides, DECLARED_KEM_SELECTIONS,
-    DeriveIdentityErrorReturn, DeriveIdentityPayloadOverrides, EncapsulateErrorReturn,
-    EncapsulatePayloadOverrides, ICreateKemCaseConsumer, ICredentialKemAdapter, IKemConsumer,
-    IdentityScope, IssueErrorReturn, IssuePayloadOverrides, KEM_INTERFACE_VERSION, KemIdentity,
-    MasterScalarFromComponentsPayloadOverrides, ParameterSetFromComponentsPayloadOverrides,
-    RerandomizeErrorReturn, RerandomizePayloadOverrides, SetupErrorReturn, SetupParamsOverrides,
-    SetupPayloadOverrides, SetupScope, build_capsule_components_params,
-    build_capsule_components_payload, build_capsule_from_components_params,
-    build_capsule_from_components_payload, build_create_kem_case_deps,
-    build_create_kem_case_params, build_create_kem_case_payload, build_create_kem_deps,
-    build_create_kem_params, build_create_kem_payload, build_credential_components_params,
-    build_credential_components_payload, build_credential_from_components_params,
-    build_credential_from_components_payload, build_decapsulate_params, build_decapsulate_payload,
-    build_derive_identity_params, build_derive_identity_payload, build_encapsulate_params,
-    build_encapsulate_payload, build_identity_element_components_params,
-    build_identity_element_components_payload, build_is_valid_params, build_is_valid_payload,
-    build_is_well_formed_params, build_is_well_formed_payload, build_issue_params,
-    build_issue_payload, build_master_scalar_components_params,
-    build_master_scalar_components_payload, build_master_scalar_from_components_params,
-    build_master_scalar_from_components_payload, build_parameter_set_components_params,
-    build_parameter_set_components_payload, build_parameter_set_from_components_params,
-    build_parameter_set_from_components_payload, build_rerandomize_params,
-    build_rerandomize_payload, build_setup_params, build_setup_payload, run_create_kem_case,
+    CapsuleComponents, CapsuleFromComponentsPayloadOverrides, ConsumeCreateKemCaseParams,
+    ConsumeCreateKemCasePayload, ConsumeKemParams, ConsumeKemPayload, CreateKemCaseParamsOverrides,
+    CreateKemDepsOverrides, CreateKemParams, CreateKemParamsOverrides,
+    CredentialFromComponentsPayloadOverrides, DeriveIdentityErrorReturn,
+    DeriveIdentityPayloadOverrides, EncapsulateErrorReturn, EncapsulatePayloadOverrides,
+    ICreateKemCaseConsumer, ICredentialKemAdapter, IKemConsumer, IdentityScope, IssueErrorReturn,
+    IssuePayloadOverrides, KEM_CONCRETES, KEM_INTERFACE_VERSION, KemConcrete, KemConcreteOverrides,
+    KemIdentity, MasterScalarFromComponentsPayloadOverrides,
+    ParameterSetFromComponentsPayloadOverrides, RerandomizeErrorReturn,
+    RerandomizePayloadOverrides, SetupErrorReturn, SetupParamsOverrides, SetupPayloadOverrides,
+    SetupScope, build_capsule_components_params, build_capsule_components_payload,
+    build_capsule_from_components_params, build_capsule_from_components_payload,
+    build_create_kem_case_deps, build_create_kem_case_params, build_create_kem_case_payload,
+    build_create_kem_deps, build_create_kem_params, build_create_kem_payload,
+    build_credential_components_params, build_credential_components_payload,
+    build_credential_from_components_params, build_credential_from_components_payload,
+    build_decapsulate_params, build_decapsulate_payload, build_derive_identity_params,
+    build_derive_identity_payload, build_encapsulate_params, build_encapsulate_payload,
+    build_identity_element_components_params, build_identity_element_components_payload,
+    build_is_valid_params, build_is_valid_payload, build_is_well_formed_params,
+    build_is_well_formed_payload, build_issue_params, build_issue_payload, build_kem_concrete,
+    build_master_scalar_components_params, build_master_scalar_components_payload,
+    build_master_scalar_from_components_params, build_master_scalar_from_components_payload,
+    build_parameter_set_components_params, build_parameter_set_components_payload,
+    build_parameter_set_from_components_params, build_parameter_set_from_components_payload,
+    build_rerandomize_params, build_rerandomize_payload, build_setup_params, build_setup_payload,
+    run_create_kem_case,
+};
+use crate::admit_kem_composition::provides::admit_kem_composition;
+use crate::lookup_kem_declaration::provides::{
+    LookupKemDeclarationDeps, LookupKemDeclarationParams, LookupKemDeclarationPayload,
+    lookup_kem_declaration,
 };
 use domain::build_secret;
 use hash_to_scalar::{
-    CreateHashToScalarParamsOverrides, DECLARED_HASH_TO_SCALAR_SELECTIONS,
-    DomainTagConstructorParamsOverrides, HashToScalarConcrete, HashToScalarErrorReturn,
-    HashToScalarIdentifier, IHashToScalarAdapter, MockIHashToScalarAdapterFailureMode,
-    build_create_hash_to_scalar_params, build_domain_tag, expected_uniform_bytes,
+    CreateHashToScalarParamsOverrides, DomainTagConstructorParamsOverrides,
+    HASH_TO_SCALAR_CONCRETES, HashToScalarConcrete, HashToScalarConcreteOverrides,
+    HashToScalarErrorReturn, HashToScalarIdentifier, IHashToScalarAdapter,
+    LookupHashToScalarDeclarationDeps, LookupHashToScalarDeclarationParams,
+    LookupHashToScalarDeclarationPayload, MockIHashToScalarAdapterFailureMode,
+    build_create_hash_to_scalar_params, build_domain_tag, build_hash_to_scalar_concrete,
+    expected_uniform_bytes, lookup_hash_to_scalar_declaration,
 };
 use hashing::{RootConstructorParamsOverrides, build_root};
 use pairing::{
@@ -46,26 +56,27 @@ use pairing::{
     SampleUniformScalarParams, SampleUniformScalarPayload, build_create_pairing_params,
 };
 
-/// Contract: own entry
-///   `every_concrete_is_constructed_under_the_identifier_and_scope_it_declares`;
-///   given a case's selection, declared identifier, and declared scope,
-///   `create_kem` yields `Ok` whose consumer reads `K::DECLARATION.identifier`
-///   equal to `params.identifier`, `K::DECLARATION.interface_version` equal to
-///   `KEM_INTERFACE_VERSION`, `K::DECLARATION.identity_scopes` containing
-///   `params.scope`, and `payload.scope()` equal to `params.scope`.
-/// Arrange: every case of `cases`, each with the identifier its own declaration
-///   names, over every case of `DECLARED_HASH_TO_SCALAR_SELECTIONS`; the cases'
-///   declared identifiers differ, so a construction of another concrete reports
-///   another identifier.
-/// Act:     `create_kem` per case, inside `PairingConsumer`.
+/// Contract: own entry `every_concrete_is_constructed_under_the_scope_it_declares`;
+///   `create_kem` under a case's selection and a scope its declaration provides
+///   yields `Ok` whose consumer reads the declaration's `concrete` equal to
+///   `params.concrete`, its `interface_version` equal to `KEM_INTERFACE_VERSION`,
+///   its `identity_scopes` containing `params.scope`, and `payload.scope()`
+///   equal to `params.scope`; absorbs the composition admission's
+///   `a_member_admitted_by_selection_is_compatible_with_each_scope_of_the_declared_set`.
+/// Arrange: every case of `cases`, each scope its own declaration provides,
+///   over every member of `HASH_TO_SCALAR_CONCRETES`; the declarations read in
+///   `KemConsumer` through `lookup_kem_declaration` over `params.concrete`, so a
+///   construction of another concrete reports another declaration.
+/// Act:     `create_kem` per case, inside `Consumer`.
 /// Assert:  in `KemConsumer`, the four declaration and scope reads above by
 ///   `assert_eq!`/`assert!`; outside the consumer, `created.is_ok()`.
-/// Boundary: the private surface through `create_kem` and the selected
-///   concrete's `try_new`.
+/// Boundary: the private surface through `lookup_kem_declaration`,
+///   `admit_kem_composition`, `create_kem`, and the selected concrete's
+///   `try_new`.
 /// Mocked:  nothing; the mock selection is the family's mock concrete reached
 ///   by configuration.
 #[test]
-fn every_concrete_is_constructed_under_the_identifier_and_scope_it_declares() {
+fn every_concrete_is_constructed_under_the_scope_it_declares() {
     struct KemConsumer {
         params: CreateKemParams,
     }
@@ -78,9 +89,24 @@ fn every_concrete_is_constructed_under_the_identifier_and_scope_it_declares() {
             _params: ConsumeKemParams,
             payload: ConsumeKemPayload<K>,
         ) -> Self::Output {
-            assert!(K::DECLARATION.identifier == self.params.identifier);
-            assert_eq!(K::DECLARATION.interface_version, KEM_INTERFACE_VERSION);
-            assert!(K::DECLARATION.identity_scopes.contains(&self.params.scope));
+            let Ok(looked_up) = lookup_kem_declaration(
+                &LookupKemDeclarationDeps,
+                LookupKemDeclarationParams {
+                    concrete: self.params.concrete,
+                },
+                LookupKemDeclarationPayload,
+            );
+            assert_eq!(looked_up.declaration.concrete, self.params.concrete);
+            assert_eq!(
+                looked_up.declaration.interface_version,
+                KEM_INTERFACE_VERSION
+            );
+            assert!(
+                looked_up
+                    .declaration
+                    .identity_scopes
+                    .contains(&self.params.scope)
+            );
             assert_eq!(payload.scope(), self.params.scope);
         }
     }
@@ -90,32 +116,38 @@ fn every_concrete_is_constructed_under_the_identifier_and_scope_it_declares() {
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
+                        payload.pairing,
+                        payload.hash_to_scalar,
                         KemConsumer { params: *case },
-                        Default::default(),
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -126,7 +158,7 @@ fn every_concrete_is_constructed_under_the_identifier_and_scope_it_declares() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -134,107 +166,14 @@ fn every_concrete_is_constructed_under_the_identifier_and_scope_it_declares() {
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
-                }),
-                build_create_kem_case_payload(Default::default()),
-            );
-            assert!(created.is_ok());
-        }
-    }
-}
-
-/// Contract: own entry
-///   `every_concrete_is_refused_under_an_identifier_it_does_not_declare`; given
-///   a case's selection and another case's declared identifier, `create_kem`
-///   yields `Err(CreateKemErrorReturn::UnsupportedKemIdentifier)` and the
-///   consumer never runs.
-/// Arrange: each case of `cases` paired with the declared identifier of every
-///   other case whose declared identifier differs from its own; `KemConsumer`
-///   is the deps' consumer and its body fails the block if run.
-/// Act:     `create_kem` per pairing, inside `PairingConsumer`.
-/// Assert:  `assert_eq!(result.err(),
-///   Some(CreateKemErrorReturn::UnsupportedKemIdentifier))` per pairing;
-///   outside the consumer, `created.is_ok()`.
-/// Boundary: the private surface through `create_kem`.
-/// Mocked:  nothing.
-#[test]
-fn every_concrete_is_refused_under_an_identifier_it_does_not_declare() {
-    struct KemConsumer;
-
-    impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer {
-        type Output = ();
-
-        fn consume_kem<K: ICredentialKemAdapter<Pairing = P>>(
-            &self,
-            _params: ConsumeKemParams,
-            _payload: ConsumeKemPayload<K>,
-        ) -> Self::Output {
-            unreachable!("the refusal returns before the consumer runs")
-        }
-    }
-
-    struct Consumer;
-
-    impl ICreateKemCaseConsumer for Consumer {
-        type Output = ();
-
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
-            &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
-        ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
-                }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
-            }
-            for case in &cases {
-                for other in &cases {
-                    if other.identifier == case.identifier {
-                        continue;
-                    }
-                    let result = create_kem(
-                        &build_create_kem_deps(
-                            pairing,
-                            hash_to_scalar,
-                            KemConsumer,
-                            Default::default(),
-                        ),
-                        build_create_kem_params(CreateKemParamsOverrides {
-                            concrete: Some(case.concrete),
-                            identifier: Some(other.identifier),
-                            scope: Some(case.scope),
-                        }),
-                        build_create_kem_payload(Default::default()),
-                    );
-                    assert_eq!(
-                        result.err(),
-                        Some(CreateKemErrorReturn::UnsupportedKemIdentifier)
-                    );
-                }
-            }
-        }
-    }
-
-    for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
-            let created = run_create_kem_case(
-                &build_create_kem_case_deps(Consumer, Default::default()),
-                build_create_kem_case_params(CreateKemCaseParamsOverrides {
-                    pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
-                        concrete: Some(*concrete),
-                        ..Default::default()
-                    })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -328,32 +267,38 @@ fn every_concrete_issues_a_credential_valid_for_its_identity() {
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
+                        payload.pairing,
+                        payload.hash_to_scalar,
                         KemConsumer,
-                        Default::default(),
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -364,7 +309,7 @@ fn every_concrete_issues_a_credential_valid_for_its_identity() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -372,7 +317,14 @@ fn every_concrete_issues_a_credential_valid_for_its_identity() {
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -506,32 +458,40 @@ fn every_concrete_rerandomizes_a_credential_to_one_valid_for_its_identity() {
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
-                        KemConsumer { pairing },
-                        Default::default(),
+                        payload.pairing,
+                        payload.hash_to_scalar,
+                        KemConsumer {
+                            pairing: payload.pairing,
+                        },
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -542,7 +502,7 @@ fn every_concrete_rerandomizes_a_credential_to_one_valid_for_its_identity() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -550,7 +510,14 @@ fn every_concrete_rerandomizes_a_credential_to_one_valid_for_its_identity() {
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -719,32 +686,38 @@ fn every_concrete_decapsulates_a_well_formed_capsule_to_the_encapsulated_bytes()
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
+                        payload.pairing,
+                        payload.hash_to_scalar,
                         KemConsumer,
-                        Default::default(),
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -755,7 +728,7 @@ fn every_concrete_decapsulates_a_well_formed_capsule_to_the_encapsulated_bytes()
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -763,7 +736,14 @@ fn every_concrete_decapsulates_a_well_formed_capsule_to_the_encapsulated_bytes()
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -916,24 +896,27 @@ fn every_concrete_recovers_one_value_from_the_credentials_of_different_entitleme
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in cases
                 .iter()
@@ -941,10 +924,15 @@ fn every_concrete_recovers_one_value_from_the_credentials_of_different_entitleme
             {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
-                        KemConsumer { pairing },
-                        Default::default(),
+                        payload.pairing,
+                        payload.hash_to_scalar,
+                        KemConsumer {
+                            pairing: payload.pairing,
+                        },
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -955,7 +943,7 @@ fn every_concrete_recovers_one_value_from_the_credentials_of_different_entitleme
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -963,7 +951,14 @@ fn every_concrete_recovers_one_value_from_the_credentials_of_different_entitleme
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -1146,32 +1141,38 @@ fn every_concrete_rejects_a_credential_for_another_identity_and_under_another_pa
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
+                        payload.pairing,
+                        payload.hash_to_scalar,
                         KemConsumer,
-                        Default::default(),
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -1182,7 +1183,7 @@ fn every_concrete_rejects_a_credential_for_another_identity_and_under_another_pa
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -1190,7 +1191,14 @@ fn every_concrete_rejects_a_credential_for_another_identity_and_under_another_pa
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -1286,24 +1294,27 @@ fn every_concrete_rejects_a_capsule_with_exchanged_identity_base_elements() {
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in cases
                 .iter()
@@ -1311,10 +1322,15 @@ fn every_concrete_rejects_a_capsule_with_exchanged_identity_base_elements() {
             {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
-                        KemConsumer { pairing },
-                        Default::default(),
+                        payload.pairing,
+                        payload.hash_to_scalar,
+                        KemConsumer {
+                            pairing: payload.pairing,
+                        },
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -1325,7 +1341,7 @@ fn every_concrete_rejects_a_capsule_with_exchanged_identity_base_elements() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -1333,7 +1349,14 @@ fn every_concrete_rejects_a_capsule_with_exchanged_identity_base_elements() {
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -1437,32 +1460,38 @@ fn every_concrete_rejects_a_capsule_under_another_parameter_set() {
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
+                        payload.pairing,
+                        payload.hash_to_scalar,
                         KemConsumer,
-                        Default::default(),
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -1473,7 +1502,7 @@ fn every_concrete_rejects_a_capsule_under_another_parameter_set() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -1481,7 +1510,14 @@ fn every_concrete_rejects_a_capsule_under_another_parameter_set() {
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -1502,7 +1538,9 @@ fn every_concrete_rejects_a_capsule_under_another_parameter_set() {
 /// Mocked:  nothing.
 #[test]
 fn every_concrete_rejects_a_capsule_of_the_other_scope() {
-    struct KemConsumer;
+    struct KemConsumer {
+        concrete: KemConcrete,
+    }
 
     impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer {
         type Output = ();
@@ -1512,10 +1550,19 @@ fn every_concrete_rejects_a_capsule_of_the_other_scope() {
             _params: ConsumeKemParams,
             payload: ConsumeKemPayload<K>,
         ) -> Self::Output {
-            if !(K::DECLARATION
+            let Ok(looked_up) = lookup_kem_declaration(
+                &LookupKemDeclarationDeps,
+                LookupKemDeclarationParams {
+                    concrete: self.concrete,
+                },
+                LookupKemDeclarationPayload,
+            );
+            if !(looked_up
+                .declaration
                 .identity_scopes
                 .contains(&IdentityScope::Entitlement)
-                && K::DECLARATION
+                && looked_up
+                    .declaration
                     .identity_scopes
                     .contains(&IdentityScope::Asset))
             {
@@ -1602,32 +1649,40 @@ fn every_concrete_rejects_a_capsule_of_the_other_scope() {
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
-                        KemConsumer,
-                        Default::default(),
+                        payload.pairing,
+                        payload.hash_to_scalar,
+                        KemConsumer {
+                            concrete: case.concrete,
+                        },
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -1638,7 +1693,7 @@ fn every_concrete_rejects_a_capsule_of_the_other_scope() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -1646,7 +1701,14 @@ fn every_concrete_rejects_a_capsule_of_the_other_scope() {
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -1726,24 +1788,27 @@ fn every_concrete_refuses_a_trivial_identity_element() {
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in cases
                 .iter()
@@ -1751,10 +1816,13 @@ fn every_concrete_refuses_a_trivial_identity_element() {
             {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
+                        payload.pairing,
+                        payload.hash_to_scalar,
                         KemConsumer,
-                        Default::default(),
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -1765,7 +1833,7 @@ fn every_concrete_refuses_a_trivial_identity_element() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -1773,7 +1841,14 @@ fn every_concrete_refuses_a_trivial_identity_element() {
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -1846,24 +1921,27 @@ fn every_concrete_refuses_a_trivial_identity_element_at_asset_setup() {
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in cases
                 .iter()
@@ -1871,10 +1949,13 @@ fn every_concrete_refuses_a_trivial_identity_element_at_asset_setup() {
             {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
+                        payload.pairing,
+                        payload.hash_to_scalar,
                         KemConsumer,
-                        Default::default(),
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -1885,7 +1966,7 @@ fn every_concrete_refuses_a_trivial_identity_element_at_asset_setup() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -1893,7 +1974,14 @@ fn every_concrete_refuses_a_trivial_identity_element_at_asset_setup() {
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -1973,24 +2061,27 @@ fn every_concrete_derives_under_the_asset_scope_only_the_identity_the_set_fixes(
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in cases
                 .iter()
@@ -1998,10 +2089,13 @@ fn every_concrete_derives_under_the_asset_scope_only_the_identity_the_set_fixes(
             {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
+                        payload.pairing,
+                        payload.hash_to_scalar,
                         KemConsumer,
-                        Default::default(),
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -2012,7 +2106,7 @@ fn every_concrete_derives_under_the_asset_scope_only_the_identity_the_set_fixes(
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -2020,7 +2114,14 @@ fn every_concrete_derives_under_the_asset_scope_only_the_identity_the_set_fixes(
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -2043,7 +2144,9 @@ fn every_concrete_derives_under_the_asset_scope_only_the_identity_the_set_fixes(
 /// Mocked:  nothing.
 #[test]
 fn every_concrete_refuses_an_identity_of_the_other_scope() {
-    struct KemConsumer;
+    struct KemConsumer {
+        concrete: KemConcrete,
+    }
 
     impl<P: IPairingArithmetic> IKemConsumer<P> for KemConsumer {
         type Output = ();
@@ -2053,10 +2156,19 @@ fn every_concrete_refuses_an_identity_of_the_other_scope() {
             _params: ConsumeKemParams,
             payload: ConsumeKemPayload<K>,
         ) -> Self::Output {
-            if !(K::DECLARATION
+            let Ok(looked_up) = lookup_kem_declaration(
+                &LookupKemDeclarationDeps,
+                LookupKemDeclarationParams {
+                    concrete: self.concrete,
+                },
+                LookupKemDeclarationPayload,
+            );
+            if !(looked_up
+                .declaration
                 .identity_scopes
                 .contains(&IdentityScope::Entitlement)
-                && K::DECLARATION
+                && looked_up
+                    .declaration
                     .identity_scopes
                     .contains(&IdentityScope::Asset))
             {
@@ -2108,32 +2220,40 @@ fn every_concrete_refuses_an_identity_of_the_other_scope() {
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
-                        KemConsumer,
-                        Default::default(),
+                        payload.pairing,
+                        payload.hash_to_scalar,
+                        KemConsumer {
+                            concrete: case.concrete,
+                        },
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -2144,7 +2264,7 @@ fn every_concrete_refuses_an_identity_of_the_other_scope() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -2152,7 +2272,14 @@ fn every_concrete_refuses_an_identity_of_the_other_scope() {
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -2273,32 +2400,40 @@ fn every_concrete_accepts_a_credential_issued_under_a_rebuilt_parameter_set_and_
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
-                        KemConsumer { pairing },
-                        Default::default(),
+                        payload.pairing,
+                        payload.hash_to_scalar,
+                        KemConsumer {
+                            pairing: payload.pairing,
+                        },
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -2309,7 +2444,7 @@ fn every_concrete_accepts_a_credential_issued_under_a_rebuilt_parameter_set_and_
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -2317,7 +2452,14 @@ fn every_concrete_accepts_a_credential_issued_under_a_rebuilt_parameter_set_and_
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -2451,32 +2593,40 @@ fn every_concrete_decapsulates_a_rebuilt_credential_and_capsule_to_the_encapsula
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
-                        KemConsumer { pairing },
-                        Default::default(),
+                        payload.pairing,
+                        payload.hash_to_scalar,
+                        KemConsumer {
+                            pairing: payload.pairing,
+                        },
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -2487,7 +2637,7 @@ fn every_concrete_decapsulates_a_rebuilt_credential_and_capsule_to_the_encapsula
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -2495,7 +2645,14 @@ fn every_concrete_decapsulates_a_rebuilt_credential_and_capsule_to_the_encapsula
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -2582,32 +2739,40 @@ fn every_concrete_accepts_a_rebuilt_capsule_as_well_formed() {
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
-                        KemConsumer { pairing },
-                        Default::default(),
+                        payload.pairing,
+                        payload.hash_to_scalar,
+                        KemConsumer {
+                            pairing: payload.pairing,
+                        },
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -2618,7 +2783,7 @@ fn every_concrete_accepts_a_rebuilt_capsule_as_well_formed() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -2626,7 +2791,14 @@ fn every_concrete_accepts_a_rebuilt_capsule_as_well_formed() {
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -2713,32 +2885,40 @@ fn every_concrete_binds_the_public_value_to_the_master_scalar() {
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
-                        KemConsumer { pairing },
-                        Default::default(),
+                        payload.pairing,
+                        payload.hash_to_scalar,
+                        KemConsumer {
+                            pairing: payload.pairing,
+                        },
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -2749,7 +2929,7 @@ fn every_concrete_binds_the_public_value_to_the_master_scalar() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -2757,7 +2937,14 @@ fn every_concrete_binds_the_public_value_to_the_master_scalar() {
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -2892,32 +3079,40 @@ fn every_concrete_returns_the_randomness_its_credential_was_formed_with() {
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
-                        KemConsumer { pairing },
-                        Default::default(),
+                        payload.pairing,
+                        payload.hash_to_scalar,
+                        KemConsumer {
+                            pairing: payload.pairing,
+                        },
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -2928,7 +3123,7 @@ fn every_concrete_returns_the_randomness_its_credential_was_formed_with() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -2936,7 +3131,14 @@ fn every_concrete_returns_the_randomness_its_credential_was_formed_with() {
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -3072,32 +3274,40 @@ fn every_concrete_returns_the_offset_it_applied_under_rerandomization() {
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
-                        KemConsumer { pairing },
-                        Default::default(),
+                        payload.pairing,
+                        payload.hash_to_scalar,
+                        KemConsumer {
+                            pairing: payload.pairing,
+                        },
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -3108,7 +3318,7 @@ fn every_concrete_returns_the_offset_it_applied_under_rerandomization() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -3116,7 +3326,14 @@ fn every_concrete_returns_the_offset_it_applied_under_rerandomization() {
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -3219,32 +3436,40 @@ fn every_concrete_exposes_the_target_group_encoding_of_the_encapsulated_value() 
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
-                        KemConsumer { pairing },
-                        Default::default(),
+                        payload.pairing,
+                        payload.hash_to_scalar,
+                        KemConsumer {
+                            pairing: payload.pairing,
+                        },
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -3255,7 +3480,7 @@ fn every_concrete_exposes_the_target_group_encoding_of_the_encapsulated_value() 
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -3263,7 +3488,14 @@ fn every_concrete_exposes_the_target_group_encoding_of_the_encapsulated_value() 
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -3273,12 +3505,13 @@ fn every_concrete_exposes_the_target_group_encoding_of_the_encapsulated_value() 
 }
 
 /// Contract: own entry `every_concrete_maps_an_identity_under_its_declared_tag`;
-///   the identity scalar is the oracle's scalar under
-///   `K::DECLARATION.identity_tag`.
-/// Arrange: each case, over each case of `DECLARED_HASH_TO_SCALAR_SELECTIONS`
-///   that declares `HashToScalarIdentifier::Keccak256V1`; the tag from
-///   `build_domain_tag` over the bytes of `K::DECLARATION.identity_tag`;
-///   `setup` and `derive_identity` run in the arrangement.
+///   the identity scalar is the oracle's scalar under the `identity_tag` of the
+///   declaration `lookup_kem_declaration` returns for the case's concrete.
+/// Arrange: each case, over each member of `HASH_TO_SCALAR_CONCRETES` whose
+///   declaration declares `HashToScalarIdentifier::Keccak256V1`; the tag from
+///   `build_domain_tag` over the bytes of the `identity_tag` of the declaration
+///   `lookup_kem_declaration` returns for the case's concrete; `setup` and
+///   `derive_identity` run in the arrangement.
 /// Act:     `identity_element_components` on the derived identity element.
 /// Assert:  `encode_scalar` of the scalar equals `encode_scalar` of the scalar
 ///   sampled from `expected_uniform_bytes(&tag, canonical,
@@ -3291,6 +3524,7 @@ fn every_concrete_exposes_the_target_group_encoding_of_the_encapsulated_value() 
 fn every_concrete_maps_an_identity_under_its_declared_tag() {
     struct KemConsumer<'a, P: IPairingArithmetic> {
         pairing: &'a P,
+        concrete: KemConcrete,
     }
 
     impl<'a, P: IPairingArithmetic> IKemConsumer<P> for KemConsumer<'a, P> {
@@ -3301,8 +3535,15 @@ fn every_concrete_maps_an_identity_under_its_declared_tag() {
             _params: ConsumeKemParams,
             payload: ConsumeKemPayload<K>,
         ) -> Self::Output {
+            let Ok(looked_up) = lookup_kem_declaration(
+                &LookupKemDeclarationDeps,
+                LookupKemDeclarationParams {
+                    concrete: self.concrete,
+                },
+                LookupKemDeclarationPayload,
+            );
             let tag = build_domain_tag(DomainTagConstructorParamsOverrides {
-                bytes: Some(K::DECLARATION.identity_tag.to_vec()),
+                bytes: Some(looked_up.declaration.identity_tag.to_vec()),
             });
             let scope = payload.scope();
             let root = build_root(Default::default());
@@ -3412,32 +3653,41 @@ fn every_concrete_maps_an_identity_under_its_declared_tag() {
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
-                        KemConsumer { pairing },
-                        Default::default(),
+                        payload.pairing,
+                        payload.hash_to_scalar,
+                        KemConsumer {
+                            pairing: payload.pairing,
+                            concrete: case.concrete,
+                        },
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -3448,10 +3698,14 @@ fn every_concrete_maps_an_identity_under_its_declared_tag() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS
-            .iter()
-            .filter(|case| case.identifier == HashToScalarIdentifier::Keccak256V1)
-        {
+        for member in HASH_TO_SCALAR_CONCRETES.iter().filter(|member| {
+            let Ok(looked_up) = lookup_hash_to_scalar_declaration(
+                &LookupHashToScalarDeclarationDeps,
+                LookupHashToScalarDeclarationParams { concrete: **member },
+                LookupHashToScalarDeclarationPayload,
+            );
+            looked_up.declaration.identifier == HashToScalarIdentifier::Keccak256V1
+        }) {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -3459,7 +3713,14 @@ fn every_concrete_maps_an_identity_under_its_declared_tag() {
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -3644,32 +3905,38 @@ fn every_concrete_returns_a_sampling_refusal_whole() {
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
-            }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
             }
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
+                        payload.pairing,
+                        payload.hash_to_scalar,
                         KemConsumer,
-                        Default::default(),
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -3680,7 +3947,7 @@ fn every_concrete_returns_a_sampling_refusal_whole() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for h2s_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             let created = run_create_kem_case(
                 &build_create_kem_case_deps(Consumer, Default::default()),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
@@ -3688,7 +3955,14 @@ fn every_concrete_returns_a_sampling_refusal_whole() {
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );
@@ -3705,9 +3979,8 @@ fn every_concrete_returns_a_sampling_refusal_whole() {
 ///   `build_create_hash_to_scalar_params(CreateHashToScalarParamsOverrides {
 ///   concrete: Some(HashToScalarConcrete::Mock(
 ///   MockIHashToScalarAdapterFailureMode::SamplingRefused)),
-///   ..Default::default() })`, against each case of
-///   `DECLARED_HASH_TO_SCALAR_SELECTIONS` under which the same calls return
-///   `Ok`.
+///   ..Default::default() })`, against each member of
+///   `HASH_TO_SCALAR_CONCRETES` under which the same calls return `Ok`.
 /// Act:     `setup` under the asset scope, and `derive_identity`.
 /// Assert:  for every case, `assert_eq!` of the error `setup` returns against
 ///   `SetupErrorReturn::HashToScalar(HashToScalarErrorReturn::Sampling(
@@ -3795,39 +4068,47 @@ fn every_concrete_returns_a_hash_to_scalar_refusal_whole() {
         }
     }
 
-    struct Consumer;
+    struct Consumer {
+        hash_refused: bool,
+    }
 
     impl ICreateKemCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_create_kem_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_create_kem_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &CreateKemCasePayload,
+            _params: ConsumeCreateKemCaseParams,
+            payload: ConsumeCreateKemCasePayload<'_, P, H>,
         ) -> Self::Output {
-            let mut cases: Vec<CreateKemParams> = DECLARED_KEM_SELECTIONS.to_vec();
-            let mut scopes: Vec<IdentityScope> = Vec::new();
-            for selection in DECLARED_KEM_SELECTIONS {
-                if !scopes.contains(&selection.scope) {
-                    scopes.push(selection.scope);
+            let mut cases: Vec<CreateKemParams> = Vec::new();
+            for concrete in KEM_CONCRETES.iter().copied().chain([KemConcrete::Mock]) {
+                let Ok(looked_up) = lookup_kem_declaration(
+                    &LookupKemDeclarationDeps,
+                    LookupKemDeclarationParams { concrete },
+                    LookupKemDeclarationPayload,
+                );
+                for scope in looked_up.declaration.identity_scopes {
+                    cases.push(build_create_kem_params(CreateKemParamsOverrides {
+                        concrete: Some(build_kem_concrete(concrete, KemConcreteOverrides)),
+                        scope: Some(*scope),
+                    }));
                 }
             }
-            for scope in scopes {
-                cases.push(build_create_kem_params(CreateKemParamsOverrides {
-                    scope: Some(scope),
-                    ..Default::default()
-                }));
-            }
-            let hash_refused =
-                hash_to_scalar.declaration().identifier == HashToScalarIdentifier::Mock;
             for case in &cases {
                 let created = create_kem(
                     &build_create_kem_deps(
-                        pairing,
-                        hash_to_scalar,
-                        KemConsumer { hash_refused },
-                        Default::default(),
+                        payload.pairing,
+                        payload.hash_to_scalar,
+                        KemConsumer {
+                            hash_refused: self.hash_refused,
+                        },
+                        CreateKemDepsOverrides {
+                            admit_kem_composition: Some(admit_kem_composition),
+                            lookup_kem_declaration: Some(lookup_kem_declaration),
+                        },
                     ),
                     *case,
                     build_create_kem_payload(Default::default()),
@@ -3838,24 +4119,36 @@ fn every_concrete_returns_a_hash_to_scalar_refusal_whole() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        let mut h2s_cases = vec![build_create_hash_to_scalar_params(
-            CreateHashToScalarParamsOverrides {
-                concrete: Some(HashToScalarConcrete::Mock(
-                    MockIHashToScalarAdapterFailureMode::SamplingRefused,
-                )),
-                ..Default::default()
-            },
-        )];
-        h2s_cases.extend_from_slice(DECLARED_HASH_TO_SCALAR_SELECTIONS);
-        for h2s_case in &h2s_cases {
+        for member in [HashToScalarConcrete::Mock(
+            MockIHashToScalarAdapterFailureMode::SamplingRefused,
+        )]
+        .iter()
+        .copied()
+        .chain(HASH_TO_SCALAR_CONCRETES.iter().copied())
+        {
             let created = run_create_kem_case(
-                &build_create_kem_case_deps(Consumer, Default::default()),
+                &build_create_kem_case_deps(
+                    Consumer {
+                        hash_refused: matches!(member, HashToScalarConcrete::Mock(_)),
+                    },
+                    Default::default(),
+                ),
                 build_create_kem_case_params(CreateKemCaseParamsOverrides {
                     pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
                         concrete: Some(*concrete),
                         ..Default::default()
                     })),
-                    hash_to_scalar: Some(*h2s_case),
+                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                        CreateHashToScalarParamsOverrides {
+                            concrete: Some(match member {
+                                HashToScalarConcrete::Mock(_) => member,
+                                _ => build_hash_to_scalar_concrete(
+                                    member,
+                                    HashToScalarConcreteOverrides,
+                                ),
+                            }),
+                        },
+                    )),
                 }),
                 build_create_kem_case_payload(Default::default()),
             );

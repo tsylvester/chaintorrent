@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod integration_test;
 mod interface;
-#[cfg(any(test, feature = "mocks"))]
+#[cfg(test)]
 mod mock;
 pub(crate) mod provides;
 #[cfg(test)]
@@ -23,7 +23,7 @@ use crate::factory::provides::{
     IdentityElementComponentsReturn, IdentityElementComponentsSuccessReturn, IsValidParams,
     IsValidPayload, IsValidReturn, IsValidSuccessReturn, IsWellFormedParams, IsWellFormedPayload,
     IsWellFormedReturn, IsWellFormedSuccessReturn, IssueErrorReturn, IssueParams, IssuePayload,
-    IssueReturn, IssueSuccessReturn, KemDeclaration, KemIdentity, MasterScalarComponents,
+    IssueReturn, IssueSuccessReturn, KemIdentity, MasterScalarComponents,
     MasterScalarComponentsParams, MasterScalarComponentsPayload, MasterScalarComponentsReturn,
     MasterScalarComponentsSuccessReturn, MasterScalarFromComponentsParams,
     MasterScalarFromComponentsPayload, MasterScalarFromComponentsReturn,
@@ -40,10 +40,10 @@ use hash_to_scalar::{
     DomainTag, DomainTagConstructorParams, HashToScalarParams, HashToScalarPayload,
 };
 use interface::{
-    BB1_DEPTH_ONE_DECLARATION, BB1_DEPTH_ONE_IDENTITY_TAG, Bb1DepthOneCapsule,
-    Bb1DepthOneCredential, Bb1DepthOneIdentityElement, Bb1DepthOneKem,
-    Bb1DepthOneKemConstructorParams, Bb1DepthOneKemTryNewErrorReturn, Bb1DepthOneKemTryNewReturn,
-    Bb1DepthOneMasterScalar, Bb1DepthOneParameterSet, Bb1DepthOneParameterSetScope,
+    BB1_DEPTH_ONE_IDENTITY_TAG, Bb1DepthOneCapsule, Bb1DepthOneCredential,
+    Bb1DepthOneIdentityElement, Bb1DepthOneKem, Bb1DepthOneKemConstructorParams,
+    Bb1DepthOneKemTryNewErrorReturn, Bb1DepthOneKemTryNewReturn, Bb1DepthOneMasterScalar,
+    Bb1DepthOneParameterSet, Bb1DepthOneParameterSetScope,
 };
 use pairing::{
     AddG1Params, AddG1Payload, AddG2Params, AddG2Payload, EncodeG1Params, EncodeG1Payload,
@@ -56,8 +56,6 @@ use pairing::{
 };
 
 impl<'a, P: IPairingArithmetic> Bb1DepthOneKem<'a, P> {
-    pub const DECLARATION: KemDeclaration = BB1_DEPTH_ONE_DECLARATION;
-
     pub fn try_new(
         params: Bb1DepthOneKemConstructorParams<'a, P>,
     ) -> Bb1DepthOneKemTryNewReturn<'a, P> {
@@ -78,8 +76,6 @@ impl<'a, P: IPairingArithmetic> Bb1DepthOneKem<'a, P> {
 }
 
 impl<'a, P: IPairingArithmetic> ICredentialKemAdapter for Bb1DepthOneKem<'a, P> {
-    const DECLARATION: KemDeclaration = BB1_DEPTH_ONE_DECLARATION;
-
     type Pairing = P;
     type ParameterSet = Bb1DepthOneParameterSet<P>;
     type MasterScalar = Bb1DepthOneMasterScalar<P>;

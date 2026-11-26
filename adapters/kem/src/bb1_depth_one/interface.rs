@@ -1,18 +1,19 @@
 use domain::Secret;
-#[cfg(any(test, feature = "mocks"))]
+#[cfg(test)]
 use hash_to_scalar::{CreateHashToScalarErrorReturn, CreateHashToScalarParams};
 use hash_to_scalar::{DomainTag, DomainTagTryNewErrorReturn, IHashToScalarAdapter};
-#[cfg(any(test, feature = "mocks"))]
+#[cfg(test)]
 use pairing::{CreatePairingErrorReturn, CreatePairingParams, IPairingReference};
 use pairing::{IPairingAdapter, IPairingArithmetic};
 
 use crate::factory::provides::{
-    IdentityScope, KEM_INTERFACE_VERSION, KemDeclaration, KemIdentifier,
+    IdentityScope, KEM_INTERFACE_VERSION, KemConcrete, KemDeclaration, KemIdentifier,
 };
 
 pub const BB1_DEPTH_ONE_IDENTITY_TAG: &[u8] = b"ChainTorrent-v1-kem-identity";
 
 pub(crate) const BB1_DEPTH_ONE_DECLARATION: KemDeclaration = KemDeclaration {
+    concrete: KemConcrete::Bb1DepthOne,
     identifier: KemIdentifier::Bb1DepthOneV1,
     identity_scopes: &[IdentityScope::Entitlement, IdentityScope::Asset],
     identity_tag: BB1_DEPTH_ONE_IDENTITY_TAG,
@@ -72,49 +73,61 @@ pub enum Bb1DepthOneCapsule<P: IPairingAdapter> {
     Asset { u: P::G2, v: P::G1 },
 }
 
-#[cfg(any(test, feature = "mocks"))]
+#[cfg(test)]
 pub trait IBb1DepthOneCaseConsumer {
     type Output;
 
-    fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+    fn consume_bb1_depth_one_case<
+        P: IPairingArithmetic + IPairingReference,
+        H: IHashToScalarAdapter<P::Scalar>,
+    >(
         &self,
-        pairing: &P,
-        hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-        payload: &Bb1DepthOneCasePayload,
+        params: ConsumeBb1DepthOneCaseParams,
+        payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
     ) -> Self::Output;
 }
 
-#[cfg(any(test, feature = "mocks"))]
+#[cfg(test)]
+pub struct ConsumeBb1DepthOneCaseParams;
+
+#[cfg(test)]
+pub struct ConsumeBb1DepthOneCasePayload<'a, P, H> {
+    pub pairing: &'a P,
+    pub hash_to_scalar: &'a H,
+    pub case: &'a Bb1DepthOneCasePayload,
+}
+
+#[cfg(test)]
 pub struct Bb1DepthOneCaseDeps<C: IBb1DepthOneCaseConsumer> {
     pub consumer: C,
 }
 
-#[cfg(any(test, feature = "mocks"))]
+#[cfg(test)]
 pub struct Bb1DepthOneCaseParams {
     pub pairing: CreatePairingParams,
     pub hash_to_scalar: CreateHashToScalarParams,
 }
 
-#[cfg(any(test, feature = "mocks"))]
+#[cfg(test)]
 pub struct Bb1DepthOneCasePayload;
 
-#[cfg(any(test, feature = "mocks"))]
+#[cfg(test)]
 pub struct Bb1DepthOneCaseSuccessReturn<O> {
     pub output: O,
 }
 
-#[cfg(any(test, feature = "mocks"))]
+#[cfg(test)]
 #[derive(Debug, PartialEq, Eq)]
 pub enum Bb1DepthOneCaseErrorReturn {
     CreatePairing(CreatePairingErrorReturn),
     CreateHashToScalar(CreateHashToScalarErrorReturn),
 }
 
-#[cfg(any(test, feature = "mocks"))]
+#[cfg(test)]
 pub type Bb1DepthOneCaseReturn<O> =
     Result<Bb1DepthOneCaseSuccessReturn<O>, Bb1DepthOneCaseErrorReturn>;
 
-#[cfg(any(test, feature = "mocks"))]
+#[cfg(test)]
 pub type RunBb1DepthOneCaseFn<C> =
     fn(
         &Bb1DepthOneCaseDeps<C>,

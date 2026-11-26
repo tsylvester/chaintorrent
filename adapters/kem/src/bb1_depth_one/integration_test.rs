@@ -1,6 +1,9 @@
 #![allow(clippy::expect_used, clippy::panic)]
 
-use super::interface::{Bb1DepthOneCasePayload, Bb1DepthOneKem, IBb1DepthOneCaseConsumer};
+use super::interface::{
+    Bb1DepthOneKem, ConsumeBb1DepthOneCaseParams, ConsumeBb1DepthOneCasePayload,
+    IBb1DepthOneCaseConsumer,
+};
 use super::mock::{
     Bb1DepthOneCaseParamsOverrides, build_bb1_depth_one_case_deps, build_bb1_depth_one_case_params,
     build_bb1_depth_one_case_payload, build_bb1_depth_one_kem, run_bb1_depth_one_case,
@@ -28,8 +31,8 @@ use crate::factory::provides::{
 };
 use domain::{Secret, build_secret};
 use hash_to_scalar::{
-    CreateHashToScalarParamsOverrides, DECLARED_HASH_TO_SCALAR_SELECTIONS, IHashToScalarAdapter,
-    build_create_hash_to_scalar_params,
+    CreateHashToScalarParamsOverrides, HASH_TO_SCALAR_CONCRETES, HashToScalarConcreteOverrides,
+    IHashToScalarAdapter, build_create_hash_to_scalar_params, build_hash_to_scalar_concrete,
 };
 use hashing::{RootConstructorParamsOverrides, build_root};
 use pairing::{
@@ -47,9 +50,10 @@ fn scalar_bytes<S: ISampleUniformScalar>(value: u8) -> Secret<Vec<u8>> {
 ///   `setup`, `derive_identity`, and `issue` with the master scalar `setup`
 ///   returned, under each scope, satisfy the validity relation, so `is_valid`
 ///   returns `Ok(IsValidSuccessReturn { is_valid: true })`.
-/// Arrange: `Consumer` that, per `case` of `DECLARED_HASH_TO_SCALAR_SELECTIONS`,
-///   binds `made` from `create_hash_to_scalar::<P::Scalar>` under the case's
-///   concrete and identifier and `kem` from `build_bb1_depth_one_kem`, then per
+/// Arrange: `Consumer` that, per `member` of `HASH_TO_SCALAR_CONCRETES`,
+///   binds `kem` from `build_bb1_depth_one_kem` over `payload.pairing` and
+///   `payload.hash_to_scalar`, the member's concrete reaching the payload
+///   through `build_hash_to_scalar_concrete` in the params, then per
 ///   scope — `SetupScope::Entitlement` with `b"entitlement-one"` and
 ///   `SetupScope::Asset` with the root `build_root` returns for
 ///   `[0xa1; 32]` — runs `setup` with a distinct `scalar_bytes(n)` for the
@@ -73,12 +77,16 @@ fn every_credential_issued_under_a_setup_parameter_set_is_valid_for_its_identity
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let root = build_root(RootConstructorParamsOverrides {
@@ -152,7 +160,7 @@ fn every_credential_issued_under_a_setup_parameter_set_is_valid_for_its_identity
     }
 
     for concrete in PAIRING_CONCRETES {
-        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             // Act
             let created = run_bb1_depth_one_case(
                 &build_bb1_depth_one_case_deps(Consumer, Default::default()),
@@ -163,8 +171,10 @@ fn every_credential_issued_under_a_setup_parameter_set_is_valid_for_its_identity
                     })),
                     hash_to_scalar: Some(build_create_hash_to_scalar_params(
                         CreateHashToScalarParamsOverrides {
-                            concrete: Some(case.concrete),
-                            identifier: Some(case.identifier),
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
                         },
                     )),
                 }),
@@ -181,8 +191,8 @@ fn every_credential_issued_under_a_setup_parameter_set_is_valid_for_its_identity
 ///   `rerandomize` over an issued credential, with no master scalar, yields a
 ///   credential that still satisfies the validity relation for its identity,
 ///   and the credential it was made from stays valid.
-/// Arrange: `Consumer` that, per `case` of `DECLARED_HASH_TO_SCALAR_SELECTIONS`,
-///   binds `made` and `kem` as the block above, then per scope runs `setup`,
+/// Arrange: `Consumer` that, per `member` of `HASH_TO_SCALAR_CONCRETES`,
+///   binds `kem` as the block above, then per scope runs `setup`,
 ///   `derive_identity`, and `issue` with distinct `scalar_bytes(n)` per
 ///   sampler, and `rerandomize` over the issued credential with a
 ///   `scalar_bytes(n)` distinct from the issuance sampler's.
@@ -203,12 +213,16 @@ fn a_rerandomized_credential_is_valid_for_its_identity() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let root = build_root(RootConstructorParamsOverrides {
@@ -310,7 +324,7 @@ fn a_rerandomized_credential_is_valid_for_its_identity() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             // Act
             let created = run_bb1_depth_one_case(
                 &build_bb1_depth_one_case_deps(Consumer, Default::default()),
@@ -321,8 +335,10 @@ fn a_rerandomized_credential_is_valid_for_its_identity() {
                     })),
                     hash_to_scalar: Some(build_create_hash_to_scalar_params(
                         CreateHashToScalarParamsOverrides {
-                            concrete: Some(case.concrete),
-                            identifier: Some(case.identifier),
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
                         },
                     )),
                 }),
@@ -342,8 +358,8 @@ fn a_rerandomized_credential_is_valid_for_its_identity() {
 ///   credential each recover the bytes `encapsulate` returned; under the asset
 ///   scope the payload's identity element is the one `derive_identity` returns
 ///   for the other asset root, which the asset branch does not read.
-/// Arrange: `Consumer` that, per `case` of `DECLARED_HASH_TO_SCALAR_SELECTIONS`,
-///   binds `made` and `kem` as the blocks above, then per scope runs `setup`,
+/// Arrange: `Consumer` that, per `member` of `HASH_TO_SCALAR_CONCRETES`,
+///   binds `kem` as the blocks above, then per scope runs `setup`,
 ///   `derive_identity`, `issue`, `rerandomize`, and `encapsulate` with distinct
 ///   `scalar_bytes(n)` per sampler; under the asset scope a second `setup`
 ///   over `SetupScope::Asset` with the root for `[0xb2; 32]` and a
@@ -368,12 +384,16 @@ fn every_valid_credential_decapsulates_a_well_formed_capsule_to_the_encapsulated
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let root = build_root(RootConstructorParamsOverrides {
@@ -555,7 +575,7 @@ fn every_valid_credential_decapsulates_a_well_formed_capsule_to_the_encapsulated
     }
 
     for concrete in PAIRING_CONCRETES {
-        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             // Act
             let created = run_bb1_depth_one_case(
                 &build_bb1_depth_one_case_deps(Consumer, Default::default()),
@@ -566,8 +586,10 @@ fn every_valid_credential_decapsulates_a_well_formed_capsule_to_the_encapsulated
                     })),
                     hash_to_scalar: Some(build_create_hash_to_scalar_params(
                         CreateHashToScalarParamsOverrides {
-                            concrete: Some(case.concrete),
-                            identifier: Some(case.identifier),
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
                         },
                     )),
                 }),
@@ -585,8 +607,8 @@ fn every_valid_credential_decapsulates_a_well_formed_capsule_to_the_encapsulated
 ///   under the entitlement scope a credential `issue`d for each of two
 ///   entitlement identities decapsulates one capsule to the bytes `encapsulate`
 ///   returned, `I` differing between the credentials.
-/// Arrange: `Consumer` that, per `case` of `DECLARED_HASH_TO_SCALAR_SELECTIONS`,
-///   binds `made` and `kem` as the blocks above, runs one `setup` under
+/// Arrange: `Consumer` that, per `member` of `HASH_TO_SCALAR_CONCRETES`,
+///   binds `kem` as the blocks above, runs one `setup` under
 ///   `SetupScope::Entitlement`, `derive_identity` over `b"entitlement-one"`
 ///   and over `b"entitlement-two"`, `issue` for each identity element with a
 ///   distinct `scalar_bytes(n)`, and one `encapsulate`.
@@ -608,12 +630,16 @@ fn credentials_of_different_entitlements_under_one_parameter_set_recover_the_sam
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let setup = kem.setup(
@@ -746,7 +772,7 @@ fn credentials_of_different_entitlements_under_one_parameter_set_recover_the_sam
     }
 
     for concrete in PAIRING_CONCRETES {
-        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             // Act
             let created = run_bb1_depth_one_case(
                 &build_bb1_depth_one_case_deps(Consumer, Default::default()),
@@ -757,8 +783,10 @@ fn credentials_of_different_entitlements_under_one_parameter_set_recover_the_sam
                     })),
                     hash_to_scalar: Some(build_create_hash_to_scalar_params(
                         CreateHashToScalarParamsOverrides {
-                            concrete: Some(case.concrete),
-                            identifier: Some(case.identifier),
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
                         },
                     )),
                 }),
@@ -776,8 +804,8 @@ fn credentials_of_different_entitlements_under_one_parameter_set_recover_the_sam
 ///   `is_valid` over an issued credential with the identity element of another
 ///   identity, and under a parameter set `setup` returned for other uniform
 ///   bytes, each return `Ok(IsValidSuccessReturn { is_valid: false })`.
-/// Arrange: `Consumer` that, per `case` of `DECLARED_HASH_TO_SCALAR_SELECTIONS`,
-///   binds `made` and `kem` as the blocks above, then per scope runs `setup`,
+/// Arrange: `Consumer` that, per `member` of `HASH_TO_SCALAR_CONCRETES`,
+///   binds `kem` as the blocks above, then per scope runs `setup`,
 ///   `derive_identity`, and `issue` with distinct `scalar_bytes(n)` per
 ///   sampler; the other identity is `b"entitlement-two"` under the entitlement
 ///   scope and the root `[0xb2; 32]` under the asset scope, whose identity
@@ -801,12 +829,16 @@ fn a_credential_is_invalid_for_another_identity_and_under_another_parameter_set(
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let root = build_root(RootConstructorParamsOverrides {
@@ -946,7 +978,7 @@ fn a_credential_is_invalid_for_another_identity_and_under_another_parameter_set(
     }
 
     for concrete in PAIRING_CONCRETES {
-        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             // Act
             let created = run_bb1_depth_one_case(
                 &build_bb1_depth_one_case_deps(Consumer, Default::default()),
@@ -957,8 +989,10 @@ fn a_credential_is_invalid_for_another_identity_and_under_another_parameter_set(
                     })),
                     hash_to_scalar: Some(build_create_hash_to_scalar_params(
                         CreateHashToScalarParamsOverrides {
-                            concrete: Some(case.concrete),
-                            identifier: Some(case.identifier),
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
                         },
                     )),
                 }),
@@ -976,8 +1010,8 @@ fn a_credential_is_invalid_for_another_identity_and_under_another_parameter_set(
 ///   `capsule_components`, its `v` and `w` exchanged, and rebuilt by
 ///   `capsule_from_components` fails the well-formedness checks the original
 ///   passes.
-/// Arrange: `Consumer` that, per `case` of `DECLARED_HASH_TO_SCALAR_SELECTIONS`,
-///   binds `made` and `kem` as the blocks above, runs `setup` under
+/// Arrange: `Consumer` that, per `member` of `HASH_TO_SCALAR_CONCRETES`,
+///   binds `kem` as the blocks above, runs `setup` under
 ///   `SetupScope::Entitlement` and `encapsulate` with distinct
 ///   `scalar_bytes(n)` per sampler, reads the capsule's components, and
 ///   rebuilds it from `CapsuleComponents::Entitlement { u, v: w, w: v }`, the
@@ -1000,12 +1034,16 @@ fn a_capsule_with_exchanged_identity_base_elements_is_ill_formed() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let setup = kem.setup(
@@ -1087,7 +1125,7 @@ fn a_capsule_with_exchanged_identity_base_elements_is_ill_formed() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             // Act
             let created = run_bb1_depth_one_case(
                 &build_bb1_depth_one_case_deps(Consumer, Default::default()),
@@ -1098,8 +1136,10 @@ fn a_capsule_with_exchanged_identity_base_elements_is_ill_formed() {
                     })),
                     hash_to_scalar: Some(build_create_hash_to_scalar_params(
                         CreateHashToScalarParamsOverrides {
-                            concrete: Some(case.concrete),
-                            identifier: Some(case.identifier),
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
                         },
                     )),
                 }),
@@ -1117,8 +1157,8 @@ fn a_capsule_with_exchanged_identity_base_elements_is_ill_formed() {
 ///   set `setup` returned for other uniform bytes, yields
 ///   `Ok(IsWellFormedSuccessReturn { is_well_formed: false })`, the capsule
 ///   being well formed under the set it was made against.
-/// Arrange: `Consumer` that, per `case` of `DECLARED_HASH_TO_SCALAR_SELECTIONS`,
-///   binds `made` and `kem` as the blocks above, then per scope runs `setup`
+/// Arrange: `Consumer` that, per `member` of `HASH_TO_SCALAR_CONCRETES`,
+///   binds `kem` as the blocks above, then per scope runs `setup`
 ///   and `encapsulate` with distinct `scalar_bytes(n)` per sampler, and a
 ///   second `setup` under the same scope with a different `scalar_bytes(n)`
 ///   for each sampler.
@@ -1140,12 +1180,16 @@ fn a_capsule_is_ill_formed_under_another_parameter_set() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let root = build_root(RootConstructorParamsOverrides {
@@ -1232,7 +1276,7 @@ fn a_capsule_is_ill_formed_under_another_parameter_set() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             // Act
             let created = run_bb1_depth_one_case(
                 &build_bb1_depth_one_case_deps(Consumer, Default::default()),
@@ -1243,8 +1287,10 @@ fn a_capsule_is_ill_formed_under_another_parameter_set() {
                     })),
                     hash_to_scalar: Some(build_create_hash_to_scalar_params(
                         CreateHashToScalarParamsOverrides {
-                            concrete: Some(case.concrete),
-                            identifier: Some(case.identifier),
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
                         },
                     )),
                 }),
@@ -1262,8 +1308,8 @@ fn a_capsule_is_ill_formed_under_another_parameter_set() {
 ///   and over an entitlement capsule under an asset parameter set each yield
 ///   `Ok(IsWellFormedSuccessReturn { is_well_formed: false })`, each capsule
 ///   being well formed under a parameter set of its own scope.
-/// Arrange: `Consumer` that, per `case` of `DECLARED_HASH_TO_SCALAR_SELECTIONS`,
-///   binds `made` and `kem` as the blocks above, runs one `setup` under
+/// Arrange: `Consumer` that, per `member` of `HASH_TO_SCALAR_CONCRETES`,
+///   binds `kem` as the blocks above, runs one `setup` under
 ///   `SetupScope::Entitlement` and one under `SetupScope::Asset` with the root
 ///   for `[0xa1; 32]`, each with a distinct `scalar_bytes(n)` per sampler, and
 ///   `encapsulate` under each parameter set.
@@ -1285,12 +1331,16 @@ fn a_capsule_of_the_other_scope_is_ill_formed() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let root = build_root(RootConstructorParamsOverrides {
@@ -1416,7 +1466,7 @@ fn a_capsule_of_the_other_scope_is_ill_formed() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             // Act
             let created = run_bb1_depth_one_case(
                 &build_bb1_depth_one_case_deps(Consumer, Default::default()),
@@ -1427,8 +1477,10 @@ fn a_capsule_of_the_other_scope_is_ill_formed() {
                     })),
                     hash_to_scalar: Some(build_create_hash_to_scalar_params(
                         CreateHashToScalarParamsOverrides {
-                            concrete: Some(case.concrete),
-                            identifier: Some(case.identifier),
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
                         },
                     )),
                 }),
@@ -1447,8 +1499,8 @@ fn a_capsule_of_the_other_scope_is_ill_formed() {
 ///   element whatever `I` is and `derive_identity` over an entitlement
 ///   identity yields `Err(DeriveIdentityErrorReturn::TrivialIdentityElement)`,
 ///   while the same call under a set from nonzero bytes returns `Ok`.
-/// Arrange: `Consumer` that, per `case` of `DECLARED_HASH_TO_SCALAR_SELECTIONS`,
-///   binds `made` and `kem` as the blocks above, runs `setup` under
+/// Arrange: `Consumer` that, per `member` of `HASH_TO_SCALAR_CONCRETES`,
+///   binds `kem` as the blocks above, runs `setup` under
 ///   `SetupScope::Entitlement` with `u0_uniform` and `u1_uniform` each
 ///   `Some(scalar_bytes(0))` against the default nonzero bytes the second
 ///   `setup` uses.
@@ -1470,12 +1522,16 @@ fn derive_identity_refuses_a_trivial_identity_element() {
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let trivial_setup = kem.setup(
@@ -1525,7 +1581,7 @@ fn derive_identity_refuses_a_trivial_identity_element() {
     }
 
     for concrete in PAIRING_CONCRETES {
-        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             // Act
             let created = run_bb1_depth_one_case(
                 &build_bb1_depth_one_case_deps(Consumer, Default::default()),
@@ -1536,8 +1592,10 @@ fn derive_identity_refuses_a_trivial_identity_element() {
                     })),
                     hash_to_scalar: Some(build_create_hash_to_scalar_params(
                         CreateHashToScalarParamsOverrides {
-                            concrete: Some(case.concrete),
-                            identifier: Some(case.identifier),
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
                         },
                     )),
                 }),
@@ -1556,8 +1614,8 @@ fn derive_identity_refuses_a_trivial_identity_element() {
 ///   that identity's element, so `derive_identity` over the same root yields
 ///   `Ok(DeriveIdentitySuccessReturn { identity_element })` and over another
 ///   root yields `Err(DeriveIdentityErrorReturn::OutsideAssetScope)`.
-/// Arrange: `Consumer` that, per `case` of `DECLARED_HASH_TO_SCALAR_SELECTIONS`,
-///   binds `made` and `kem` as the blocks above and runs `setup` under
+/// Arrange: `Consumer` that, per `member` of `HASH_TO_SCALAR_CONCRETES`,
+///   binds `kem` as the blocks above and runs `setup` under
 ///   `SetupScope::Asset` with the root for `[0xa1; 32]`, the other root being
 ///   `[0xb2; 32]`, each sampler fed a distinct `scalar_bytes(n)`.
 /// Act:     `create_pairing(&deps, params, CreatePairingPayload)` per concrete
@@ -1578,12 +1636,16 @@ fn derive_identity_derives_under_the_asset_scope_only_the_identity_the_set_fixes
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let root = build_root(RootConstructorParamsOverrides {
@@ -1640,7 +1702,7 @@ fn derive_identity_derives_under_the_asset_scope_only_the_identity_the_set_fixes
     }
 
     for concrete in PAIRING_CONCRETES {
-        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             // Act
             let created = run_bb1_depth_one_case(
                 &build_bb1_depth_one_case_deps(Consumer, Default::default()),
@@ -1651,8 +1713,10 @@ fn derive_identity_derives_under_the_asset_scope_only_the_identity_the_set_fixes
                     })),
                     hash_to_scalar: Some(build_create_hash_to_scalar_params(
                         CreateHashToScalarParamsOverrides {
-                            concrete: Some(case.concrete),
-                            identifier: Some(case.identifier),
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
                         },
                     )),
                 }),
@@ -1674,8 +1738,8 @@ fn derive_identity_derives_under_the_asset_scope_only_the_identity_the_set_fixes
 ///   original set, the rebuilt credential is valid and decapsulates to the
 ///   encapsulated bytes, and the rebuilt capsule is well formed under the
 ///   original set.
-/// Arrange: `Consumer` that, per `case` of `DECLARED_HASH_TO_SCALAR_SELECTIONS`,
-///   binds `made` and `kem` as the blocks above, then per scope runs `setup`,
+/// Arrange: `Consumer` that, per `member` of `HASH_TO_SCALAR_CONCRETES`,
+///   binds `kem` as the blocks above, then per scope runs `setup`,
 ///   `derive_identity`, `issue`, and `encapsulate` with distinct
 ///   `scalar_bytes(n)` per sampler, reads each value's components, and
 ///   rebuilds each from the components its reader returned, so a swapped
@@ -1703,12 +1767,16 @@ fn every_value_rebuilt_from_its_components_behaves_as_the_value_it_was_read_from
     impl IBb1DepthOneCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_bb1_depth_one_case<P: IPairingArithmetic + IPairingReference>(
+        fn consume_bb1_depth_one_case<
+            P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+        >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _payload: &Bb1DepthOneCasePayload,
+            _params: ConsumeBb1DepthOneCaseParams,
+            payload: ConsumeBb1DepthOneCasePayload<'_, P, H>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
             let kem: Bb1DepthOneKem<'_, P> =
                 build_bb1_depth_one_kem(pairing, hash_to_scalar, Default::default());
             let root = build_root(RootConstructorParamsOverrides {
@@ -1929,7 +1997,7 @@ fn every_value_rebuilt_from_its_components_behaves_as_the_value_it_was_read_from
     }
 
     for concrete in PAIRING_CONCRETES {
-        for case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for member in HASH_TO_SCALAR_CONCRETES {
             // Act
             let created = run_bb1_depth_one_case(
                 &build_bb1_depth_one_case_deps(Consumer, Default::default()),
@@ -1940,8 +2008,10 @@ fn every_value_rebuilt_from_its_components_behaves_as_the_value_it_was_read_from
                     })),
                     hash_to_scalar: Some(build_create_hash_to_scalar_params(
                         CreateHashToScalarParamsOverrides {
-                            concrete: Some(case.concrete),
-                            identifier: Some(case.identifier),
+                            concrete: Some(build_hash_to_scalar_concrete(
+                                *member,
+                                HashToScalarConcreteOverrides,
+                            )),
                         },
                     )),
                 }),
