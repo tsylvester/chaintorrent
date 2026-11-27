@@ -62,13 +62,16 @@ pub trait IUnwrapPieceGroupKeyCaseConsumer {
 
     fn consume_unwrap_piece_group_key_case<
         E: IEncoderAdapter + IDecoderAdapter,
+        D: IKeyDerivationAdapter,
         P: IPairingArithmetic + IPairingReference,
+        H: IHashToScalarAdapter<P::Scalar>,
+        R: IRandomSourceAdapter,
         K1: ICredentialKemAdapter<Pairing = P>,
         K2: ICredentialKemAdapter<Pairing = P>,
     >(
         &self,
         params: ConsumeUnwrapPieceGroupKeyCaseParams,
-        payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, P, K1, K2>,
+        payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, D, P, H, R, K1, K2>,
     ) -> Self::Output;
 }
 
@@ -79,17 +82,20 @@ pub struct ConsumeUnwrapPieceGroupKeyCaseParams;
 pub struct ConsumeUnwrapPieceGroupKeyCasePayload<
     'a,
     E: IEncoderAdapter + IDecoderAdapter,
+    D: IKeyDerivationAdapter,
     P: IPairingArithmetic + IPairingReference,
+    H: IHashToScalarAdapter<P::Scalar>,
+    R: IRandomSourceAdapter,
     K1: ICredentialKemAdapter<Pairing = P>,
     K2: ICredentialKemAdapter<Pairing = P>,
 > {
     pub encoder: &'a E,
-    pub kdf: &'a dyn IKeyDerivationAdapter,
+    pub kdf: &'a D,
     pub pairing: &'a P,
-    pub hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    pub hash_to_scalar: &'a H,
     pub kem_first: &'a K1,
     pub kem_second: &'a K2,
-    pub random: &'a dyn IRandomSourceAdapter,
+    pub random: &'a R,
     pub scope_first: IdentityScope,
     pub scope_second: IdentityScope,
     pub case: &'a UnwrapPieceGroupKeyCasePayload,

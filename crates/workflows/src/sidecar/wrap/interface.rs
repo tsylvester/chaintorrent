@@ -75,11 +75,13 @@ pub type WrapPieceGroupKeyFn<E> = fn(
 pub trait IWrapPieceGroupKeyCaseConsumer {
     type Output;
 
-    fn consume_wrap_piece_group_key_case<E: IEncoderAdapter + IDecoderAdapter>(
+    fn consume_wrap_piece_group_key_case<
+        E: IEncoderAdapter + IDecoderAdapter,
+        K: IKeyDerivationAdapter,
+    >(
         &self,
-        encoder: &E,
-        kdf: &dyn IKeyDerivationAdapter,
-        payload: &WrapPieceGroupKeyCasePayload<'_>,
+        params: ConsumeWrapPieceGroupKeyCaseParams,
+        payload: ConsumeWrapPieceGroupKeyCasePayload<'_, E, K>,
     ) -> Self::Output;
 }
 
@@ -98,6 +100,16 @@ pub struct WrapPieceGroupKeyCaseParams {
 pub struct WrapPieceGroupKeyCasePayload<'a> {
     pub encapsulated: &'a EncapsulatedValue,
     pub context: &'a DerivationContext,
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeWrapPieceGroupKeyCaseParams;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeWrapPieceGroupKeyCasePayload<'a, E, K> {
+    pub encoder: &'a E,
+    pub kdf: &'a K,
+    pub case: &'a WrapPieceGroupKeyCasePayload<'a>,
 }
 
 #[cfg(any(test, feature = "mocks"))]

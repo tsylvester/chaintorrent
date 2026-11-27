@@ -1,16 +1,16 @@
 #![allow(clippy::expect_used)]
 
 use super::provides::{
+    ConsumeWrapPieceGroupKeyCaseParams, ConsumeWrapPieceGroupKeyCasePayload,
     IWrapPieceGroupKeyCaseConsumer, PieceGroupKey, PieceGroupKeyConstructorParamsOverrides,
-    PieceGroupKeyErrorReturn, WrapPieceGroupKeyCaseParamsOverrides, WrapPieceGroupKeyCasePayload,
-    WrapPieceGroupKeyErrorReturn, WrappedPieceGroupKey,
-    WrappedPieceGroupKeyConstructorParamsOverrides, WrappedPieceGroupKeyErrorReturn,
-    build_piece_group_key, build_piece_group_key_constructor_params,
-    build_wrap_piece_group_key_case_deps, build_wrap_piece_group_key_case_params,
-    build_wrap_piece_group_key_case_payload, build_wrap_piece_group_key_deps,
-    build_wrap_piece_group_key_params, build_wrap_piece_group_key_payload,
-    build_wrapped_piece_group_key_constructor_params, run_wrap_piece_group_key_case,
-    wrap_piece_group_key,
+    PieceGroupKeyErrorReturn, WrapPieceGroupKeyCaseParamsOverrides, WrapPieceGroupKeyErrorReturn,
+    WrappedPieceGroupKey, WrappedPieceGroupKeyConstructorParamsOverrides,
+    WrappedPieceGroupKeyErrorReturn, build_piece_group_key,
+    build_piece_group_key_constructor_params, build_wrap_piece_group_key_case_deps,
+    build_wrap_piece_group_key_case_params, build_wrap_piece_group_key_case_payload,
+    build_wrap_piece_group_key_deps, build_wrap_piece_group_key_params,
+    build_wrap_piece_group_key_payload, build_wrapped_piece_group_key_constructor_params,
+    run_wrap_piece_group_key_case, wrap_piece_group_key,
 };
 use crate::sidecar::derivation_context::provides::{
     build_derivation_context, build_derivation_context_description,
@@ -29,7 +29,7 @@ use kem::{EncapsulatedValueOverrides, build_encapsulated_value};
 ///   `deps.kdf.derive_key(...)`, called once, returns `Err(error)` →
 ///   `Err(WrapPieceGroupKeyErrorReturn::KeyDerivation(error))`, the refusal
 ///   unchanged.
-/// Arrange: `build_create_key_derivation_params` overriding `concrete` with
+/// Arrange: `build_create_key_derivation_params` overriding `selection` with
 ///   `KdfConcrete::Mock(MockIKeyDerivationAdapterFailureMode::
 ///   KeyMaterialLengthUnrepresentable)`; `build_encapsulated_value` overriding
 ///   `key_material` with `build_secret` over a literal vector of 48 bytes, a
@@ -57,18 +57,20 @@ fn wrap_returns_the_key_derivation_refusal_unchanged() {
     impl IWrapPieceGroupKeyCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_wrap_piece_group_key_case<E: IEncoderAdapter + IDecoderAdapter>(
+        fn consume_wrap_piece_group_key_case<
+            E: IEncoderAdapter + IDecoderAdapter,
+            K: IKeyDerivationAdapter,
+        >(
             &self,
-            encoder: &E,
-            kdf: &dyn IKeyDerivationAdapter,
-            payload: &WrapPieceGroupKeyCasePayload<'_>,
+            _params: ConsumeWrapPieceGroupKeyCaseParams,
+            payload: ConsumeWrapPieceGroupKeyCasePayload<'_, E, K>,
         ) -> Self::Output {
             let result = wrap_piece_group_key(
-                &build_wrap_piece_group_key_deps(kdf, encoder, Default::default()),
+                &build_wrap_piece_group_key_deps(payload.kdf, payload.encoder, Default::default()),
                 build_wrap_piece_group_key_params(Default::default()),
                 build_wrap_piece_group_key_payload(
-                    payload.encapsulated,
-                    payload.context,
+                    payload.case.encapsulated,
+                    payload.case.context,
                     &self.piece_group_key,
                     Default::default(),
                 ),
@@ -97,10 +99,9 @@ fn wrap_returns_the_key_derivation_refusal_unchanged() {
     let params = build_wrap_piece_group_key_case_params(WrapPieceGroupKeyCaseParamsOverrides {
         key_derivation: Some(build_create_key_derivation_params(
             CreateKeyDerivationParamsOverrides {
-                concrete: Some(KdfConcrete::Mock(
+                selection: Some(KdfConcrete::Mock(
                     MockIKeyDerivationAdapterFailureMode::KeyMaterialLengthUnrepresentable,
                 )),
-                ..Default::default()
             },
         )),
         ..Default::default()
@@ -150,29 +151,33 @@ fn wrap_returns_a_zero_wrapped_key_when_the_piece_group_key_equals_the_wrapping_
     impl IWrapPieceGroupKeyCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_wrap_piece_group_key_case<E: IEncoderAdapter + IDecoderAdapter>(
+        fn consume_wrap_piece_group_key_case<
+            E: IEncoderAdapter + IDecoderAdapter,
+            K: IKeyDerivationAdapter,
+        >(
             &self,
-            encoder: &E,
-            kdf: &dyn IKeyDerivationAdapter,
-            payload: &WrapPieceGroupKeyCasePayload<'_>,
+            _params: ConsumeWrapPieceGroupKeyCaseParams,
+            payload: ConsumeWrapPieceGroupKeyCasePayload<'_, E, K>,
         ) -> Self::Output {
-            let context_bytes = encoder
+            let context_bytes = payload
+                .encoder
                 .encode(
                     EncodeParams {
                         description: &build_derivation_context_description(Default::default()),
                     },
-                    payload.context,
+                    payload.case.context,
                 )
                 .expect("the mock encoder encodes the context")
                 .bytes;
-            let wrapping_key = kdf
+            let wrapping_key = payload
+                .kdf
                 .derive_key(
                     build_derive_key_params(DeriveKeyParamsOverrides {
                         purpose: Some(DerivationPurpose::WrappingKey),
                         length: Some(32),
                     }),
                     build_derive_key_payload(DeriveKeyPayloadOverrides {
-                        key_material: Some(payload.encapsulated.key_material()),
+                        key_material: Some(payload.case.encapsulated.key_material()),
                         context: Some(context_bytes.as_slice()),
                     }),
                 )
@@ -185,11 +190,11 @@ fn wrap_returns_a_zero_wrapped_key_when_the_piece_group_key_equals_the_wrapping_
                 )),
             });
             let result = wrap_piece_group_key(
-                &build_wrap_piece_group_key_deps(kdf, encoder, Default::default()),
+                &build_wrap_piece_group_key_deps(payload.kdf, payload.encoder, Default::default()),
                 build_wrap_piece_group_key_params(Default::default()),
                 build_wrap_piece_group_key_payload(
-                    payload.encapsulated,
-                    payload.context,
+                    payload.case.encapsulated,
+                    payload.case.context,
                     &piece_group_key,
                     Default::default(),
                 ),
@@ -247,29 +252,33 @@ fn wrap_returns_the_complement_of_the_wrapping_key_when_the_piece_group_key_is_a
     impl IWrapPieceGroupKeyCaseConsumer for Consumer {
         type Output = ();
 
-        fn consume_wrap_piece_group_key_case<E: IEncoderAdapter + IDecoderAdapter>(
+        fn consume_wrap_piece_group_key_case<
+            E: IEncoderAdapter + IDecoderAdapter,
+            K: IKeyDerivationAdapter,
+        >(
             &self,
-            encoder: &E,
-            kdf: &dyn IKeyDerivationAdapter,
-            payload: &WrapPieceGroupKeyCasePayload<'_>,
+            _params: ConsumeWrapPieceGroupKeyCaseParams,
+            payload: ConsumeWrapPieceGroupKeyCasePayload<'_, E, K>,
         ) -> Self::Output {
-            let context_bytes = encoder
+            let context_bytes = payload
+                .encoder
                 .encode(
                     EncodeParams {
                         description: &build_derivation_context_description(Default::default()),
                     },
-                    payload.context,
+                    payload.case.context,
                 )
                 .expect("the mock encoder encodes the context")
                 .bytes;
-            let wrapping_key = kdf
+            let wrapping_key = payload
+                .kdf
                 .derive_key(
                     build_derive_key_params(DeriveKeyParamsOverrides {
                         purpose: Some(DerivationPurpose::WrappingKey),
                         length: Some(32),
                     }),
                     build_derive_key_payload(DeriveKeyPayloadOverrides {
-                        key_material: Some(payload.encapsulated.key_material()),
+                        key_material: Some(payload.case.encapsulated.key_material()),
                         context: Some(context_bytes.as_slice()),
                     }),
                 )
@@ -280,11 +289,11 @@ fn wrap_returns_the_complement_of_the_wrapping_key_when_the_piece_group_key_is_a
                 *slot = !byte;
             }
             let result = wrap_piece_group_key(
-                &build_wrap_piece_group_key_deps(kdf, encoder, Default::default()),
+                &build_wrap_piece_group_key_deps(payload.kdf, payload.encoder, Default::default()),
                 build_wrap_piece_group_key_params(Default::default()),
                 build_wrap_piece_group_key_payload(
-                    payload.encapsulated,
-                    payload.context,
+                    payload.case.encapsulated,
+                    payload.case.context,
                     &self.piece_group_key,
                     Default::default(),
                 ),

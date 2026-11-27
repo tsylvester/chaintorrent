@@ -1827,6 +1827,15 @@ pub fn build_create_pairing_params(overrides: CreatePairingParamsOverrides) -> C
 }
 
 #[derive(Default)]
+pub struct CreatePairingPayloadOverrides;
+
+pub fn build_create_pairing_payload(
+    _overrides: CreatePairingPayloadOverrides,
+) -> CreatePairingPayload {
+    CreatePairingPayload
+}
+
+#[derive(Default)]
 pub struct CreatePairingSuccessReturnOverrides;
 
 pub fn build_create_pairing_success_return<O>(

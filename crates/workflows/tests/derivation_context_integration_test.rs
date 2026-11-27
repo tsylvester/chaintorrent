@@ -6,10 +6,14 @@ use domain::{
     build_group_index, build_piece_geometry,
 };
 use encoding::{
-    CreateEncodingParamsOverrides, DECLARED_ENCODING_SELECTIONS, DecodeErrorReturn,
-    EncodingIdentifier, build_create_encoding_deps, build_create_encoding_params,
-    build_create_encoding_payload, build_mock_i_encoding_consumer, create_encoding,
+    CreateEncodingParamsOverrides, DecodeErrorReturn, ENCODING_CONCRETES, EncodingConcrete,
+    EncodingConcreteOverrides, EncodingIdentifier, LookupEncodingDeclarationParamsOverrides,
+    build_create_encoding_deps, build_create_encoding_params, build_create_encoding_payload,
+    build_encoding_concrete, build_lookup_encoding_declaration_deps,
+    build_lookup_encoding_declaration_params, build_lookup_encoding_declaration_payload,
+    build_mock_i_encoding_consumer, create_encoding, lookup_encoding_declaration,
 };
+use hex::decode;
 use workflows::{
     DerivationContext, DerivationContextConstructorParamsOverrides,
     DerivationContextFromFieldsErrorReturn, DerivationContextTryNewErrorReturn,
@@ -17,29 +21,9 @@ use workflows::{
     build_derivation_context_description,
 };
 
-const REFERENCE_VECTOR_HEX: &str = concat!(
-    "0101010101010101010101010101010101010101010101010101010101010101",
-    "1111111111111111111111111111111111111111111111111111111111111111",
-    "2222222222222222222222222222222222222222222222222222222222222222",
-    "0000000000000000000000000000000000000000000000000000000000000001",
-    "3333333333333333333333333333333333333333333333333333333333333333",
-    "0000000000000000000000000000000000000000000000000000000000000007",
-    "0000000000000000000000000000000000000000000000000000000000004000",
-    "0000000000000000000000000000000000000000000000000000000000008000",
-    "0000000000000000000000000000000000000000000000000000000000100000",
-);
+const REFERENCE_VECTOR_HEX: &str = "010101010101010101010101010101010101010101010101010101010101010111111111111111111111111111111111111111111111111111111111111111112222222222222222222222222222222222222222222222222222222222222222000000000000000000000000000000000000000000000000000000000000000133333333333333333333333333333333333333333333333333333333333333330000000000000000000000000000000000000000000000000000000000000007000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000100000";
 
-const REFUSAL_VECTOR_HEX: &str = concat!(
-    "0101010101010101010101010101010101010101010101010101010101010101",
-    "1111111111111111111111111111111111111111111111111111111111111111",
-    "2222222222222222222222222222222222222222222222222222222222222222",
-    "0000000000000000000000000000000000000000000000000000000000000001",
-    "3333333333333333333333333333333333333333333333333333333333333333",
-    "0000000000000000000000000000000000000000000000000000000000000020",
-    "0000000000000000000000000000000000000000000000000000000000004000",
-    "0000000000000000000000000000000000000000000000000000000000008000",
-    "0000000000000000000000000000000000000000000000000000000000100000",
-);
+const REFUSAL_VECTOR_HEX: &str = "010101010101010101010101010101010101010101010101010101010101010111111111111111111111111111111111111111111111111111111111111111112222222222222222222222222222222222222222222222222222222222222222000000000000000000000000000000000000000000000000000000000000000133333333333333333333333333333333333333333333333333333333333333330000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000100000";
 
 fn reference_context() -> DerivationContext {
     build_derivation_context(DerivationContextConstructorParamsOverrides {
@@ -54,24 +38,23 @@ fn reference_context() -> DerivationContext {
 }
 
 fn reference_vector() -> Vec<u8> {
-    hex::decode(REFERENCE_VECTOR_HEX).expect("the reference vector is hexadecimal")
+    decode(REFERENCE_VECTOR_HEX).expect("the reference vector is hexadecimal")
 }
 
 fn refusal_vector() -> Vec<u8> {
-    hex::decode(REFUSAL_VECTOR_HEX).expect("the refusal vector is hexadecimal")
+    decode(REFUSAL_VECTOR_HEX).expect("the refusal vector is hexadecimal")
 }
 
 /// Contract: the own entry `every_concrete_decodes_the_derivation_context_it_encodes`:
-///   for each case of the declared set, the concrete `create_encoding` hands the
-///   consumer encodes the reference context under `DerivationContextDescription`
-///   and decodes the bytes it wrote → the decoded context equals the reference
-///   context.
+///   the context a concrete decodes from the bytes it wrote for the reference
+///   context equals the reference context.
 /// Arrange: the consumer over the description, the reference context, and no
-///   bytes; every case of the declared set in turn; the reference context's nine
-///   values are distinct within each kind.
-/// Act:     `create_encoding(&deps, params, payload)` per case.
-/// Assert:  per case, the output is present, and its `round_trip` mapped to its
-///   `described` equals `Ok` of the reference context by `assert_eq!`.
+///   bytes; every member of `ENCODING_CONCRETES` in turn, each selection built
+///   settings-free through `build_encoding_concrete` at defaults; the
+///   reference context's nine values are distinct within each kind.
+/// Act:     `create_encoding(&deps, params, payload)` per member.
+/// Assert:  per member, the output is present, and its `round_trip` mapped to
+///   its `described` equals `Ok` of the reference context by `assert_eq!`.
 /// Boundary: the public `create_encoding`; the real chain is `create_encoding`,
 ///   the selected concrete's constructor, `consume_encoding`, `encode`,
 ///   `to_fields`, `decode`, `fields_to_value`, the components' constructors, and
@@ -82,14 +65,14 @@ fn refusal_vector() -> Vec<u8> {
 #[test]
 fn every_concrete_decodes_the_derivation_context_it_encodes() {
     // Arrange
-    for case in DECLARED_ENCODING_SELECTIONS {
-        let description = build_derivation_context_description(Default::default());
+    let description = build_derivation_context_description(Default::default());
+    for member in ENCODING_CONCRETES {
+        let selection = build_encoding_concrete(*member, EncodingConcreteOverrides);
         let consumer =
             build_mock_i_encoding_consumer(&description, reference_context(), Vec::new());
-        let deps = build_create_encoding_deps(consumer);
+        let deps = build_create_encoding_deps(consumer, Default::default());
         let params = build_create_encoding_params(CreateEncodingParamsOverrides {
-            concrete: Some(case.concrete),
-            identifier: Some(case.identifier),
+            selection: Some(selection),
         });
         let payload = build_create_encoding_payload(Default::default());
 
@@ -100,7 +83,7 @@ fn every_concrete_decodes_the_derivation_context_it_encodes() {
         let output = result
             .ok()
             .map(|success| success.output)
-            .expect("the case's concrete is admitted under the identifier it declares");
+            .expect("the member's concrete is admitted under the selection it names");
         assert_eq!(
             output.round_trip.map(|success| success.described),
             Ok(reference_context())
@@ -111,40 +94,59 @@ fn every_concrete_decodes_the_derivation_context_it_encodes() {
 
 /// Contract: the own entry
 ///   `every_concrete_declaring_the_ethereum_abi_identifier_encodes_the_reference_context_to_the_reference_vector`:
-///   for each case of the declared set whose concrete declares
-///   `EncodingIdentifier::EthereumAbiV1`, the concrete encodes the reference
-///   context under `DerivationContextDescription` → the bytes equal the
-///   reference vector, nine 32-byte words.
+///   the bytes such a concrete writes for the reference context equal the
+///   reference vector.
 /// Arrange: the consumer over the description, the reference context, and no
-///   bytes; every case of the declared set runs and the Ethereum ABI outputs
-///   are kept; the reference context's piece size and piece-group size differ.
-/// Act:     `create_encoding(&deps, params, payload)` per case.
+///   bytes; every member of `ENCODING_CONCRETES`, each selection built
+///   settings-free through `build_encoding_concrete` at defaults; the
+///   reference context's piece size and piece-group size differ.
+/// Act:     `lookup_encoding_declaration` per member with its own built deps,
+///   params, and payload, keeping each member whose returned declaration's
+///   `identifier` equals `EncodingIdentifier::EthereumAbiV1`, then
+///   `create_encoding(&deps, params, payload)` per kept member.
 /// Assert:  at least one output is kept; each kept output's `encoded` mapped
 ///   to its `bytes` equals `Ok` of the reference vector by `assert_eq!`.
-/// Boundary: the public `create_encoding`; the real chain is `create_encoding`,
-///   the selected concrete's constructor, `consume_encoding`, `encode`, and
-///   `to_fields`.
+/// Boundary: the public `lookup_encoding_declaration` and `create_encoding`;
+///   the real chain is `lookup_encoding_declaration`, ending at the member's
+///   declaration constant, then `create_encoding`, the selected concrete's
+///   constructor, `consume_encoding`, `encode`, and `to_fields`.
 /// Mocked:  the consumer, replaced by `MockIEncodingConsumer`, which calls the
-///   concrete's `encode` and relays its return; the concretes and the
-///   description run real.
+///   concrete's `encode` and relays its return; the lookup runs real and
+///   constructs no adapter; the concretes and the description run real.
 #[test]
 fn every_concrete_declaring_the_ethereum_abi_identifier_encodes_the_reference_context_to_the_reference_vector()
  {
     // Arrange
-    let outputs = DECLARED_ENCODING_SELECTIONS
+    let description = build_derivation_context_description(Default::default());
+
+    // Act
+    let members = ENCODING_CONCRETES
         .iter()
-        .map(|case| {
-            let description = build_derivation_context_description(Default::default());
+        .map(|member| build_encoding_concrete(*member, EncodingConcreteOverrides))
+        .filter(|selection| {
+            let Ok(looked_up) = lookup_encoding_declaration(
+                &build_lookup_encoding_declaration_deps(Default::default()),
+                build_lookup_encoding_declaration_params(
+                    LookupEncodingDeclarationParamsOverrides {
+                        concrete: Some(*selection),
+                    },
+                ),
+                build_lookup_encoding_declaration_payload(Default::default()),
+            );
+            looked_up.declaration.identifier == EncodingIdentifier::EthereumAbiV1
+        })
+        .collect::<Vec<EncodingConcrete>>();
+    let outputs = members
+        .into_iter()
+        .map(|selection| {
             let consumer =
                 build_mock_i_encoding_consumer(&description, reference_context(), Vec::new());
-            let deps = build_create_encoding_deps(consumer);
+            let deps = build_create_encoding_deps(consumer, Default::default());
             let params = build_create_encoding_params(CreateEncodingParamsOverrides {
-                concrete: Some(case.concrete),
-                identifier: Some(case.identifier),
+                selection: Some(selection),
             });
             let payload = build_create_encoding_payload(Default::default());
 
-            // Act
             create_encoding(&deps, params, payload)
                 .ok()
                 .map(|success| success.output)
@@ -152,13 +154,10 @@ fn every_concrete_declaring_the_ethereum_abi_identifier_encodes_the_reference_co
         .collect::<Vec<_>>();
 
     // Assert
-    let kept = outputs
-        .into_iter()
-        .flatten()
-        .filter(|output| output.declaration.identifier == EncodingIdentifier::EthereumAbiV1)
-        .collect::<Vec<_>>();
-    assert!(!kept.is_empty());
-    for output in kept {
+    assert!(!outputs.is_empty());
+    for output in outputs {
+        let output =
+            output.expect("the kept member's concrete is admitted under the selection it names");
         assert_eq!(
             output.encoded.map(|success| success.bytes),
             Ok(reference_vector())
@@ -169,44 +168,64 @@ fn every_concrete_declaring_the_ethereum_abi_identifier_encodes_the_reference_co
 
 /// Contract: the own entry
 ///   `every_concrete_declaring_the_ethereum_abi_identifier_decodes_the_reference_vector_to_the_reference_context`:
-///   for each case of the declared set whose concrete declares
-///   `EncodingIdentifier::EthereumAbiV1`, the concrete decodes the reference
-///   vector under `DerivationContextDescription` → the decoded context equals
-///   the reference context.
+///   the context such a concrete decodes from the reference vector equals the
+///   reference context.
 /// Arrange: the consumer over the description, the reference context, and the
-///   reference vector as its bytes; every case runs and the Ethereum ABI
-///   outputs are kept.
-/// Act:     `create_encoding(&deps, params, payload)` per case.
+///   reference vector as its bytes; every member of `ENCODING_CONCRETES`, each
+///   selection built settings-free through `build_encoding_concrete` at
+///   defaults.
+/// Act:     `lookup_encoding_declaration` per member with its own built deps,
+///   params, and payload, keeping each member whose returned declaration's
+///   `identifier` equals `EncodingIdentifier::EthereumAbiV1`, then
+///   `create_encoding(&deps, params, payload)` per kept member.
 /// Assert:  at least one output is kept; each kept output's `decoded` mapped
 ///   to its `described` equals `Ok` of the reference context by `assert_eq!`.
-/// Boundary: the public `create_encoding`; the real chain is `create_encoding`,
-///   the selected concrete's constructor, `consume_encoding`, `decode`,
-///   `fields_to_value`, the components' constructors, and
-///   `DerivationContext::try_new`.
+/// Boundary: the public `lookup_encoding_declaration` and `create_encoding`;
+///   the real chain is `lookup_encoding_declaration`, ending at the member's
+///   declaration constant, then `create_encoding`, the selected concrete's
+///   constructor, `consume_encoding`, `decode`, `fields_to_value`, the
+///   components' constructors, and `DerivationContext::try_new`.
 /// Mocked:  the consumer, replaced by `MockIEncodingConsumer`, which calls the
-///   concrete's `decode` and relays its return; the concretes, the description,
-///   and the components run real.
+///   concrete's `decode` and relays its return; the lookup runs real and
+///   constructs no adapter; the concretes, the description, and the components
+///   run real.
 #[test]
 fn every_concrete_declaring_the_ethereum_abi_identifier_decodes_the_reference_vector_to_the_reference_context()
  {
     // Arrange
-    let outputs = DECLARED_ENCODING_SELECTIONS
+    let description = build_derivation_context_description(Default::default());
+
+    // Act
+    let members = ENCODING_CONCRETES
         .iter()
-        .map(|case| {
-            let description = build_derivation_context_description(Default::default());
+        .map(|member| build_encoding_concrete(*member, EncodingConcreteOverrides))
+        .filter(|selection| {
+            let Ok(looked_up) = lookup_encoding_declaration(
+                &build_lookup_encoding_declaration_deps(Default::default()),
+                build_lookup_encoding_declaration_params(
+                    LookupEncodingDeclarationParamsOverrides {
+                        concrete: Some(*selection),
+                    },
+                ),
+                build_lookup_encoding_declaration_payload(Default::default()),
+            );
+            looked_up.declaration.identifier == EncodingIdentifier::EthereumAbiV1
+        })
+        .collect::<Vec<EncodingConcrete>>();
+    let outputs = members
+        .into_iter()
+        .map(|selection| {
             let consumer = build_mock_i_encoding_consumer(
                 &description,
                 reference_context(),
                 reference_vector(),
             );
-            let deps = build_create_encoding_deps(consumer);
+            let deps = build_create_encoding_deps(consumer, Default::default());
             let params = build_create_encoding_params(CreateEncodingParamsOverrides {
-                concrete: Some(case.concrete),
-                identifier: Some(case.identifier),
+                selection: Some(selection),
             });
             let payload = build_create_encoding_payload(Default::default());
 
-            // Act
             create_encoding(&deps, params, payload)
                 .ok()
                 .map(|success| success.output)
@@ -214,13 +233,10 @@ fn every_concrete_declaring_the_ethereum_abi_identifier_decodes_the_reference_ve
         .collect::<Vec<_>>();
 
     // Assert
-    let kept = outputs
-        .into_iter()
-        .flatten()
-        .filter(|output| output.declaration.identifier == EncodingIdentifier::EthereumAbiV1)
-        .collect::<Vec<_>>();
-    assert!(!kept.is_empty());
-    for output in kept {
+    assert!(!outputs.is_empty());
+    for output in outputs {
+        let output =
+            output.expect("the kept member's concrete is admitted under the selection it names");
         assert_eq!(
             output.decoded.map(|success| success.described),
             Ok(reference_context())
@@ -231,44 +247,63 @@ fn every_concrete_declaring_the_ethereum_abi_identifier_decodes_the_reference_ve
 
 /// Contract: the own entry
 ///   `every_concrete_declaring_the_ethereum_abi_identifier_returns_the_context_refusal_whole`:
-///   for each case of the declared set whose concrete declares
-///   `EncodingIdentifier::EthereumAbiV1`, the concrete decodes the reference
-///   vector with its group-index word replaced by `0x00…0020`, thirty-two, the
-///   reference geometry's group count →
-///   `Err(DecodeErrorReturn::Description(DerivationContextFromFieldsErrorReturn
-///   ::Context(DerivationContextTryNewErrorReturn::GroupIndexOutOfRange
-///   { group_index: 32, group_count: 32 })))`.
+///   decoding the reference vector with the group-index word set to thirty-two
+///   returns the context's refusal whole inside the family's `Description`
+///   variant.
 /// Arrange: the consumer over the description, the reference context, and as
-///   its bytes the reference vector's literal with its group-index word
-///   `0x00…0020`; every case runs and the Ethereum ABI outputs are kept; the
-///   index equals the reference geometry's group count.
-/// Act:     `create_encoding(&deps, params, payload)` per case.
+///   its bytes `hex::decode` of the reference vector's literal with its
+///   group-index word `0x00…0020`, bound through `expect`; every member of
+///   `ENCODING_CONCRETES`, each selection built settings-free through
+///   `build_encoding_concrete` at defaults; the index equals the reference
+///   geometry's group count.
+/// Act:     `lookup_encoding_declaration` per member with its own built deps,
+///   params, and payload, keeping each member whose returned declaration's
+///   `identifier` equals `EncodingIdentifier::EthereumAbiV1`, then
+///   `create_encoding(&deps, params, payload)` per kept member.
 /// Assert:  at least one output is kept; each kept output's `decoded` mapped
 ///   to its `described` equals the whole `Err` by `assert_eq!`.
-/// Boundary: the public `create_encoding`; the real chain is `create_encoding`,
-///   the selected concrete's constructor, `consume_encoding`, `decode`,
-///   `fields_to_value`, the components' constructors, and
-///   `DerivationContext::try_new`.
+/// Boundary: the public `lookup_encoding_declaration` and `create_encoding`;
+///   the real chain is `lookup_encoding_declaration`, ending at the member's
+///   declaration constant, then `create_encoding`, the selected concrete's
+///   constructor, `consume_encoding`, `decode`, `fields_to_value`, the
+///   components' constructors, and `DerivationContext::try_new`.
 /// Mocked:  the consumer, replaced by `MockIEncodingConsumer`, which calls the
-///   concrete's `decode` and relays its return; the concretes, the description,
-///   and the components run real.
+///   concrete's `decode` and relays its return; the lookup runs real and
+///   constructs no adapter; the concretes, the description, and the components
+///   run real.
 #[test]
 fn every_concrete_declaring_the_ethereum_abi_identifier_returns_the_context_refusal_whole() {
     // Arrange
-    let outputs = DECLARED_ENCODING_SELECTIONS
+    let description = build_derivation_context_description(Default::default());
+
+    // Act
+    let members = ENCODING_CONCRETES
         .iter()
-        .map(|case| {
-            let description = build_derivation_context_description(Default::default());
+        .map(|member| build_encoding_concrete(*member, EncodingConcreteOverrides))
+        .filter(|selection| {
+            let Ok(looked_up) = lookup_encoding_declaration(
+                &build_lookup_encoding_declaration_deps(Default::default()),
+                build_lookup_encoding_declaration_params(
+                    LookupEncodingDeclarationParamsOverrides {
+                        concrete: Some(*selection),
+                    },
+                ),
+                build_lookup_encoding_declaration_payload(Default::default()),
+            );
+            looked_up.declaration.identifier == EncodingIdentifier::EthereumAbiV1
+        })
+        .collect::<Vec<EncodingConcrete>>();
+    let outputs = members
+        .into_iter()
+        .map(|selection| {
             let consumer =
                 build_mock_i_encoding_consumer(&description, reference_context(), refusal_vector());
-            let deps = build_create_encoding_deps(consumer);
+            let deps = build_create_encoding_deps(consumer, Default::default());
             let params = build_create_encoding_params(CreateEncodingParamsOverrides {
-                concrete: Some(case.concrete),
-                identifier: Some(case.identifier),
+                selection: Some(selection),
             });
             let payload = build_create_encoding_payload(Default::default());
 
-            // Act
             create_encoding(&deps, params, payload)
                 .ok()
                 .map(|success| success.output)
@@ -276,13 +311,10 @@ fn every_concrete_declaring_the_ethereum_abi_identifier_returns_the_context_refu
         .collect::<Vec<_>>();
 
     // Assert
-    let kept = outputs
-        .into_iter()
-        .flatten()
-        .filter(|output| output.declaration.identifier == EncodingIdentifier::EthereumAbiV1)
-        .collect::<Vec<_>>();
-    assert!(!kept.is_empty());
-    for output in kept {
+    assert!(!outputs.is_empty());
+    for output in outputs {
+        let output =
+            output.expect("the kept member's concrete is admitted under the selection it names");
         assert_eq!(
             output.decoded.map(|success| success.described),
             Err(DecodeErrorReturn::Description(

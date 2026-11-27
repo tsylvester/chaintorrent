@@ -17,9 +17,10 @@ use crate::sidecar::wrap::provides::{
 };
 use domain::build_secret;
 use encoding::{EncodeParams, IDecoderAdapter, IEncoderAdapter};
+use hash_to_scalar::IHashToScalarAdapter;
 use kdf::{
     CreateKeyDerivationParamsOverrides, DerivationPurpose, DeriveKeyErrorReturn,
-    DeriveKeyParamsOverrides, DeriveKeyPayloadOverrides, KdfConcrete,
+    DeriveKeyParamsOverrides, DeriveKeyPayloadOverrides, IKeyDerivationAdapter, KdfConcrete,
     MockIKeyDerivationAdapterDeriveKeyErrorReturn, MockIKeyDerivationAdapterFailureMode,
     build_create_key_derivation_params, build_derive_key_params, build_derive_key_payload,
 };
@@ -27,6 +28,7 @@ use kem::{
     EncapsulatedValue, EncapsulatedValueOverrides, ICredentialKemAdapter, build_encapsulated_value,
 };
 use pairing::{IPairingArithmetic, IPairingReference};
+use random::IRandomSourceAdapter;
 
 /// Contract: `unwrap_piece_group_key`, key derivation refused:
 ///   `deps.kdf.derive_key(...)`, called once, returns `Err(error)` →
@@ -66,13 +68,16 @@ fn unwrap_returns_the_key_derivation_refusal_unchanged() {
 
         fn consume_unwrap_piece_group_key_case<
             E: IEncoderAdapter + IDecoderAdapter,
+            D: IKeyDerivationAdapter,
             P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K1: ICredentialKemAdapter<Pairing = P>,
             K2: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
             _params: ConsumeUnwrapPieceGroupKeyCaseParams,
-            payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, P, K1, K2>,
+            payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, D, P, H, R, K1, K2>,
         ) -> Self::Output {
             let result = unwrap_piece_group_key(
                 &build_unwrap_piece_group_key_deps(
@@ -112,10 +117,9 @@ fn unwrap_returns_the_key_derivation_refusal_unchanged() {
     let params = build_unwrap_piece_group_key_case_params(UnwrapPieceGroupKeyCaseParamsOverrides {
         key_derivation: Some(build_create_key_derivation_params(
             CreateKeyDerivationParamsOverrides {
-                concrete: Some(KdfConcrete::Mock(
+                selection: Some(KdfConcrete::Mock(
                     MockIKeyDerivationAdapterFailureMode::KeyMaterialLengthUnrepresentable,
                 )),
-                ..Default::default()
             },
         )),
         ..Default::default()
@@ -170,13 +174,16 @@ fn unwrap_returns_a_zero_key_when_the_wrapped_key_equals_the_wrapping_key() {
 
         fn consume_unwrap_piece_group_key_case<
             E: IEncoderAdapter + IDecoderAdapter,
+            D: IKeyDerivationAdapter,
             P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K1: ICredentialKemAdapter<Pairing = P>,
             K2: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
             _params: ConsumeUnwrapPieceGroupKeyCaseParams,
-            payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, P, K1, K2>,
+            payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, D, P, H, R, K1, K2>,
         ) -> Self::Output {
             let context_bytes = payload
                 .encoder
@@ -278,13 +285,16 @@ fn unwrap_returns_the_complement_of_the_wrapping_key_when_the_wrapped_key_is_all
 
         fn consume_unwrap_piece_group_key_case<
             E: IEncoderAdapter + IDecoderAdapter,
+            D: IKeyDerivationAdapter,
             P: IPairingArithmetic + IPairingReference,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K1: ICredentialKemAdapter<Pairing = P>,
             K2: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
             _params: ConsumeUnwrapPieceGroupKeyCaseParams,
-            payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, P, K1, K2>,
+            payload: ConsumeUnwrapPieceGroupKeyCasePayload<'_, E, D, P, H, R, K1, K2>,
         ) -> Self::Output {
             let context_bytes = payload
                 .encoder

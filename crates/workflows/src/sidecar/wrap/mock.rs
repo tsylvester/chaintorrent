@@ -1,6 +1,7 @@
 #![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 use super::interface::{
+    ConsumeWrapPieceGroupKeyCaseParams, ConsumeWrapPieceGroupKeyCasePayload,
     IWrapPieceGroupKeyCaseConsumer, PIECE_GROUP_KEY_LENGTH, PieceGroupKey,
     PieceGroupKeyConstructorParams, RunWrapPieceGroupKeyCaseFn, WrapPieceGroupKeyCaseDeps,
     WrapPieceGroupKeyCaseErrorReturn, WrapPieceGroupKeyCaseParams, WrapPieceGroupKeyCasePayload,
@@ -16,7 +17,8 @@ use encoding::{
     build_create_encoding_payload, create_encoding,
 };
 use kdf::{
-    CreateKeyDerivationParams, IKeyDerivationAdapter, build_create_key_derivation_deps,
+    ConsumeKeyDerivationParams, ConsumeKeyDerivationPayload, CreateKeyDerivationParams,
+    IKeyDerivationAdapter, IKeyDerivationConsumer, build_create_key_derivation_deps,
     build_create_key_derivation_params, build_create_key_derivation_payload, create_key_derivation,
 };
 use kem::EncapsulatedValue;
@@ -234,6 +236,27 @@ pub fn build_wrap_piece_group_key_case_success_return<O>(
     WrapPieceGroupKeyCaseSuccessReturn { output }
 }
 
+#[derive(Default)]
+pub struct ConsumeWrapPieceGroupKeyCaseParamsOverrides;
+
+pub fn build_consume_wrap_piece_group_key_case_params(
+    _overrides: ConsumeWrapPieceGroupKeyCaseParamsOverrides,
+) -> ConsumeWrapPieceGroupKeyCaseParams {
+    ConsumeWrapPieceGroupKeyCaseParams
+}
+
+#[derive(Default)]
+pub struct ConsumeWrapPieceGroupKeyCasePayloadOverrides;
+
+pub fn build_consume_wrap_piece_group_key_case_payload<'a, E, K>(
+    encoder: &'a E,
+    kdf: &'a K,
+    case: &'a WrapPieceGroupKeyCasePayload<'a>,
+    _overrides: ConsumeWrapPieceGroupKeyCasePayloadOverrides,
+) -> ConsumeWrapPieceGroupKeyCasePayload<'a, E, K> {
+    ConsumeWrapPieceGroupKeyCasePayload { encoder, kdf, case }
+}
+
 struct CaseAtEncoding<'a, C: IWrapPieceGroupKeyCaseConsumer> {
     consumer: &'a C,
     key_derivation: CreateKeyDerivationParams,
@@ -248,20 +271,51 @@ impl<C: IWrapPieceGroupKeyCaseConsumer> IEncodingConsumer for CaseAtEncoding<'_,
         _params: ConsumeEncodingParams,
         payload: ConsumeEncodingPayload<E>,
     ) -> Self::Output {
-        let created = match create_key_derivation(
-            &build_create_key_derivation_deps(Default::default()),
+        match create_key_derivation(
+            &build_create_key_derivation_deps(
+                CaseAtKeyDerivation {
+                    consumer: self.consumer,
+                    encoder: &payload.adapter,
+                    case_payload: self.case_payload,
+                },
+                Default::default(),
+            ),
             self.key_derivation,
             build_create_key_derivation_payload(Default::default()),
         ) {
-            Ok(created) => created,
-            Err(error) => {
-                return Err(WrapPieceGroupKeyCaseErrorReturn::CreateKeyDerivation(error));
-            }
-        };
+            Ok(created) => created.output,
+            Err(error) => Err(WrapPieceGroupKeyCaseErrorReturn::CreateKeyDerivation(error)),
+        }
+    }
+}
+
+struct CaseAtKeyDerivation<
+    'a,
+    E: IEncoderAdapter + IDecoderAdapter,
+    C: IWrapPieceGroupKeyCaseConsumer,
+> {
+    consumer: &'a C,
+    encoder: &'a E,
+    case_payload: &'a WrapPieceGroupKeyCasePayload<'a>,
+}
+
+impl<E: IEncoderAdapter + IDecoderAdapter, C: IWrapPieceGroupKeyCaseConsumer> IKeyDerivationConsumer
+    for CaseAtKeyDerivation<'_, E, C>
+{
+    type Output = WrapPieceGroupKeyCaseReturn<C::Output>;
+
+    fn consume_key_derivation<K: IKeyDerivationAdapter>(
+        &self,
+        _params: ConsumeKeyDerivationParams,
+        payload: ConsumeKeyDerivationPayload<K>,
+    ) -> Self::Output {
         let output = self.consumer.consume_wrap_piece_group_key_case(
-            &payload.adapter,
-            &*created.adapter,
-            self.case_payload,
+            ConsumeWrapPieceGroupKeyCaseParams,
+            ConsumeWrapPieceGroupKeyCasePayload {
+                encoder: self.encoder,
+                kdf: &payload.adapter,
+                case: self.case_payload,
+            },
         );
         Ok(WrapPieceGroupKeyCaseSuccessReturn { output })
     }
@@ -274,11 +328,14 @@ pub fn run_wrap_piece_group_key_case<C: IWrapPieceGroupKeyCaseConsumer>(
 ) -> WrapPieceGroupKeyCaseReturn<C::Output> {
     let _: RunWrapPieceGroupKeyCaseFn<C> = run_wrap_piece_group_key_case;
     match create_encoding(
-        &build_create_encoding_deps(CaseAtEncoding {
-            consumer: &deps.consumer,
-            key_derivation: params.key_derivation,
-            case_payload: &payload,
-        }),
+        &build_create_encoding_deps(
+            CaseAtEncoding {
+                consumer: &deps.consumer,
+                key_derivation: params.key_derivation,
+                case_payload: &payload,
+            },
+            Default::default(),
+        ),
         params.encoding,
         build_create_encoding_payload(Default::default()),
     ) {

@@ -19,11 +19,13 @@ use encoding::{
     build_create_encoding_payload, create_encoding,
 };
 use hash_to_scalar::{
-    CreateHashToScalarParams, IHashToScalarAdapter, build_create_hash_to_scalar_deps,
+    ConsumeHashToScalarParams, ConsumeHashToScalarPayload, CreateHashToScalarParams,
+    IHashToScalarAdapter, IHashToScalarConsumer, build_create_hash_to_scalar_deps,
     build_create_hash_to_scalar_params, build_create_hash_to_scalar_payload, create_hash_to_scalar,
 };
 use kdf::{
-    CreateKeyDerivationParams, IKeyDerivationAdapter, build_create_key_derivation_deps,
+    ConsumeKeyDerivationParams, ConsumeKeyDerivationPayload, CreateKeyDerivationParams,
+    IKeyDerivationAdapter, IKeyDerivationConsumer, build_create_key_derivation_deps,
     build_create_key_derivation_params, build_create_key_derivation_payload, create_key_derivation,
 };
 use kem::{
@@ -37,7 +39,8 @@ use pairing::{
     build_create_pairing_payload, create_pairing,
 };
 use random::{
-    CreateRandomSourceParams, IRandomSourceAdapter, build_create_random_source_deps,
+    ConsumeRandomSourceParams, ConsumeRandomSourcePayload, CreateRandomSourceParams,
+    IRandomSourceAdapter, IRandomSourceConsumer, build_create_random_source_deps,
     build_create_random_source_params, build_create_random_source_payload, create_random_source,
 };
 use serde_json::{Map, Value};
@@ -210,22 +213,25 @@ pub struct ConsumeUnwrapPieceGroupKeyCasePayloadOverrides;
 pub fn build_consume_unwrap_piece_group_key_case_payload<
     'a,
     E: IEncoderAdapter + IDecoderAdapter,
+    D: IKeyDerivationAdapter,
     P: IPairingArithmetic + IPairingReference,
+    H: IHashToScalarAdapter<P::Scalar>,
+    R: IRandomSourceAdapter,
     K1: ICredentialKemAdapter<Pairing = P>,
     K2: ICredentialKemAdapter<Pairing = P>,
 >(
     encoder: &'a E,
-    kdf: &'a dyn IKeyDerivationAdapter,
+    kdf: &'a D,
     pairing: &'a P,
-    hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    hash_to_scalar: &'a H,
     kem_first: &'a K1,
     kem_second: &'a K2,
-    random: &'a dyn IRandomSourceAdapter,
+    random: &'a R,
     scope_first: IdentityScope,
     scope_second: IdentityScope,
     case: &'a UnwrapPieceGroupKeyCasePayload,
     _overrides: ConsumeUnwrapPieceGroupKeyCasePayloadOverrides,
-) -> ConsumeUnwrapPieceGroupKeyCasePayload<'a, E, P, K1, K2> {
+) -> ConsumeUnwrapPieceGroupKeyCasePayload<'a, E, D, P, H, R, K1, K2> {
     ConsumeUnwrapPieceGroupKeyCasePayload {
         encoder,
         kdf,
@@ -258,22 +264,12 @@ impl<C: IUnwrapPieceGroupKeyCaseConsumer> IEncodingConsumer for CaseAtEncoding<'
         _params: ConsumeEncodingParams,
         payload: ConsumeEncodingPayload<E>,
     ) -> Self::Output {
-        let created = match create_key_derivation(
-            &build_create_key_derivation_deps(Default::default()),
-            self.key_derivation,
-            build_create_key_derivation_payload(Default::default()),
-        ) {
-            Ok(created) => created,
-            Err(error) => {
-                return Err(UnwrapPieceGroupKeyCaseErrorReturn::KeyDerivation(error));
-            }
-        };
-        match create_pairing(
-            &build_create_pairing_deps(
-                CaseAtPairing {
+        match create_key_derivation(
+            &build_create_key_derivation_deps(
+                CaseAtKeyDerivation {
                     consumer: self.consumer,
                     encoder: &payload.adapter,
-                    kdf: &*created.adapter,
+                    pairing: &self.pairing,
                     hash_to_scalar: self.hash_to_scalar,
                     random_source: &self.random_source,
                     kem: self.kem,
@@ -281,10 +277,60 @@ impl<C: IUnwrapPieceGroupKeyCaseConsumer> IEncodingConsumer for CaseAtEncoding<'
                 },
                 Default::default(),
             ),
+            self.key_derivation,
+            build_create_key_derivation_payload(Default::default()),
+        ) {
+            Ok(success) => success.output,
+            Err(error) => Err(UnwrapPieceGroupKeyCaseErrorReturn::KeyDerivation(error)),
+        }
+    }
+}
+
+struct CaseAtKeyDerivation<'a, C: IUnwrapPieceGroupKeyCaseConsumer, E> {
+    consumer: &'a C,
+    encoder: &'a E,
+    pairing: &'a CreatePairingParams,
+    hash_to_scalar: CreateHashToScalarParams,
+    random_source: &'a CreateRandomSourceParams,
+    kem: CreateKemParams,
+    kem_second: CreateKemParams,
+}
+
+impl<C: IUnwrapPieceGroupKeyCaseConsumer, E: IEncoderAdapter + IDecoderAdapter>
+    IKeyDerivationConsumer for CaseAtKeyDerivation<'_, C, E>
+{
+    type Output = UnwrapPieceGroupKeyCaseReturn<C::Output>;
+
+    fn consume_key_derivation<D: IKeyDerivationAdapter>(
+        &self,
+        _params: ConsumeKeyDerivationParams,
+        payload: ConsumeKeyDerivationPayload<D>,
+    ) -> Self::Output {
+        match create_pairing(
+            &build_create_pairing_deps(
+                CaseAtPairing {
+                    consumer: self.consumer,
+                    encoder: self.encoder,
+                    kdf: &payload.adapter,
+                    hash_to_scalar: self.hash_to_scalar,
+                    random_source: self.random_source,
+                    kem: self.kem,
+                    kem_second: self.kem_second,
+                },
+                pairing::lookup_pairing_declaration,
+                pairing::admit_pairing_composition,
+                pairing::build_admit_pairing_composition_deps(
+                    pairing::lookup_pairing_declaration,
+                    Default::default(),
+                ),
+                Default::default(),
+            ),
             CreatePairingParams {
                 concrete: self.pairing.concrete,
-                supported_encodings: self.pairing.supported_encodings.clone(),
-                target_group_encoding: self.pairing.target_group_encoding,
+                required_curve: self.pairing.required_curve,
+                required_verifier_group_arithmetic: self.pairing.required_verifier_group_arithmetic,
+                required_precompile_encodings: self.pairing.required_precompile_encodings.clone(),
+                required_target_group_encoding: self.pairing.required_target_group_encoding,
             },
             build_create_pairing_payload(Default::default()),
         ) {
@@ -294,18 +340,21 @@ impl<C: IUnwrapPieceGroupKeyCaseConsumer> IEncodingConsumer for CaseAtEncoding<'
     }
 }
 
-struct CaseAtPairing<'a, C: IUnwrapPieceGroupKeyCaseConsumer, E> {
+struct CaseAtPairing<'a, C: IUnwrapPieceGroupKeyCaseConsumer, E, D> {
     consumer: &'a C,
     encoder: &'a E,
-    kdf: &'a dyn IKeyDerivationAdapter,
+    kdf: &'a D,
     hash_to_scalar: CreateHashToScalarParams,
     random_source: &'a CreateRandomSourceParams,
     kem: CreateKemParams,
     kem_second: CreateKemParams,
 }
 
-impl<C: IUnwrapPieceGroupKeyCaseConsumer, E: IEncoderAdapter + IDecoderAdapter> IPairingConsumer
-    for CaseAtPairing<'_, C, E>
+impl<
+    C: IUnwrapPieceGroupKeyCaseConsumer,
+    E: IEncoderAdapter + IDecoderAdapter,
+    D: IKeyDerivationAdapter,
+> IPairingConsumer for CaseAtPairing<'_, C, E, D>
 {
     type Output = UnwrapPieceGroupKeyCaseReturn<C::Output>;
 
@@ -314,39 +363,112 @@ impl<C: IUnwrapPieceGroupKeyCaseConsumer, E: IEncoderAdapter + IDecoderAdapter> 
         _params: ConsumePairingParams,
         payload: ConsumePairingPayload<P>,
     ) -> Self::Output {
-        let hashed = match create_hash_to_scalar::<P::Scalar>(
-            &build_create_hash_to_scalar_deps(Default::default()),
+        match create_hash_to_scalar::<P::Scalar, CaseAtHashToScalar<'_, C, E, D, P>>(
+            &build_create_hash_to_scalar_deps(
+                CaseAtHashToScalar {
+                    consumer: self.consumer,
+                    encoder: self.encoder,
+                    kdf: self.kdf,
+                    pairing: &payload.adapter,
+                    random_source: self.random_source,
+                    kem: self.kem,
+                    kem_second: self.kem_second,
+                },
+                Default::default(),
+            ),
             self.hash_to_scalar,
             build_create_hash_to_scalar_payload(Default::default()),
         ) {
-            Ok(hashed) => hashed,
-            Err(error) => {
-                return Err(UnwrapPieceGroupKeyCaseErrorReturn::HashToScalar(error));
-            }
-        };
-        let randomized = match create_random_source(
-            &build_create_random_source_deps(Default::default()),
+            Ok(success) => success.output,
+            Err(error) => Err(UnwrapPieceGroupKeyCaseErrorReturn::HashToScalar(error)),
+        }
+    }
+}
+
+struct CaseAtHashToScalar<'a, C: IUnwrapPieceGroupKeyCaseConsumer, E, D, P: IPairingArithmetic> {
+    consumer: &'a C,
+    encoder: &'a E,
+    kdf: &'a D,
+    pairing: &'a P,
+    random_source: &'a CreateRandomSourceParams,
+    kem: CreateKemParams,
+    kem_second: CreateKemParams,
+}
+
+impl<
+    C: IUnwrapPieceGroupKeyCaseConsumer,
+    E: IEncoderAdapter + IDecoderAdapter,
+    D: IKeyDerivationAdapter,
+    P: IPairingArithmetic + IPairingReference,
+> IHashToScalarConsumer<P::Scalar> for CaseAtHashToScalar<'_, C, E, D, P>
+{
+    type Output = UnwrapPieceGroupKeyCaseReturn<C::Output>;
+
+    fn consume_hash_to_scalar<H: IHashToScalarAdapter<P::Scalar>>(
+        &self,
+        _params: ConsumeHashToScalarParams,
+        payload: ConsumeHashToScalarPayload<P::Scalar, H>,
+    ) -> Self::Output {
+        match create_random_source(
+            &build_create_random_source_deps(
+                CaseAtRandomSource {
+                    consumer: self.consumer,
+                    encoder: self.encoder,
+                    kdf: self.kdf,
+                    pairing: self.pairing,
+                    hash_to_scalar: &payload.adapter,
+                    kem: self.kem,
+                    kem_second: self.kem_second,
+                },
+                Default::default(),
+            ),
             CreateRandomSourceParams {
                 kind: self.random_source.kind,
             },
             build_create_random_source_payload(Default::default()),
         ) {
-            Ok(randomized) => randomized,
-            Err(error) => {
-                return Err(UnwrapPieceGroupKeyCaseErrorReturn::RandomSource(error));
-            }
-        };
+            Ok(success) => success.output,
+            Err(error) => Err(UnwrapPieceGroupKeyCaseErrorReturn::RandomSource(error)),
+        }
+    }
+}
+
+struct CaseAtRandomSource<'a, C: IUnwrapPieceGroupKeyCaseConsumer, E, D, P: IPairingArithmetic, H> {
+    consumer: &'a C,
+    encoder: &'a E,
+    kdf: &'a D,
+    pairing: &'a P,
+    hash_to_scalar: &'a H,
+    kem: CreateKemParams,
+    kem_second: CreateKemParams,
+}
+
+impl<
+    C: IUnwrapPieceGroupKeyCaseConsumer,
+    E: IEncoderAdapter + IDecoderAdapter,
+    D: IKeyDerivationAdapter,
+    P: IPairingArithmetic + IPairingReference,
+    H: IHashToScalarAdapter<P::Scalar>,
+> IRandomSourceConsumer for CaseAtRandomSource<'_, C, E, D, P, H>
+{
+    type Output = UnwrapPieceGroupKeyCaseReturn<C::Output>;
+
+    fn consume_random_source<R: IRandomSourceAdapter>(
+        &self,
+        _params: ConsumeRandomSourceParams,
+        payload: ConsumeRandomSourcePayload<R>,
+    ) -> Self::Output {
         match create_kem(
             &build_create_kem_deps(
-                &payload.adapter,
-                &*hashed.adapter,
+                self.pairing,
+                self.hash_to_scalar,
                 CaseAtKem {
                     consumer: self.consumer,
                     encoder: self.encoder,
                     kdf: self.kdf,
-                    pairing: &payload.adapter,
-                    hash_to_scalar: &*hashed.adapter,
-                    random: &*randomized.adapter,
+                    pairing: self.pairing,
+                    hash_to_scalar: self.hash_to_scalar,
+                    random: &payload.source,
                     kem_second: self.kem_second,
                 },
                 Default::default(),
@@ -360,21 +482,24 @@ impl<C: IUnwrapPieceGroupKeyCaseConsumer, E: IEncoderAdapter + IDecoderAdapter> 
     }
 }
 
-struct CaseAtKem<'a, C: IUnwrapPieceGroupKeyCaseConsumer, E, P: IPairingArithmetic> {
+struct CaseAtKem<'a, C: IUnwrapPieceGroupKeyCaseConsumer, E, D, P: IPairingArithmetic, H, R> {
     consumer: &'a C,
     encoder: &'a E,
-    kdf: &'a dyn IKeyDerivationAdapter,
+    kdf: &'a D,
     pairing: &'a P,
-    hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
-    random: &'a dyn IRandomSourceAdapter,
+    hash_to_scalar: &'a H,
+    random: &'a R,
     kem_second: CreateKemParams,
 }
 
 impl<
     C: IUnwrapPieceGroupKeyCaseConsumer,
     E: IEncoderAdapter + IDecoderAdapter,
+    D: IKeyDerivationAdapter,
     P: IPairingArithmetic + IPairingReference,
-> IKemConsumer<P> for CaseAtKem<'_, C, E, P>
+    H: IHashToScalarAdapter<P::Scalar>,
+    R: IRandomSourceAdapter,
+> IKemConsumer<P> for CaseAtKem<'_, C, E, D, P, H, R>
 {
     type Output = UnwrapPieceGroupKeyCaseReturn<C::Output>;
 
@@ -408,23 +533,35 @@ impl<
     }
 }
 
-struct CaseAtKemInner<'a, C: IUnwrapPieceGroupKeyCaseConsumer, E, P: IPairingArithmetic, K1> {
+struct CaseAtKemInner<
+    'a,
+    C: IUnwrapPieceGroupKeyCaseConsumer,
+    E,
+    D,
+    P: IPairingArithmetic,
+    H,
+    K1,
+    R,
+> {
     consumer: &'a C,
     encoder: &'a E,
-    kdf: &'a dyn IKeyDerivationAdapter,
+    kdf: &'a D,
     pairing: &'a P,
-    hash_to_scalar: &'a dyn IHashToScalarAdapter<P::Scalar>,
+    hash_to_scalar: &'a H,
     kem_first: &'a K1,
-    random: &'a dyn IRandomSourceAdapter,
+    random: &'a R,
     scope_first: IdentityScope,
 }
 
 impl<
     C: IUnwrapPieceGroupKeyCaseConsumer,
     E: IEncoderAdapter + IDecoderAdapter,
+    D: IKeyDerivationAdapter,
     P: IPairingArithmetic + IPairingReference,
+    H: IHashToScalarAdapter<P::Scalar>,
     K1: ICredentialKemAdapter<Pairing = P>,
-> IKemConsumer<P> for CaseAtKemInner<'_, C, E, P, K1>
+    R: IRandomSourceAdapter,
+> IKemConsumer<P> for CaseAtKemInner<'_, C, E, D, P, H, K1, R>
 {
     type Output = UnwrapPieceGroupKeyCaseReturn<C::Output>;
 
@@ -460,15 +597,18 @@ pub fn run_unwrap_piece_group_key_case<C: IUnwrapPieceGroupKeyCaseConsumer>(
 ) -> UnwrapPieceGroupKeyCaseReturn<C::Output> {
     let _: RunUnwrapPieceGroupKeyCaseFn<C> = run_unwrap_piece_group_key_case;
     match create_encoding(
-        &build_create_encoding_deps(CaseAtEncoding {
-            consumer: &deps.consumer,
-            key_derivation: params.key_derivation,
-            pairing: params.pairing,
-            hash_to_scalar: params.hash_to_scalar,
-            random_source: params.random_source,
-            kem: params.kem,
-            kem_second: params.kem_second,
-        }),
+        &build_create_encoding_deps(
+            CaseAtEncoding {
+                consumer: &deps.consumer,
+                key_derivation: params.key_derivation,
+                pairing: params.pairing,
+                hash_to_scalar: params.hash_to_scalar,
+                random_source: params.random_source,
+                kem: params.kem,
+                kem_second: params.kem_second,
+            },
+            Default::default(),
+        ),
         params.encoding,
         build_create_encoding_payload(Default::default()),
     ) {
