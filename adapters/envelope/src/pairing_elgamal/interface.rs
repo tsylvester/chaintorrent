@@ -14,12 +14,26 @@ use pairing::{IPairingAdapter, IPairingArithmetic, SampleUniformScalarErrorRetur
 use random::{CreateRandomSourceErrorReturn, CreateRandomSourceParams};
 use random::{FillBytesErrorReturn, IRandomSourceAdapter};
 
+use crate::factory::provides::{
+    EnvelopeAlgebra, KEY_AGREEMENT_INTERFACE_VERSION, KeyAgreementConcrete,
+    KeyAgreementDeclaration, KeyAgreementIdentifier,
+};
 use crate::possession_statement::provides::{
     PossessionG1StatementDescription, PossessionG2StatementDescription,
 };
 
 pub const PAIRING_ELGAMAL_POSSESSION_G1_TAG: &[u8] = b"ChainTorrent-v1-envelope-possession-g1";
 pub const PAIRING_ELGAMAL_POSSESSION_G2_TAG: &[u8] = b"ChainTorrent-v1-envelope-possession-g2";
+
+pub(crate) const PAIRING_ELGAMAL_DECLARATION: KeyAgreementDeclaration = KeyAgreementDeclaration {
+    concrete: KeyAgreementConcrete::PairingElGamal,
+    identifier: KeyAgreementIdentifier::PairingElGamalV1,
+    algebra: EnvelopeAlgebra::PairingElGamal,
+    possession_g1_tag: PAIRING_ELGAMAL_POSSESSION_G1_TAG,
+    possession_g2_tag: PAIRING_ELGAMAL_POSSESSION_G2_TAG,
+    adapter_version: 1,
+    interface_version: KEY_AGREEMENT_INTERFACE_VERSION,
+};
 
 pub struct PairingElGamalKeyAgreement<'a, P: IPairingArithmetic, E: IEncoderAdapter> {
     pub(super) pairing: &'a P,
@@ -105,14 +119,25 @@ pub trait IPairingElGamalKeyAgreementCaseConsumer {
     fn consume_pairing_elgamal_key_agreement_case<
         P: IPairingArithmetic + IPairingReference,
         E: IEncoderAdapter + IDecoderAdapter,
+        H: IHashToScalarAdapter<P::Scalar>,
+        R: IRandomSourceAdapter,
     >(
         &self,
-        pairing: &P,
-        hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &E,
-        random: &dyn IRandomSourceAdapter,
-        payload: &PairingElGamalKeyAgreementCasePayload,
+        params: ConsumePairingElGamalKeyAgreementCaseParams,
+        payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
     ) -> Self::Output;
+}
+
+#[cfg(test)]
+pub struct ConsumePairingElGamalKeyAgreementCaseParams;
+
+#[cfg(test)]
+pub struct ConsumePairingElGamalKeyAgreementCasePayload<'a, P, E, H, R> {
+    pub pairing: &'a P,
+    pub hash_to_scalar: &'a H,
+    pub encoder: &'a E,
+    pub random: &'a R,
+    pub case: &'a PairingElGamalKeyAgreementCasePayload,
 }
 
 #[cfg(test)]

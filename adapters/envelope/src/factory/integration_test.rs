@@ -2,39 +2,45 @@
 
 use super::create_key_agreement;
 use super::provides::{
+    ConsumeCreateKeyAgreementCaseParams, ConsumeCreateKeyAgreementCasePayload,
     ConsumeKeyAgreementParams, ConsumeKeyAgreementPayload, CreateKeyAgreementCaseParamsOverrides,
-    CreateKeyAgreementCasePayload, CreateKeyAgreementParams, CreateKeyAgreementParamsOverrides,
-    DECLARED_KEY_AGREEMENT_SELECTIONS, EnvelopeFromComponentsPayloadOverrides,
+    CreateKeyAgreementParamsOverrides, EnvelopeFromComponentsPayloadOverrides,
     GenerateKeysErrorReturn, GenerateKeysPayloadOverrides, ICreateKeyAgreementCaseConsumer,
-    IKeyAgreementAdapter, IKeyAgreementConsumer, KeyAgreementConcrete, KeyPairComponentsOverrides,
-    KeyPairFromComponentsErrorReturn, KeyPairFromComponentsPayloadOverrides,
-    MockIKeyAgreementAdapterFailureMode, MockIKeyAgreementAdapterGenerateKeysErrorReturn,
-    MockIKeyAgreementAdapterWrapToErrorReturn, PossessionComponentsOverrides,
-    PossessionFromComponentsPayloadOverrides, PublicKeysComponentsOverrides,
-    PublicKeysFromComponentsErrorReturn, PublicKeysFromComponentsPayloadOverrides,
-    WrapToErrorReturn, WrapToPayloadOverrides, build_create_key_agreement_case_deps,
-    build_create_key_agreement_case_params, build_create_key_agreement_case_payload,
-    build_create_key_agreement_deps, build_create_key_agreement_params,
-    build_create_key_agreement_payload, build_envelope_components_params,
-    build_envelope_components_payload, build_envelope_from_components_params,
-    build_envelope_from_components_payload, build_generate_keys_params,
-    build_generate_keys_payload, build_key_pair_components, build_key_pair_components_params,
-    build_key_pair_components_payload, build_key_pair_from_components_params,
-    build_key_pair_from_components_payload, build_key_pair_public_keys_params,
-    build_key_pair_public_keys_payload, build_possession_components,
-    build_possession_components_params, build_possession_components_payload,
-    build_possession_from_components_params, build_possession_from_components_payload,
-    build_public_keys_components, build_public_keys_components_params,
-    build_public_keys_components_payload, build_public_keys_from_components_params,
-    build_public_keys_from_components_payload, build_unwrap_params, build_unwrap_payload,
-    build_wrap_to_params, build_wrap_to_payload, run_create_key_agreement_case,
+    IKeyAgreementAdapter, IKeyAgreementConsumer, KEY_AGREEMENT_CONCRETES, KeyAgreementConcrete,
+    KeyPairComponentsOverrides, KeyPairFromComponentsErrorReturn,
+    KeyPairFromComponentsPayloadOverrides, MockIKeyAgreementAdapterFailureMode,
+    MockIKeyAgreementAdapterGenerateKeysErrorReturn, MockIKeyAgreementAdapterWrapToErrorReturn,
+    PossessionComponentsOverrides, PossessionFromComponentsPayloadOverrides,
+    PublicKeysComponentsOverrides, PublicKeysFromComponentsErrorReturn,
+    PublicKeysFromComponentsPayloadOverrides, WrapToErrorReturn, WrapToPayloadOverrides,
+    build_create_key_agreement_case_deps, build_create_key_agreement_case_params,
+    build_create_key_agreement_case_payload, build_create_key_agreement_deps,
+    build_create_key_agreement_params, build_create_key_agreement_payload,
+    build_envelope_components_params, build_envelope_components_payload,
+    build_envelope_from_components_params, build_envelope_from_components_payload,
+    build_generate_keys_params, build_generate_keys_payload, build_key_agreement_concrete,
+    build_key_pair_components, build_key_pair_components_params, build_key_pair_components_payload,
+    build_key_pair_from_components_params, build_key_pair_from_components_payload,
+    build_key_pair_public_keys_params, build_key_pair_public_keys_payload,
+    build_possession_components, build_possession_components_params,
+    build_possession_components_payload, build_possession_from_components_params,
+    build_possession_from_components_payload, build_public_keys_components,
+    build_public_keys_components_params, build_public_keys_components_payload,
+    build_public_keys_from_components_params, build_public_keys_from_components_payload,
+    build_unwrap_params, build_unwrap_payload, build_wrap_to_params, build_wrap_to_payload,
+    run_create_key_agreement_case,
 };
+use crate::pairing_elgamal::provides::PairingElGamalGenerateKeysErrorReturn;
 use domain::{SecretConstructorParamsOverrides, build_secret};
 use encoding::{
-    CreateEncodingParamsOverrides, DECLARED_ENCODING_SELECTIONS, IDecoderAdapter, IEncoderAdapter,
-    build_create_encoding_params,
+    CreateEncodingParamsOverrides, ENCODING_CONCRETES, IDecoderAdapter, IEncoderAdapter,
+    build_create_encoding_params, build_encoding_concrete,
 };
-use hash_to_scalar::{DECLARED_HASH_TO_SCALAR_SELECTIONS, IHashToScalarAdapter};
+use hash_to_scalar::{
+    CreateHashToScalarParamsOverrides, HASH_TO_SCALAR_CONCRETES, HashToScalarConcrete,
+    HashToScalarErrorReturn, IHashToScalarAdapter, MockIHashToScalarAdapterFailureMode,
+    build_create_hash_to_scalar_params, build_hash_to_scalar_concrete,
+};
 use kem::{
     CredentialComponentsOverrides, ICredentialKemAdapter, build_create_kem_params,
     build_credential_components,
@@ -81,7 +87,7 @@ use random::{
 fn every_key_agreement_forms_the_public_keys_its_secrets_form() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -90,16 +96,18 @@ fn every_key_agreement_forms_the_public_keys_its_secrets_form() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -282,19 +290,24 @@ fn every_key_agreement_forms_the_public_keys_its_secrets_form() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -315,11 +328,20 @@ fn every_key_agreement_forms_the_public_keys_its_secrets_form() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -362,7 +384,7 @@ fn every_key_agreement_forms_the_public_keys_its_secrets_form() {
 fn every_envelope_opens_under_its_key_pair_to_the_components_it_wrapped() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -371,16 +393,18 @@ fn every_envelope_opens_under_its_key_pair_to_the_components_it_wrapped() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -594,19 +618,24 @@ fn every_envelope_opens_under_its_key_pair_to_the_components_it_wrapped() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -627,11 +656,20 @@ fn every_envelope_opens_under_its_key_pair_to_the_components_it_wrapped() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -669,7 +707,7 @@ fn every_envelope_opens_under_its_key_pair_to_the_components_it_wrapped() {
 fn another_key_pair_opens_an_envelope_to_different_components() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -678,16 +716,18 @@ fn another_key_pair_opens_an_envelope_to_different_components() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -927,19 +967,24 @@ fn another_key_pair_opens_an_envelope_to_different_components() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -960,11 +1005,20 @@ fn another_key_pair_opens_an_envelope_to_different_components() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -1004,7 +1058,7 @@ fn another_key_pair_opens_an_envelope_to_different_components() {
 fn every_wrap_returns_the_coins_its_envelope_was_formed_with() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -1013,16 +1067,18 @@ fn every_wrap_returns_the_coins_its_envelope_was_formed_with() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -1314,19 +1370,24 @@ fn every_wrap_returns_the_coins_its_envelope_was_formed_with() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -1347,11 +1408,20 @@ fn every_wrap_returns_the_coins_its_envelope_was_formed_with() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -1389,7 +1459,7 @@ fn every_wrap_returns_the_coins_its_envelope_was_formed_with() {
 fn every_key_agreement_returns_an_x_draw_sampling_refusal_whole() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -1398,16 +1468,18 @@ fn every_key_agreement_returns_an_x_draw_sampling_refusal_whole() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -1463,19 +1535,24 @@ fn every_key_agreement_returns_an_x_draw_sampling_refusal_whole() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -1496,11 +1573,20 @@ fn every_key_agreement_returns_an_x_draw_sampling_refusal_whole() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -1538,7 +1624,7 @@ fn every_key_agreement_returns_an_x_draw_sampling_refusal_whole() {
 fn every_key_agreement_returns_a_y_draw_sampling_refusal_whole() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -1547,16 +1633,18 @@ fn every_key_agreement_returns_a_y_draw_sampling_refusal_whole() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -1612,19 +1700,24 @@ fn every_key_agreement_returns_a_y_draw_sampling_refusal_whole() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -1645,11 +1738,20 @@ fn every_key_agreement_returns_a_y_draw_sampling_refusal_whole() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -1683,7 +1785,7 @@ fn every_key_agreement_returns_a_y_draw_sampling_refusal_whole() {
 fn every_key_agreement_refuses_a_zero_x_draw_as_an_identity_first_group_key() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -1692,16 +1794,18 @@ fn every_key_agreement_refuses_a_zero_x_draw_as_an_identity_first_group_key() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -1749,19 +1853,24 @@ fn every_key_agreement_refuses_a_zero_x_draw_as_an_identity_first_group_key() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -1782,11 +1891,20 @@ fn every_key_agreement_refuses_a_zero_x_draw_as_an_identity_first_group_key() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -1820,7 +1938,7 @@ fn every_key_agreement_refuses_a_zero_x_draw_as_an_identity_first_group_key() {
 fn every_key_agreement_refuses_a_zero_y_draw_as_an_identity_second_group_key() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -1829,16 +1947,18 @@ fn every_key_agreement_refuses_a_zero_y_draw_as_an_identity_second_group_key() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -1886,19 +2006,24 @@ fn every_key_agreement_refuses_a_zero_y_draw_as_an_identity_second_group_key() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -1919,11 +2044,20 @@ fn every_key_agreement_refuses_a_zero_y_draw_as_an_identity_second_group_key() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -1956,7 +2090,7 @@ fn every_key_agreement_refuses_a_zero_y_draw_as_an_identity_second_group_key() {
 fn every_key_agreement_refuses_equal_secret_draws() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -1965,16 +2099,18 @@ fn every_key_agreement_refuses_equal_secret_draws() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -2022,19 +2158,24 @@ fn every_key_agreement_refuses_equal_secret_draws() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -2055,11 +2196,20 @@ fn every_key_agreement_refuses_equal_secret_draws() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -2096,7 +2246,7 @@ fn every_key_agreement_refuses_equal_secret_draws() {
 fn every_key_agreement_refuses_a_key_pair_of_a_zero_x_secret() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -2105,16 +2255,18 @@ fn every_key_agreement_refuses_a_key_pair_of_a_zero_x_secret() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -2175,19 +2327,24 @@ fn every_key_agreement_refuses_a_key_pair_of_a_zero_x_secret() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -2208,11 +2365,20 @@ fn every_key_agreement_refuses_a_key_pair_of_a_zero_x_secret() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -2249,7 +2415,7 @@ fn every_key_agreement_refuses_a_key_pair_of_a_zero_x_secret() {
 fn every_key_agreement_refuses_a_key_pair_of_a_zero_y_secret() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -2258,16 +2424,18 @@ fn every_key_agreement_refuses_a_key_pair_of_a_zero_y_secret() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -2328,19 +2496,24 @@ fn every_key_agreement_refuses_a_key_pair_of_a_zero_y_secret() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -2361,11 +2534,20 @@ fn every_key_agreement_refuses_a_key_pair_of_a_zero_y_secret() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -2402,7 +2584,7 @@ fn every_key_agreement_refuses_a_key_pair_of_a_zero_y_secret() {
 fn every_key_agreement_refuses_a_key_pair_of_equal_secrets() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -2411,16 +2593,18 @@ fn every_key_agreement_refuses_a_key_pair_of_equal_secrets() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -2489,19 +2673,24 @@ fn every_key_agreement_refuses_a_key_pair_of_equal_secrets() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -2522,11 +2711,20 @@ fn every_key_agreement_refuses_a_key_pair_of_equal_secrets() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -2566,7 +2764,7 @@ fn every_key_agreement_refuses_a_key_pair_of_equal_secrets() {
 fn a_key_pair_restored_from_its_components_opens_the_envelope() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -2575,16 +2773,18 @@ fn a_key_pair_restored_from_its_components_opens_the_envelope() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -2830,19 +3030,24 @@ fn a_key_pair_restored_from_its_components_opens_the_envelope() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -2863,11 +3068,20 @@ fn a_key_pair_restored_from_its_components_opens_the_envelope() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -2905,7 +3119,7 @@ fn a_key_pair_restored_from_its_components_opens_the_envelope() {
 fn an_envelope_rebuilt_from_its_components_opens() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -2914,16 +3128,18 @@ fn an_envelope_rebuilt_from_its_components_opens() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -3163,19 +3379,24 @@ fn an_envelope_rebuilt_from_its_components_opens() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -3196,11 +3417,20 @@ fn an_envelope_rebuilt_from_its_components_opens() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -3240,7 +3470,7 @@ fn an_envelope_rebuilt_from_its_components_opens() {
 fn public_keys_are_admitted_with_their_own_proof_of_possession() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -3249,16 +3479,18 @@ fn public_keys_are_admitted_with_their_own_proof_of_possession() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -3386,19 +3618,24 @@ fn public_keys_are_admitted_with_their_own_proof_of_possession() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -3419,11 +3656,20 @@ fn public_keys_are_admitted_with_their_own_proof_of_possession() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -3460,7 +3706,7 @@ fn public_keys_are_admitted_with_their_own_proof_of_possession() {
 fn a_possession_rebuilt_from_its_components_is_admitted() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -3469,16 +3715,18 @@ fn a_possession_rebuilt_from_its_components_is_admitted() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -3561,19 +3809,24 @@ fn a_possession_rebuilt_from_its_components_is_admitted() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -3594,11 +3847,20 @@ fn a_possession_rebuilt_from_its_components_is_admitted() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -3636,7 +3898,7 @@ fn a_possession_rebuilt_from_its_components_is_admitted() {
 fn public_keys_are_refused_with_another_key_pairs_proof_of_possession() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -3645,16 +3907,18 @@ fn public_keys_are_refused_with_another_key_pairs_proof_of_possession() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -3736,19 +4000,24 @@ fn public_keys_are_refused_with_another_key_pairs_proof_of_possession() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -3769,11 +4038,20 @@ fn public_keys_are_refused_with_another_key_pairs_proof_of_possession() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -3814,7 +4092,7 @@ fn public_keys_are_refused_with_another_key_pairs_proof_of_possession() {
 fn public_keys_are_refused_with_a_second_group_proof_from_another_key_pair() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -3823,16 +4101,18 @@ fn public_keys_are_refused_with_a_second_group_proof_from_another_key_pair() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -3957,19 +4237,24 @@ fn public_keys_are_refused_with_a_second_group_proof_from_another_key_pair() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -3990,11 +4275,20 @@ fn public_keys_are_refused_with_a_second_group_proof_from_another_key_pair() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -4033,7 +4327,7 @@ fn public_keys_are_refused_with_a_second_group_proof_from_another_key_pair() {
 fn public_keys_are_refused_with_an_identity_first_group_key() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -4042,16 +4336,18 @@ fn public_keys_are_refused_with_an_identity_first_group_key() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -4136,19 +4432,24 @@ fn public_keys_are_refused_with_an_identity_first_group_key() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -4169,11 +4470,20 @@ fn public_keys_are_refused_with_an_identity_first_group_key() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -4212,7 +4522,7 @@ fn public_keys_are_refused_with_an_identity_first_group_key() {
 fn public_keys_are_refused_with_an_identity_second_group_key() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -4221,16 +4531,18 @@ fn public_keys_are_refused_with_an_identity_second_group_key() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -4326,19 +4638,24 @@ fn public_keys_are_refused_with_an_identity_second_group_key() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -4359,11 +4676,20 @@ fn public_keys_are_refused_with_an_identity_second_group_key() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -4402,7 +4728,7 @@ fn public_keys_are_refused_with_an_identity_second_group_key() {
 fn public_keys_are_refused_with_a_secret_shared_across_the_groups() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -4411,16 +4737,18 @@ fn public_keys_are_refused_with_a_secret_shared_across_the_groups() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -4518,19 +4846,24 @@ fn public_keys_are_refused_with_a_secret_shared_across_the_groups() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let mut cases: Vec<CreateKeyAgreementParams> = DECLARED_KEY_AGREEMENT_SELECTIONS.to_vec();
-    cases.push(build_create_key_agreement_params(Default::default()));
+    let mut cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+    cases.push(build_create_key_agreement_params(Default::default()).concrete);
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -4551,11 +4884,20 @@ fn public_keys_are_refused_with_a_secret_shared_across_the_groups() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -4594,7 +4936,7 @@ fn public_keys_are_refused_with_a_secret_shared_across_the_groups() {
 fn a_refused_nonce_draw_returns_the_mock_error_whole() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -4603,16 +4945,18 @@ fn a_refused_nonce_draw_returns_the_mock_error_whole() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -4652,25 +4996,22 @@ fn a_refused_nonce_draw_returns_the_mock_error_whole() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let cases = vec![build_create_key_agreement_params(
-        CreateKeyAgreementParamsOverrides {
-            concrete: Some(KeyAgreementConcrete::Mock(
-                MockIKeyAgreementAdapterFailureMode::NonceDrawRefused,
-            )),
-            ..Default::default()
-        },
+    let cases = vec![KeyAgreementConcrete::Mock(
+        MockIKeyAgreementAdapterFailureMode::NonceDrawRefused,
     )];
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -4691,11 +5032,20 @@ fn a_refused_nonce_draw_returns_the_mock_error_whole() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -4735,7 +5085,7 @@ fn a_refused_nonce_draw_returns_the_mock_error_whole() {
 fn a_refused_coin_draw_returns_the_mock_error_whole() {
     // Arrange
     struct Consumer {
-        key_agreement: CreateKeyAgreementParams,
+        key_agreement: KeyAgreementConcrete,
     }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
@@ -4744,16 +5094,18 @@ fn a_refused_coin_draw_returns_the_mock_error_whole() {
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
             struct KeyAgreementConsumer<'a, P> {
                 pairing: &'a P,
             }
@@ -4834,25 +5186,22 @@ fn a_refused_coin_draw_returns_the_mock_error_whole() {
                     KeyAgreementConsumer { pairing },
                     Default::default(),
                 ),
-                self.key_agreement,
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
             .expect("the selection admits the concrete it names");
         }
     }
 
-    let cases = vec![build_create_key_agreement_params(
-        CreateKeyAgreementParamsOverrides {
-            concrete: Some(KeyAgreementConcrete::Mock(
-                MockIKeyAgreementAdapterFailureMode::CoinDrawRefused,
-            )),
-            ..Default::default()
-        },
+    let cases = vec![KeyAgreementConcrete::Mock(
+        MockIKeyAgreementAdapterFailureMode::CoinDrawRefused,
     )];
 
     for pairing_concrete in PAIRING_CONCRETES {
-        for encoding_case in DECLARED_ENCODING_SELECTIONS {
-            for hash_case in DECLARED_HASH_TO_SCALAR_SELECTIONS {
+        for encoding_case in ENCODING_CONCRETES {
+            for hash_case in HASH_TO_SCALAR_CONCRETES {
                 for case in &cases {
                     for kind in RANDOM_SOURCE_KINDS {
                         // Act
@@ -4873,11 +5222,20 @@ fn a_refused_coin_draw_returns_the_mock_error_whole() {
                                     )),
                                     encoding: Some(build_create_encoding_params(
                                         CreateEncodingParamsOverrides {
-                                            concrete: Some(encoding_case.concrete),
-                                            identifier: Some(encoding_case.identifier),
+                                            selection: Some(build_encoding_concrete(
+                                                *encoding_case,
+                                                Default::default(),
+                                            )),
                                         },
                                     )),
-                                    hash_to_scalar: Some(*hash_case),
+                                    hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                                        CreateHashToScalarParamsOverrides {
+                                            concrete: Some(build_hash_to_scalar_concrete(
+                                                *hash_case,
+                                                Default::default(),
+                                            )),
+                                        },
+                                    )),
                                     random_source: Some(build_create_random_source_params(
                                         CreateRandomSourceParamsOverrides { kind: Some(*kind) },
                                     )),
@@ -4896,3 +5254,149 @@ fn a_refused_coin_draw_returns_the_mock_error_whole() {
     }
 }
 // end a_refused_coin_draw_returns_the_mock_error_whole
+
+/// Contract: callee disposition, `envelope/pairing_elgamal` entry
+///   `every_concrete_returns_the_sampling_bound_refusal_whole`, absorbed;
+///   `generate_keys` on the adapter `create_key_agreement` hands the
+///   consumer, with the hash-to-scalar adapter under `SamplingRefused`,
+///   returns
+///   `Err(GenerateKeysErrorReturn::PairingElGamal(PairingElGamalGenerateKeysErrorReturn::HashToScalar(HashToScalarErrorReturn::Sampling(SampleUniformScalarErrorReturn::WrongLength { expected, actual }))))`,
+///   `expected` the scalar type's `UNIFORM_BYTES_LENGTH` and `actual` zero.
+/// Arrange: the real selection from `build_key_agreement_concrete` for each
+///   member of `KEY_AGREEMENT_CONCRETES`; the case params' `hash_to_scalar`
+///   overridden to `build_create_hash_to_scalar_params` with `concrete`
+///   `HashToScalarConcrete::Mock(MockIHashToScalarAdapterFailureMode::SamplingRefused)`;
+///   draws from `build_generate_keys_payload` that differ from each other;
+///   each case over `PAIRING_CONCRETES` and `RANDOM_SOURCE_KINDS`.
+/// Act:     `generate_keys` once.
+/// Assert:  the error equals the expected error whole.
+/// Boundary: `run_create_key_agreement_case` to the case consumer,
+///   `create_key_agreement`, then `generate_keys` at its challenge step.
+/// Mocked:  the hash-to-scalar family's mock concrete under
+///   `SamplingRefused`, the outer-edge collaborator on the route; nothing
+///   else.
+#[test]
+fn every_concrete_returns_the_sampling_bound_refusal_whole() {
+    // Arrange
+    struct Consumer {
+        key_agreement: KeyAgreementConcrete,
+    }
+
+    impl ICreateKeyAgreementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_create_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
+            K: ICredentialKemAdapter<Pairing = P>,
+        >(
+            &self,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
+        ) -> Self::Output {
+            let pairing = payload.pairing;
+            let hash_to_scalar = payload.hash_to_scalar;
+            let encoder = payload.encoder;
+            let random = payload.random;
+            struct KeyAgreementConsumer<'a, P> {
+                pairing: &'a P,
+            }
+
+            impl<P: IPairingArithmetic> IKeyAgreementConsumer<P> for KeyAgreementConsumer<'_, P> {
+                type Output = ();
+
+                fn consume_key_agreement<A: IKeyAgreementAdapter<Pairing = P>>(
+                    &self,
+                    _params: ConsumeKeyAgreementParams,
+                    payload: ConsumeKeyAgreementPayload<A>,
+                ) -> Self::Output {
+                    let pairing = self.pairing;
+                    let bound = <P::Scalar as ISampleUniformScalar>::UNIFORM_BYTES_LENGTH;
+
+                    // Act
+                    let result = payload.adapter.generate_keys(
+                        build_generate_keys_params(Default::default()),
+                        build_generate_keys_payload(pairing, Default::default()),
+                    );
+
+                    // Assert
+                    assert_eq!(
+                        result.err(),
+                        Some(GenerateKeysErrorReturn::PairingElGamal(
+                            PairingElGamalGenerateKeysErrorReturn::HashToScalar(
+                                HashToScalarErrorReturn::Sampling(
+                                    SampleUniformScalarErrorReturn::WrongLength {
+                                        expected: bound,
+                                        actual: 0,
+                                    }
+                                )
+                            )
+                        ))
+                    );
+                }
+            }
+
+            create_key_agreement(
+                &build_create_key_agreement_deps(
+                    pairing,
+                    hash_to_scalar,
+                    encoder,
+                    random,
+                    KeyAgreementConsumer { pairing },
+                    Default::default(),
+                ),
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.key_agreement),
+                }),
+                build_create_key_agreement_payload(Default::default()),
+            )
+            .expect("the selection admits the concrete it names");
+        }
+    }
+
+    let cases: Vec<KeyAgreementConcrete> = KEY_AGREEMENT_CONCRETES
+        .iter()
+        .map(|concrete| build_key_agreement_concrete(*concrete, Default::default()))
+        .collect();
+
+    for pairing_concrete in PAIRING_CONCRETES {
+        for case in &cases {
+            for kind in RANDOM_SOURCE_KINDS {
+                // Act
+                let run = run_create_key_agreement_case(
+                    &build_create_key_agreement_case_deps(
+                        Consumer {
+                            key_agreement: *case,
+                        },
+                        Default::default(),
+                    ),
+                    build_create_key_agreement_case_params(CreateKeyAgreementCaseParamsOverrides {
+                        pairing: Some(build_create_pairing_params(CreatePairingParamsOverrides {
+                            concrete: Some(*pairing_concrete),
+                            ..Default::default()
+                        })),
+                        encoding: Some(build_create_encoding_params(Default::default())),
+                        hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                            CreateHashToScalarParamsOverrides {
+                                concrete: Some(HashToScalarConcrete::Mock(
+                                    MockIHashToScalarAdapterFailureMode::SamplingRefused,
+                                )),
+                            },
+                        )),
+                        random_source: Some(build_create_random_source_params(
+                            CreateRandomSourceParamsOverrides { kind: Some(*kind) },
+                        )),
+                        kem: Some(build_create_kem_params(Default::default())),
+                    }),
+                    build_create_key_agreement_case_payload(Default::default()),
+                );
+
+                // Assert
+                assert!(run.is_ok());
+            }
+        }
+    }
+}
+// end every_concrete_returns_the_sampling_bound_refusal_whole

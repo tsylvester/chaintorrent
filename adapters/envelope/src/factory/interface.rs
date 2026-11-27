@@ -32,12 +32,59 @@ pub enum KeyAgreementIdentifier {
     Mock,
 }
 
+impl KeyAgreementIdentifier {
+    pub const fn name(&self) -> &'static str {
+        match self {
+            Self::PairingElGamalV1 => "pairing_elgamal_v1",
+            #[cfg(any(test, feature = "mocks"))]
+            Self::Mock => "mock",
+        }
+    }
+}
+
+pub const KEY_AGREEMENT_IDENTIFIERS: &[KeyAgreementIdentifier] =
+    &[KeyAgreementIdentifier::PairingElGamalV1];
+
+pub struct KeyAgreementIdentifierConstructorParams {
+    pub text: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum KeyAgreementIdentifierTryNewErrorReturn {
+    Unknown { text: String },
+}
+
+pub type KeyAgreementIdentifierTryNewReturn =
+    Result<KeyAgreementIdentifier, KeyAgreementIdentifierTryNewErrorReturn>;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub enum EnvelopeAlgebra {
     PairingElGamal,
 }
 
+impl EnvelopeAlgebra {
+    pub const fn name(&self) -> &'static str {
+        match self {
+            Self::PairingElGamal => "pairing_elgamal",
+        }
+    }
+}
+
+pub const ENVELOPE_ALGEBRAS: &[EnvelopeAlgebra] = &[EnvelopeAlgebra::PairingElGamal];
+
+pub struct EnvelopeAlgebraConstructorParams {
+    pub text: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum EnvelopeAlgebraTryNewErrorReturn {
+    Unknown { text: String },
+}
+
+pub type EnvelopeAlgebraTryNewReturn = Result<EnvelopeAlgebra, EnvelopeAlgebraTryNewErrorReturn>;
+
 pub struct KeyAgreementDeclaration {
+    pub concrete: KeyAgreementConcrete,
     pub identifier: KeyAgreementIdentifier,
     pub algebra: EnvelopeAlgebra,
     pub possession_g1_tag: &'static [u8],
@@ -393,6 +440,31 @@ pub enum KeyAgreementConcrete {
     Mock(MockIKeyAgreementAdapterFailureMode),
 }
 
+impl KeyAgreementConcrete {
+    pub const fn name(&self) -> &'static str {
+        match self {
+            Self::PairingElGamal => "pairing_elgamal",
+            #[cfg(any(test, feature = "mocks"))]
+            Self::Mock(_) => "mock",
+        }
+    }
+}
+
+pub const KEY_AGREEMENT_CONCRETES: &[KeyAgreementConcrete] =
+    &[KeyAgreementConcrete::PairingElGamal];
+
+pub struct KeyAgreementConcreteConstructorParams {
+    pub text: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum KeyAgreementConcreteTryNewErrorReturn {
+    Unknown { text: String },
+}
+
+pub type KeyAgreementConcreteTryNewReturn =
+    Result<KeyAgreementConcrete, KeyAgreementConcreteTryNewErrorReturn>;
+
 pub trait IKeyAgreementConsumer<P: IPairingAdapter> {
     type Output;
 
@@ -417,11 +489,8 @@ pub struct CreateKeyAgreementDeps<'a, P: IPairingArithmetic, E: IEncoderAdapter,
     pub consumer: C,
 }
 
-#[derive(Clone, Copy)]
 pub struct CreateKeyAgreementParams {
     pub concrete: KeyAgreementConcrete,
-    pub identifier: KeyAgreementIdentifier,
-    pub algebra: EnvelopeAlgebra,
 }
 
 pub struct CreateKeyAgreementPayload;
@@ -432,8 +501,6 @@ pub struct CreateKeyAgreementSuccessReturn<O> {
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum CreateKeyAgreementErrorReturn {
-    UnsupportedKeyAgreementIdentifier,
-    UnsupportedEnvelopeAlgebra,
     PairingElGamal(PairingElGamalKeyAgreementTryNewErrorReturn),
 }
 
@@ -450,8 +517,6 @@ pub type CreateKeyAgreementFn<'a, P, E, C> =
 pub const DECLARED_KEY_AGREEMENT_SELECTIONS: &[CreateKeyAgreementParams] =
     &[CreateKeyAgreementParams {
         concrete: KeyAgreementConcrete::PairingElGamal,
-        identifier: KeyAgreementIdentifier::PairingElGamalV1,
-        algebra: EnvelopeAlgebra::PairingElGamal,
     }];
 
 #[cfg(any(test, feature = "mocks"))]
@@ -461,16 +526,34 @@ pub trait ICreateKeyAgreementCaseConsumer {
     fn consume_create_key_agreement_case<
         P: IPairingArithmetic + IPairingReference,
         E: IEncoderAdapter + IDecoderAdapter,
+        H: IHashToScalarAdapter<P::Scalar>,
+        R: IRandomSourceAdapter,
         K: ICredentialKemAdapter<Pairing = P>,
     >(
         &self,
-        pairing: &P,
-        hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-        encoder: &E,
-        random: &dyn IRandomSourceAdapter,
-        kem: &K,
-        payload: &CreateKeyAgreementCasePayload,
+        params: ConsumeCreateKeyAgreementCaseParams,
+        payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
     ) -> Self::Output;
+}
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeCreateKeyAgreementCaseParams;
+
+#[cfg(any(test, feature = "mocks"))]
+pub struct ConsumeCreateKeyAgreementCasePayload<
+    'a,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter + IDecoderAdapter,
+    H: IHashToScalarAdapter<P::Scalar>,
+    R: IRandomSourceAdapter,
+    K: ICredentialKemAdapter<Pairing = P>,
+> {
+    pub pairing: &'a P,
+    pub hash_to_scalar: &'a H,
+    pub encoder: &'a E,
+    pub random: &'a R,
+    pub kem: &'a K,
+    pub case: &'a CreateKeyAgreementCasePayload,
 }
 
 #[cfg(any(test, feature = "mocks"))]
@@ -498,11 +581,11 @@ pub struct CreateKeyAgreementCaseSuccessReturn<O> {
 #[cfg(any(test, feature = "mocks"))]
 #[derive(Debug, PartialEq, Eq)]
 pub enum CreateKeyAgreementCaseErrorReturn {
-    CreatePairing(CreatePairingErrorReturn),
-    CreateEncoding(CreateEncodingErrorReturn),
-    CreateHashToScalar(CreateHashToScalarErrorReturn),
-    CreateRandomSource(CreateRandomSourceErrorReturn),
-    CreateKem(CreateKemErrorReturn),
+    Pairing(CreatePairingErrorReturn),
+    Encoding(CreateEncodingErrorReturn),
+    HashToScalar(CreateHashToScalarErrorReturn),
+    RandomSource(CreateRandomSourceErrorReturn),
+    Kem(CreateKemErrorReturn),
 }
 
 #[cfg(any(test, feature = "mocks"))]

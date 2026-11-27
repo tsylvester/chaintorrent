@@ -3,73 +3,177 @@ help: Check that the patched package version and available features are compatib
       with the dependency requirements. If the patch has a different version from
       what is locked in the Cargo.lock file, run `cargo update` to use the new
       version. This may also occur with an optional dependency that is not enabled.
-   Compiling workflows v0.0.0 (C:\Users\Tim\ChainTorrent\crates\workflows)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.24s
-     Running unittests src\lib.rs (target\debug\deps\workflows-dab7573804749f38.exe)
+   Compiling envelope v0.0.0 (C:\Users\Tim\ChainTorrent\adapters\envelope)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.38s
+     Running unittests src\lib.rs (target\debug\deps\envelope-c20fd99d50e1f9d4.exe)
 
-running 26 tests
-test sidecar::derivation_context::test_basic::description_try_new_returns_the_description ... ok
-test sidecar::derivation_context::test_basic::fields_declares_the_nine_canonical_kinds ... ok
-test sidecar::derivation_context::test_basic::try_new_admits_the_last_group_of_the_geometry ... ok
-test sidecar::derivation_context::test_basic::fields_to_value_returns_the_context_the_fields_describe ... ok
-test sidecar::derivation_context::test_basic::to_fields_lists_the_context_in_canonical_order ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_context_refusal_whole ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_geometry_refusal_whole ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_deployment_refusal_whole ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_parameter_set_refusal_whole ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_readers_refusal ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_root_refusal_whole ... ok
-test sidecar::derivation_context::test_error::fields_to_value_carries_the_suite_refusal_whole ... ok
-test sidecar::derivation_context::test_error::fields_to_value_reports_the_first_component_refusal ... ok
-test sidecar::derivation_context::test_error::try_new_refuses_a_group_index_equal_to_the_group_count ... ok
-test sidecar::wrap::test::piece_group_key_try_new_holds_the_bytes_of_an_admitted_secret ... ok
-test sidecar::wrap::test::piece_group_key_try_new_refuses_a_secret_longer_than_the_key_length ... ok
-test sidecar::unwrap::test::unwrap_returns_the_key_derivation_refusal_unchanged ... ok
-test sidecar::wrap::test::piece_group_key_try_new_refuses_a_secret_shorter_than_the_key_length ... ok
-test sidecar::unwrap::test::unwrap_returns_a_zero_key_when_the_wrapped_key_equals_the_wrapping_key ... ok
-test sidecar::unwrap::test::unwrap_returns_the_complement_of_the_wrapping_key_when_the_wrapped_key_is_all_ones ... ok
-test sidecar::wrap::test::wrap_returns_the_key_derivation_refusal_unchanged ... ok
-test sidecar::wrap::test::wrapped_piece_group_key_try_new_holds_the_admitted_bytes ... ok
-test sidecar::wrap::test::wrap_returns_a_zero_wrapped_key_when_the_piece_group_key_equals_the_wrapping_key ... ok
-test sidecar::wrap::test::wrap_returns_the_complement_of_the_wrapping_key_when_the_piece_group_key_is_all_ones ... ok
-test sidecar::wrap::test::wrapped_piece_group_key_try_new_refuses_bytes_longer_than_the_key_length ... ok
-test sidecar::wrap::test::wrapped_piece_group_key_try_new_refuses_bytes_shorter_than_the_key_length ... ok
+running 123 tests
+test admit_envelope_selection::test::admit_envelope_selection_refuses_a_setting_for_the_mock_member ... ok
+test admit_envelope_selection::test::admit_envelope_selection_refuses_a_setting_for_the_mock_member_for_any_other_value ... ok
+test admit_envelope_selection::test::admit_envelope_selection_returns_the_mock_selection_carrying_each_failure_mode ... ok
+test admit_envelope_selection::test::admit_envelope_selection_refuses_a_setting_for_the_pairing_elgamal_member_for_any_other_value ... ok
+test admit_envelope_selection::test::admit_envelope_selection_returns_the_pairing_elgamal_selection_for_a_null_document ... ok
+test admit_envelope_selection::test::admit_envelope_selection_returns_the_pairing_elgamal_selection_for_an_empty_object ... ok
+test admit_envelope_selection::test::admit_envelope_selection_refuses_a_setting_for_the_pairing_elgamal_member ... ok
+test factory::test::create_key_agreement_constructs_the_mock_member_for_the_mock_selection ... ok
+test factory::test::create_key_agreement_constructs_the_pairing_elgamal_member_for_the_pairing_elgamal_selection ... ok
+test lookup_envelope_declaration::test::lookup_envelope_declaration_returns_the_pairing_elgamal_declaration_for_the_real_member ... ok
+test factory::integration_test::every_key_agreement_returns_an_x_draw_sampling_refusal_whole ... ok
+test lookup_envelope_declaration::test::lookup_envelope_declaration_substitutes_the_selected_failure_mode_into_the_mock_declaration ... ok
+test factory::integration_test::every_key_agreement_returns_a_y_draw_sampling_refusal_whole ... ok
+test factory::integration_test::every_key_agreement_refuses_a_zero_y_draw_as_an_identity_second_group_key ... ok
+test factory::integration_test::every_key_agreement_refuses_a_key_pair_of_a_zero_y_secret ... ok
+test factory::integration_test::every_key_agreement_refuses_a_zero_x_draw_as_an_identity_first_group_key ... ok
+test factory::integration_test::every_key_agreement_refuses_a_key_pair_of_a_zero_x_secret ... ok
+test factory::integration_test::a_refused_nonce_draw_returns_the_mock_error_whole ... ok
+test factory::integration_test::every_concrete_returns_the_sampling_bound_refusal_whole ... ok
+test pairing_elgamal::integration_test::every_concrete_refuses_a_key_pair_of_a_zero_y_secret ... ok
+test pairing_elgamal::integration_test::every_concrete_refuses_a_key_pair_of_a_zero_x_secret ... ok
+test pairing_elgamal::integration_test::every_concrete_refuses_a_zero_x_draw_as_an_identity_first_group_key ... ok
+test pairing_elgamal::integration_test::every_concrete_refuses_a_key_pair_of_equal_secrets ... ok
+test factory::integration_test::every_key_agreement_refuses_equal_secret_draws ... ok
+test pairing_elgamal::integration_test::every_concrete_refuses_a_zero_y_draw_as_an_identity_second_group_key ... ok
+test pairing_elgamal::integration_test::every_concrete_returns_a_y_draw_sampling_refusal_whole ... ok
+test factory::integration_test::every_key_agreement_refuses_a_key_pair_of_equal_secrets ... ok
+test pairing_elgamal::integration_test::every_concrete_returns_an_x_draw_sampling_refusal_whole ... ok
+test pairing_elgamal::integration_test::each_proof_of_possession_hashes_its_challenge_under_the_declared_tag ... ok
+test factory::integration_test::a_refused_coin_draw_returns_the_mock_error_whole ... ok
+test pairing_elgamal::test_basic::declaration_names_the_identifier_algebra_tags_and_versions ... ok
+test pairing_elgamal::test_basic::envelope_components_returns_the_envelopes_elements ... ok
+test pairing_elgamal::integration_test::every_concrete_refuses_equal_secret_draws ... ok
+test pairing_elgamal::test_basic::envelope_from_components_holds_the_components ... ok
+test pairing_elgamal::test_basic::generate_keys_hashes_each_challenge_under_its_groups_tag ... ok
+test pairing_elgamal::test_basic::generate_keys_returns_proofs_that_satisfy_the_verification_equation ... ok
+test pairing_elgamal::test_basic::generate_keys_returns_the_public_keys_its_secrets_form ... ok
+test pairing_elgamal::test_basic::generate_keys_returns_the_secrets_its_draws_sample ... ok
+test pairing_elgamal::test_basic::key_pair_components_returns_new_secrets_holding_the_key_pairs_secrets ... ok
+test pairing_elgamal::test_basic::key_pair_from_components_returns_the_key_pair_its_secrets_form ... ok
+test factory::integration_test::public_keys_are_refused_with_an_identity_second_group_key ... ok
+test pairing_elgamal::test_basic::key_pair_public_keys_returns_the_key_pairs_public_keys ... ok
+test pairing_elgamal::integration_test::every_key_pair_holds_the_public_keys_its_secrets_form ... ok
+test pairing_elgamal::test_basic::possession_components_returns_the_possessions_elements ... ok
+test pairing_elgamal::test_basic::possession_from_components_holds_the_components ... ok
+test pairing_elgamal::test_basic::public_keys_components_returns_the_public_keys_elements ... ok
+test pairing_elgamal::test_basic::public_keys_from_components_returns_the_public_keys_the_components_hold ... ok
+test pairing_elgamal::test_basic::the_declared_sets_and_spellings_are_total_and_real ... ok
+test pairing_elgamal::test_basic::try_new_holds_the_tags_built_from_the_possession_constants ... ok
+test pairing_elgamal::test_basic::unwrap_returns_the_components_the_envelope_was_formed_from ... ok
+test pairing_elgamal::test_basic::unwrap_under_another_key_pair_returns_different_components ... ok
+test pairing_elgamal::test_basic::unwrap_with_a_first_group_coin_element_from_another_envelope_changes_only_the_first_component ... ok
+test pairing_elgamal::test_basic::unwrap_with_a_second_group_coin_element_from_another_envelope_changes_only_the_second_component ... ok
+test pairing_elgamal::test_basic::unwrap_with_exchanged_secrets_returns_different_components ... ok
+test pairing_elgamal::test_basic::wrap_to_draws_each_coin_from_its_own_draw ... ok
+test pairing_elgamal::test_basic::wrap_to_returns_the_envelope_its_coins_form ... ok
+test pairing_elgamal::test_error::generate_keys_checks_the_identity_keys_before_the_shared_secret ... ok
+test pairing_elgamal::test_error::generate_keys_checks_the_keys_before_drawing_the_nonces ... ok
+test factory::integration_test::every_key_agreement_forms_the_public_keys_its_secrets_form ... ok
+test pairing_elgamal::test_error::generate_keys_refuses_a_zero_x_draw_as_an_identity_first_group_key ... ok
+test pairing_elgamal::test_error::generate_keys_refuses_a_zero_y_draw_as_an_identity_second_group_key ... ok
+test pairing_elgamal::test_error::generate_keys_refuses_equal_draws_as_a_shared_secret ... ok
+test pairing_elgamal::test_error::generate_keys_returns_the_y_sampling_refusal_unchanged ... ok
+test pairing_elgamal::test_error::generate_keys_returns_the_nonce_draw_refusal_unchanged ... ok
+test pairing_elgamal::test_error::generate_keys_returns_the_x_sampling_refusal_unchanged ... ok
+test pairing_elgamal::test_error::generate_keys_refuses_the_x_draw_before_the_y_draw ... ok
+test pairing_elgamal::test_error::generate_keys_returns_the_hash_to_scalar_refusal_unchanged ... ok
+test pairing_elgamal::test_error::key_pair_from_components_refuses_a_shared_secret ... ok
+test pairing_elgamal::test_error::key_pair_from_components_refuses_a_zero_x_secret_as_an_identity_first_group_key ... ok
+test pairing_elgamal::test_error::key_pair_from_components_refuses_a_zero_y_secret_as_an_identity_second_group_key ... ok
+test pairing_elgamal::test_error::public_keys_from_components_checks_the_first_group_proof_before_the_second ... ok
+test pairing_elgamal::test_error::key_pair_from_components_checks_the_identity_keys_before_the_shared_secret ... ok
+test pairing_elgamal::test_error::public_keys_from_components_checks_the_identity_keys_before_the_shared_secret ... ok
+test pairing_elgamal::test_error::public_keys_from_components_refuses_a_first_group_proof_from_another_key_pair ... ok
+test pairing_elgamal::test_error::public_keys_from_components_refuses_a_second_group_proof_from_another_key_pair ... ok
+test pairing_elgamal::test_error::public_keys_from_components_refuses_a_shared_secret ... ok
+test pairing_elgamal::test_error::public_keys_from_components_refuses_an_identity_first_group_key ... ok
+test pairing_elgamal::test_error::public_keys_from_components_refuses_an_identity_second_group_key ... ok
+test pairing_elgamal::test_error::public_keys_from_components_returns_the_hash_to_scalar_refusal_unchanged ... ok
+test possession_statement::test_basic::g1_fields_declares_the_key_and_the_commitment_as_byte_strings ... ok
+test pairing_elgamal::test_error::wrap_to_returns_the_coin_draw_refusal_unchanged ... ok
+test possession_statement::test_basic::g1_fields_to_value_returns_the_statement_the_fields_describe ... ok
+test possession_statement::test_basic::g1_to_fields_lists_the_key_then_the_commitment ... ok
+test possession_statement::test_basic::g1_try_new_stores_the_supplied_pairing ... ok
+test possession_statement::test_basic::g2_fields_declares_the_key_and_the_commitment_as_byte_strings ... ok
+test possession_statement::test_basic::g2_fields_to_value_returns_the_statement_the_fields_describe ... ok
+test possession_statement::test_basic::g2_to_fields_lists_the_key_then_the_commitment ... ok
+test possession_statement::test_basic::g2_try_new_stores_the_supplied_pairing ... ok
+test possession_statement::test_error_decode::g1_fields_to_value_checks_the_kinds_before_decoding_any_group_element ... ok
+test possession_statement::test_error_decode::g1_fields_to_value_rejects_a_commitment_the_pairing_refuses ... ok
+test possession_statement::test_error_decode::g1_fields_to_value_reports_the_first_refusal ... ok
+test possession_statement::test_error_decode::g2_fields_to_value_checks_the_kinds_before_decoding_any_group_element ... ok
+test possession_statement::test_error_decode::g2_fields_to_value_rejects_a_commitment_the_pairing_refuses ... ok
+test possession_statement::test_error_decode::g2_fields_to_value_reports_the_first_refusal ... ok
+test possession_statement::test_error_shape::g1_fields_to_value_carries_the_readers_refusal ... ok
+test possession_statement::test_error_shape::g2_fields_to_value_carries_the_readers_refusal ... ok
+test factory::integration_test::public_keys_are_refused_with_an_identity_first_group_key ... ok
+test pairing_elgamal::integration_test::an_envelope_rebuilt_from_its_components_opens ... ok
+test pairing_elgamal::integration_test::public_keys_are_refused_with_an_identity_first_group_key ... ok
+test pairing_elgamal::integration_test::public_keys_are_refused_with_an_identity_second_group_key ... ok
+test pairing_elgamal::integration_test::a_first_group_coin_element_from_another_envelope_changes_only_the_first_component ... ok
+test pairing_elgamal::integration_test::a_second_group_coin_element_from_another_envelope_changes_only_the_second_component ... ok
+test factory::integration_test::public_keys_are_refused_with_a_secret_shared_across_the_groups ... ok
+test pairing_elgamal::integration_test::public_keys_are_refused_with_a_secret_shared_across_the_groups ... ok
+test pairing_elgamal::integration_test::public_keys_are_admitted_with_a_proof_rebuilt_from_its_components ... ok
+test pairing_elgamal::integration_test::a_key_pair_restored_from_its_components_opens_the_envelope ... ok
+test pairing_elgamal::integration_test::public_keys_are_admitted_with_their_own_proof_of_possession ... ok
+test pairing_elgamal::integration_test::every_envelope_opens_under_its_key_pair_to_the_credential_it_wrapped ... ok
+test pairing_elgamal::integration_test::another_key_pair_opens_an_envelope_to_a_different_pair ... ok
+test factory::integration_test::a_possession_rebuilt_from_its_components_is_admitted ... ok
+test factory::integration_test::public_keys_are_admitted_with_their_own_proof_of_possession ... ok
+test pairing_elgamal::integration_test::every_wrap_returns_the_coins_its_envelope_was_formed_with ... ok
+test pairing_elgamal::integration_test::public_keys_are_refused_with_a_second_group_proof_from_another_key_pair ... ok
+test pairing_elgamal::integration_test::public_keys_are_refused_with_another_key_pairs_proof_of_possession ... ok
+test pairing_elgamal::integration_test::exchanged_secrets_open_an_envelope_to_a_different_pair ... ok
+test factory::integration_test::public_keys_are_refused_with_another_key_pairs_proof_of_possession ... ok
+test pairing_elgamal::integration_test::independent_coins_change_every_envelope_element_and_still_open ... ok
+test factory::integration_test::public_keys_are_refused_with_a_second_group_proof_from_another_key_pair ... ok
+test factory::integration_test::every_envelope_opens_under_its_key_pair_to_the_components_it_wrapped ... ok
+test factory::integration_test::an_envelope_rebuilt_from_its_components_opens ... ok
+test factory::integration_test::every_wrap_returns_the_coins_its_envelope_was_formed_with ... ok
+test factory::integration_test::a_key_pair_restored_from_its_components_opens_the_envelope ... ok
+test factory::integration_test::another_key_pair_opens_an_envelope_to_different_components ... ok
 
-test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 123 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.10s
 
-     Running tests\derivation_context_integration_test.rs (target\debug\deps\derivation_context_integration_test-1687dcdd672643f5.exe)
+     Running tests\admit_envelope_selection_integration_test.rs (target\debug\deps\admit_envelope_selection_integration_test-425a8d4db2769267.exe)
 
-running 5 tests
-test the_crate_root_refuses_a_group_index_outside_the_geometry_whole ... ok
-test every_concrete_decodes_the_derivation_context_it_encodes ... ok
-test every_concrete_declaring_the_ethereum_abi_identifier_returns_the_context_refusal_whole ... ok
-test every_concrete_declaring_the_ethereum_abi_identifier_decodes_the_reference_vector_to_the_reference_context ... ok
-test every_concrete_declaring_the_ethereum_abi_identifier_encodes_the_reference_context_to_the_reference_vector ... ok
+running 2 tests
+test every_admitted_key_agreement_selection_declares_the_member_it_names ... ok
+test every_declared_key_agreement_member_refuses_a_supplied_setting ... ok
 
-test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests\unwrap_integration_test.rs (target\debug\deps\unwrap_integration_test-725363fe9453c9b8.exe)
+     Running tests\factory_integration_test.rs (target\debug\deps\factory_integration_test-ac084431479b43ee.exe)
 
 running 6 tests
-test unwrapping_returns_a_key_derivation_refusal_whole ... ok
-test unwrapping_what_the_wrap_produced_returns_the_piece_group_key ... ok
-test unwrapping_an_all_ones_wrapped_key_yields_the_complement_of_the_wrapping_key_the_oracle_states ... ok
-test unwrapping_a_wrapped_key_equal_to_the_wrapping_key_the_oracle_states_yields_a_zero_piece_group_key ... ok
-test an_escrow_set_and_a_claimants_set_unwrap_one_piece_group_key ... ok
-test two_independently_generated_entitlement_scope_sets_unwrap_one_piece_group_key ... ok
+test a_refused_nonce_draw_returns_the_mock_error_whole ... ok
+test libraries_sharing_an_identifier_flatten_a_first_group_statement_to_the_same_fields ... ok
+test libraries_sharing_an_identifier_flatten_a_second_group_statement_to_the_same_fields ... ok
+test every_admitted_key_agreement_selection_declares_the_member_it_names ... ok
+test a_refused_coin_draw_returns_the_mock_error_whole ... ok
+test a_delivered_credential_opens_valid_for_its_recipient_and_invalid_for_another_key_pair ... ok
 
-test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.00s
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.15s
 
-     Running tests\wrap_integration_test.rs (target\debug\deps\wrap_integration_test-7a1a4cbed665e97a.exe)
+     Running tests\lookup_envelope_declaration_integration_test.rs (target\debug\deps\lookup_envelope_declaration_integration_test-a2d6bbaff96bdcdc.exe)
 
-running 3 tests
-test a_key_derivation_refusal_reaches_the_caller_whole ... ok
-test wrapping_an_all_ones_piece_group_key_yields_the_complement_of_the_wrapping_key_the_oracle_states ... ok
-test wrapping_a_zero_piece_group_key_yields_the_wrapping_key_the_oracle_states ... ok
+running 1 test
+test every_declared_key_agreement_member_declares_itself ... ok
 
-test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-   Doc-tests workflows
+     Running tests\possession_statement_integration_test.rs (target\debug\deps\possession_statement_integration_test-459a0f708770adf2.exe)
+
+running 6 tests
+test libraries_sharing_an_identifier_flatten_a_first_group_statement_to_the_same_fields ... ok
+test libraries_sharing_an_identifier_flatten_a_second_group_statement_to_the_same_fields ... ok
+test a_first_group_statement_survives_the_round_trip_through_its_fields ... ok
+test each_first_group_decoder_refuses_the_first_group_reference_encoding_where_one_exists ... ok
+test a_second_group_statement_survives_the_round_trip_through_its_fields ... ok
+test each_second_group_decoder_refuses_the_second_group_reference_encoding ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+   Doc-tests envelope
 
 running 0 tests
 

@@ -1,10 +1,18 @@
 #![allow(clippy::expect_used)]
 
 use crate::factory::provides::{
-    EnvelopeAlgebra, IKeyAgreementAdapter, KEY_AGREEMENT_INTERFACE_VERSION, KeyAgreementIdentifier,
-    WrapToPayloadOverrides, build_envelope_components_params, build_envelope_components_payload,
+    ENVELOPE_ALGEBRAS, EnvelopeAlgebra, EnvelopeAlgebraConstructorParamsOverrides,
+    EnvelopeAlgebraTryNewErrorReturn, IKeyAgreementAdapter, KEY_AGREEMENT_CONCRETES,
+    KEY_AGREEMENT_IDENTIFIERS, KEY_AGREEMENT_INTERFACE_VERSION, KeyAgreementConcrete,
+    KeyAgreementConcreteConstructorParamsOverrides, KeyAgreementConcreteOverrides,
+    KeyAgreementConcreteTryNewErrorReturn, KeyAgreementIdentifier,
+    KeyAgreementIdentifierConstructorParamsOverrides, KeyAgreementIdentifierTryNewErrorReturn,
+    WrapToPayloadOverrides, build_envelope_algebra_constructor_params,
+    build_envelope_components_params, build_envelope_components_payload,
     build_envelope_from_components_params, build_envelope_from_components_payload,
-    build_generate_keys_params, build_generate_keys_payload, build_key_pair_components_params,
+    build_generate_keys_params, build_generate_keys_payload, build_key_agreement_concrete,
+    build_key_agreement_concrete_constructor_params,
+    build_key_agreement_identifier_constructor_params, build_key_pair_components_params,
     build_key_pair_components_payload, build_key_pair_from_components_params,
     build_key_pair_from_components_payload, build_key_pair_public_keys_params,
     build_key_pair_public_keys_payload, build_possession_components_params,
@@ -15,11 +23,12 @@ use crate::factory::provides::{
     build_wrap_to_params, build_wrap_to_payload,
 };
 use crate::pairing_elgamal::provides::{
-    IPairingElGamalKeyAgreementCaseConsumer, PairingElGamalEnvelopeOverrides,
-    PairingElGamalKeyAgreement, PairingElGamalKeyAgreementCasePayload,
-    PairingElGamalKeyPairOverrides, build_pairing_elgamal_envelope,
-    build_pairing_elgamal_key_agreement, build_pairing_elgamal_key_agreement_case_deps,
-    build_pairing_elgamal_key_agreement_case_params,
+    ConsumePairingElGamalKeyAgreementCaseParams, ConsumePairingElGamalKeyAgreementCasePayload,
+    IPairingElGamalKeyAgreementCaseConsumer, PAIRING_ELGAMAL_DECLARATION,
+    PairingElGamalEnvelopeOverrides, PairingElGamalKeyAgreement,
+    PairingElGamalKeyAgreementCaseParamsOverrides, PairingElGamalKeyPairOverrides,
+    build_pairing_elgamal_envelope, build_pairing_elgamal_key_agreement,
+    build_pairing_elgamal_key_agreement_case_deps, build_pairing_elgamal_key_agreement_case_params,
     build_pairing_elgamal_key_agreement_case_payload,
     build_pairing_elgamal_key_agreement_constructor_params, build_pairing_elgamal_key_pair,
     build_pairing_elgamal_possession, build_pairing_elgamal_public_keys,
@@ -33,8 +42,9 @@ use crate::possession_statement::provides::{
 use domain::{SecretConstructorParamsOverrides, build_secret};
 use encoding::{EncodeParams, IDecoderAdapter, IEncoderAdapter};
 use hash_to_scalar::{
-    DomainTag, DomainTagConstructorParams, HashToScalarParams, HashToScalarPayload,
-    IHashToScalarAdapter,
+    CreateHashToScalarParamsOverrides, DomainTag, DomainTagConstructorParams, HashToScalarConcrete,
+    HashToScalarParams, HashToScalarPayload, IHashToScalarAdapter,
+    build_create_hash_to_scalar_params,
 };
 use kem::{CredentialComponentsOverrides, build_credential_components};
 use pairing::{
@@ -74,14 +84,21 @@ fn try_new_holds_the_tags_built_from_the_possession_constants() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let _case = payload.case;
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Act
             let created = PairingElGamalKeyAgreement::try_new(
                 build_pairing_elgamal_key_agreement_constructor_params(
@@ -142,14 +159,20 @@ fn generate_keys_returns_the_secrets_its_draws_sample() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -285,14 +308,20 @@ fn generate_keys_returns_the_public_keys_its_secrets_form() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -466,14 +495,20 @@ fn generate_keys_returns_proofs_that_satisfy_the_verification_equation() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -701,14 +736,17 @@ fn generate_keys_returns_proofs_that_satisfy_the_verification_equation() {
 /// Contract: `generate_keys` returns `Ok` whose possession's first-group
 ///   challenge is hashed under the first-group tag and whose second-group
 ///   challenge is hashed under the second-group tag.
-/// Arrange: `build_generate_keys_payload` at its defaults; the tags built by
-///   `DomainTag::try_new` over the literal possession tag bytes.
+/// Arrange: `build_create_hash_to_scalar_params` with `concrete` overridden to
+///   `HashToScalarConcrete::Keccak256`; `build_generate_keys_payload` at its
+///   defaults; the tags built by `DomainTag::try_new` over the literal
+///   possession tag bytes.
 /// Act:     `adapter.generate_keys`.
 /// Assert:  for each group the two sides of `z·g = R + c·pk` encode differently
 ///   when `c` is hashed under the other group's tag, asserted by `assert_ne!`.
 /// Boundary: the private surface's `generate_keys`.
-/// Mocked:  the pairing, encoding, hash-to-scalar, and randomness concretes each
-///   family's factory hands out at default params.
+/// Mocked:  the pairing, encoding, and randomness concretes each family's
+///   factory hands out at default params, the hash-to-scalar concrete named
+///   `Keccak256`.
 #[test]
 fn generate_keys_hashes_each_challenge_under_its_groups_tag() {
     // Arrange
@@ -720,14 +758,20 @@ fn generate_keys_hashes_each_challenge_under_its_groups_tag() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -948,7 +992,16 @@ fn generate_keys_hashes_each_challenge_under_its_groups_tag() {
     // Act
     let created = run_pairing_elgamal_key_agreement_case(
         &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
-        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(
+            PairingElGamalKeyAgreementCaseParamsOverrides {
+                hash_to_scalar: Some(build_create_hash_to_scalar_params(
+                    CreateHashToScalarParamsOverrides {
+                        concrete: Some(HashToScalarConcrete::Keccak256),
+                    },
+                )),
+                ..Default::default()
+            },
+        ),
         build_pairing_elgamal_key_agreement_case_payload(Default::default()),
     );
 
@@ -983,14 +1036,20 @@ fn wrap_to_returns_the_envelope_its_coins_form() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -1274,14 +1333,20 @@ fn wrap_to_draws_each_coin_from_its_own_draw() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -1412,14 +1477,20 @@ fn unwrap_returns_the_components_the_envelope_was_formed_from() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -1665,14 +1736,20 @@ fn unwrap_under_another_key_pair_returns_different_components() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -1935,20 +2012,24 @@ fn unwrap_under_another_key_pair_returns_different_components() {
     assert!(created.is_ok());
 }
 
-/// Contract: `PairingElGamalKeyAgreement::<'_, P, E>::DECLARATION` is
-///   `KeyAgreementDeclaration { identifier: PairingElGamalV1,
-///   algebra: PairingElGamal, possession_g1_tag: PAIRING_ELGAMAL_POSSESSION_G1_TAG,
+/// Contract: `PAIRING_ELGAMAL_DECLARATION` is `KeyAgreementDeclaration {
+///   concrete: KeyAgreementConcrete::PairingElGamal,
+///   identifier: KeyAgreementIdentifier::PairingElGamalV1,
+///   algebra: EnvelopeAlgebra::PairingElGamal,
+///   possession_g1_tag: PAIRING_ELGAMAL_POSSESSION_G1_TAG,
 ///   possession_g2_tag: PAIRING_ELGAMAL_POSSESSION_G2_TAG, adapter_version: 1,
 ///   interface_version: KEY_AGREEMENT_INTERFACE_VERSION }`.
-/// Arrange: the block's consumers only, which supply `P` and `E`; no instance.
-/// Act:     reading `PairingElGamalKeyAgreement::<P, E>::DECLARATION` in the
-///   innermost method.
-/// Assert:  `identifier` matches `KeyAgreementIdentifier::PairingElGamalV1`
+/// Arrange: the block's consumer only, which the case runner supplies `P` and
+///   `E` to; no instance.
+/// Act:     reading `PAIRING_ELGAMAL_DECLARATION` in the case consumer's
+///   method, with no `P`, `E`, or instance named.
+/// Assert:  `concrete` matches `KeyAgreementConcrete::PairingElGamal` under
+///   `matches!`; `identifier` matches `KeyAgreementIdentifier::PairingElGamalV1`
 ///   under `matches!`; `algebra` equals `EnvelopeAlgebra::PairingElGamal`; each
 ///   tag equals the literal written in the assertion; `adapter_version` equals
 ///   the literal `1`; `interface_version` equals
 ///   `KEY_AGREEMENT_INTERFACE_VERSION`.
-/// Boundary: the private surface's `DECLARATION` constant.
+/// Boundary: the private surface's `PAIRING_ELGAMAL_DECLARATION` constant.
 /// Mocked:  the pairing and encoding concretes each family's factory hands out
 ///   at default params, supplying the block's generic types.
 #[test]
@@ -1962,18 +2043,29 @@ fn declaration_names_the_identifier_algebra_tags_and_versions() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            _pairing: &P,
-            _hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            _encoder: &E,
-            _random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            _payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing: _,
+                hash_to_scalar: _,
+                encoder: _,
+                random: _,
+                case: _,
+            } = _payload;
+
             // Act
-            let declaration = PairingElGamalKeyAgreement::<'_, P, E>::DECLARATION;
+            let declaration = PAIRING_ELGAMAL_DECLARATION;
 
             // Assert
+            assert!(matches!(
+                declaration.concrete,
+                KeyAgreementConcrete::PairingElGamal
+            ));
             assert!(matches!(
                 declaration.identifier,
                 KeyAgreementIdentifier::PairingElGamalV1
@@ -2007,6 +2099,197 @@ fn declaration_names_the_identifier_algebra_tags_and_versions() {
 }
 // end declaration_names_the_identifier_algebra_tags_and_versions
 
+/// Contract: `KEY_AGREEMENT_CONCRETES` contains only
+///   `KeyAgreementConcrete::PairingElGamal`; `KEY_AGREEMENT_IDENTIFIERS`
+///   contains only `KeyAgreementIdentifier::PairingElGamalV1`;
+///   `ENVELOPE_ALGEBRAS` contains only `EnvelopeAlgebra::PairingElGamal`;
+///   every member's and value's `name()` spelling is distinct and its
+///   `try_new` returns that member; unknown text returns that identifier's
+///   `Unknown { text }` error carrying the same text; no mock member enters
+///   a real set; `build_key_agreement_concrete` returns the real selection
+///   without configuration.
+/// Arrange: the block's consumer only; the three declared sets; each
+///   identifier type's official constructor-params builder for every
+///   declared spelling and for the unknown spellings `unknown` and `mock`;
+///   `build_key_agreement_concrete` over `KeyAgreementConcrete::PairingElGamal`
+///   with fieldless overrides, all read and built in the consumer's method.
+/// Act:     read each declared set and each member's and value's `name()`;
+///   call `KeyAgreementConcrete::try_new`, `KeyAgreementIdentifier::try_new`,
+///   and `EnvelopeAlgebra::try_new` over each declared spelling and the
+///   unknown spellings `unknown` and `mock`; run the declared-selection
+///   builder.
+/// Assert:  each set holds exactly its stated real member or value; the
+///   spellings are pairwise distinct and each `try_new` returns its
+///   spelling's member; each unknown-spelling call returns, by `assert_eq!`,
+///   its corresponding `Unknown { text }`; no mock member appears in a real
+///   set; the builder returns `KeyAgreementConcrete::PairingElGamal` carrying
+///   no configuration.
+/// Boundary: the declared sets and the admitted spellings of `factory`'s
+///   identifier types.
+/// Mocked:  the pairing and encoding concretes each family's factory hands
+///   out at default params, supplying the block's generic types.
+#[test]
+fn the_declared_sets_and_spellings_are_total_and_real() {
+    // Arrange
+    struct Consumer;
+
+    impl IPairingElGamalKeyAgreementCaseConsumer for Consumer {
+        type Output = ();
+
+        fn consume_pairing_elgamal_key_agreement_case<
+            P: IPairingArithmetic + IPairingReference,
+            E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
+        >(
+            &self,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            _payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
+        ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing: _,
+                hash_to_scalar: _,
+                encoder: _,
+                random: _,
+                case: _,
+            } = _payload;
+
+            // Act
+            let concretes = KEY_AGREEMENT_CONCRETES;
+            let identifiers = KEY_AGREEMENT_IDENTIFIERS;
+            let algebras = ENVELOPE_ALGEBRAS;
+            let concrete_name = concretes[0].name();
+            let identifier_name = identifiers[0].name();
+            let algebra_name = algebras[0].name();
+            let concrete_of_declared =
+                KeyAgreementConcrete::try_new(build_key_agreement_concrete_constructor_params(
+                    KeyAgreementConcreteConstructorParamsOverrides {
+                        text: Some(concrete_name.to_string()),
+                    },
+                ));
+            let identifier_of_declared =
+                KeyAgreementIdentifier::try_new(build_key_agreement_identifier_constructor_params(
+                    KeyAgreementIdentifierConstructorParamsOverrides {
+                        text: Some(identifier_name.to_string()),
+                    },
+                ));
+            let algebra_of_declared =
+                EnvelopeAlgebra::try_new(build_envelope_algebra_constructor_params(
+                    EnvelopeAlgebraConstructorParamsOverrides {
+                        text: Some(algebra_name.to_string()),
+                    },
+                ));
+            let concrete_of_unknown =
+                KeyAgreementConcrete::try_new(build_key_agreement_concrete_constructor_params(
+                    KeyAgreementConcreteConstructorParamsOverrides {
+                        text: Some("unknown".to_string()),
+                    },
+                ));
+            let identifier_of_unknown =
+                KeyAgreementIdentifier::try_new(build_key_agreement_identifier_constructor_params(
+                    KeyAgreementIdentifierConstructorParamsOverrides {
+                        text: Some("unknown".to_string()),
+                    },
+                ));
+            let algebra_of_unknown =
+                EnvelopeAlgebra::try_new(build_envelope_algebra_constructor_params(
+                    EnvelopeAlgebraConstructorParamsOverrides {
+                        text: Some("unknown".to_string()),
+                    },
+                ));
+            let concrete_of_mock =
+                KeyAgreementConcrete::try_new(build_key_agreement_concrete_constructor_params(
+                    KeyAgreementConcreteConstructorParamsOverrides {
+                        text: Some("mock".to_string()),
+                    },
+                ));
+            let identifier_of_mock =
+                KeyAgreementIdentifier::try_new(build_key_agreement_identifier_constructor_params(
+                    KeyAgreementIdentifierConstructorParamsOverrides {
+                        text: Some("mock".to_string()),
+                    },
+                ));
+            let algebra_of_mock =
+                EnvelopeAlgebra::try_new(build_envelope_algebra_constructor_params(
+                    EnvelopeAlgebraConstructorParamsOverrides {
+                        text: Some("mock".to_string()),
+                    },
+                ));
+            let selection = build_key_agreement_concrete(
+                KeyAgreementConcrete::PairingElGamal,
+                KeyAgreementConcreteOverrides,
+            );
+
+            // Assert
+            assert_eq!(concretes, &[KeyAgreementConcrete::PairingElGamal]);
+            assert_eq!(identifiers, &[KeyAgreementIdentifier::PairingElGamalV1]);
+            assert_eq!(algebras, &[EnvelopeAlgebra::PairingElGamal]);
+            assert_eq!(concrete_name, "pairing_elgamal");
+            assert_eq!(identifier_name, "pairing_elgamal_v1");
+            assert_eq!(algebra_name, "pairing_elgamal");
+            assert_ne!(identifier_name, concrete_name);
+            assert_ne!(identifier_name, algebra_name);
+            assert_eq!(
+                concrete_of_declared,
+                Ok(KeyAgreementConcrete::PairingElGamal)
+            );
+            assert_eq!(
+                identifier_of_declared,
+                Ok(KeyAgreementIdentifier::PairingElGamalV1)
+            );
+            assert_eq!(algebra_of_declared, Ok(EnvelopeAlgebra::PairingElGamal));
+            assert_eq!(
+                concrete_of_unknown,
+                Err(KeyAgreementConcreteTryNewErrorReturn::Unknown {
+                    text: "unknown".to_string()
+                })
+            );
+            assert_eq!(
+                identifier_of_unknown,
+                Err(KeyAgreementIdentifierTryNewErrorReturn::Unknown {
+                    text: "unknown".to_string()
+                })
+            );
+            assert_eq!(
+                algebra_of_unknown,
+                Err(EnvelopeAlgebraTryNewErrorReturn::Unknown {
+                    text: "unknown".to_string()
+                })
+            );
+            assert_eq!(
+                concrete_of_mock,
+                Err(KeyAgreementConcreteTryNewErrorReturn::Unknown {
+                    text: "mock".to_string()
+                })
+            );
+            assert_eq!(
+                identifier_of_mock,
+                Err(KeyAgreementIdentifierTryNewErrorReturn::Unknown {
+                    text: "mock".to_string()
+                })
+            );
+            assert_eq!(
+                algebra_of_mock,
+                Err(EnvelopeAlgebraTryNewErrorReturn::Unknown {
+                    text: "mock".to_string()
+                })
+            );
+            assert!(matches!(selection, KeyAgreementConcrete::PairingElGamal));
+        }
+    }
+
+    // Act
+    let created = run_pairing_elgamal_key_agreement_case(
+        &build_pairing_elgamal_key_agreement_case_deps(Consumer, Default::default()),
+        build_pairing_elgamal_key_agreement_case_params(Default::default()),
+        build_pairing_elgamal_key_agreement_case_payload(Default::default()),
+    );
+
+    // Assert
+    assert!(created.is_ok());
+}
+// end the_declared_sets_and_spellings_are_total_and_real
+
 /// Contract: an envelope unwrapped under a key pair whose `x` and `y` are
 ///   exchanged returns components other than the formed ones.
 /// Arrange: the envelope of `unwrap_returns_the_components_the_envelope_was_formed_from`;
@@ -2029,14 +2312,20 @@ fn unwrap_with_exchanged_secrets_returns_different_components() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -2322,14 +2611,20 @@ fn unwrap_with_a_first_group_coin_element_from_another_envelope_changes_only_the
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -2582,14 +2877,20 @@ fn unwrap_with_a_second_group_coin_element_from_another_envelope_changes_only_th
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -2844,14 +3145,20 @@ fn key_pair_from_components_returns_the_key_pair_its_secrets_form() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -3052,14 +3359,20 @@ fn public_keys_from_components_returns_the_public_keys_the_components_hold() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -3169,14 +3482,20 @@ fn key_pair_components_returns_new_secrets_holding_the_key_pairs_secrets() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -3288,14 +3607,20 @@ fn key_pair_public_keys_returns_the_key_pairs_public_keys() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -3424,14 +3749,20 @@ fn public_keys_components_returns_the_public_keys_elements() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -3562,14 +3893,20 @@ fn possession_components_returns_the_possessions_elements() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -3734,14 +4071,20 @@ fn possession_from_components_holds_the_components() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -3907,14 +4250,20 @@ fn envelope_components_returns_the_envelopes_elements() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,
@@ -4071,14 +4420,20 @@ fn envelope_from_components_holds_the_components() {
         fn consume_pairing_elgamal_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _payload: &PairingElGamalKeyAgreementCasePayload,
+            _params: ConsumePairingElGamalKeyAgreementCaseParams,
+            payload: ConsumePairingElGamalKeyAgreementCasePayload<'_, P, E, H, R>,
         ) -> Self::Output {
+            let ConsumePairingElGamalKeyAgreementCasePayload {
+                pairing,
+                hash_to_scalar,
+                encoder,
+                random,
+                case: _,
+            } = payload;
             // Arrange
             let adapter = build_pairing_elgamal_key_agreement(
                 pairing,

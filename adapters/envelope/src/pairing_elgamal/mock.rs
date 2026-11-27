@@ -1,6 +1,7 @@
 #![allow(dead_code, clippy::expect_used, clippy::too_many_arguments)]
 
 use super::interface::{
+    ConsumePairingElGamalKeyAgreementCaseParams, ConsumePairingElGamalKeyAgreementCasePayload,
     IPairingElGamalKeyAgreementCaseConsumer, PairingElGamalEnvelope, PairingElGamalKeyAgreement,
     PairingElGamalKeyAgreementCaseDeps, PairingElGamalKeyAgreementCaseErrorReturn,
     PairingElGamalKeyAgreementCaseParams, PairingElGamalKeyAgreementCasePayload,
@@ -24,26 +25,30 @@ use encoding::{
     build_create_encoding_payload, create_encoding,
 };
 use hash_to_scalar::{
-    CreateHashToScalarParams, HashToScalarParams, HashToScalarPayload, IHashToScalarAdapter,
+    ConsumeHashToScalarParams, ConsumeHashToScalarPayload, CreateHashToScalarDeps,
+    CreateHashToScalarDepsOverrides, CreateHashToScalarParams, HashToScalarParams,
+    HashToScalarPayload, IHashToScalarAdapter, IHashToScalarConsumer,
     build_create_hash_to_scalar_deps, build_create_hash_to_scalar_params,
-    build_create_hash_to_scalar_payload, create_hash_to_scalar,
+    build_create_hash_to_scalar_payload, create_hash_to_scalar, lookup_hash_to_scalar_declaration,
 };
 use pairing::{
-    AddScalarParams, AddScalarPayloadOverrides, ConsumePairingParams, ConsumePairingPayload,
-    CreatePairingDeps, CreatePairingParams, EncodeG1Params, EncodeG1Payload, EncodeG2Params,
-    EncodeG2Payload, EncodeScalarParams, EncodeScalarPayload, G1GeneratorParams,
+    AddScalarParams, AddScalarPayloadOverrides, AdmitPairingCompositionDeps, ConsumePairingParams,
+    ConsumePairingPayload, CreatePairingDeps, CreatePairingParams, EncodeG1Params, EncodeG1Payload,
+    EncodeG2Params, EncodeG2Payload, EncodeScalarParams, EncodeScalarPayload, G1GeneratorParams,
     G1GeneratorPayload, G2GeneratorParams, G2GeneratorPayload, IPairingAdapter, IPairingArithmetic,
     IPairingConsumer, IPairingReference, ISampleUniformScalar, MulG1Params, MulG1PayloadOverrides,
     MulG2Params, MulG2PayloadOverrides, MulScalarParams, MulScalarPayloadOverrides,
-    SampleUniformScalarParams, SampleUniformScalarPayloadOverrides, build_add_scalar_payload,
-    build_create_pairing_deps, build_create_pairing_params, build_create_pairing_payload,
-    build_mul_g1_payload, build_mul_g2_payload, build_mul_scalar_payload,
-    build_sample_uniform_scalar_payload, create_pairing,
+    SampleUniformScalarParams, SampleUniformScalarPayloadOverrides, admit_pairing_composition,
+    build_add_scalar_payload, build_create_pairing_deps, build_create_pairing_params,
+    build_create_pairing_payload, build_mul_g1_payload, build_mul_g2_payload,
+    build_mul_scalar_payload, build_sample_uniform_scalar_payload, create_pairing,
+    lookup_pairing_declaration,
 };
 use random::{
+    ConsumeRandomSourceParams, ConsumeRandomSourcePayload, CreateRandomSourceDeps,
     CreateRandomSourceParams, CreateRandomSourceParamsOverrides, IRandomSourceAdapter,
-    build_create_random_source_deps, build_create_random_source_params,
-    build_create_random_source_payload, create_random_source,
+    IRandomSourceConsumer, RandomSourceKind, build_create_random_source_deps,
+    build_create_random_source_params, build_create_random_source_payload, create_random_source,
 };
 use serde_json::{Map, Value};
 
@@ -637,6 +642,35 @@ pub fn build_pairing_elgamal_key_agreement_case_success_return<O>(
     PairingElGamalKeyAgreementCaseSuccessReturn { output }
 }
 
+#[derive(Default)]
+pub struct ConsumePairingElGamalKeyAgreementCaseParamsOverrides;
+
+pub fn build_consume_pairing_elgamal_key_agreement_case_params(
+    _overrides: ConsumePairingElGamalKeyAgreementCaseParamsOverrides,
+) -> ConsumePairingElGamalKeyAgreementCaseParams {
+    ConsumePairingElGamalKeyAgreementCaseParams
+}
+
+#[derive(Default)]
+pub struct ConsumePairingElGamalKeyAgreementCasePayloadOverrides;
+
+pub fn build_consume_pairing_elgamal_key_agreement_case_payload<'a, P, E, H, R>(
+    pairing: &'a P,
+    hash_to_scalar: &'a H,
+    encoder: &'a E,
+    random: &'a R,
+    case: &'a PairingElGamalKeyAgreementCasePayload,
+    _overrides: ConsumePairingElGamalKeyAgreementCasePayloadOverrides,
+) -> ConsumePairingElGamalKeyAgreementCasePayload<'a, P, E, H, R> {
+    ConsumePairingElGamalKeyAgreementCasePayload {
+        pairing,
+        hash_to_scalar,
+        encoder,
+        random,
+        case,
+    }
+}
+
 struct CaseAtPairing<'a, C: IPairingElGamalKeyAgreementCaseConsumer> {
     pub consumer: &'a C,
     pub encoding: CreateEncodingParams,
@@ -653,21 +687,23 @@ impl<'a, C: IPairingElGamalKeyAgreementCaseConsumer> IPairingConsumer for CaseAt
         payload: ConsumePairingPayload<P>,
     ) -> Self::Output {
         let encoding_deps: CreateEncodingDeps<CaseAtEncoding<'_, '_, C, P>> =
-            build_create_encoding_deps(CaseAtEncoding {
-                consumer: self.consumer,
-                pairing: &payload.adapter,
-                hash_to_scalar: self.hash_to_scalar,
-                random_source: build_create_random_source_params(
-                    CreateRandomSourceParamsOverrides {
-                        kind: Some(self.random_source.kind),
-                    },
-                ),
-            });
+            build_create_encoding_deps(
+                CaseAtEncoding {
+                    consumer: self.consumer,
+                    pairing: &payload.adapter,
+                    hash_to_scalar: self.hash_to_scalar,
+                    random_source: build_create_random_source_params(
+                        CreateRandomSourceParamsOverrides {
+                            kind: Some(self.random_source.kind),
+                        },
+                    ),
+                },
+                Default::default(),
+            );
         match create_encoding(
             &encoding_deps,
             build_create_encoding_params(CreateEncodingParamsOverrides {
-                concrete: Some(self.encoding.concrete),
-                identifier: Some(self.encoding.identifier),
+                selection: Some(self.encoding.selection),
             }),
             build_create_encoding_payload(Default::default()),
         ) {
@@ -699,38 +735,129 @@ impl<C: IPairingElGamalKeyAgreementCaseConsumer, P: IPairingArithmetic + IPairin
         _params: ConsumeEncodingParams,
         payload: ConsumeEncodingPayload<E>,
     ) -> Self::Output {
-        let created_hash_to_scalar = match create_hash_to_scalar::<P::Scalar>(
-            &build_create_hash_to_scalar_deps(Default::default()),
+        let hash_to_scalar_deps: CreateHashToScalarDeps<CaseAtHashToScalar<'_, '_, '_, C, P, E>> =
+            build_create_hash_to_scalar_deps(
+                CaseAtHashToScalar {
+                    consumer: self.consumer,
+                    pairing: self.pairing,
+                    encoder: &payload.adapter,
+                    random_source: build_create_random_source_params(
+                        CreateRandomSourceParamsOverrides {
+                            kind: Some(self.random_source.kind),
+                        },
+                    ),
+                },
+                CreateHashToScalarDepsOverrides {
+                    lookup: Some(lookup_hash_to_scalar_declaration),
+                },
+            );
+        match create_hash_to_scalar::<P::Scalar, _>(
+            &hash_to_scalar_deps,
             self.hash_to_scalar,
             build_create_hash_to_scalar_payload(Default::default()),
         ) {
-            Ok(created) => created,
-            Err(error) => {
-                return Err(PairingElGamalKeyAgreementCaseErrorReturn::HashToScalar(
-                    error,
-                ));
-            }
-        };
-        let created_random = match create_random_source(
-            &build_create_random_source_deps(Default::default()),
+            Ok(success) => success.output,
+            Err(error) => Err(PairingElGamalKeyAgreementCaseErrorReturn::HashToScalar(
+                error,
+            )),
+        }
+    }
+}
+
+struct CaseAtHashToScalar<
+    'a,
+    'p,
+    'e,
+    C: IPairingElGamalKeyAgreementCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter + IDecoderAdapter,
+> {
+    pub consumer: &'a C,
+    pub pairing: &'p P,
+    pub encoder: &'e E,
+    pub random_source: CreateRandomSourceParams,
+}
+
+impl<
+    C: IPairingElGamalKeyAgreementCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter + IDecoderAdapter,
+> IHashToScalarConsumer<P::Scalar> for CaseAtHashToScalar<'_, '_, '_, C, P, E>
+{
+    type Output = PairingElGamalKeyAgreementCaseReturn<C::Output>;
+
+    fn consume_hash_to_scalar<H: IHashToScalarAdapter<P::Scalar>>(
+        &self,
+        _params: ConsumeHashToScalarParams,
+        payload: ConsumeHashToScalarPayload<P::Scalar, H>,
+    ) -> Self::Output {
+        let kind: RandomSourceKind = self.random_source.kind;
+        let random_source_deps: CreateRandomSourceDeps<
+            CaseAtRandomSource<'_, '_, '_, '_, C, P, E, H>,
+        > = build_create_random_source_deps(
+            CaseAtRandomSource {
+                consumer: self.consumer,
+                pairing: self.pairing,
+                hash_to_scalar: &payload.adapter,
+                encoder: self.encoder,
+            },
+            Default::default(),
+        );
+        match create_random_source(
+            &random_source_deps,
             build_create_random_source_params(CreateRandomSourceParamsOverrides {
-                kind: Some(self.random_source.kind),
+                kind: Some(kind),
             }),
             build_create_random_source_payload(Default::default()),
         ) {
-            Ok(created) => created,
-            Err(error) => {
-                return Err(PairingElGamalKeyAgreementCaseErrorReturn::RandomSource(
-                    error,
-                ));
-            }
-        };
+            Ok(success) => success.output,
+            Err(error) => Err(PairingElGamalKeyAgreementCaseErrorReturn::RandomSource(
+                error,
+            )),
+        }
+    }
+}
+
+struct CaseAtRandomSource<
+    'a,
+    'p,
+    'e,
+    'h,
+    C: IPairingElGamalKeyAgreementCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter + IDecoderAdapter,
+    H: IHashToScalarAdapter<P::Scalar>,
+> {
+    pub consumer: &'a C,
+    pub pairing: &'p P,
+    pub hash_to_scalar: &'h H,
+    pub encoder: &'e E,
+}
+
+impl<
+    C: IPairingElGamalKeyAgreementCaseConsumer,
+    P: IPairingArithmetic + IPairingReference,
+    E: IEncoderAdapter + IDecoderAdapter,
+    H: IHashToScalarAdapter<P::Scalar>,
+> IRandomSourceConsumer for CaseAtRandomSource<'_, '_, '_, '_, C, P, E, H>
+{
+    type Output = PairingElGamalKeyAgreementCaseReturn<C::Output>;
+
+    fn consume_random_source<R: IRandomSourceAdapter>(
+        &self,
+        _params: ConsumeRandomSourceParams,
+        payload: ConsumeRandomSourcePayload<R>,
+    ) -> Self::Output {
         let output = self.consumer.consume_pairing_elgamal_key_agreement_case(
-            self.pairing,
-            &*created_hash_to_scalar.adapter,
-            &payload.adapter,
-            &*created_random.adapter,
-            &PairingElGamalKeyAgreementCasePayload,
+            build_consume_pairing_elgamal_key_agreement_case_params(Default::default()),
+            build_consume_pairing_elgamal_key_agreement_case_payload(
+                self.pairing,
+                self.hash_to_scalar,
+                self.encoder,
+                &payload.source,
+                &PairingElGamalKeyAgreementCasePayload,
+                Default::default(),
+            ),
         );
         Ok(PairingElGamalKeyAgreementCaseSuccessReturn { output })
     }
@@ -748,6 +875,11 @@ pub fn run_pairing_elgamal_key_agreement_case<C: IPairingElGamalKeyAgreementCase
             encoding: params.encoding,
             hash_to_scalar: params.hash_to_scalar,
             random_source: params.random_source,
+        },
+        lookup_pairing_declaration,
+        admit_pairing_composition,
+        AdmitPairingCompositionDeps {
+            lookup_pairing_declaration,
         },
         Default::default(),
     );

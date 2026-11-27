@@ -11,7 +11,8 @@ use encoding::{
 use pairing::{
     ConsumePairingParams, ConsumePairingPayload, CreatePairingPayload, DecodeG1ErrorReturn,
     DecodeG2ErrorReturn, IPairingArithmetic, IPairingConsumer, IPairingReference,
-    build_create_pairing_deps, build_create_pairing_params, create_pairing,
+    build_admit_pairing_composition_deps, build_create_pairing_deps, build_create_pairing_params,
+    create_pairing, mock_admit_pairing_composition, mock_lookup_pairing_declaration,
 };
 
 /// Contract: ordering: both reads precede any group element's decoding.
@@ -65,7 +66,16 @@ fn g1_fields_to_value_checks_the_kinds_before_decoding_any_group_element() {
     }
 
     let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
+        &build_create_pairing_deps(
+            Consumer,
+            mock_lookup_pairing_declaration,
+            mock_admit_pairing_composition,
+            build_admit_pairing_composition_deps(
+                mock_lookup_pairing_declaration,
+                Default::default(),
+            ),
+            Default::default(),
+        ),
         build_create_pairing_params(Default::default()),
         CreatePairingPayload,
     );
@@ -124,7 +134,16 @@ fn g2_fields_to_value_checks_the_kinds_before_decoding_any_group_element() {
     }
 
     let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
+        &build_create_pairing_deps(
+            Consumer,
+            mock_lookup_pairing_declaration,
+            mock_admit_pairing_composition,
+            build_admit_pairing_composition_deps(
+                mock_lookup_pairing_declaration,
+                Default::default(),
+            ),
+            Default::default(),
+        ),
         build_create_pairing_params(Default::default()),
         CreatePairingPayload,
     );
@@ -185,7 +204,16 @@ fn g1_fields_to_value_rejects_a_commitment_the_pairing_refuses() {
     }
 
     let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
+        &build_create_pairing_deps(
+            Consumer,
+            mock_lookup_pairing_declaration,
+            mock_admit_pairing_composition,
+            build_admit_pairing_composition_deps(
+                mock_lookup_pairing_declaration,
+                Default::default(),
+            ),
+            Default::default(),
+        ),
         build_create_pairing_params(Default::default()),
         CreatePairingPayload,
     );
@@ -246,7 +274,16 @@ fn g2_fields_to_value_rejects_a_commitment_the_pairing_refuses() {
     }
 
     let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
+        &build_create_pairing_deps(
+            Consumer,
+            mock_lookup_pairing_declaration,
+            mock_admit_pairing_composition,
+            build_admit_pairing_composition_deps(
+                mock_lookup_pairing_declaration,
+                Default::default(),
+            ),
+            Default::default(),
+        ),
         build_create_pairing_params(Default::default()),
         CreatePairingPayload,
     );
@@ -306,7 +343,16 @@ fn g1_fields_to_value_reports_the_first_refusal() {
     }
 
     let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
+        &build_create_pairing_deps(
+            Consumer,
+            mock_lookup_pairing_declaration,
+            mock_admit_pairing_composition,
+            build_admit_pairing_composition_deps(
+                mock_lookup_pairing_declaration,
+                Default::default(),
+            ),
+            Default::default(),
+        ),
         build_create_pairing_params(Default::default()),
         CreatePairingPayload,
     );
@@ -366,7 +412,16 @@ fn g2_fields_to_value_reports_the_first_refusal() {
     }
 
     let created = create_pairing(
-        &build_create_pairing_deps(Consumer, Default::default()),
+        &build_create_pairing_deps(
+            Consumer,
+            mock_lookup_pairing_declaration,
+            mock_admit_pairing_composition,
+            build_admit_pairing_composition_deps(
+                mock_lookup_pairing_declaration,
+                Default::default(),
+            ),
+            Default::default(),
+        ),
         build_create_pairing_params(Default::default()),
         CreatePairingPayload,
     );

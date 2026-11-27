@@ -2,254 +2,267 @@
 
 use super::create_key_agreement;
 use super::provides::{
-    CreateKeyAgreementCasePayload, CreateKeyAgreementErrorReturn,
-    CreateKeyAgreementParamsOverrides, CreateKeyAgreementReturn, DECLARED_KEY_AGREEMENT_SELECTIONS,
-    ICreateKeyAgreementCaseConsumer, KeyAgreementIdentifier, MockIKeyAgreementConsumer,
+    ConsumeCreateKeyAgreementCaseParams, ConsumeCreateKeyAgreementCasePayload,
+    ConsumeKeyAgreementParams, ConsumeKeyAgreementPayload, CreateKeyAgreementParamsOverrides,
+    CreateKeyAgreementReturn, CreateKeyAgreementSuccessReturn, GenerateKeysErrorReturn,
+    ICreateKeyAgreementCaseConsumer, IKeyAgreementAdapter, IKeyAgreementConsumer,
+    KeyAgreementConcrete, MockIKeyAgreementAdapterFailureMode,
+    MockIKeyAgreementAdapterGenerateKeysErrorReturn, PossessionComponentsParams,
     build_create_key_agreement_case_deps, build_create_key_agreement_case_params,
     build_create_key_agreement_case_payload, build_create_key_agreement_deps,
     build_create_key_agreement_params, build_create_key_agreement_payload,
-    run_create_key_agreement_case,
+    build_generate_keys_params, build_generate_keys_payload, build_key_agreement_concrete,
+    build_possession_components_payload, run_create_key_agreement_case,
 };
 use encoding::{IDecoderAdapter, IEncoderAdapter};
 use hash_to_scalar::IHashToScalarAdapter;
 use kem::ICredentialKemAdapter;
-use pairing::{IPairingArithmetic, IPairingReference};
+use pairing::{EncodeG1Params, EncodeG1Payload, IPairingArithmetic, IPairingReference};
 use random::IRandomSourceAdapter;
 
-/// Contract: `create_key_agreement`, admitted: the arm's `try_new` returns
-///   `Ok(adapter)` → `Ok(CreateKeyAgreementSuccessReturn { output })`, the
+/// Contract: `create_key_agreement`, admitted: the `Mock` arm's `try_new`
+///   returns `Ok(adapter)` → `deps.consumer.consume_key_agreement`, exactly
+///   once, with the mock concrete under the failure mode the selection
+///   carries → `Ok(CreateKeyAgreementSuccessReturn { output })`, the
 ///   consumer's output held whole.
-/// Arrange: `Consumer` whose params are `build_create_key_agreement_params(
-///   Default::default())`, the default selection of the family's mock
-///   concrete under the identifier and algebra its declaration admits; the
-///   consumer is `MockIKeyAgreementConsumer`, whose `type Output = ()`.
+/// Arrange: `Consumer` holding the mock selection under
+///   `MockIKeyAgreementAdapterFailureMode::NonceDrawRefused`; the block's
+///   `IKeyAgreementConsumer` returns whether `generate_keys` over draws that
+///   differ from each other returned
+///   `Err(GenerateKeysErrorReturn::Mock(MockIKeyAgreementAdapterGenerateKeysErrorReturn::NonceDrawRefused))`,
+///   a return only the mock concrete under that failure mode produces.
 /// Act:     `run_create_key_agreement_case` runs the case, whose consumer's
 ///   single call is `create_key_agreement`.
-/// Assert:  the case success's `output` is `Ok`, holding the `()` the mock
-///   consumer declares.
-/// Collaborators: the pairing from `create_pairing`, the encoder from
-///   `create_encoding`, the hash-to-scalar adapter from
-///   `create_hash_to_scalar`, and the randomness source from
-///   `create_random_source`, each reached through the case runner at the
-///   defaults of its official params builder, which select that family's
-///   mock concrete; the `kem` borrow is unused by the unit blocks.
+/// Assert:  the case success's `output` equals
+///   `Ok(CreateKeyAgreementSuccessReturn { output: true })` whole, `true`
+///   stated as an independent literal, so a factory that constructs the real
+///   concrete or never calls the consumer fails.
+/// Collaborators: the pairing `create_pairing` hands `IPairingConsumer`, the
+///   encoder `create_encoding` hands `IEncodingConsumer`, the hash-to-scalar
+///   concrete `create_hash_to_scalar` hands `IHashToScalarConsumer<P::Scalar>`
+///   through `ConsumeHashToScalarPayload { adapter, declaration }`, and the
+///   randomness source `create_random_source` hands `IRandomSourceConsumer`,
+///   each reached through the case runner at the defaults of its official
+///   params builder, which select that family's mock concrete; the `kem`
+///   borrow is unused by the unit blocks.
 #[test]
-fn create_key_agreement_returns_the_consumers_output_for_the_mock_selection() {
-    struct Consumer;
+fn create_key_agreement_constructs_the_mock_member_for_the_mock_selection() {
+    struct Inner<'a, P: IPairingArithmetic + IPairingReference> {
+        pairing: &'a P,
+    }
+
+    impl<P: IPairingArithmetic + IPairingReference> IKeyAgreementConsumer<P> for Inner<'_, P> {
+        type Output = bool;
+
+        fn consume_key_agreement<K: IKeyAgreementAdapter<Pairing = P>>(
+            &self,
+            _params: ConsumeKeyAgreementParams,
+            payload: ConsumeKeyAgreementPayload<K>,
+        ) -> Self::Output {
+            matches!(
+                payload.adapter.generate_keys(
+                    build_generate_keys_params(Default::default()),
+                    build_generate_keys_payload::<P>(self.pairing, Default::default()),
+                ),
+                Err(GenerateKeysErrorReturn::Mock(
+                    MockIKeyAgreementAdapterGenerateKeysErrorReturn::NonceDrawRefused,
+                ))
+            )
+        }
+    }
+
+    struct Consumer {
+        concrete: KeyAgreementConcrete,
+    }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
-        type Output = CreateKeyAgreementReturn<()>;
+        type Output = CreateKeyAgreementReturn<bool>;
 
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
+            let _case = payload.case;
             create_key_agreement(
                 &build_create_key_agreement_deps(
-                    pairing,
-                    hash_to_scalar,
-                    encoder,
-                    random,
-                    MockIKeyAgreementConsumer,
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    Inner {
+                        pairing: payload.pairing,
+                    },
                     Default::default(),
                 ),
-                build_create_key_agreement_params(Default::default()),
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.concrete),
+                }),
                 build_create_key_agreement_payload(Default::default()),
             )
         }
     }
 
     let created = run_create_key_agreement_case(
-        &build_create_key_agreement_case_deps(Consumer, Default::default()),
+        &build_create_key_agreement_case_deps(
+            Consumer {
+                concrete: KeyAgreementConcrete::Mock(
+                    MockIKeyAgreementAdapterFailureMode::NonceDrawRefused,
+                ),
+            },
+            Default::default(),
+        ),
         build_create_key_agreement_case_params(Default::default()),
         build_create_key_agreement_case_payload(Default::default()),
     );
 
-    assert!(created.is_ok());
     let Ok(success) = created else {
         panic!("the case ran")
     };
-    assert!(success.output.is_ok());
+    assert!(matches!(
+        success.output,
+        Ok(CreateKeyAgreementSuccessReturn { output: true })
+    ));
 }
 
-/// Contract: `create_key_agreement`, unsupported identifier: the `Mock`
-///   arm's declared identifier is not `params.identifier` →
-///   `Err(CreateKeyAgreementErrorReturn::UnsupportedKeyAgreementIdentifier)`,
-///   with nothing constructed and the consumer not called.
-/// Arrange: `Consumer` that, for each member of
-///   `DECLARED_KEY_AGREEMENT_SELECTIONS`, takes params from
-///   `build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
-///   identifier: Some(member.identifier), ..Default::default() })`, keeping
-///   the default selection of the mock concrete, which declares
-///   `KeyAgreementIdentifier::Mock`, so the identifier required differs
-///   from the identifier declared for every case.
+/// Contract: `create_key_agreement`, admitted: the `PairingElGamal` arm's
+///   `try_new` returns `Ok(adapter)` → `deps.consumer.consume_key_agreement`,
+///   exactly once, with the real concrete →
+///   `Ok(CreateKeyAgreementSuccessReturn { output })`, the consumer's output
+///   held whole.
+/// Arrange: `Consumer` holding the selection `build_key_agreement_concrete`
+///   returns for `KeyAgreementConcrete::PairingElGamal`; the block's
+///   `IKeyAgreementConsumer` calls `generate_keys` twice over the same draws
+///   and returns whether the two possessions' `r1` encodings, read through
+///   `possession_components` and `encode_g1`, differ, a difference only the
+///   real concrete produces because it draws each nonce from the randomness
+///   source, whose counter advances between the calls, while the mock
+///   concrete forms its proof from constant nonces and returns equal
+///   encodings.
 /// Act:     `run_create_key_agreement_case` runs the case, whose consumer's
-///   single call per case is `create_key_agreement`.
-/// Assert:  per case and for the returned output,
-///   `assert_eq!(output.err(),
-///   Some(CreateKeyAgreementErrorReturn::UnsupportedKeyAgreementIdentifier))`.
+///   single call is `create_key_agreement`.
+/// Assert:  the case success's `output` equals
+///   `Ok(CreateKeyAgreementSuccessReturn { output: true })` whole, `true`
+///   stated as an independent literal, so a factory that constructs the mock
+///   concrete or never calls the consumer fails.
 /// Collaborators: as
-///   `create_key_agreement_returns_the_consumers_output_for_the_mock_selection`.
+///   `create_key_agreement_constructs_the_mock_member_for_the_mock_selection`;
+///   the key agreement is the real `pairing_elgamal` concrete the real
+///   selection constructs over those collaborators.
 #[test]
-fn create_key_agreement_refuses_the_mock_selection_whose_identifier_the_mock_does_not_declare() {
-    struct Consumer;
+fn create_key_agreement_constructs_the_pairing_elgamal_member_for_the_pairing_elgamal_selection() {
+    struct Inner<'a, P: IPairingArithmetic + IPairingReference> {
+        pairing: &'a P,
+    }
+
+    impl<P: IPairingArithmetic + IPairingReference> IKeyAgreementConsumer<P> for Inner<'_, P> {
+        type Output = bool;
+
+        fn consume_key_agreement<K: IKeyAgreementAdapter<Pairing = P>>(
+            &self,
+            _params: ConsumeKeyAgreementParams,
+            payload: ConsumeKeyAgreementPayload<K>,
+        ) -> Self::Output {
+            let encoded_r1 = |possession: &K::Possession| {
+                payload
+                    .adapter
+                    .possession_components(
+                        PossessionComponentsParams,
+                        build_possession_components_payload(possession, Default::default()),
+                    )
+                    .ok()
+                    .and_then(|success| {
+                        self.pairing
+                            .encode_g1(
+                                EncodeG1Params,
+                                EncodeG1Payload {
+                                    point: success.components.r1,
+                                },
+                            )
+                            .ok()
+                            .map(|encoded| encoded.bytes)
+                    })
+            };
+            let first = payload.adapter.generate_keys(
+                build_generate_keys_params(Default::default()),
+                build_generate_keys_payload::<P>(self.pairing, Default::default()),
+            );
+            let second = payload.adapter.generate_keys(
+                build_generate_keys_params(Default::default()),
+                build_generate_keys_payload::<P>(self.pairing, Default::default()),
+            );
+            match (first, second) {
+                (Ok(first), Ok(second)) => {
+                    encoded_r1(&first.possession) != encoded_r1(&second.possession)
+                }
+                _ => false,
+            }
+        }
+    }
+
+    struct Consumer {
+        concrete: KeyAgreementConcrete,
+    }
 
     impl ICreateKeyAgreementCaseConsumer for Consumer {
-        type Output = CreateKeyAgreementReturn<()>;
+        type Output = CreateKeyAgreementReturn<bool>;
 
         fn consume_create_key_agreement_case<
             P: IPairingArithmetic + IPairingReference,
             E: IEncoderAdapter + IDecoderAdapter,
+            H: IHashToScalarAdapter<P::Scalar>,
+            R: IRandomSourceAdapter,
             K: ICredentialKemAdapter<Pairing = P>,
         >(
             &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
+            _params: ConsumeCreateKeyAgreementCaseParams,
+            payload: ConsumeCreateKeyAgreementCasePayload<'_, P, E, H, R, K>,
         ) -> Self::Output {
-            let mut output = None;
-            for selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                let result = create_key_agreement(
-                    &build_create_key_agreement_deps(
-                        pairing,
-                        hash_to_scalar,
-                        encoder,
-                        random,
-                        MockIKeyAgreementConsumer,
-                        Default::default(),
-                    ),
-                    build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
-                        identifier: Some(selection.identifier),
-                        ..Default::default()
-                    }),
-                    build_create_key_agreement_payload(Default::default()),
-                );
-                assert_eq!(
-                    result.as_ref().err(),
-                    Some(&CreateKeyAgreementErrorReturn::UnsupportedKeyAgreementIdentifier)
-                );
-                output = Some(result);
-            }
-            let Some(output) = output else {
-                panic!("the declared set holds a case")
-            };
-            output
+            let _case = payload.case;
+            create_key_agreement(
+                &build_create_key_agreement_deps(
+                    payload.pairing,
+                    payload.hash_to_scalar,
+                    payload.encoder,
+                    payload.random,
+                    Inner {
+                        pairing: payload.pairing,
+                    },
+                    Default::default(),
+                ),
+                build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
+                    concrete: Some(self.concrete),
+                }),
+                build_create_key_agreement_payload(Default::default()),
+            )
         }
     }
 
     let created = run_create_key_agreement_case(
-        &build_create_key_agreement_case_deps(Consumer, Default::default()),
+        &build_create_key_agreement_case_deps(
+            Consumer {
+                concrete: build_key_agreement_concrete(
+                    KeyAgreementConcrete::PairingElGamal,
+                    Default::default(),
+                ),
+            },
+            Default::default(),
+        ),
         build_create_key_agreement_case_params(Default::default()),
         build_create_key_agreement_case_payload(Default::default()),
     );
 
-    assert!(created.is_ok());
     let Ok(success) = created else {
         panic!("the case ran")
     };
-    assert_eq!(
-        success.output.err(),
-        Some(CreateKeyAgreementErrorReturn::UnsupportedKeyAgreementIdentifier)
-    );
-}
-
-/// Contract: `create_key_agreement`, unsupported identifier: the
-///   `PairingElGamal` arm's declared identifier is not `params.identifier` →
-///   `Err(CreateKeyAgreementErrorReturn::UnsupportedKeyAgreementIdentifier)`,
-///   with nothing constructed and the consumer not called.
-/// Arrange: `Consumer` that, for each member of
-///   `DECLARED_KEY_AGREEMENT_SELECTIONS`, takes params from
-///   `build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
-///   concrete: Some(member.concrete), identifier:
-///   Some(KeyAgreementIdentifier::Mock), algebra: Some(member.algebra) })`,
-///   the identifier `build_create_key_agreement_params` carries at its
-///   defaults, which no declared concrete declares, so the identifier
-///   required differs from the identifier declared for every case.
-/// Act:     `run_create_key_agreement_case` runs the case, whose consumer's
-///   single call per case is `create_key_agreement`.
-/// Assert:  per case and for the returned output,
-///   `assert_eq!(output.err(),
-///   Some(CreateKeyAgreementErrorReturn::UnsupportedKeyAgreementIdentifier))`.
-/// Collaborators: as
-///   `create_key_agreement_returns_the_consumers_output_for_the_mock_selection`;
-///   the refusal is decided from the selected concrete's declaration
-///   constant, before any construction, so no real concrete's function runs.
-#[test]
-fn create_key_agreement_refuses_a_declared_selection_whose_identifier_the_concrete_does_not_declare()
- {
-    struct Consumer;
-
-    impl ICreateKeyAgreementCaseConsumer for Consumer {
-        type Output = CreateKeyAgreementReturn<()>;
-
-        fn consume_create_key_agreement_case<
-            P: IPairingArithmetic + IPairingReference,
-            E: IEncoderAdapter + IDecoderAdapter,
-            K: ICredentialKemAdapter<Pairing = P>,
-        >(
-            &self,
-            pairing: &P,
-            hash_to_scalar: &dyn IHashToScalarAdapter<P::Scalar>,
-            encoder: &E,
-            random: &dyn IRandomSourceAdapter,
-            _kem: &K,
-            _payload: &CreateKeyAgreementCasePayload,
-        ) -> Self::Output {
-            let mut output = None;
-            for selection in DECLARED_KEY_AGREEMENT_SELECTIONS {
-                let result = create_key_agreement(
-                    &build_create_key_agreement_deps(
-                        pairing,
-                        hash_to_scalar,
-                        encoder,
-                        random,
-                        MockIKeyAgreementConsumer,
-                        Default::default(),
-                    ),
-                    build_create_key_agreement_params(CreateKeyAgreementParamsOverrides {
-                        concrete: Some(selection.concrete),
-                        identifier: Some(KeyAgreementIdentifier::Mock),
-                        algebra: Some(selection.algebra),
-                    }),
-                    build_create_key_agreement_payload(Default::default()),
-                );
-                assert_eq!(
-                    result.as_ref().err(),
-                    Some(&CreateKeyAgreementErrorReturn::UnsupportedKeyAgreementIdentifier)
-                );
-                output = Some(result);
-            }
-            let Some(output) = output else {
-                panic!("the declared set holds a case")
-            };
-            output
-        }
-    }
-
-    let created = run_create_key_agreement_case(
-        &build_create_key_agreement_case_deps(Consumer, Default::default()),
-        build_create_key_agreement_case_params(Default::default()),
-        build_create_key_agreement_case_payload(Default::default()),
-    );
-
-    assert!(created.is_ok());
-    let Ok(success) = created else {
-        panic!("the case ran")
-    };
-    assert_eq!(
-        success.output.err(),
-        Some(CreateKeyAgreementErrorReturn::UnsupportedKeyAgreementIdentifier)
-    );
+    assert!(matches!(
+        success.output,
+        Ok(CreateKeyAgreementSuccessReturn { output: true })
+    ));
 }

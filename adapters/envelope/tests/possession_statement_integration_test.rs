@@ -18,8 +18,12 @@ use pairing::{
     G1OutsideSubgroupEncodingErrorReturn, G1OutsideSubgroupEncodingParams,
     G1OutsideSubgroupEncodingPayload, G2OutsideSubgroupEncodingErrorReturn,
     G2OutsideSubgroupEncodingParams, G2OutsideSubgroupEncodingPayload, IPairingAdapter,
-    IPairingConsumer, IPairingReference, PAIRING_CONCRETES, TargetGroupEncodingIdentifier,
-    build_create_pairing_deps, build_create_pairing_params, create_pairing,
+    IPairingConsumer, IPairingReference, LookupPairingDeclarationParamsOverrides,
+    PAIRING_CONCRETES, PairingConcreteOverrides, TargetGroupEncodingIdentifier,
+    admit_pairing_composition, build_admit_pairing_composition_deps, build_create_pairing_deps,
+    build_create_pairing_params, build_lookup_pairing_declaration_deps,
+    build_lookup_pairing_declaration_params, build_lookup_pairing_declaration_payload,
+    build_pairing_concrete, create_pairing, lookup_pairing_declaration,
 };
 
 /// Contract: entry `a_first_group_statement_survives_the_round_trip_through_its_fields`;
@@ -79,11 +83,18 @@ fn a_first_group_statement_survives_the_round_trip_through_its_fields() {
     }
 
     for concrete in PAIRING_CONCRETES {
+        let selection = build_pairing_concrete(*concrete, PairingConcreteOverrides);
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
+            concrete: Some(selection),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            lookup_pairing_declaration,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -154,11 +165,18 @@ fn a_second_group_statement_survives_the_round_trip_through_its_fields() {
     }
 
     for concrete in PAIRING_CONCRETES {
+        let selection = build_pairing_concrete(*concrete, PairingConcreteOverrides);
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
+            concrete: Some(selection),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            lookup_pairing_declaration,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -177,23 +195,28 @@ fn a_second_group_statement_survives_the_round_trip_through_its_fields() {
 ///   `libraries_sharing_an_identifier_flatten_a_first_group_statement_to_the_same_fields`;
 ///   any two concretes whose identifiers are equal return equal fields for the
 ///   same statement.
-/// Boundary: the public `create_pairing`; the real chain is `create_pairing`,
-///   the arm's `try_new`, `consume_pairing`, the description's `try_new`,
-///   `to_fields`, and `encode_g1`.
+/// Boundary: the public `lookup_pairing_declaration` and `create_pairing`; the
+///   real chain is `lookup_pairing_declaration`, `create_pairing`, the arm's
+///   `try_new`, `consume_pairing`, the description's `try_new`, `to_fields`,
+///   and `encode_g1`.
 /// Mocked:   none.
-/// Arrange:  a `Consumer` written against `IPairingAdapter` building the
-///   description and the statement as the first-group round trip does, calling
-///   `to_fields`, and returning `P::DECLARATION.target_group_encoding` with
-///   the fields; every concrete of the declared set runs, collected in order,
-///   so each library of each identifier is present.
+/// Arrange:  a `Consumer` written against `IPairingAdapter`, holding the
+///   `TargetGroupEncodingIdentifier` the looked-up declaration carries as its
+///   arrangement, building the description and the statement as the
+///   first-group round trip does, calling `to_fields`, and returning that
+///   typed identifier with the fields; every concrete of the declared set
+///   runs, collected in order, so each library of each identifier is present;
+///   the same selection is used in the lookup params and the infallible
+///   `lookup_pairing_declaration` result is unpacked before `create_pairing`.
 /// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per concrete.
 /// Assert:   an output for every concrete; any two outputs with equal
 ///   identifiers hold equal fields.
 #[test]
 fn libraries_sharing_an_identifier_flatten_a_first_group_statement_to_the_same_fields() {
     // Arrange
-    #[derive(Default)]
-    struct Consumer;
+    struct Consumer {
+        identifier: TargetGroupEncodingIdentifier,
+    }
 
     impl IPairingConsumer for Consumer {
         type Output = (TargetGroupEncodingIdentifier, CanonicalFields);
@@ -208,17 +231,33 @@ fn libraries_sharing_an_identifier_flatten_a_first_group_statement_to_the_same_f
             let statement = build_possession_g1_statement(&payload.adapter, Default::default());
             let Ok(success) =
                 description.to_fields(build_to_fields_params(Default::default()), &statement);
-            (P::DECLARATION.target_group_encoding, success.fields)
+            (self.identifier, success.fields)
         }
     }
 
     let mut outputs = Vec::new();
     for concrete in PAIRING_CONCRETES {
+        let selection = build_pairing_concrete(*concrete, PairingConcreteOverrides);
+        let Ok(looked_up) = lookup_pairing_declaration(
+            &build_lookup_pairing_declaration_deps(Default::default()),
+            build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
+                concrete: Some(selection),
+            }),
+            build_lookup_pairing_declaration_payload(Default::default()),
+        );
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
+            concrete: Some(selection),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer {
+                identifier: looked_up.declaration.target_group_encoding,
+            },
+            lookup_pairing_declaration,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -243,22 +282,27 @@ fn libraries_sharing_an_identifier_flatten_a_first_group_statement_to_the_same_f
 ///   `libraries_sharing_an_identifier_flatten_a_second_group_statement_to_the_same_fields`;
 ///   any two concretes whose identifiers are equal return equal fields for the
 ///   same statement.
-/// Boundary: the public `create_pairing`; the real chain is `create_pairing`,
-///   the arm's `try_new`, `consume_pairing`, the description's `try_new`,
-///   `to_fields`, and `encode_g2`.
+/// Boundary: the public `lookup_pairing_declaration` and `create_pairing`; the
+///   real chain is `lookup_pairing_declaration`, `create_pairing`, the arm's
+///   `try_new`, `consume_pairing`, the description's `try_new`, `to_fields`,
+///   and `encode_g2`.
 /// Mocked:   none.
-/// Arrange:  the `Consumer` of the first-group flatten block over
+/// Arrange:  the `Consumer` of the first-group flatten block, holding its
+///   looked-up `TargetGroupEncodingIdentifier` arrangement the same way, over
 ///   `build_possession_g2_statement_description` and
 ///   `build_possession_g2_statement`; every concrete of the declared set runs,
-///   collected in order, so each library of each identifier is present.
+///   collected in order, so each library of each identifier is present; the
+///   same selection is used in the lookup params and the infallible
+///   `lookup_pairing_declaration` result is unpacked before `create_pairing`.
 /// Act:      `create_pairing(&deps, params, CreatePairingPayload)` per concrete.
 /// Assert:   an output for every concrete; any two outputs with equal
 ///   identifiers hold equal fields.
 #[test]
 fn libraries_sharing_an_identifier_flatten_a_second_group_statement_to_the_same_fields() {
     // Arrange
-    #[derive(Default)]
-    struct Consumer;
+    struct Consumer {
+        identifier: TargetGroupEncodingIdentifier,
+    }
 
     impl IPairingConsumer for Consumer {
         type Output = (TargetGroupEncodingIdentifier, CanonicalFields);
@@ -273,17 +317,33 @@ fn libraries_sharing_an_identifier_flatten_a_second_group_statement_to_the_same_
             let statement = build_possession_g2_statement(&payload.adapter, Default::default());
             let Ok(success) =
                 description.to_fields(build_to_fields_params(Default::default()), &statement);
-            (P::DECLARATION.target_group_encoding, success.fields)
+            (self.identifier, success.fields)
         }
     }
 
     let mut outputs = Vec::new();
     for concrete in PAIRING_CONCRETES {
+        let selection = build_pairing_concrete(*concrete, PairingConcreteOverrides);
+        let Ok(looked_up) = lookup_pairing_declaration(
+            &build_lookup_pairing_declaration_deps(Default::default()),
+            build_lookup_pairing_declaration_params(LookupPairingDeclarationParamsOverrides {
+                concrete: Some(selection),
+            }),
+            build_lookup_pairing_declaration_payload(Default::default()),
+        );
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
+            concrete: Some(selection),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer {
+                identifier: looked_up.declaration.target_group_encoding,
+            },
+            lookup_pairing_declaration,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -367,11 +427,18 @@ fn each_first_group_decoder_refuses_the_first_group_reference_encoding_where_one
 
     let mut outputs = Vec::new();
     for concrete in PAIRING_CONCRETES {
+        let selection = build_pairing_concrete(*concrete, PairingConcreteOverrides);
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
+            concrete: Some(selection),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            lookup_pairing_declaration,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
@@ -454,11 +521,18 @@ fn each_second_group_decoder_refuses_the_second_group_reference_encoding() {
     }
 
     for concrete in PAIRING_CONCRETES {
+        let selection = build_pairing_concrete(*concrete, PairingConcreteOverrides);
         let params = build_create_pairing_params(CreatePairingParamsOverrides {
-            concrete: Some(*concrete),
+            concrete: Some(selection),
             ..Default::default()
         });
-        let deps = build_create_pairing_deps(Consumer, Default::default());
+        let deps = build_create_pairing_deps(
+            Consumer,
+            lookup_pairing_declaration,
+            admit_pairing_composition,
+            build_admit_pairing_composition_deps(lookup_pairing_declaration, Default::default()),
+            Default::default(),
+        );
 
         // Act
         let result = create_pairing(&deps, params, CreatePairingPayload);
